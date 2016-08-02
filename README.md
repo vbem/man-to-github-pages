@@ -24,3 +24,7 @@ git commit -m 'renew my man pages today'
 # push to your github pages
 git push
 ```
+
+### Q&A
+- Q: Aren't http://linux.die.net/man/ and http://man7.org/linux/man-pages/index.html enough for me?
+- A: Online man pages services always bind to specific commands and their versions. This project is useful for your own machine's man pages.
