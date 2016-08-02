@@ -18,6 +18,9 @@ sh build.sh
 # ask git to track all new HTML files
 sh track.sh
 
+# commit to repo
+git commit -m 'renew my man pages today'
+
 # push to your github pages
 git push
 ```
