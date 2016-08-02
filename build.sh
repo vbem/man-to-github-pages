@@ -18,7 +18,8 @@ declare INDEX_BEGIN='
 <head><title>Man Pages on Github Pages</title></head>
 <body bgcolor="white">
 <h1><a href="https://github.com/vbem/man-to-github-pages" target="_blank">Man Pages on Github Pages</a></h1>
-Use CTRL+F for searching.
+Use CTRL+F for searching.<br /> 
+For more, check <a href="http://man7.org/linux/man-pages/index.html" target="_blank">man7.org</a> and <a href="http://linux.die.net/man/" target="_blank">die.net</a>.
 <hr><table border="1">
 <tr><td>Section</td><td>Name</td><td>Description</td></tr>
 '
