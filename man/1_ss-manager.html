@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.2 -->
-<!-- CreationDate: Tue Aug  2 14:52:02 2016 -->
+<!-- CreationDate: Tue Aug  2 15:11:01 2016 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -13,17 +13,19 @@
        table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
        h1      { text-align: center }
 </style>
-<title>SS&minus;TUNNEL</title>
+<title>SS&minus;MANAGER</title>
 
 </head>
 <body>
 
-<h1 align="center">SS&minus;TUNNEL</h1>
+<h1 align="center">SS&minus;MANAGER</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
 <a href="#DESCRIPTION">DESCRIPTION</a><br>
 <a href="#OPTIONS">OPTIONS</a><br>
+<a href="#PROTOCOL">PROTOCOL</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
 <a href="#SEE ALSO">SEE ALSO</a><br>
 
 <hr>
@@ -34,9 +36,9 @@
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">ss-tunnel
-&minus; shadowsocks tools for local port forwarding, libev
-port</p>
+<p style="margin-left:11%; margin-top: 1em">ss-manager
+&minus; ss&minus;server controller for multi&minus;user
+management and traffic statistics</p>
 
 <h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
@@ -44,7 +46,7 @@ port</p>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>ss&minus;tunnel</b>
+<p style="margin-left:11%; margin-top: 1em"><b>ss&minus;manager</b>
 [&minus;AuUv] [&minus;h|&minus;&minus;help] [&minus;s
 <i>&lt;server_host&gt;</i>] [&minus;p
 <i>&lt;server_port&gt;</i>] [&minus;l
@@ -55,8 +57,11 @@ port</p>
 [&minus;c <i>&lt;config_file&gt;</i>] [&minus;i
 <i>&lt;interface&gt;</i>] [&minus;b
 <i>&lt;local_addr&gt;</i>] [&minus;a
-<i>&lt;user_name&gt;</i>] [&minus;n <i>&lt;nofile&gt;</i>]
-[&minus;L addr:port]</p>
+<i>&lt;user_name&gt;</i>]
+[&minus;&minus;manager&minus;address
+<i>&lt;path_to_unix_domain&gt;</i>]
+[&minus;&minus;executable
+<i>&lt;path_to_server_executable&gt;</i>]</p>
 
 <h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
@@ -73,11 +78,13 @@ and low resource consumption.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>Shadowsocks&minus;libev</b>
-consists of five components. <b>ss&minus;tunnel</b>(1) is a
-tool for local port forwarding. See <i>OPTIONS</i> section
-for special option needed by <b>ss&minus;tunnel</b>(1). For
-more information, check out
-<b>shadowsocks&minus;libev</b>(8).</p>
+consists of five components. <b>ss&minus;manager</b>(1) is a
+controller for multi&minus;user management and traffic
+statistics, using UNIX domain socket to talk with
+<b>ss&minus;server</b>(1). Also, it provides a UNIX domain
+socket or IP based API for other software. About the details
+of this API, please refer to the following <i>PROTOCOL</i>
+section.</p>
 
 <h2>OPTIONS
 <a name="OPTIONS"></a>
@@ -89,17 +96,6 @@ more information, check out
 
 <p style="margin-left:17%;">Set the server&rsquo;s hostname
 or IP.</p>
-
-<p style="margin-left:11%; margin-top: 1em">&minus;p
-<i>&lt;server_port&gt;</i></p>
-
-<p style="margin-left:17%;">Set the server&rsquo;s port
-number.</p>
-
-<p style="margin-left:11%; margin-top: 1em">&minus;l
-<i>&lt;local_port&gt;</i></p>
-
-<p style="margin-left:17%;">Set the local port number.</p>
 
 <p style="margin-left:11%; margin-top: 1em">&minus;k
 <i>&lt;password&gt;</i></p>
@@ -154,19 +150,6 @@ seconds. The default value is 60.</p>
 
 <p style="margin-left:17%;">Use a configuration file.</p>
 
-<p style="margin-left:17%; margin-top: 1em">Refer to
-<b>shadowsocks&minus;libev</b>(8) <i>CONFIG FILE</i> section
-for more details.</p>
-
-<p style="margin-left:11%; margin-top: 1em">&minus;n
-<i>&lt;number&gt;</i></p>
-
-<p style="margin-left:17%;">Specify max number of open
-files.</p>
-
-<p style="margin-left:17%; margin-top: 1em">Only available
-on Linux.</p>
-
 <p style="margin-left:11%; margin-top: 1em">&minus;i
 <i>&lt;interface&gt;</i></p>
 
@@ -176,16 +159,10 @@ network interface.</p>
 <p style="margin-left:17%; margin-top: 1em">For example,
 there are three interfaces in your device, which is lo
 (127.0.0.1), eth0 (192.168.0.1) and eth1 (192.168.0.2).
-Meanwhile, you configure <b>ss&minus;tunnel</b> to listen on
+Meanwhile, you configure <b>ss&minus;local</b> to listen on
 0.0.0.0:8388 and bind to eth1. That results the traffic go
 out through eth1, but not lo nor eth0. This option is useful
 to control traffic in multi&minus;interface environment.</p>
-
-<p style="margin-left:11%; margin-top: 1em">&minus;b
-<i>&lt;local_address&gt;</i></p>
-
-<p style="margin-left:17%;">Specify local address to
-bind.</p>
 
 <p style="margin-left:11%; margin-top: 1em">&minus;u</p>
 
@@ -201,14 +178,48 @@ TCP relay.</p>
 <p style="margin-left:17%;">Enable onetime
 authentication.</p>
 
-<p style="margin-left:11%; margin-top: 1em">&minus;L
-<i>&lt;addr:port&gt;</i></p>
+<p style="margin-left:11%; margin-top: 1em">&minus;d
+<i>&lt;addr&gt;</i></p>
 
-<p style="margin-left:17%;">Specify destination server
-address and port for local port forwarding.</p>
+<p style="margin-left:17%;">Setup name servers for internal
+DNS resolver (libudns). The default server is fetched from
+<b>/etc/resolv.conf</b>.</p>
 
-<p style="margin-left:17%; margin-top: 1em">Only used and
-available in tunnel mode.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;fast&minus;open</p>
+
+<p style="margin-left:17%;">Enable TCP fast open.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Only available
+with Linux kernel &gt; 3.7.0.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;acl
+<i>&lt;acl_config&gt;</i></p>
+
+<p style="margin-left:17%;">Enable ACL (Access Control
+List) and specify config file.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;manager&minus;address
+<i>&lt;path_to_unix_domain&gt;</i></p>
+
+<p style="margin-left:17%;">Specify UNIX domain socket
+address for the communication between ss&minus;manager(1)
+and ss&minus;server(1).</p>
+
+<p style="margin-left:17%; margin-top: 1em">Only available
+in server and manager mode.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;executable
+<i>&lt;path_to_server_executable&gt;</i></p>
+
+<p style="margin-left:17%;">Specify the executable path of
+ss&minus;server.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Only available
+in manager mode.</p>
 
 <p style="margin-left:11%; margin-top: 1em">&minus;v</p>
 
@@ -219,6 +230,77 @@ available in tunnel mode.</p>
 
 <p style="margin-left:17%;">Print help message.</p>
 
+<h2>PROTOCOL
+<a name="PROTOCOL"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>ss&minus;manager</b>(1)
+provides several APIs through UDP protocol:</p>
+
+<p style="margin-left:11%; margin-top: 1em">Send UDP
+commands in the following format to the
+manager&minus;address provided to ss&minus;manager(1):</p>
+
+<p style="margin-left:17%;">command: [JSON data]</p>
+
+<p style="margin-left:11%; margin-top: 1em">To add a
+port:</p>
+
+<p style="margin-left:17%;">add: {&quot;server_port&quot;:
+8001, &quot;password&quot;:&quot;7cd308cc059&quot;}</p>
+
+<p style="margin-left:11%; margin-top: 1em">To remove a
+port:</p>
+
+<p style="margin-left:17%;">remove:
+{&quot;server_port&quot;: 8001}</p>
+
+<p style="margin-left:11%; margin-top: 1em">To receive a
+pong:</p>
+
+<p style="margin-left:17%;">ping</p>
+
+<p style="margin-left:11%; margin-top: 1em">Then
+<b>ss&minus;manager</b>(1) will send back the traffic
+statistics:</p>
+
+<p style="margin-left:17%;">stat:
+{&quot;8001&quot;:11370}</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">To use
+<b>ss&minus;manager</b>(1), First start it and specify
+necessary information.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Then
+communicate with <b>ss&minus;manager</b>(1) through UNIX
+Domain Socket using UDP protocol:</p>
+
+<p style="margin-left:17%; margin-top: 1em"># Start the
+manager. Arguments for ss&minus;server will be passed to
+generated <br>
+# ss&minus;server process(es) respectively. <br>
+ss&minus;manager &minus;&minus;manager&minus;address
+/tmp/manager.sock &minus;&minus;executable $(which
+ss&minus;server) &minus;s example.com &minus;m
+aes&minus;256&minus;cfb &minus;c /path/to/config.json</p>
+
+<p style="margin-left:17%; margin-top: 1em"># Connect to
+the socket. Using netcat&minus;openbsd as an example. <br>
+# You should use scripts or other programs for further
+management. <br>
+nc &minus;Uu /tmp/manager.sock</p>
+
+<p style="margin-left:11%; margin-top: 1em">After that, you
+may communicate with <b>ss&minus;manager</b>(1) as described
+above in the <i>PROTOCOL</i> section.</p>
+
 <h2>SEE ALSO
 <a name="SEE ALSO"></a>
 </h2>
@@ -226,9 +308,9 @@ available in tunnel mode.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>ss&minus;local</b>(1),
-<b>ss&minus;server</b>(1), <b>ss&minus;redir</b>(1),
-<b>ss&minus;manager</b>(1),
-<b>shadowsocks&minus;libev</b>(8), <b>iptables</b>(8),
+<b>ss&minus;server</b>(1), <b>ss&minus;tunnel</b>(1),
+<b>ss&minus;redir</b>(1), <b>shadowsocks&minus;libev</b>(8),
+<b>iptables</b>(8),
 /etc/shadowsocks&minus;libev/config.json</p>
 <hr>
 </body>
