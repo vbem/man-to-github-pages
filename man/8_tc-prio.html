@@ -1,0 +1,293 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:38:31 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PRIO</title>
+
+</head>
+<body>
+
+<h1 align="center">PRIO</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#ALGORITHM">ALGORITHM</a><br>
+<a href="#CLASSIFICATION">CLASSIFICATION</a><br>
+<a href="#QDISC PARAMETERS">QDISC PARAMETERS</a><br>
+<a href="#CLASSES">CLASSES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">PRIO &minus;
+Priority qdisc</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>tc qdisc ...
+dev</b> dev <b>( parent</b> classid <b>| root) [ handle</b>
+major: <b>] prio [ bands</b> bands <b>] [ priomap</b> band
+band band... <b>] [ estimator</b> interval timeconstant
+<b>]</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The PRIO qdisc
+is a simple classful queueing discipline that contains an
+arbitrary number of classes of differing priority. The
+classes are dequeued in numerical descending order of
+priority. PRIO is a scheduler and never delays packets - it
+is a work-conserving qdisc, though the qdiscs contained in
+the classes may not be.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Very useful for
+lowering latency when there is no need for slowing down
+traffic.</p>
+
+<h2>ALGORITHM
+<a name="ALGORITHM"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On creation
+with &rsquo;tc qdisc add&rsquo;, a fixed number of bands is
+created. Each band is a class, although is not possible to
+add classes with &rsquo;tc qdisc add&rsquo;, the number of
+bands to be created must instead be specified on the command
+line attaching PRIO to its root.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When
+dequeueing, band 0 is tried first and only if it did not
+deliver a packet does PRIO try band 1, and so onwards.
+Maximum reliability packets should therefore go to band 0,
+minimum delay to band 1 and the rest to band 2.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As the PRIO
+qdisc itself will have minor number 0, band 0 is actually
+major:1, band 1 is major:2, etc. For major, substitute the
+major number assigned to the qdisc on &rsquo;tc qdisc
+add&rsquo; with the <b>handle</b> parameter.</p>
+
+<h2>CLASSIFICATION
+<a name="CLASSIFICATION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Three methods
+are available to PRIO to determine in which band a packet
+will be enqueued. <br>
+From userspace</p>
+
+<p style="margin-left:22%;">A process with sufficient
+privileges can encode the destination class directly with
+SO_PRIORITY, see <b>socket(7).</b></p>
+
+<p style="margin-left:11%;">with a tc filter</p>
+
+<p style="margin-left:22%;">A tc filter attached to the
+root qdisc can point traffic directly to a class</p>
+
+<p style="margin-left:11%;">with the priomap</p>
+
+<p style="margin-left:22%;">Based on the packet priority,
+which in turn is derived from the Type of Service assigned
+to the packet.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Only the
+priomap is specific to this qdisc.</p>
+
+<h2>QDISC PARAMETERS
+<a name="QDISC PARAMETERS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p style="margin-top: 1em">bands</p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">Number of bands. If changed from
+the default of 3, <b>priomap</b> must be updated as
+well.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%;">priomap</p>
+
+<p style="margin-left:22%;">The priomap maps the priority
+of a packet to a class. The priority can either be set
+directly from userspace, or be derived from the Type of
+Service of the packet.</p>
+
+<p style="margin-left:22%; margin-top: 1em">Determines how
+packet priorities, as assigned by the kernel, map to bands.
+Mapping occurs based on the TOS octet of the packet, which
+looks like this:</p>
+
+<p style="margin-left:22%; margin-top: 1em">0 1 2 3 4 5 6 7
+<br>
++---+---+---+---+---+---+---+---+ <br>
+| | | | <br>
+|PRECEDENCE | TOS |MBZ| <br>
+| | | | <br>
++---+---+---+---+---+---+---+---+</p>
+
+<p style="margin-left:22%; margin-top: 1em">The four TOS
+bits (the &rsquo;TOS field&rsquo;) are defined as:</p>
+
+<p style="margin-left:22%; margin-top: 1em">Binary Decimal
+Meaning <br>
+----------------------------------------- <br>
+1000 8 Minimize delay (md) <br>
+0100 4 Maximize throughput (mt) <br>
+0010 2 Maximize reliability (mr) <br>
+0001 1 Minimize monetary cost (mmc) <br>
+0000 0 Normal Service</p>
+
+<p style="margin-left:22%; margin-top: 1em">As there is 1
+bit to the right of these four bits, the actual value of the
+TOS field is double the value of the TOS bits. Tcpdump -v -v
+shows you the value of the entire TOS field, not just the
+four bits. It is the value you see in the first column of
+this table:</p>
+
+<p style="margin-left:22%; margin-top: 1em">TOS Bits Means
+Linux Priority Band <br>
+
+------------------------------------------------------------
+<br>
+0x0 0 Normal Service 0 Best Effort 1 <br>
+0x2 1 Minimize Monetary Cost 1 Filler 2 <br>
+0x4 2 Maximize Reliability 0 Best Effort 1 <br>
+0x6 3 mmc+mr 0 Best Effort 1 <br>
+0x8 4 Maximize Throughput 2 Bulk 2 <br>
+0xa 5 mmc+mt 2 Bulk 2 <br>
+0xc 6 mr+mt 2 Bulk 2 <br>
+0xe 7 mmc+mr+mt 2 Bulk 2 <br>
+0x10 8 Minimize Delay 6 Interactive 0 <br>
+0x12 9 mmc+md 6 Interactive 0 <br>
+0x14 10 mr+md 6 Interactive 0 <br>
+0x16 11 mmc+mr+md 6 Interactive 0 <br>
+0x18 12 mt+md 4 Int. Bulk 1 <br>
+0x1a 13 mmc+mt+md 4 Int. Bulk 1 <br>
+0x1c 14 mr+mt+md 4 Int. Bulk 1 <br>
+0x1e 15 mmc+mr+mt+md 4 Int. Bulk 1</p>
+
+<p style="margin-left:22%; margin-top: 1em">The second
+column contains the value of the relevant four TOS bits,
+followed by their translated meaning. For example, 15 stands
+for a packet wanting Minimal Monetary Cost, Maximum
+Reliability, Maximum Throughput AND Minimum Delay.</p>
+
+<p style="margin-left:22%; margin-top: 1em">The fourth
+column lists the way the Linux kernel interprets the TOS
+bits, by showing to which Priority they are mapped.</p>
+
+<p style="margin-left:22%; margin-top: 1em">The last column
+shows the result of the default priomap. On the command
+line, the default priomap looks like this:</p>
+
+<p style="margin-left:22%; margin-top: 1em">1 2 2 2 1 2 0 0
+1 1 1 1 1 1 1 1</p>
+
+<p style="margin-left:22%; margin-top: 1em">This means that
+priority 4, for example, gets mapped to band number 1. The
+priomap also allows you to list higher priorities (&gt; 7)
+which do not correspond to TOS mappings, but which are set
+by other means.</p>
+
+<p style="margin-left:22%; margin-top: 1em">This table from
+RFC 1349 (read it for more details) explains how
+applications might very well set their TOS bits:</p>
+
+<p style="margin-left:22%; margin-top: 1em">TELNET 1000
+(minimize delay) <br>
+FTP <br>
+Control 1000 (minimize delay) <br>
+Data 0100 (maximize throughput)</p>
+
+<p style="margin-left:22%; margin-top: 1em">TFTP 1000
+(minimize delay)</p>
+
+<p style="margin-left:22%; margin-top: 1em">SMTP <br>
+Command phase 1000 (minimize delay) <br>
+DATA phase 0100 (maximize throughput)</p>
+
+<p style="margin-left:22%; margin-top: 1em">Domain Name
+Service <br>
+UDP Query 1000 (minimize delay) <br>
+TCP Query 0000 <br>
+Zone Transfer 0100 (maximize throughput)</p>
+
+<p style="margin-left:22%; margin-top: 1em">NNTP 0001
+(minimize monetary cost)</p>
+
+<p style="margin-left:22%; margin-top: 1em">ICMP <br>
+Errors 0000 <br>
+Requests 0000 (mostly) <br>
+Responses &lt;same as request&gt; (mostly)</p>
+
+<h2>CLASSES
+<a name="CLASSES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">PRIO classes
+cannot be configured further - they are automatically
+created when the PRIO qdisc is attached. Each class however
+can contain yet a further qdisc.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Large amounts
+of traffic in the lower bands can cause starvation of higher
+bands. Can be prevented by attaching a shaper (for example,
+<b>tc-tbf(8)</b> to these bands to make sure they cannot
+dominate the link.</p>
+
+<h2>AUTHORS
+<a name="AUTHORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Alexey N.
+Kuznetsov, &lt;kuznet@ms2.inr.ac.ru&gt;, J Hadi Salim
+&lt;hadi@cyberus.ca&gt;. This manpage maintained by bert
+hubert &lt;ahu@ds9a.nl&gt;</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,488 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:38:49 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>RPC::PlServer</title>
+
+</head>
+<body>
+
+<h1 align="center">RPC::PlServer</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#CONFIGURATION FILE">CONFIGURATION FILE</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SECURITY">SECURITY</a><br>
+<a href="#AUTHOR AND COPYRIGHT">AUTHOR AND COPYRIGHT</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">RPC::PlServer
+&minus; Perl extension for writing PlRPC servers</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  # Create a subclass of RPC::PlServer
+  use RPC::PlServer;
+  package MyServer;
+  $MyServer::VERSION = '0.01';
+  @MyServer::ISA = qw(RPC::PlServer);
+  # Overwrite the Run() method to handle a single connection
+  sub Run {
+      my $self = shift;
+      my $socket = $self&minus;&gt;{'socket'};
+  }
+  # Create an instance of the MyServer class
+  package main;
+  my $server = MyServer&minus;&gt;new({'localport' =&gt; '1234'}, \@ARGV);
+  # Bind the server to its port to make it actually running
+  $server&minus;&gt;Bind();</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">PlRPC (Perl
+<small>RPC</small> ) is a package for implementing servers
+and clients that are written in Perl entirely. The name is
+borrowed from Sun&rsquo;s <small>RPC</small> (Remote
+Procedure Call), but it could as well be <small>RMI</small>
+like Java&rsquo;s &quot;Remote Method Interface), because
+PlRPC gives you the complete power of Perl&rsquo;s
+<small>OO</small> framework in a very simple manner.</p>
+
+<p style="margin-left:11%; margin-top: 1em">RPC::PlServer
+is the package used on the server side, and you guess what
+RPC::PlClient is for. Both share the package
+RPC::PlServer::Comm for communication purposes. See
+<i>PlRPC::Client</i>(3) and RPC::PlServer::Comm for these
+parts.</p>
+
+<p style="margin-left:11%; margin-top: 1em">PlRPC works by
+defining a set of methods that may be executed by the
+client. For example, the server might offer a method
+&quot;multiply&quot; to the client. Now the clients method
+call</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @result = $client&minus;&gt;multiply($a, $b);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">will be
+immediately mapped to a method call</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @result = $server&minus;&gt;multiply($a, $b);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">on the server.
+The arguments and results will be transferred to or from the
+server automagically. (This magic has a name in Perl:
+It&rsquo;s the Storable module, my thanks to Raphael
+Manfredi for this excellent package.) Simple, eh?
+:&minus;)</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+RPC::PlServer and RPC::PlClient are abstract servers and
+clients: You have to derive your own classes from it.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Additional
+options</b> <br>
+The RPC::PlServer inherits all of Net::Daemon&rsquo;s
+options and attributes and adds the following:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><i>cipher</i></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>The attribute value is an instance of Crypt::DES,
+Crypt::IDEA or any other class with the same
+<small>API</small> for block encryption. If you supply such
+an attribute, the traffic between client and server will be
+encrypted using this option.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><i>maxmessage</i>
+(<b>&minus;&minus;maxmessage=size</b>)</p>
+
+<p style="margin-left:23%;">The size of messages exchanged
+between client and server is restricted, in order to omit
+denial of service attacks. By default the limit is 65536
+bytes.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p>users</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>This is an attribute of the client object used for
+Permit/Deny rules in the config file. It&rsquo;s value is an
+array ref of user names that are allowed to connect from the
+given client. See the example config file below. &quot;
+<small>CONFIGURATION FILE&quot;</small> .</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Error
+Handling</b> <br>
+Error handling is simple with the <small>RPC</small>
+package, because it is based on Perl exceptions completely.
+Thus your typical code looks like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  eval {
+      # Do something here. Don't care for errors.
+      ...
+  };
+  if ($@) {
+      # An error occurred.
+      ...
+  }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Server
+Constructors</b></p>
+
+<pre style="margin-left:11%;">  my $server = RPC::PlServer(\%options, \@args);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">(Class method)
+This constructor is immediately inherited from the
+Net::Daemon package. See <i>Net::Daemon</i>(3) for
+details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Access
+Control</b></p>
+
+<pre style="margin-left:11%;">  $ok = $self&minus;&gt;AcceptApplication($app);
+  $ok = $self&minus;&gt;AcceptVersion($version);
+  $ok = $self&minus;&gt;AcceptUser($user, $password);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+RPC::PlServer package has a very detailed access control
+scheme: First of all it inherits Net::Daemon&rsquo;s host
+based access control. It adds version control and user
+authorization. To achieve that, the method <i>Accept</i>
+from Net::Daemon is split into three methods,
+<i>AcceptApplication</i>, <i>AcceptVersion</i> and
+<i>AcceptUser</i>, each of them returning
+<small>TRUE</small> or <small>FALSE.</small> The client
+receives the arguments as the attributes <i>application</i>,
+<i>version</i>, <i>user</i> and <i>password</i>. A client is
+accepted only if all of the above methods are returning
+<small>TRUE.</small></p>
+
+<p style="margin-left:11%; margin-top: 1em">The default
+implementations are as follows: The AcceptApplication method
+returns <small>TRUE,</small> if <b>$self</b> is a subclass
+of <b>$app</b>. The AcceptVersion method returns
+<small>TRUE,</small> if the requested version is less or
+equal to <b>${$class}::VERSION</b>, <tt>$self</tt> being an
+instance of <b>$class</b>. Whether a user is permitted to
+connect depends on the client configuration. See &quot;
+<small>CONFIGURATION FILE&quot;</small> below for
+examples.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Method based
+access control</b> <br>
+Giving a client the ability to invoke arbitrary methods can
+be a terrible security hole. Thus the server has a
+<i>methods</i> attribute. This is a hash ref of class names
+as keys, the values being hash refs again with method names
+as the keys. That is, if your hash looks as follows:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $self&minus;&gt;{'methods'} = {
+        'CalcServer' =&gt; {
+            'NewHandle' =&gt; 1,
+            'CallMethod' =&gt; 1 },
+        'Calculator' =&gt; {
+            'new' =&gt; 1,
+            'multiply' =&gt; 1,
+            'add' =&gt; 1,
+            'divide' =&gt; 1,
+            'subtract' =&gt; 1 }
+        };</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">then the client
+may use the CalcServer&rsquo;s <i>NewHandle</i> method to
+create objects, but only via the permitted constructor
+Calculator&minus;&gt;new. Once a Calculator object is
+created, the server may invoke the methods multiply, add,
+divide and subtract.</p>
+
+<h2>CONFIGURATION FILE
+<a name="CONFIGURATION FILE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The server
+config file is inherited from Net::Daemon. It adds the
+<i>users</i> and <i>cipher</i> attribute to the client list.
+Thus a typical config file might look as follows:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    # Load external modules; this is not required unless you use
+    # the chroot() option.
+    #require DBD::mysql;
+    #require DBD::CSV;
+    # Create keys
+    my $myhost_key = Crypt::IDEA&minus;&gt;new('83fbd23390ade239');
+    my $bob_key    = Crypt::IDEA&minus;&gt;new('be39893df23f98a2');
+    {
+        # 'chroot' =&gt; '/var/dbiproxy',
+        'facility' =&gt; 'daemon',
+        'pidfile' =&gt; '/var/dbiproxy/dbiproxy.pid',
+        'user' =&gt; 'nobody',
+        'group' =&gt; 'nobody',
+        'localport' =&gt; '1003',
+        'mode' =&gt; 'fork',
+        # Access control
+        'clients' =&gt; [
+            # Accept the local LAN (192.168.1.*)
+            {
+                'mask' =&gt; '^192\.168\.1\.\d+$',
+                'accept' =&gt; 1,
+                'users' =&gt; [ 'bob', 'jim' ],
+                'cipher' =&gt; $myhost_key
+            },
+            # Accept myhost.company.com
+            {
+                'mask' =&gt; '^myhost\.company\.com$',
+                'accept' =&gt; 1,
+                'users' =&gt; [ {
+                    'name' =&gt; 'bob',
+                    'cipher' =&gt; $bob_key
+                    } ]
+            },
+            # Deny everything else
+            {
+                'mask' =&gt; '.*',
+                'accept' =&gt; 0
+            }
+        ]
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Things you
+should note: The user list of 192.168.1.* contains scalar
+values, but the user list of myhost.company.com contains
+hash refs: This is required, because the user configuration
+is more specific for user based encryption.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Enough wasted
+time, spread the example, not the word. :&minus;)
+Let&rsquo;s write a simple server, say a server for
+<small>MD5</small> digests. The server uses the external
+package <small>MD5,</small> but the client doesn&rsquo;t
+need to install the package. <i><small>MD5</small></i> (3).
+We present the server source here, the client is part of the
+RPC::PlClient man page. See <i>RPC::PlClient</i>(3).</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    #!/usr/bin/perl &minus;wT
+    # Note the &minus;T switch! This is always recommended for Perl servers.
+    use strict;               # Always a good choice.
+    require RPC::PlServer;
+    require MD5;
+    package MD5_Server;  # Clients need to request application
+                         # &quot;MD5_Server&quot;
+    $MD5_Server::VERSION = '1.0'; # Clients will be refused, if they
+                                  # request version 1.1
+    @MD5_Server::ISA = qw(RPC::PlServer);
+    eval {
+        # Server options below can be overwritten in the config file or
+        # on the command line.
+        my $server = MD5_Server&minus;&gt;new({
+            'pidfile'    =&gt; '/var/run/md5serv.pid',
+            'configfile' =&gt; '/etc/md5serv.conf',
+            'facility'   =&gt; 'daemon', # Default
+            'user'       =&gt; 'nobody',
+            'group'      =&gt; 'nobody',
+            'localport'  =&gt; 2000,
+            'logfile'    =&gt; 0,        # Use syslog
+            'mode'       =&gt; 'fork',   # Recommended for Unix
+            'methods'    =&gt; {
+                'MD5_Server' =&gt; {
+                    'ClientObject' =&gt; 1,
+                    'CallMethod' =&gt; 1,
+                    'NewHandle' =&gt; 1
+                    },
+                'MD5' =&gt; {
+                    'new' =&gt; 1,
+                    'add' =&gt; 1,
+                    'hexdigest' =&gt; 1
+                    },
+                }
+        });
+        $server&minus;&gt;Bind();
+    };</pre>
+
+
+<h2>SECURITY
+<a name="SECURITY"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">It has to be
+said: PlRPC based servers are a potential security problem!
+I did my best to avoid security problems, but it is more
+than likely, that I missed something. Security was a design
+goal, but not *the* design goal. (A well known problem
+...)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Due to
+implementation of PlRPC, it&rsquo;s hard to use internal
+authentication mechanisms properly to achieve secured remote
+calls. Therefore users are advised to use an external
+authentication mechanism like <small>TLS</small> or
+IPsec.</p>
+
+<p style="margin-left:11%; margin-top: 1em">I highly
+recommend the following design principles:</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Protection
+against &quot;trusted&quot; users</b> <br>
+perlsec</p>
+
+<p style="margin-left:17%;">Read the perl security
+<small>FAQ</small> (<tt>&quot;perldoc perlsec&quot;</tt>)
+and use the <tt>&quot;&minus;T&quot;</tt> switch.</p>
+
+<p style="margin-left:11%;">taintperl</p>
+
+<p style="margin-left:17%;"><b>Use</b> the
+<tt>&quot;&minus;T&quot;</tt> switch. I mean it!</p>
+
+<p style="margin-left:11%;">Verify data</p>
+
+<p style="margin-left:17%;">Never untaint strings withouth
+verification, better verify twice. For example the
+<i>CallMethod</i> function first checks, whether an object
+handle is valid before coercing a method on it.</p>
+
+<p style="margin-left:11%;">Be restrictive</p>
+
+<p style="margin-left:17%;">Think twice, before you give a
+client access to a method.</p>
+
+<p style="margin-left:11%;">Use of Storable</p>
+
+<p style="margin-left:17%;">Storable module used for
+serialization and deserialization underneath is inherently
+insecure. Deserialized data can contain objects which lead
+to loading foreign modules and executing possible attached
+destructors. Do not accept host-based unauthorized
+connections. The Storable module is exercised before
+checking user password.</p>
+
+<p style="margin-left:11%;">perlsec</p>
+
+<p style="margin-left:17%;">And just in case I forgot it:
+Read the <tt>&quot;perlsec&quot;</tt> man page.
+:&minus;)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Protection
+against untrusted users</b> <br>
+Host based authorization</p>
+
+<p style="margin-left:17%;">PlRPC has a builtin host based
+authorization scheme; use it! See &quot;
+<small>CONFIGURATION FILE&quot;</small> .</p>
+
+<p style="margin-left:11%;">User based authorization</p>
+
+<p style="margin-left:17%;">PlRPC has a builtin user based
+authorization scheme; use it! See &quot;
+<small>CONFIGURATION FILE&quot;</small> .</p>
+
+<p style="margin-left:11%;">Encryption</p>
+
+<p style="margin-left:17%;">Using encryption with PlRPC is
+extremely easy. There is absolutely no reason for
+communicating unencrypted with the clients. Even more: I
+recommend two phase encryption: The first phase is the login
+phase, where to use a host based key. As soon as the user
+has authorized, you should switch to a user based key. See
+the DBI::ProxyServer for an example.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Please note
+PlRPC encryption does not protect from reply attacks. You
+should have implement it on the application or the cipher
+level.</p>
+
+<h2>AUTHOR AND COPYRIGHT
+<a name="AUTHOR AND COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+PlRPC-modules are</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  Copyright (C) 1998, Jochen Wiedmann
+                      Email: jochen.wiedmann at freenet.de
+  All rights reserved.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You may
+distribute this package under the terms of either the
+<small>GNU</small> General Public License or the Artistic
+License, as specified in the Perl <small>README</small>
+file.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>RPC::PlClient</i>(3),
+<i>RPC::PlServer::Comm</i>(3), <i>Net::Daemon</i>(3),
+<i>Net::Daemon::Log</i>(3), <i>Storable</i>(3),
+<i>Sys::Syslog</i>(3), <i>Win32::EventLog</i>(3)</p>
+
+<p style="margin-left:11%; margin-top: 1em">See
+<i>DBI::ProxyServer</i>(3) for an example application.</p>
+<hr>
+</body>
+</html>

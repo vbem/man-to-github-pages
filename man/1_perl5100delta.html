@@ -1,0 +1,2460 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:37:08 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERL5100DELTA</title>
+
+</head>
+<body>
+
+<h1 align="center">PERL5100DELTA</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#Core Enhancements">Core Enhancements</a><br>
+<a href="#Incompatible Changes">Incompatible Changes</a><br>
+<a href="#Modules and Pragmata">Modules and Pragmata</a><br>
+<a href="#Utility Changes">Utility Changes</a><br>
+<a href="#New Documentation">New Documentation</a><br>
+<a href="#Performance Enhancements">Performance Enhancements</a><br>
+<a href="#Installation and Configuration Improvements">Installation and Configuration Improvements</a><br>
+<a href="#Selected Bug Fixes">Selected Bug Fixes</a><br>
+<a href="#New or Changed Diagnostics">New or Changed Diagnostics</a><br>
+<a href="#Changed Internals">Changed Internals</a><br>
+<a href="#Known Problems">Known Problems</a><br>
+<a href="#Platform Specific Problems">Platform Specific Problems</a><br>
+<a href="#Reporting Bugs">Reporting Bugs</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perl5100delta
+&minus; what is new for perl 5.10.0</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+describes the differences between the 5.8.8 release and the
+5.10.0 release.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Many of the bug
+fixes in 5.10.0 were already seen in the 5.8.X maintenance
+releases; they are not duplicated here and are documented in
+the set of man pages named perl58[1&minus;8]?delta.</p>
+
+<h2>Core Enhancements
+<a name="Core Enhancements"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>The
+&quot;feature&quot; pragma</b> <br>
+The <tt>&quot;feature&quot;</tt> pragma is used to enable
+new syntax that would break Perl&rsquo;s
+backwards-compatibility with older releases of the language.
+It&rsquo;s a lexical pragma, like
+<tt>&quot;strict&quot;</tt> or
+<tt>&quot;warnings&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Currently the
+following new features are available:
+<tt>&quot;switch&quot;</tt> (adds a switch statement),
+<tt>&quot;say&quot;</tt> (adds a <tt>&quot;say&quot;</tt>
+built-in function), and <tt>&quot;state&quot;</tt> (adds a
+<tt>&quot;state&quot;</tt> keyword for declaring
+&quot;static&quot; variables). Those features are described
+in their own sections of this document.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;feature&quot;</tt> pragma is also implicitly
+loaded when you require a minimal perl version (with the
+<tt>&quot;use VERSION&quot;</tt> construct) greater than, or
+equal to, 5.9.5. See feature for details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>New &minus;E
+command-line switch <br>
+&minus;E</b> is equivalent to <b>&minus;e</b>, but it
+implicitly enables all optional features (like <tt>&quot;use
+feature &quot;:5.10&quot;&quot;</tt>).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Defined-or
+operator</b> <br>
+A new operator <tt>&quot;//&quot;</tt> (defined-or) has been
+implemented. The following expression:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $a // $b</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">is merely
+equivalent to</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   defined $a ? $a : $b</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">and the
+statement</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   $c //= $d;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">can now be used
+instead of</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   $c = $d unless defined $c;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;//&quot;</tt> operator has the same precedence and
+associativity as <tt>&quot;||&quot;</tt>. Special care has
+been taken to ensure that this operator Do What You Mean
+while not breaking old code, but some edge cases involving
+the empty regular expression may now parse differently. See
+perlop for details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Switch and
+Smart Match operator</b> <br>
+Perl 5 now has a switch statement. It&rsquo;s available when
+<tt>&quot;use feature 'switch'&quot;</tt> is in effect. This
+feature introduces three new keywords,
+<tt>&quot;given&quot;</tt>, <tt>&quot;when&quot;</tt>, and
+<tt>&quot;default&quot;</tt>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    given ($foo) {
+        when (/^abc/) { $abc = 1; }
+        when (/^def/) { $def = 1; }
+        when (/^xyz/) { $xyz = 1; }
+        default { $nothing = 1; }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">A more complete
+description of how Perl matches the switch variable against
+the <tt>&quot;when&quot;</tt> conditions is given in
+&quot;Switch statements&quot; in perlsyn.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This kind of
+match is called <i>smart match</i>, and it&rsquo;s also
+possible to use it outside of switch statements, via the new
+<tt>&quot;~~&quot;</tt> operator. See &quot;Smart matching
+in detail&quot; in perlsyn.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This feature
+was contributed by Robin Houston.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Regular
+expressions</b> <br>
+Recursive Patterns</p>
+
+<p style="margin-left:17%;">It is now possible to write
+recursive patterns without using the
+<tt>&quot;(??{})&quot;</tt> construct. This new way is more
+efficient, and in many cases easier to read.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Each capturing
+parenthesis can now be treated as an independent pattern
+that can be entered by using the
+<tt>&quot;(?PARNO)&quot;</tt> syntax
+(<tt>&quot;PARNO&quot;</tt> standing for &quot;parenthesis
+number&quot;). For example, the following pattern will match
+nested balanced angle brackets:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    /
+     ^                      # start of line
+     (                      # start capture buffer 1
+        &lt;                   #   match an opening angle bracket
+        (?:                 #   match one of:
+            (?&gt;             #     don't backtrack over the inside of this group
+                [^&lt;&gt;]+      #       one or more non angle brackets
+            )               #     end non backtracking group
+        |                   #     ... or ...
+            (?1)            #     recurse to bracket 1 and try it again
+        )*                  #   0 or more times.
+        &gt;                   #   match a closing angle bracket
+     )                      # end capture buffer one
+     $                      # end of line
+    /x</pre>
+
+
+
+<p style="margin-left:17%; margin-top: 1em"><small>PCRE</small>
+users should note that Perl&rsquo;s recursive regex feature
+allows backtracking into a recursed pattern, whereas in
+<small>PCRE</small> the recursion is atomic or
+&quot;possessive&quot; in nature. As in the example above,
+you can add (?&gt;) to control this selectively. (Yves
+Orton)</p>
+
+<p style="margin-left:11%;">Named Capture Buffers</p>
+
+<p style="margin-left:17%;">It is now possible to name
+capturing parenthesis in a pattern and refer to the captured
+contents by name. The naming syntax is
+<tt>&quot;(?&lt;NAME&gt;....)&quot;</tt>. It&rsquo;s
+possible to backreference to a named buffer with the
+<tt>&quot;\k&lt;NAME&gt;&quot;</tt> syntax. In code, the new
+magical hashes <tt>&quot;%+&quot;</tt> and
+<tt>&quot;%&minus;&quot;</tt> can be used to access the
+contents of the capture buffers.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Thus, to
+replace all doubled chars with a single copy, one could
+write</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    s/(?&lt;letter&gt;.)\k&lt;letter&gt;/$+{letter}/g</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Only buffers
+with defined contents will be &quot;visible&quot; in the
+<tt>&quot;%+&quot;</tt> hash, so it&rsquo;s possible to do
+something like</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    foreach my $name (keys %+) {
+        print &quot;content of buffer '$name' is $+{$name}\n&quot;;
+    }</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The
+<tt>&quot;%&minus;&quot;</tt> hash is a bit more complete,
+since it will contain array refs holding values from all
+capture buffers similarly named, if there should be many of
+them.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;%+&quot;</tt>
+and <tt>&quot;%&minus;&quot;</tt> are implemented as tied
+hashes through the new module
+<tt>&quot;Tie::Hash::NamedCapture&quot;</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Users exposed
+to the .NET regex engine will find that the perl
+implementation differs in that the numerical ordering of the
+buffers is sequential, and not &quot;unnamed first, then
+named&quot;. Thus in the pattern</p>
+
+<pre style="margin-left:17%; margin-top: 1em">   /(A)(?&lt;B&gt;B)(C)(?&lt;D&gt;D)/</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">$1 will be
+&rsquo;A&rsquo;, <tt>$2</tt> will be &rsquo;B&rsquo;,
+<tt>$3</tt> will be &rsquo;C&rsquo; and <tt>$4</tt> will be
+&rsquo;D&rsquo; and not <tt>$1</tt> is &rsquo;A&rsquo;,
+<tt>$2</tt> is &rsquo;C&rsquo; and <tt>$3</tt> is
+&rsquo;B&rsquo; and <tt>$4</tt> is &rsquo;D&rsquo; that a
+.NET programmer would expect. This is considered a feature.
+:&minus;) (Yves Orton)</p>
+
+<p style="margin-left:11%;">Possessive Quantifiers</p>
+
+<p style="margin-left:17%;">Perl now supports the
+&quot;possessive quantifier&quot; syntax of the &quot;atomic
+match&quot; pattern. Basically a possessive quantifier
+matches as much as it can and never gives any back. Thus it
+can be used to control backtracking. The syntax is similar
+to non-greedy matching, except instead of using a
+&rsquo;?&rsquo; as the modifier the &rsquo;+&rsquo; is used.
+Thus <tt>&quot;?+&quot;</tt>, <tt>&quot;*+&quot;</tt>,
+<tt>&quot;++&quot;</tt>, <tt>&quot;{min,max}+&quot;</tt> are
+now legal quantifiers. (Yves Orton)</p>
+
+<p style="margin-left:11%;">Backtracking control verbs</p>
+
+<p style="margin-left:17%;">The regex engine now supports a
+number of special-purpose backtrack control verbs: (*THEN),
+(*PRUNE), (*MARK), (*SKIP), (*COMMIT), (*FAIL) and
+(*ACCEPT). See perlre for their descriptions. (Yves
+Orton)</p>
+
+<p style="margin-left:11%;">Relative backreferences</p>
+
+<p style="margin-left:17%;">A new syntax
+<tt>&quot;\g{N}&quot;</tt> or <tt>&quot;\gN&quot;</tt> where
+&quot;N&quot; is a decimal integer allows a safer form of
+back-reference notation as well as allowing relative
+backreferences. This should make it easier to generate and
+embed patterns that contain backreferences. See
+&quot;Capture buffers&quot; in perlre. (Yves Orton)</p>
+
+<p style="margin-left:11%;">&quot;\K&quot; escape</p>
+
+<p style="margin-left:17%;">The functionality of Jeff
+Pinyan&rsquo;s module Regexp::Keep has been added to the
+core. In regular expressions you can now use the special
+escape <tt>&quot;\K&quot;</tt> as a way to do something like
+floating length positive lookbehind. It is also useful in
+substitutions like:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  s/(foo)bar/$1/g</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">that can now be
+converted to</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  s/foo\Kbar//g</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">which is much
+more efficient. (Yves Orton)</p>
+
+<p style="margin-left:11%;">Vertical and horizontal
+whitespace, and linebreak</p>
+
+<p style="margin-left:17%;">Regular expressions now
+recognize the <tt>&quot;\v&quot;</tt> and
+<tt>&quot;\h&quot;</tt> escapes that match vertical and
+horizontal whitespace, respectively. <tt>&quot;\V&quot;</tt>
+and <tt>&quot;\H&quot;</tt> logically match their
+complements.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;\R&quot;</tt>
+matches a generic linebreak, that is, vertical whitespace,
+plus the multi-character sequence
+<tt>&quot;\x0D\x0A&quot;</tt>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;say()&quot;</b>
+<i><br>
+say()</i> is a new built-in, only available when
+<tt>&quot;use feature 'say'&quot;</tt> is in effect, that is
+similar to <i>print()</i>, but that implicitly appends a
+newline to the printed string. See &quot;say&quot; in
+perlfunc. (Robin Houston)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Lexical
+$_</b> <br>
+The default variable <tt>$_</tt> can now be lexicalized, by
+declaring it like any other lexical variable, with a
+simple</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my $_;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The operations
+that default on <tt>$_</tt> will use the lexically-scoped
+version of <tt>$_</tt> when it exists, instead of the global
+<tt>$_</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In a
+<tt>&quot;map&quot;</tt> or a <tt>&quot;grep&quot;</tt>
+block, if <tt>$_</tt> was previously my&rsquo;ed, then the
+<tt>$_</tt> inside the block is lexical as well (and scoped
+to the block).</p>
+
+<p style="margin-left:11%; margin-top: 1em">In a scope
+where <tt>$_</tt> has been lexicalized, you can still have
+access to the global version of <tt>$_</tt> by using
+<tt>$::_</tt>, or, more simply, by overriding the lexical
+declaration with <tt>&quot;our $_&quot;</tt>. (Rafael
+Garcia-Suarez)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>The
+&quot;_&quot; prototype</b> <br>
+A new prototype character has been added.
+<tt>&quot;_&quot;</tt> is equivalent to
+<tt>&quot;$&quot;</tt> but defaults to <tt>$_</tt> if the
+corresponding argument isn&rsquo;t supplied (both
+<tt>&quot;$&quot;</tt> and <tt>&quot;_&quot;</tt> denote a
+scalar). Due to the optional nature of the argument, you can
+only use it at the end of a prototype, or before a
+semicolon.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This has a
+small incompatible consequence: the <i>prototype()</i>
+function has been adjusted to return <tt>&quot;_&quot;</tt>
+for some built-ins in appropriate cases (for example,
+<tt>&quot;prototype('CORE::rmdir')&quot;</tt>). (Rafael
+Garcia-Suarez)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>UNITCHECK</small>
+blocks</b> <tt><br>
+&quot;UNITCHECK&quot;</tt>, a new special code block has
+been introduced, in addition to <tt>&quot;BEGIN&quot;</tt>,
+<tt>&quot;CHECK&quot;</tt>, <tt>&quot;INIT&quot;</tt> and
+<tt>&quot;END&quot;</tt>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;CHECK&quot;</tt>
+and <tt>&quot;INIT&quot;</tt> blocks, while useful for some
+specialized purposes, are always executed at the transition
+between the compilation and the execution of the main
+program, and thus are useless whenever code is loaded at
+runtime. On the other hand, <tt>&quot;UNITCHECK&quot;</tt>
+blocks are executed just after the unit which defined them
+has been compiled. See perlmod for more information. (Alex
+Gough)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>New Pragma,
+&quot;mro&quot;</b> <br>
+A new pragma, <tt>&quot;mro&quot;</tt> (for Method
+Resolution Order) has been added. It permits to switch, on a
+per-class basis, the algorithm that perl uses to find
+inherited methods in case of a multiple inheritance
+hierarchy. The default <small>MRO</small> hasn&rsquo;t
+changed ( <small>DFS</small> , for Depth First Search).
+Another <small>MRO</small> is available: the C3 algorithm.
+See mro for more information. (Brandon Black)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that, due
+to changes in the implementation of class hierarchy search,
+code that used to undef the <tt>*ISA</tt> glob will most
+probably break. Anyway, undef&rsquo;ing <tt>*ISA</tt> had
+the side-effect of removing the magic on the <tt>@ISA</tt>
+array and should not have been done in the first place.
+Also, the cache <tt>*::ISA::CACHE::</tt> no longer exists;
+to force reset the <tt>@ISA</tt> cache, you now need to use
+the <tt>&quot;mro&quot;</tt> <small>API</small> , or more
+simply to assign to <tt>@ISA</tt> (e.g. with <tt>&quot;@ISA
+= @ISA&quot;</tt>).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>readdir()</i>
+<b>may return a &quot;short filename&quot; on Windows</b>
+<br>
+The <i>readdir()</i> function may return a &quot;short
+filename&quot; when the long filename contains characters
+outside the <small>ANSI</small> codepage. Similarly
+<i>Cwd::cwd()</i> may return a short directory name, and
+<i>glob()</i> may return short names as well. On the
+<small>NTFS</small> file system these short names can always
+be represented in the <small>ANSI</small> codepage. This
+will not be true for all other file system drivers; e.g. the
+<small>FAT</small> filesystem stores short filenames in the
+<small>OEM</small> codepage, so some files on
+<small>FAT</small> volumes remain unaccessible through the
+<small>ANSI</small> APIs.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Similarly, $^X,
+<tt>@INC</tt>, and <tt>$ENV</tt>{ <small>PATH</small> } are
+preprocessed at startup to make sure all paths are valid in
+the <small>ANSI</small> codepage (if possible).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>Win32::GetLongPathName()</i> function now returns the
+<small>UTF&minus;8</small> encoded correct long file name
+instead of using replacement characters to force the name
+into the <small>ANSI</small> codepage. The new
+<i>Win32::GetANSIPathName()</i> function can be used to turn
+a long pathname into a short one only if the long one cannot
+be represented in the <small>ANSI</small> codepage.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Many other
+functions in the <tt>&quot;Win32&quot;</tt> module have been
+improved to accept <small>UTF&minus;8</small> encoded
+arguments. Please see Win32 for details.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>readpipe()</i>
+<b>is now overridable</b> <br>
+The built-in function <i>readpipe()</i> is now overridable.
+Overriding it permits also to override its operator
+counterpart, <tt>&quot;qx//&quot;</tt> (a.k.a.
+<tt>&quot;``&quot;</tt>). Moreover, it now defaults to
+<tt>$_</tt> if no argument is provided. (Rafael
+Garcia-Suarez)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Default
+argument for</b> <i>readline() <br>
+readline()</i> now defaults to <tt>*ARGV</tt> if no argument
+is provided. (Rafael Garcia-Suarez)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>state()</i>
+<b>variables</b> <br>
+A new class of variables has been introduced. State
+variables are similar to <tt>&quot;my&quot;</tt> variables,
+but are declared with the <tt>&quot;state&quot;</tt> keyword
+in place of <tt>&quot;my&quot;</tt>. They&rsquo;re visible
+only in their lexical scope, but their value is persistent:
+unlike <tt>&quot;my&quot;</tt> variables, they&rsquo;re not
+undefined at scope entry, but retain their previous value.
+(Rafael Garcia-Suarez, Nicholas Clark)</p>
+
+<p style="margin-left:11%; margin-top: 1em">To use state
+variables, one needs to enable them by using</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use feature 'state';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">or by using the
+<tt>&quot;&minus;E&quot;</tt> command-line switch in
+one-liners. See &quot;Persistent Private Variables&quot; in
+perlsub.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Stacked
+filetest operators</b> <br>
+As a new form of syntactic sugar, it&rsquo;s now possible to
+stack up filetest operators. You can now write
+<tt>&quot;&minus;f &minus;w &minus;x $file&quot;</tt> in a
+row to mean <tt>&quot;&minus;x $file &amp;&amp; &minus;w _
+&amp;&amp; &minus;f _&quot;</tt>. See &quot;&minus;X&quot;
+in perlfunc.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i><small>UNIVERSAL::DOES</small>
+()</i> <br>
+The <tt>&quot;UNIVERSAL&quot;</tt> class has a new method,
+<tt>&quot;DOES()&quot;</tt>. It has been added to solve
+semantic problems with the <tt>&quot;isa()&quot;</tt>
+method. <tt>&quot;isa()&quot;</tt> checks for inheritance,
+while <tt>&quot;DOES()&quot;</tt> has been designed to be
+overridden when module authors use other types of relations
+between classes (in addition to inheritance).
+(chromatic)</p>
+
+<p style="margin-left:11%; margin-top: 1em">See
+&quot;$obj&minus;&gt; <small>DOES</small> (
+<small>ROLE</small> )&quot; in <small>UNIVERSAL</small>
+.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Formats</b>
+<br>
+Formats were improved in several ways. A new field,
+<tt>&quot;^*&quot;</tt>, can be used for variable-width,
+one-line-at-a-time text. Null characters are now handled
+correctly in picture lines. Using <tt>&quot;@#&quot;</tt>
+and <tt>&quot;~~&quot;</tt> together will now produce a
+compile-time error, as those format fields are incompatible.
+perlform has been improved, and miscellaneous bugs
+fixed.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Byte-order
+modifiers for</b> <i>pack()</i> <b>and</b> <i>unpack()</i>
+<br>
+There are two new byte-order modifiers,
+<tt>&quot;&gt;&quot;</tt> (big-endian) and
+<tt>&quot;&lt;&quot;</tt> (little-endian), that can be
+appended to most <i>pack()</i> and <i>unpack()</i> template
+characters and groups to force a certain byte-order for that
+type or group. See &quot;pack&quot; in perlfunc and
+perlpacktut for details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;no
+VERSION&quot;</b> <br>
+You can now use <tt>&quot;no&quot;</tt> followed by a
+version number to specify that you want to use a version of
+perl older than the specified one.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;chdir&quot;,
+&quot;chmod&quot; and &quot;chown&quot; on filehandles</b>
+<tt><br>
+&quot;chdir&quot;</tt>, <tt>&quot;chmod&quot;</tt> and
+<tt>&quot;chown&quot;</tt> can now work on filehandles as
+well as filenames, if the system supports respectively
+<tt>&quot;fchdir&quot;</tt>, <tt>&quot;fchmod&quot;</tt> and
+<tt>&quot;fchown&quot;</tt>, thanks to a patch provided by
+Gisle Aas.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>OS</small>
+groups</b> <tt><br>
+$(</tt> and <tt>$)</tt> now return groups in the order where
+the <small>OS</small> returns them, thanks to Gisle Aas.
+This wasn&rsquo;t previously the case.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Recursive
+sort subs</b> <br>
+You can now use recursive subroutines with <i>sort()</i>,
+thanks to Robin Houston.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Exceptions
+in constant folding</b> <br>
+The constant folding routine is now wrapped in an exception
+handler, and if folding throws an exception (such as
+attempting to evaluate 0/0), perl now retains the current
+optree, rather than aborting the whole program. Without this
+change, programs would not compile if they had expressions
+that happened to generate exceptions, even though those
+expressions were in code that could never be reached at
+runtime. (Nicholas Clark, Dave Mitchell)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Source
+filters in @INC</b> <br>
+It&rsquo;s possible to enhance the mechanism of subroutine
+hooks in <tt>@INC</tt> by adding a source filter on top of
+the filehandle opened and returned by the hook. This feature
+was planned a long time ago, but wasn&rsquo;t quite working
+until now. See &quot;require&quot; in perlfunc for details.
+(Nicholas Clark)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>New internal
+variables</b> <br>
+&quot;${^RE_DEBUG_FLAGS}&quot;</p>
+
+<p style="margin-left:17%;">This variable controls what
+debug flags are in effect for the regular expression engine
+when running under <tt>&quot;use re
+&quot;debug&quot;&quot;</tt>. See re for details.</p>
+
+
+<p style="margin-left:11%;">&quot;${^CHILD_ERROR_NATIVE}&quot;</p>
+
+<p style="margin-left:17%;">This variable gives the native
+status returned by the last pipe close, backtick command,
+successful call to <i>wait()</i> or <i>waitpid()</i>, or
+from the <i>system()</i> operator. See perlvar for details.
+(Contributed by Gisle Aas.)</p>
+
+
+<p style="margin-left:11%;">&quot;${^RE_TRIE_MAXBUF}&quot;</p>
+
+<p style="margin-left:17%;">See &quot;Trie optimisation of
+literal string alternations&quot;.</p>
+
+
+<p style="margin-left:11%;">&quot;${^WIN32_SLOPPY_STAT}&quot;</p>
+
+<p style="margin-left:17%;">See &quot;Sloppy stat on
+Windows&quot;.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Miscellaneous</b>
+<tt><br>
+&quot;unpack()&quot;</tt> now defaults to unpacking the
+<tt>$_</tt> variable.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;mkdir()&quot;</tt>
+without arguments now defaults to <tt>$_</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The internal
+dump output has been improved, so that non-printable
+characters such as newline and backspace are output in
+<tt>&quot;\x&quot;</tt> notation, rather than octal.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>&minus;C</b> option can no longer be used on the
+<tt>&quot;#!&quot;</tt> line. It wasn&rsquo;t working there
+anyway, since the standard streams are already set up at
+this point in the execution of the perl interpreter. You can
+use <i>binmode()</i> instead to get the desired
+behaviour.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>UCD</small>
+5.0.0</b> <br>
+The copy of the Unicode Character Database included in Perl
+5 has been updated to version 5.0.0.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>MAD</small></b>
+<small><br>
+MAD</small> , which stands for <i>Miscellaneous Attribute
+Decoration</i>, is a still-in-development work leading to a
+Perl 5 to Perl 6 converter. To enable it, it&rsquo;s
+necessary to pass the argument
+<tt>&quot;&minus;Dmad&quot;</tt> to Configure. The obtained
+perl isn&rsquo;t binary compatible with a regular perl 5.10,
+and has space and speed penalties; moreover not all
+regression tests still pass with it. (Larry Wall, Nicholas
+Clark)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>kill()</i>
+<b>on Windows</b> <br>
+On Windows platforms, <tt>&quot;kill(&minus;9,
+$pid)&quot;</tt> now kills a process tree. (On Unix, this
+delivers the signal to all processes in the same process
+group.)</p>
+
+<h2>Incompatible Changes
+<a name="Incompatible Changes"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Packing and
+<small>UTF&minus;8</small> strings</b> <br>
+The semantics of <i>pack()</i> and <i>unpack()</i> regarding
+UTF&minus;8&minus;encoded data has been changed. Processing
+is now by default character per character instead of byte
+per byte on the underlying encoding. Notably, code that used
+things like <tt>&quot;pack(&quot;a*&quot;,
+$string)&quot;</tt> to see through the encoding of string
+will now simply get back the original <tt>$string</tt>.
+Packed strings can also get upgraded during processing when
+you store upgraded characters. You can get the old behaviour
+by using <tt>&quot;use bytes&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To be
+consistent with <i>pack()</i>, the <tt>&quot;C0&quot;</tt>
+in <i>unpack()</i> templates indicates that the data is to
+be processed in character mode, i.e. character by character;
+on the contrary, <tt>&quot;U0&quot;</tt> in <i>unpack()</i>
+indicates <small>UTF&minus;8</small> mode, where the packed
+string is processed in its UTF&minus;8&minus;encoded Unicode
+form on a byte by byte basis. This is reversed with regard
+to perl 5.8.X, but now consistent between <i>pack()</i> and
+<i>unpack()</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Moreover,
+<tt>&quot;C0&quot;</tt> and <tt>&quot;U0&quot;</tt> can also
+be used in <i>pack()</i> templates to specify respectively
+character and byte modes.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;C0&quot;</tt>
+and <tt>&quot;U0&quot;</tt> in the middle of a pack or
+unpack format now switch to the specified encoding mode,
+honoring parens grouping. Previously, parens were
+ignored.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also, there is
+a new <i>pack()</i> character format,
+<tt>&quot;W&quot;</tt>, which is intended to replace the old
+<tt>&quot;C&quot;</tt>. <tt>&quot;C&quot;</tt> is kept for
+unsigned chars coded as bytes in the strings internal
+representation. <tt>&quot;W&quot;</tt> represents unsigned
+(logical) character values, which can be greater than 255.
+It is therefore more robust when dealing with potentially
+UTF&minus;8&minus;encoded data (as <tt>&quot;C&quot;</tt>
+will wrap values outside the range 0..255, and not respect
+the string encoding).</p>
+
+<p style="margin-left:11%; margin-top: 1em">In practice,
+that means that pack formats are now encoding-neutral,
+except <tt>&quot;C&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+consistency, <tt>&quot;A&quot;</tt> in <i>unpack()</i>
+format now trims all Unicode whitespace from the end of the
+string. Before perl 5.9.2, it used to strip only the
+classical <small>ASCII</small> space characters.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Byte/character
+count feature in</b> <i>unpack()</i> <br>
+A new <i>unpack()</i> template character,
+<tt>&quot;.&quot;</tt>, returns the number of bytes or
+characters (depending on the selected encoding mode, see
+above) read so far.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>The $* and
+$# variables have been removed</b> <tt><br>
+$*</tt>, which was deprecated in favor of the
+<tt>&quot;/s&quot;</tt> and <tt>&quot;/m&quot;</tt> regexp
+modifiers, has been removed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The deprecated
+<tt>$#</tt> variable (output format for numbers) has been
+removed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Two new severe
+warnings, <tt>&quot;$#/$* is no longer supported&quot;</tt>,
+have been added.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>substr()</i>
+<b>lvalues are no longer fixed-length</b> <br>
+The lvalues returned by the three argument form of
+<i>substr()</i> used to be a &quot;fixed length window&quot;
+on the original string. In some cases this could cause
+surprising action at distance or other undefined behaviour.
+Now the length of the window adjusts itself to the length of
+the string assigned to it.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Parsing of
+&quot;&minus;f _&quot;</b> <br>
+The identifier <tt>&quot;_&quot;</tt> is now forced to be a
+bareword after a filetest operator. This solves a number of
+misparsing issues when a global <tt>&quot;_&quot;</tt>
+subroutine is defined.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;:unique&quot;</b>
+<br>
+The <tt>&quot;:unique&quot;</tt> attribute has been made a
+no-op, since its current implementation was fundamentally
+flawed and not threadsafe.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Effect of
+pragmas in eval</b> <br>
+The compile-time value of the <tt>&quot;%^H&quot;</tt> hint
+variable can now propagate into eval(&quot;&quot;)uated
+code. This makes it more useful to implement lexical
+pragmas.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As a
+side-effect of this, the overloaded-ness of constants now
+propagates into eval(&quot;&quot;).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>chdir
+<small>FOO</small></b> <br>
+A bareword argument to <i>chdir()</i> is now recognized as a
+file handle. Earlier releases interpreted the bareword as a
+directory name. (Gisle Aas)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Handling of
+.pmc files</b> <br>
+An old feature of perl was that before
+<tt>&quot;require&quot;</tt> or <tt>&quot;use&quot;</tt>
+look for a file with a <i>.pm</i> extension, they will first
+look for a similar filename with a <i>.pmc</i> extension. If
+this file is found, it will be loaded in place of any
+potentially existing file ending in a <i>.pm</i>
+extension.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Previously,
+<i>.pmc</i> files were loaded only if more recent than the
+matching <i>.pm</i> file. Starting with 5.9.4, they&rsquo;ll
+be always loaded if they exist.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>$^V is now a
+&quot;version&quot; object instead of a v&minus;string</b>
+<br>
+$^V can still be used with the <tt>%vd</tt> format in
+printf, but any character-level operations will now access
+the string representation of the
+<tt>&quot;version&quot;</tt> object and not the ordinals of
+a v&minus;string. Expressions like <tt>&quot;substr($^V, 0,
+2)&quot;</tt> or <tt>&quot;split //, $^V&quot;</tt> no
+longer work and must be rewritten.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>@&minus; and
+@+ in patterns</b> <br>
+The special arrays <tt>&quot;@&minus;&quot;</tt> and
+<tt>&quot;@+&quot;</tt> are no longer interpolated in
+regular expressions. (Sadahiro Tomoyuki)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>$AUTOLOAD
+can now be tainted</b> <br>
+If you call a subroutine by a tainted name, and if it defers
+to an <small>AUTOLOAD</small> function, then
+<tt>$AUTOLOAD</tt> will be (correctly) tainted. (Rick
+Delaney)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tainting and
+printf</b> <br>
+When perl is run under taint mode,
+<tt>&quot;printf()&quot;</tt> and
+<tt>&quot;sprintf()&quot;</tt> will now reject any tainted
+format argument. (Rafael Garcia-Suarez)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>undef and
+signal handlers</b> <br>
+Undefining or deleting a signal handler via <tt>&quot;undef
+$SIG{FOO}&quot;</tt> is now equivalent to setting it to
+<tt>'DEFAULT'</tt>. (Rafael Garcia-Suarez)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>strictures
+and dereferencing in</b> <i>defined()</i> <tt><br>
+&quot;use strict 'refs'&quot;</tt> was ignoring taking a
+hard reference in an argument to <i>defined()</i>, as in
+:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use strict 'refs';
+    my $x = 'foo';
+    if (defined $$x) {...}</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This now
+correctly produces the run-time error <tt>&quot;Can't use
+string as a SCALAR ref while &quot;strict refs&quot; in
+use&quot;</tt>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;defined
+@$foo&quot;</tt> and <tt>&quot;defined %$bar&quot;</tt> are
+now also subject to <tt>&quot;strict 'refs'&quot;</tt> (that
+is, <tt>$foo</tt> and <tt>$bar</tt> shall be proper
+references there.) (<tt>&quot;defined(@foo)&quot;</tt> and
+<tt>&quot;defined(%bar)&quot;</tt> are discouraged
+constructs anyway.) (Nicholas Clark)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;(?p{})&quot;
+has been removed</b> <br>
+The regular expression construct
+<tt>&quot;(?p{})&quot;</tt>, which was deprecated in perl
+5.8, has been removed. Use <tt>&quot;(??{})&quot;</tt>
+instead. (Rafael Garcia-Suarez)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Pseudo-hashes
+have been removed</b> <br>
+Support for pseudo-hashes has been removed from Perl 5.9.
+(The <tt>&quot;fields&quot;</tt> pragma remains here, but
+uses an alternate implementation.)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Removal of
+the bytecode compiler and of perlcc</b> <tt><br>
+&quot;perlcc&quot;</tt>, the byteloader and the supporting
+modules (B::C, B::CC, B::Bytecode, etc.) are no longer
+distributed with the perl sources. Those experimental tools
+have never worked reliably, and, due to the lack of
+volunteers to keep them in line with the perl interpreter
+developments, it was decided to remove them instead of
+shipping a broken version of those. The last version of
+those modules can be found with perl 5.9.4.</p>
+
+<p style="margin-left:11%; margin-top: 1em">However the B
+compiler framework stays supported in the perl core, as with
+the more useful modules it has permitted (among others,
+B::Deparse and B::Concise).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Removal of
+the <small>JPL</small></b> <br>
+The <small>JPL</small> (Java-Perl Lingo) has been removed
+from the perl sources tarball.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Recursive
+inheritance detected earlier</b> <br>
+Perl will now immediately throw an exception if you modify
+any package&rsquo;s <tt>@ISA</tt> in such a way that it
+would cause recursive inheritance.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Previously, the
+exception would not occur until Perl attempted to make use
+of the recursive inheritance while resolving a method or
+doing a <tt>&quot;$foo&minus;&gt;isa($bar)&quot;</tt>
+lookup.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>warnings::enabled
+and warnings::warnif changed to favor users of modules</b>
+<br>
+The behaviour in 5.10.x favors the person using the module;
+The behaviour in 5.8.x favors the module writer;</p>
+
+<p style="margin-left:11%; margin-top: 1em">Assume the
+following code:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  main calls Foo::Bar::baz()
+  Foo::Bar inherits from Foo::Base
+  Foo::Bar::baz() calls Foo::Base::_bazbaz()
+  Foo::Base::_bazbaz() calls: warnings::warnif('substr', 'some warning
+message');</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">On 5.8.x, the
+code warns when Foo::Bar contains <tt>&quot;use
+warnings;&quot;</tt> It does not matter if Foo::Base or main
+have warnings enabled to disable the warning one has to
+modify Foo::Bar.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On 5.10.0 and
+newer, the code warns when main contains <tt>&quot;use
+warnings;&quot;</tt> It does not matter if Foo::Base or
+Foo::Bar have warnings enabled to disable the warning one
+has to modify main.</p>
+
+<h2>Modules and Pragmata
+<a name="Modules and Pragmata"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Upgrading
+individual core modules</b> <br>
+Even more core modules are now also available separately
+through the <small>CPAN</small> . If you wish to update one
+of these modules, you don&rsquo;t need to wait for a new
+perl release. From within the cpan shell, running the
+&rsquo;r&rsquo; command will report on modules with upgrades
+available. See <tt>&quot;perldoc CPAN&quot;</tt> for more
+information.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Pragmata
+Changes</b> <br>
+&quot;feature&quot;</p>
+
+<p style="margin-left:17%;">The new pragma
+<tt>&quot;feature&quot;</tt> is used to enable new features
+that might break old code. See &quot;The
+<tt>&quot;feature&quot;</tt> pragma&quot; above.</p>
+
+<p style="margin-left:11%;">&quot;mro&quot;</p>
+
+<p style="margin-left:17%;">This new pragma enables to
+change the algorithm used to resolve inherited methods. See
+&quot;New Pragma, <tt>&quot;mro&quot;</tt>&quot; above.</p>
+
+<p style="margin-left:11%;">Scoping of the &quot;sort&quot;
+pragma</p>
+
+<p style="margin-left:17%;">The <tt>&quot;sort&quot;</tt>
+pragma is now lexically scoped. Its effect used to be
+global.</p>
+
+<p style="margin-left:11%;">Scoping of &quot;bignum&quot;,
+&quot;bigint&quot;, &quot;bigrat&quot;</p>
+
+<p style="margin-left:17%;">The three numeric pragmas
+<tt>&quot;bignum&quot;</tt>, <tt>&quot;bigint&quot;</tt> and
+<tt>&quot;bigrat&quot;</tt> are now lexically scoped.
+(Tels)</p>
+
+<p style="margin-left:11%;">&quot;base&quot;</p>
+
+<p style="margin-left:17%;">The <tt>&quot;base&quot;</tt>
+pragma now warns if a class tries to inherit from itself.
+(Curtis &quot;Ovid&quot; Poe)</p>
+
+<p style="margin-left:11%;">&quot;strict&quot; and
+&quot;warnings&quot;</p>
+
+<p style="margin-left:17%;"><tt>&quot;strict&quot;</tt> and
+<tt>&quot;warnings&quot;</tt> will now complain loudly if
+they are loaded via incorrect casing (as in <tt>&quot;use
+Strict;&quot;</tt>). (Johan Vromans)</p>
+
+<p style="margin-left:11%;">&quot;version&quot;</p>
+
+<p style="margin-left:17%;">The
+<tt>&quot;version&quot;</tt> module provides support for
+version objects.</p>
+
+<p style="margin-left:11%;">&quot;warnings&quot;</p>
+
+<p style="margin-left:17%;">The
+<tt>&quot;warnings&quot;</tt> pragma doesn&rsquo;t load
+<tt>&quot;Carp&quot;</tt> anymore. That means that code that
+used <tt>&quot;Carp&quot;</tt> routines without having
+loaded it at compile time might need to be adjusted;
+typically, the following (faulty) code won&rsquo;t work
+anymore, and will require parentheses to be added after the
+function name:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    use warnings;
+    require Carp;
+    Carp::confess 'argh';</pre>
+
+
+<p style="margin-left:11%;">&quot;less&quot;</p>
+
+<p style="margin-left:17%;"><tt>&quot;less&quot;</tt> now
+does something useful (or at least it tries to). In fact, it
+has been turned into a lexical pragma. So, in your modules,
+you can now test whether your users have requested to use
+less <small>CPU</small> , or less memory, less magic, or
+maybe even less fat. See less for more. (Joshua ben
+Jore)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>New
+modules</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;encoding::warnings&quot;</tt>, by Audrey Tang,
+is a module to emit warnings whenever an
+<small>ASCII</small> character string containing high-bit
+bytes is implicitly converted into
+<small>UTF&minus;8</small> . It&rsquo;s a lexical pragma
+since Perl 5.9.4; on older perls, its effect is global.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Module::CoreList&quot;</tt>, by Richard Clamp,
+is a small handy module that tells you what versions of core
+modules ship with any versions of Perl 5. It comes with a
+command-line frontend, <tt>&quot;corelist&quot;</tt>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Math::BigInt::FastCalc&quot;</tt> is an
+XS-enabled, and thus faster, version of
+<tt>&quot;Math::BigInt::Calc&quot;</tt>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Compress::Zlib&quot;</tt> is an interface to
+the zlib compression library. It comes with a bundled
+version of zlib, so having a working zlib is not a
+prerequisite to install it. It&rsquo;s used by
+<tt>&quot;Archive::Tar&quot;</tt> (see below).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;IO::Zlib&quot;</tt> is an
+<tt>&quot;IO::&quot;</tt>&minus;style interface to
+<tt>&quot;Compress::Zlib&quot;</tt>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Archive::Tar&quot;</tt> is a module to
+manipulate <tt>&quot;tar&quot;</tt> archives.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Digest::SHA&quot;</tt> is a module used to
+calculate many types of <small>SHA</small> digests, has been
+included for <small>SHA</small> support in the
+<small>CPAN</small> module.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;ExtUtils::CBuilder&quot;</tt> and
+<tt>&quot;ExtUtils::ParseXS&quot;</tt> have been added.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Hash::Util::FieldHash&quot;</tt>, by Anno
+Siegel, has been added. This module provides support for
+<i>field hashes</i>: hashes that maintain an association of
+a reference with a value, in a thread-safe garbage-collected
+way. Such hashes are useful to implement inside-out
+objects.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Module::Build&quot;</tt>, by Ken Williams, has
+been added. It&rsquo;s an alternative to
+<tt>&quot;ExtUtils::MakeMaker&quot;</tt> to build and
+install perl modules.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Module::Load&quot;</tt>, by Jos Boumans, has
+been added. It provides a single interface to load Perl
+modules and <i>.pl</i> files.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Module::Loaded&quot;</tt>, by Jos Boumans, has
+been added. It&rsquo;s used to mark modules as loaded or
+unloaded.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Package::Constants&quot;</tt>, by Jos Boumans,
+has been added. It&rsquo;s a simple helper to list all
+constants declared in a given package.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Win32API::File&quot;</tt>, by Tye McQueen, has
+been added (for Windows builds). This module provides
+low-level access to Win32 system <small>API</small> calls
+for files/dirs.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Locale::Maketext::Simple&quot;</tt>, needed by
+<small>CPANPLUS</small> , is a simple wrapper around
+<tt>&quot;Locale::Maketext::Lexicon&quot;</tt>. Note that
+<tt>&quot;Locale::Maketext::Lexicon&quot;</tt> isn&rsquo;t
+included in the perl core; the behaviour of
+<tt>&quot;Locale::Maketext::Simple&quot;</tt> gracefully
+degrades when the later isn&rsquo;t present.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Params::Check&quot;</tt> implements a generic
+input parsing/checking mechanism. It is used by
+<small>CPANPLUS</small> .</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Term::UI&quot;</tt> simplifies the task to ask
+questions at a terminal prompt.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Object::Accessor&quot;</tt> provides an
+interface to create per-object accessors.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Module::Pluggable&quot;</tt> is a simple
+framework to create modules that accept pluggable
+sub-modules.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Module::Load::Conditional&quot;</tt> provides
+simple ways to query and possibly load installed
+modules.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Time::Piece&quot;</tt> provides an object
+oriented interface to time functions, overriding the
+built-ins <i>localtime()</i> and <i>gmtime()</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;IPC::Cmd&quot;</tt> helps to find and run
+external commands, possibly interactively.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;File::Fetch&quot;</tt> provide a simple
+generic file fetching mechanism.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Log::Message&quot;</tt> and
+<tt>&quot;Log::Message::Simple&quot;</tt> are used by the
+log facility of <tt>&quot;CPANPLUS&quot;</tt>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Archive::Extract&quot;</tt> is a generic
+archive extraction mechanism for <i>.tar</i> (plain, gzipped
+or bzipped) or <i>.zip</i> files.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;CPANPLUS&quot;</tt> provides an
+<small>API</small> and a command-line tool to access the
+<small>CPAN</small> mirrors.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Pod::Escapes&quot;</tt> provides utilities
+that are useful in decoding Pod E&lt;...&gt; sequences.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Pod::Simple&quot;</tt> is now the backend for
+several of the Pod-related modules included with Perl.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Selected
+Changes to Core Modules</b> <br>
+&quot;Attribute::Handlers&quot;</p>
+
+
+<p style="margin-left:17%;"><tt>&quot;Attribute::Handlers&quot;</tt>
+can now report the caller&rsquo;s file and line number.
+(David Feldman)</p>
+
+<p style="margin-left:17%; margin-top: 1em">All interpreted
+attributes are now passed as array references. (Damian
+Conway)</p>
+
+<p style="margin-left:11%;">&quot;B::Lint&quot;</p>
+
+<p style="margin-left:17%;"><tt>&quot;B::Lint&quot;</tt> is
+now based on <tt>&quot;Module::Pluggable&quot;</tt>, and so
+can be extended with plugins. (Joshua ben Jore)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p>&quot;B&quot;</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p>It&rsquo;s now possible to access the lexical pragma
+hints (<tt>&quot;%^H&quot;</tt>) by using the method
+<i>B::COP::hints_hash()</i>. It returns a
+<tt>&quot;B::RHE&quot;</tt> object, which in turn can be
+used to get a hash reference via the method
+<i>B::RHE::HASH()</i>. (Joshua ben Jore)</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">&quot;Thread&quot;</p>
+
+<p style="margin-left:17%;">As the old 5005thread threading
+model has been removed, in favor of the ithreads scheme, the
+<tt>&quot;Thread&quot;</tt> module is now a compatibility
+wrapper, to be used in old code only. It has been removed
+from the default list of dynamic extensions.</p>
+
+<h2>Utility Changes
+<a name="Utility Changes"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perl
+&minus;d</p>
+
+<p style="margin-left:17%;">The Perl debugger can now save
+all debugger commands for sourcing later; notably, it can
+now emulate stepping backwards, by restarting and rerunning
+all bar the last command from a saved command history.</p>
+
+<p style="margin-left:17%; margin-top: 1em">It can also
+display the parent inheritance tree of a given class, with
+the <tt>&quot;i&quot;</tt> command.</p>
+
+<p style="margin-left:11%;">ptar</p>
+
+<p style="margin-left:17%;"><tt>&quot;ptar&quot;</tt> is a
+pure perl implementation of <tt>&quot;tar&quot;</tt> that
+comes with <tt>&quot;Archive::Tar&quot;</tt>.</p>
+
+<p style="margin-left:11%;">ptardiff</p>
+
+<p style="margin-left:17%;"><tt>&quot;ptardiff&quot;</tt>
+is a small utility used to generate a diff between the
+contents of a tar archive and a directory tree. Like
+<tt>&quot;ptar&quot;</tt>, it comes with
+<tt>&quot;Archive::Tar&quot;</tt>.</p>
+
+<p style="margin-left:11%;">shasum</p>
+
+<p style="margin-left:17%;"><tt>&quot;shasum&quot;</tt> is
+a command-line utility, used to print or to check
+<small>SHA</small> digests. It comes with the new
+<tt>&quot;Digest::SHA&quot;</tt> module.</p>
+
+<p style="margin-left:11%;">corelist</p>
+
+<p style="margin-left:17%;">The
+<tt>&quot;corelist&quot;</tt> utility is now installed with
+perl (see &quot;New modules&quot; above).</p>
+
+<p style="margin-left:11%;">h2ph and h2xs</p>
+
+<p style="margin-left:17%;"><tt>&quot;h2ph&quot;</tt> and
+<tt>&quot;h2xs&quot;</tt> have been made more robust with
+regard to &quot;modern&quot; C code.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;h2xs&quot;</tt>
+implements a new option
+<tt>&quot;&minus;&minus;use&minus;xsloader&quot;</tt> to
+force use of <tt>&quot;XSLoader&quot;</tt> even in backwards
+compatible modules.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The handling of
+authors&rsquo; names that had apostrophes has been
+fixed.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Any enums with
+negative values are now skipped.</p>
+
+<p style="margin-left:11%;">perlivp</p>
+
+<p style="margin-left:17%;"><tt>&quot;perlivp&quot;</tt> no
+longer checks for <i>*.ph</i> files by default. Use the new
+<tt>&quot;&minus;a&quot;</tt> option to run <i>all</i>
+tests.</p>
+
+<p style="margin-left:11%;">find2perl</p>
+
+<p style="margin-left:17%;"><tt>&quot;find2perl&quot;</tt>
+now assumes <tt>&quot;&minus;print&quot;</tt> as a default
+action. Previously, it needed to be specified
+explicitly.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Several bugs
+have been fixed in <tt>&quot;find2perl&quot;</tt>, regarding
+<tt>&quot;&minus;exec&quot;</tt> and
+<tt>&quot;&minus;eval&quot;</tt>. Also the options
+<tt>&quot;&minus;path&quot;</tt>,
+<tt>&quot;&minus;ipath&quot;</tt> and
+<tt>&quot;&minus;iname&quot;</tt> have been added.</p>
+
+<p style="margin-left:11%;">config_data</p>
+
+
+<p style="margin-left:17%;"><tt>&quot;config_data&quot;</tt>
+is a new utility that comes with
+<tt>&quot;Module::Build&quot;</tt>. It provides a
+command-line interface to the configuration of Perl modules
+that use Module::Build&rsquo;s framework of configurability
+(that is, <tt>*::ConfigData</tt> modules that contain local
+configuration information for their parent modules.)</p>
+
+<p style="margin-left:11%;">cpanp</p>
+
+<p style="margin-left:17%;"><tt>&quot;cpanp&quot;</tt>, the
+<small>CPANPLUS</small> shell, has been added.
+(<tt>&quot;cpanp&minus;run&minus;perl&quot;</tt>, a helper
+for <small>CPANPLUS</small> operation, has been added too,
+but isn&rsquo;t intended for direct use).</p>
+
+<p style="margin-left:11%;">cpan2dist</p>
+
+<p style="margin-left:17%;"><tt>&quot;cpan2dist&quot;</tt>
+is a new utility that comes with <small>CPANPLUS</small> .
+It&rsquo;s a tool to create distributions (or packages) from
+<small>CPAN</small> modules.</p>
+
+<p style="margin-left:11%;">pod2html</p>
+
+<p style="margin-left:17%;">The output of
+<tt>&quot;pod2html&quot;</tt> has been enhanced to be more
+customizable via <small>CSS</small> . Some formatting
+problems were also corrected. (Jari Aalto)</p>
+
+<h2>New Documentation
+<a name="New Documentation"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The perlpragma
+manpage documents how to write one&rsquo;s own lexical
+pragmas in pure Perl (something that is possible starting
+with 5.9.4).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The new
+perlglossary manpage is a glossary of terms used in the Perl
+documentation, technical and otherwise, kindly provided by
+O&rsquo;Reilly Media, Inc.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The perlreguts
+manpage, courtesy of Yves Orton, describes internals of the
+Perl regular expression engine.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The perlreapi
+manpage describes the interface to the perl interpreter used
+to write pluggable regular expression engines (by var
+Arnfjoer` Bjarmason).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The perlunitut
+manpage is an tutorial for programming with Unicode and
+string encodings in Perl, courtesy of Juerd Waalboer.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A new manual
+page, perlunifaq (the Perl Unicode <small>FAQ</small> ), has
+been added (Juerd Waalboer).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+perlcommunity manpage gives a description of the Perl
+community on the Internet and in real life. (Edgar
+&quot;Trizor&quot; Bering)</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<small>CORE</small> manual page documents the
+<tt>&quot;CORE::&quot;</tt> namespace. (Tels)</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+long-existing feature of <tt>&quot;/(?{...})/&quot;</tt>
+regexps setting <tt>$_</tt> and <i>pos()</i> is now
+documented.</p>
+
+<h2>Performance Enhancements
+<a name="Performance Enhancements"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>In-place
+sorting</b> <br>
+Sorting arrays in place (<tt>&quot;@a = sort @a&quot;</tt>)
+is now optimized to avoid making a temporary copy of the
+array.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Likewise,
+<tt>&quot;reverse sort ...&quot;</tt> is now optimized to
+sort in reverse, avoiding the generation of a temporary
+intermediate list.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Lexical
+array access</b> <br>
+Access to elements of lexical arrays via a numeric constant
+between 0 and 255 is now faster. (This used to be only the
+case for global arrays.)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>XS-assisted
+<small>SWASHGET</small></b> <br>
+Some pure-perl code that perl was using to retrieve Unicode
+properties and transliteration mappings has been
+reimplemented in <small>XS</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Constant
+subroutines</b> <br>
+The interpreter internals now support a far more memory
+efficient form of inlineable constants. Storing a reference
+to a constant value in a symbol table is equivalent to a
+full typeglob referencing a constant subroutine, but using
+about 400 bytes less memory. This proxy constant subroutine
+is automatically upgraded to a real typeglob with subroutine
+if necessary. The approach taken is analogous to the
+existing space optimisation for subroutine stub
+declarations, which are stored as plain scalars in place of
+the full typeglob.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Several of the
+core modules have been converted to use this feature for
+their system dependent constants &minus; as a result
+<tt>&quot;use POSIX;&quot;</tt> now takes about 200K less
+memory.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;PERL_DONT_CREATE_GVSV&quot;</b>
+<br>
+The new compilation flag
+<tt>&quot;PERL_DONT_CREATE_GVSV&quot;</tt>, introduced as an
+option in perl 5.8.8, is turned on by default in perl 5.9.3.
+It prevents perl from creating an empty scalar with every
+new typeglob. See perl589delta for details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Weak
+references are cheaper</b> <br>
+Weak reference creation is now <i>O(1)</i> rather than
+<i>O(n)</i>, courtesy of Nicholas Clark. Weak reference
+deletion remains <i>O(n)</i>, but if deletion only happens
+at program exit, it may be skipped completely.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>sort()</i>
+<b>enhancements</b> <br>
+Salvador Fandin~o provided improvements to reduce the memory
+usage of <tt>&quot;sort&quot;</tt> and to speed up some
+cases.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Memory
+optimisations</b> <br>
+Several internal data structures (typeglobs, GVs, CVs,
+formats) have been restructured to use less memory.
+(Nicholas Clark)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>UTF&minus;8</small>
+cache optimisation</b> <br>
+The <small>UTF&minus;8</small> caching code is now more
+efficient, and used more often. (Nicholas Clark)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Sloppy stat
+on Windows</b> <br>
+On Windows, perl&rsquo;s <i>stat()</i> function normally
+opens the file to determine the link count and update
+attributes that may have been changed through hard links.
+Setting ${^WIN32_SLOPPY_STAT} to a true value speeds up
+<i>stat()</i> by not performing this operation. (Jan
+Dubois)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Regular
+expressions optimisations</b> <br>
+Engine de-recursivised</p>
+
+<p style="margin-left:17%;">The regular expression engine
+is no longer recursive, meaning that patterns that used to
+overflow the stack will either die with useful explanations,
+or run to completion, which, since they were able to blow
+the stack before, will likely take a very long time to
+happen. If you were experiencing the occasional stack
+overflow (or segfault) and upgrade to discover that now perl
+apparently hangs instead, look for a degenerate regex. (Dave
+Mitchell)</p>
+
+<p style="margin-left:11%;">Single char char-classes
+treated as literals</p>
+
+<p style="margin-left:17%;">Classes of a single character
+are now treated the same as if the character had been used
+as a literal, meaning that code that uses char-classes as an
+escaping mechanism will see a speedup. (Yves Orton)</p>
+
+<p style="margin-left:11%;">Trie optimisation of literal
+string alternations</p>
+
+<p style="margin-left:17%;">Alternations, where possible,
+are optimised into more efficient matching structures.
+String literal alternations are merged into a trie and are
+matched simultaneously. This means that instead of O(N) time
+for matching N alternations at a given point, the new code
+performs in O(1) time. A new special variable,
+${^RE_TRIE_MAXBUF}, has been added to fine-tune this
+optimization. (Yves Orton)</p>
+
+<p style="margin-left:17%; margin-top: 1em"><b>Note:</b>
+Much code exists that works around perl&rsquo;s historic
+poor performance on alternations. Often the tricks used to
+do so will disable the new optimisations. Hopefully the
+utility modules used for this purpose will be educated about
+these new optimisations.</p>
+
+<p style="margin-left:11%;">Aho-Corasick start-point
+optimisation</p>
+
+<p style="margin-left:17%;">When a pattern starts with a
+trie-able alternation and there aren&rsquo;t better
+optimisations available, the regex engine will use
+Aho-Corasick matching to find the start point. (Yves
+Orton)</p>
+
+<h2>Installation and Configuration Improvements
+<a name="Installation and Configuration Improvements"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Configuration
+improvements</b> <br>
+&quot;&minus;Dusesitecustomize&quot;</p>
+
+<p style="margin-left:17%;">Run-time customization of
+<tt>@INC</tt> can be enabled by passing the
+<tt>&quot;&minus;Dusesitecustomize&quot;</tt> flag to
+Configure. When enabled, this will make perl run
+<i>$sitelibexp/sitecustomize.pl</i> before anything else.
+This script can then be set up to add additional entries to
+<tt>@INC</tt>.</p>
+
+<p style="margin-left:11%;">Relocatable installations</p>
+
+<p style="margin-left:17%;">There is now Configure support
+for creating a relocatable perl tree. If you Configure with
+<tt>&quot;&minus;Duserelocatableinc&quot;</tt>, then the
+paths in <tt>@INC</tt> (and everything else in
+<tt>%Config</tt>) can be optionally located via the path of
+the perl executable.</p>
+
+<p style="margin-left:17%; margin-top: 1em">That means
+that, if the string <tt>&quot;.../&quot;</tt> is found at
+the start of any path, it&rsquo;s substituted with the
+directory of $^X. So, the relocation can be configured on a
+per-directory basis, although the default with
+<tt>&quot;&minus;Duserelocatableinc&quot;</tt> is that
+everything is relocated. The initial install is done to the
+original configured prefix.</p>
+
+<p style="margin-left:11%;"><i>strlcat()</i> and
+<i>strlcpy()</i></p>
+
+<p style="margin-left:17%;">The configuration process now
+detects whether <i>strlcat()</i> and <i>strlcpy()</i> are
+available. When they are not available, perl&rsquo;s own
+version is used (from Russ Allbery&rsquo;s public domain
+implementation). Various places in the perl interpreter now
+use them. (Steve Peters)</p>
+
+<p style="margin-left:11%;">&quot;d_pseudofork&quot; and
+&quot;d_printf_format_null&quot;</p>
+
+<p style="margin-left:17%;">A new configuration variable,
+available as <tt>$Config{d_pseudofork}</tt> in the Config
+module, has been added, to distinguish real <i>fork()</i>
+support from fake pseudofork used on Windows platforms.</p>
+
+<p style="margin-left:17%; margin-top: 1em">A new
+configuration variable,
+<tt>&quot;d_printf_format_null&quot;</tt>, has been added,
+to see if printf-like formats are allowed to be
+<small>NULL</small> .</p>
+
+<p style="margin-left:11%;">Configure help</p>
+
+<p style="margin-left:17%;"><tt>&quot;Configure
+&minus;h&quot;</tt> has been extended with the most commonly
+used options.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Compilation
+improvements</b> <br>
+Parallel build</p>
+
+<p style="margin-left:17%;">Parallel makes should work
+properly now, although there may still be problems if
+<tt>&quot;make test&quot;</tt> is instructed to run in
+parallel.</p>
+
+<p style="margin-left:11%;">Borland&rsquo;s compilers
+support</p>
+
+<p style="margin-left:17%;">Building with Borland&rsquo;s
+compilers on Win32 should work more smoothly. In particular
+Steve Hay has worked to side step many warnings emitted by
+their compilers and at least one C compiler internal
+error.</p>
+
+<p style="margin-left:11%;">Static build on Windows</p>
+
+<p style="margin-left:17%;">Perl extensions on Windows now
+can be statically built into the Perl <small>DLL</small>
+.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Also,
+it&rsquo;s now possible to build a
+<tt>&quot;perl&minus;static.exe&quot;</tt> that
+doesn&rsquo;t depend on the Perl <small>DLL</small> on
+Win32. See the Win32 makefiles for details. (Vadim
+Konovalov)</p>
+
+<p style="margin-left:11%;">ppport.h files</p>
+
+<p style="margin-left:17%;">All <i>ppport.h</i> files in
+the <small>XS</small> modules bundled with perl are now
+autogenerated at build time. (Marcus Holland-Moritz)</p>
+
+<p style="margin-left:11%;">C <small>++</small>
+compatibility</p>
+
+<p style="margin-left:17%;">Efforts have been made to make
+perl and the core <small>XS</small> modules compilable with
+various C <small>++</small> compilers (although the
+situation is not perfect with some of the compilers on some
+of the platforms tested.)</p>
+
+<p style="margin-left:11%;">Support for Microsoft
+64&minus;bit compiler</p>
+
+<p style="margin-left:17%;">Support for building perl with
+Microsoft&rsquo;s 64&minus;bit compiler has been improved.
+(ActiveState)</p>
+
+<p style="margin-left:11%;">Visual C <small>++</small></p>
+
+<p style="margin-left:17%;">Perl can now be compiled with
+Microsoft Visual C <small>++</small> 2005 (and 2008 Beta
+2).</p>
+
+<p style="margin-left:11%;">Win32 builds</p>
+
+<p style="margin-left:17%;">All win32 builds (MS-Win,
+WinCE) have been merged and cleaned up.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Installation
+improvements</b> <br>
+Module auxiliary files</p>
+
+<p style="margin-left:17%;"><small>README</small> files and
+changelogs for <small>CPAN</small> modules bundled with perl
+are no longer installed.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>New Or
+Improved Platforms</b> <br>
+Perl has been reported to work on Symbian <small>OS</small>
+. See perlsymbian for more information.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Many
+improvements have been made towards making Perl work
+correctly on z/OS.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl has been
+reported to work on DragonFlyBSD and MidnightBSD.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl has also
+been reported to work on NexentaOS (
+http://www.gnusolaris.org/ ).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<small>VMS</small> port has been improved. See perlvms.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Support for
+Cray <small>XT4</small> Catamount/Qk has been added. See
+<i>hints/catamount.sh</i> in the source code distribution
+for more information.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Vendor patches
+have been merged for RedHat and Gentoo.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>DynaLoader::dl_unload_file()</i>
+now works on Windows.</p>
+
+<h2>Selected Bug Fixes
+<a name="Selected Bug Fixes"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">strictures in
+regexp-eval blocks</p>
+
+<p style="margin-left:17%;"><tt>&quot;strict&quot;</tt>
+wasn&rsquo;t in effect in regexp-eval blocks
+(<tt>&quot;/(?{...})/&quot;</tt>).</p>
+
+<p style="margin-left:11%;">Calling
+<i>CORE::require()</i></p>
+
+<p style="margin-left:17%;"><i>CORE::require()</i> and
+<i>CORE::do()</i> were always parsed as <i>require()</i> and
+<i>do()</i> when they were overridden. This is now
+fixed.</p>
+
+<p style="margin-left:11%;">Subscripts of slices</p>
+
+<p style="margin-left:17%;">You can now use a non-arrowed
+form for chained subscripts after a list slice, like in:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    ({foo =&gt; &quot;bar&quot;})[0]{foo}</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">This used to be
+a syntax error; a <tt>&quot;&minus;&gt;&quot;</tt> was
+required.</p>
+
+<p style="margin-left:11%;">&quot;no warnings
+'category'&quot; works correctly with &minus;w</p>
+
+<p style="margin-left:17%;">Previously when running with
+warnings enabled globally via <tt>&quot;&minus;w&quot;</tt>,
+selective disabling of specific warning categories would
+actually turn off all warnings. This is now fixed; now
+<tt>&quot;no warnings 'io';&quot;</tt> will only turn off
+warnings in the <tt>&quot;io&quot;</tt> class. Previously it
+would erroneously turn off all warnings.</p>
+
+<p style="margin-left:11%;">threads improvements</p>
+
+<p style="margin-left:17%;">Several memory leaks in
+ithreads were closed. Also, ithreads were made less
+memory-intensive.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;threads&quot;</tt>
+is now a dual-life module, also available on
+<small>CPAN</small> . It has been expanded in many ways. A
+<i>kill()</i> method is available for thread signalling. One
+can get thread status, or the list of running or joinable
+threads.</p>
+
+<p style="margin-left:17%; margin-top: 1em">A new
+<tt>&quot;threads&minus;&gt;exit()&quot;</tt> method is used
+to exit from the application (this is the default for the
+main thread) or from the current thread only (this is the
+default for all other threads). On the other hand, the
+<i>exit()</i> built-in now always causes the whole
+application to terminate. (Jerry D. Hedden)</p>
+
+<p style="margin-left:11%;"><i>chr()</i> and negative
+values</p>
+
+<p style="margin-left:17%;"><i>chr()</i> on a negative
+value now gives <tt>&quot;\x{FFFD}&quot;</tt>, the Unicode
+replacement character, unless when the
+<tt>&quot;bytes&quot;</tt> pragma is in effect, where the
+low eight bits of the value are used.</p>
+
+<p style="margin-left:11%;"><small>PERL5SHELL</small> and
+tainting</p>
+
+<p style="margin-left:17%;">On Windows, the
+<small>PERL5SHELL</small> environment variable is now
+checked for taintedness. (Rafael Garcia-Suarez)</p>
+
+<p style="margin-left:11%;">Using *FILE{ <small>IO</small>
+}</p>
+
+<p style="margin-left:17%;"><tt>&quot;stat()&quot;</tt> and
+<tt>&quot;&minus;X&quot;</tt> filetests now treat *FILE{
+<small>IO</small> } filehandles like *FILE filehandles.
+(Steve Peters)</p>
+
+<p style="margin-left:11%;">Overloading and reblessing</p>
+
+<p style="margin-left:17%;">Overloading now works when
+references are reblessed into another class. Internally,
+this has been implemented by moving the flag for
+&quot;overloading&quot; from the reference to the referent,
+which logically is where it should always have been.
+(Nicholas Clark)</p>
+
+<p style="margin-left:11%;">Overloading and
+<small>UTF&minus;8</small></p>
+
+<p style="margin-left:17%;">A few bugs related to
+<small>UTF&minus;8</small> handling with objects that have
+stringification overloaded have been fixed. (Nicholas
+Clark)</p>
+
+<p style="margin-left:11%;">eval memory leaks fixed</p>
+
+<p style="margin-left:17%;">Traditionally, <tt>&quot;eval
+'syntax error'&quot;</tt> has leaked badly. Many (but not
+all) of these leaks have now been eliminated or reduced.
+(Dave Mitchell)</p>
+
+<p style="margin-left:11%;">Random device on Windows</p>
+
+<p style="margin-left:17%;">In previous versions, perl
+would read the file <i>/dev/urandom</i> if it existed when
+seeding its random number generator. That file is unlikely
+to exist on Windows, and if it did would probably not
+contain appropriate data, so perl no longer tries to read it
+on Windows. (Alex Davies)</p>
+
+
+<p style="margin-left:11%;"><small>PERLIO_DEBUG</small></p>
+
+<p style="margin-left:17%;">The
+<tt>&quot;PERLIO_DEBUG&quot;</tt> environment variable no
+longer has any effect for setuid scripts and for scripts run
+with <b>&minus;T</b>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Moreover, with
+a thread-enabled perl, using
+<tt>&quot;PERLIO_DEBUG&quot;</tt> could lead to an internal
+buffer overflow. This has been fixed.</p>
+
+<p style="margin-left:11%;">PerlIO::scalar and read-only
+scalars</p>
+
+<p style="margin-left:17%;">PerlIO::scalar will now prevent
+writing to read-only scalars. Moreover, <i>seek()</i> is now
+supported with PerlIO::scalar&minus;based filehandles, the
+underlying string being zero-filled as needed. (Rafael,
+Jarkko Hietaniemi)</p>
+
+<p style="margin-left:11%;"><i>study()</i> and
+<small>UTF&minus;8</small></p>
+
+<p style="margin-left:17%;"><i>study()</i> never worked for
+<small>UTF&minus;8</small> strings, but could lead to false
+results. It&rsquo;s now a no-op on
+<small>UTF&minus;8</small> data. (Yves Orton)</p>
+
+<p style="margin-left:11%;">Critical signals</p>
+
+<p style="margin-left:17%;">The signals
+<small>SIGILL</small> , <small>SIGBUS</small> and
+<small>SIGSEGV</small> are now always delivered in an
+&quot;unsafe&quot; manner (contrary to other signals, that
+are deferred until the perl interpreter reaches a reasonably
+stable state; see &quot;Deferred Signals (Safe
+Signals)&quot; in perlipc). (Rafael)</p>
+
+<p style="margin-left:11%;">@INC&minus;hook fix</p>
+
+<p style="margin-left:17%;">When a module or a file is
+loaded through an <tt>@INC</tt>&minus;hook, and when this
+hook has set a filename entry in <tt>%INC</tt>, __FILE__ is
+now set for this module accordingly to the contents of that
+<tt>%INC</tt> entry. (Rafael)</p>
+
+<p style="margin-left:11%;">&quot;&minus;t&quot; switch
+fix</p>
+
+<p style="margin-left:17%;">The
+<tt>&quot;&minus;w&quot;</tt> and
+<tt>&quot;&minus;t&quot;</tt> switches can now be used
+together without messing up which categories of warnings are
+activated. (Rafael)</p>
+
+<p style="margin-left:11%;">Duping
+<small>UTF&minus;8</small> filehandles</p>
+
+<p style="margin-left:17%;">Duping a filehandle which has
+the <tt>&quot;:utf8&quot;</tt> PerlIO layer set will now
+properly carry that layer on the duped filehandle.
+(Rafael)</p>
+
+<p style="margin-left:11%;">Localisation of hash
+elements</p>
+
+<p style="margin-left:17%;">Localizing a hash element whose
+key was given as a variable didn&rsquo;t work correctly if
+the variable was changed while the <i>local()</i> was in
+effect (as in <tt>&quot;local $h{$x}; ++$x&quot;</tt>). (Bo
+Lindbergh)</p>
+
+<h2>New or Changed Diagnostics
+<a name="New or Changed Diagnostics"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Use of
+uninitialized value</p>
+
+<p style="margin-left:17%;">Perl will now try to tell you
+the name of the variable (if any) that was undefined.</p>
+
+<p style="margin-left:11%;">Deprecated use of <i>my()</i>
+in false conditional</p>
+
+<p style="margin-left:17%;">A new deprecation warning,
+<i>Deprecated use of my() in false conditional</i>, has been
+added, to warn against the use of the dubious and deprecated
+construct</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    my $x if 0;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">See perldiag.
+Use <tt>&quot;state&quot;</tt> variables instead.</p>
+
+<p style="margin-left:11%;">!=~ should be !~</p>
+
+<p style="margin-left:17%;">A new warning, <tt>&quot;!=~
+should be !~&quot;</tt>, is emitted to prevent this
+misspelling of the non-matching operator.</p>
+
+<p style="margin-left:11%;">Newline in left-justified
+string</p>
+
+<p style="margin-left:17%;">The warning <i>Newline in
+left-justified string</i> has been removed.</p>
+
+<p style="margin-left:11%;">Too late for
+&quot;&minus;T&quot; option</p>
+
+<p style="margin-left:17%;">The error <i>Too late for
+&quot;&minus;T&quot; option</i> has been reformulated to be
+more descriptive.</p>
+
+<p style="margin-left:11%;">&quot;%s&quot; variable %s
+masks earlier declaration</p>
+
+<p style="margin-left:17%;">This warning is now emitted in
+more consistent cases; in short, when one of the
+declarations involved is a <tt>&quot;my&quot;</tt>
+variable:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    my $x;   my $x;     # warns
+    my $x;  our $x;     # warns
+    our $x;  my $x;     # warns</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">On the other
+hand, the following:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    our $x; our $x;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">now gives a
+<tt>&quot;&quot;our&quot; variable %s redeclared&quot;</tt>
+warning.</p>
+
+
+<p style="margin-left:11%;"><i>readdir()</i>/<i>closedir()</i>/etc.
+attempted on invalid dirhandle</p>
+
+<p style="margin-left:17%;">These new warnings are now
+emitted when a dirhandle is used but is either closed or not
+really a dirhandle.</p>
+
+<p style="margin-left:11%;">Opening dirhandle/filehandle %s
+also as a file/directory</p>
+
+<p style="margin-left:17%;">Two deprecation warnings have
+been added: (Rafael)</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    Opening dirhandle %s also as a file
+    Opening filehandle %s also as a directory</pre>
+
+
+<p style="margin-left:11%;">Use of &minus;P is
+deprecated</p>
+
+<p style="margin-left:17%;">Perl&rsquo;s command-line
+switch <tt>&quot;&minus;P&quot;</tt> is now deprecated.</p>
+
+<p style="margin-left:11%;">v&minus;string in use/require
+is non-portable</p>
+
+<p style="margin-left:17%;">Perl will warn you against
+potential backwards compatibility problems with the
+<tt>&quot;use VERSION&quot;</tt> syntax.</p>
+
+<p style="margin-left:11%;">perl &minus;V</p>
+
+<p style="margin-left:17%;"><tt>&quot;perl
+&minus;V&quot;</tt> has several improvements, making it more
+useable from shell scripts to get the value of configuration
+variables. See perlrun for details.</p>
+
+<h2>Changed Internals
+<a name="Changed Internals"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In general, the
+source code of perl has been refactored, tidied up, and
+optimized in many places. Also, memory management and
+allocation has been improved in several points.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When compiling
+the perl core with gcc, as many gcc warning flags are turned
+on as is possible on the platform. (This quest for
+cleanliness doesn&rsquo;t extend to <small>XS</small> code
+because we cannot guarantee the tidiness of code we
+didn&rsquo;t write.) Similar strictness flags have been
+added or tightened for various other C compilers.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Reordering
+of SVt_* constants</b> <br>
+The relative ordering of constants that define the various
+types of <tt>&quot;SV&quot;</tt> have changed; in
+particular, <tt>&quot;SVt_PVGV&quot;</tt> has been moved
+before <tt>&quot;SVt_PVLV&quot;</tt>,
+<tt>&quot;SVt_PVAV&quot;</tt>, <tt>&quot;SVt_PVHV&quot;</tt>
+and <tt>&quot;SVt_PVCV&quot;</tt>. This is unlikely to make
+any difference unless you have code that explicitly makes
+assumptions about that ordering. (The inheritance hierarchy
+of <tt>&quot;B::*&quot;</tt> objects has been changed to
+reflect this.)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Elimination
+of SVt_PVBM</b> <br>
+Related to this, the internal type
+<tt>&quot;SVt_PVBM&quot;</tt> has been removed. This
+dedicated type of <tt>&quot;SV&quot;</tt> was used by the
+<tt>&quot;index&quot;</tt> operator and parts of the regexp
+engine to facilitate fast Boyer-Moore matches. Its use
+internally has been replaced by <tt>&quot;SV&quot;</tt>s of
+type <tt>&quot;SVt_PVGV&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>New type
+SVt_BIND</b> <br>
+A new type <tt>&quot;SVt_BIND&quot;</tt> has been added, in
+readiness for the project to implement Perl 6 on 5. There
+deliberately is no implementation yet, and they cannot yet
+be created or destroyed.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Removal of
+<small>CPP</small> symbols</b> <br>
+The C preprocessor symbols
+<tt>&quot;PERL_PM_APIVERSION&quot;</tt> and
+<tt>&quot;PERL_XS_APIVERSION&quot;</tt>, which were supposed
+to give the version number of the oldest perl
+binary-compatible (resp. source-compatible) with the present
+one, were not used, and sometimes had misleading values.
+They have been removed.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Less space
+is used by ops</b> <br>
+The <tt>&quot;BASEOP&quot;</tt> structure now uses less
+space. The <tt>&quot;op_seq&quot;</tt> field has been
+removed and replaced by a single bit bit-field
+<tt>&quot;op_opt&quot;</tt>. <tt>&quot;op_type&quot;</tt> is
+now 9 bits long. (Consequently, the
+<tt>&quot;B::OP&quot;</tt> class doesn&rsquo;t provide an
+<tt>&quot;seq&quot;</tt> method anymore.)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>New
+parser</b> <br>
+perl&rsquo;s parser is now generated by bison (it used to be
+generated by byacc.) As a result, it seems to be a bit more
+robust.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also, Dave
+Mitchell improved the lexer debugging output under
+<tt>&quot;&minus;DT&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Use of
+&quot;const&quot;</b> <br>
+Andy Lester supplied many improvements to determine which
+function parameters and local variables could actually be
+declared <tt>&quot;const&quot;</tt> to the C compiler. Steve
+Peters provided new <tt>*_set</tt> macros and reworked the
+core to use these rather than assigning to macros in
+<small>LVALUE</small> context.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Mathoms</b>
+<br>
+A new file, <i>mathoms.c</i>, has been added. It contains
+functions that are no longer used in the perl core, but that
+remain available for binary or source compatibility reasons.
+However, those functions will not be compiled in if you add
+<tt>&quot;&minus;DNO_MATHOMS&quot;</tt> in the compiler
+flags.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;AvFLAGS&quot;
+has been removed</b> <br>
+The <tt>&quot;AvFLAGS&quot;</tt> macro has been removed.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;av_*&quot;
+changes</b> <br>
+The <tt>&quot;av_*()&quot;</tt> functions, used to
+manipulate arrays, no longer accept null
+<tt>&quot;AV*&quot;</tt> parameters.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>$^H and
+%^H</b> <br>
+The implementation of the special variables $^H and %^H has
+changed, to allow implementing lexical pragmas in pure
+Perl.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>B:: modules
+inheritance changed</b> <br>
+The inheritance hierarchy of <tt>&quot;B::&quot;</tt>
+modules has changed; <tt>&quot;B::NV&quot;</tt> now inherits
+from <tt>&quot;B::SV&quot;</tt> (it used to inherit from
+<tt>&quot;B::IV&quot;</tt>).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Anonymous
+hash and array constructors</b> <br>
+The anonymous hash and array constructors now take 1 op in
+the optree instead of 3, now that pp_anonhash and
+pp_anonlist return a reference to an hash/array when the op
+is flagged with OPf_SPECIAL. (Nicholas Clark)</p>
+
+<h2>Known Problems
+<a name="Known Problems"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">There&rsquo;s
+still a remaining problem in the implementation of the
+lexical <tt>$_</tt>: it doesn&rsquo;t work inside
+<tt>&quot;/(?{...})/&quot;</tt> blocks. (See the
+<small>TODO</small> test in <i>t/op/mydef.t</i>.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Stacked
+filetest operators won&rsquo;t work when the
+<tt>&quot;filetest&quot;</tt> pragma is in effect, because
+they rely on the <i>stat()</i> buffer <tt>&quot;_&quot;</tt>
+being populated, and filetest bypasses <i>stat()</i>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>UTF&minus;8</small>
+problems</b> <br>
+The handling of Unicode still is unclean in several places,
+where it&rsquo;s dependent on whether a string is internally
+flagged as <small>UTF&minus;8</small> . This will be made
+more consistent in perl 5.12, but that won&rsquo;t be
+possible without a certain amount of backwards
+incompatibility.</p>
+
+<h2>Platform Specific Problems
+<a name="Platform Specific Problems"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">When compiled
+with g++ and thread support on Linux, it&rsquo;s reported
+that the <tt>$!</tt> stops working correctly. This is
+related to the fact that the glibc provides two
+<i>strerror_r</i>(3) implementation, and perl selects the
+wrong one.</p>
+
+<h2>Reporting Bugs
+<a name="Reporting Bugs"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you find
+what you think is a bug, you might check the articles
+recently posted to the comp.lang.perl.misc newsgroup and the
+perl bug database at http://rt.perl.org/rt3/ . There may
+also be information at http://www.perl.org/ , the Perl Home
+Page.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you believe
+you have an unreported bug, please run the <b>perlbug</b>
+program included with your release. Be sure to trim your bug
+down to a tiny but sufficient test case. Your bug report,
+along with the output of <tt>&quot;perl &minus;V&quot;</tt>,
+will be sent off to perlbug@perl.org to be analysed by the
+Perl porting team.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>Changes</i> file and the perl590delta to perl595delta man
+pages for exhaustive details on what changed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i><small>INSTALL</small></i> file for how to build
+Perl.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i><small>README</small></i> file for general stuff.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>Artistic</i> and <i>Copying</i> files for copyright
+information.</p>
+<hr>
+</body>
+</html>

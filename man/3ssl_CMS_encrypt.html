@@ -1,0 +1,200 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:31:40 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>CMS_encrypt</title>
+
+</head>
+<body>
+
+<h1 align="center">CMS_encrypt</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#RETURN VALUES">RETURN VALUES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#HISTORY">HISTORY</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> CMS_encrypt &minus; create a CMS envelopedData structure</pre>
+
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> #include &lt;openssl/cms.h&gt;
+ CMS_ContentInfo *CMS_encrypt(STACK_OF(X509) *certs, BIO *in, const EVP_CIPHER *cipher, unsigned int flags);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>CMS_encrypt()</i>
+creates and returns a <small>CMS</small> EnvelopedData
+structure. <b>certs</b> is a list of recipient certificates.
+<b>in</b> is the content to be encrypted. <b>cipher</b> is
+the symmetric cipher to use. <b>flags</b> is an optional set
+of flags.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Only
+certificates carrying <small>RSA</small> keys are supported
+so the recipient certificates supplied to this function must
+all contain <small>RSA</small> public keys, though they do
+not have to be signed using the <small>RSA</small>
+algorithm.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>EVP_des_ede3_cbc()</i>
+(triple <small>DES</small> ) is the algorithm of choice for
+S/MIME use because most clients will support it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The algorithm
+passed in the <b>cipher</b> parameter must support
+<small>ASN1</small> encoding of its parameters.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Many browsers
+implement a &quot;sign and encrypt&quot; option which is
+simply an S/MIME envelopedData containing an S/MIME signed
+message. This can be readily produced by storing the S/MIME
+signed message in a memory <small>BIO</small> and passing it
+to <i>CMS_encrypt()</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+flags can be passed in the <b>flags</b> parameter.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+<b><small>CMS_TEXT</small></b> flag is set
+<small>MIME</small> headers for type <b>text/plain</b> are
+prepended to the data.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Normally the
+supplied content is translated into <small>MIME</small>
+canonical format (as required by the S/MIME specifications)
+if <b><small>CMS_BINARY</small></b> is set no translation
+occurs. This option should be used if the supplied data is
+in binary format otherwise the translation will corrupt it.
+If <b><small>CMS_BINARY</small></b> is set then
+<b><small>CMS_TEXT</small></b> is ignored.</p>
+
+<p style="margin-left:11%; margin-top: 1em">OpenSSL will by
+default identify recipient certificates using issuer name
+and serial number. If <b><small>CMS_USE_KEYID</small></b> is
+set it will use the subject key identifier value instead. An
+error occurs if all recipient certificates do not have a
+subject key identifier extension.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+<b><small>CMS_STREAM</small></b> flag is set a partial
+<b>CMS_ContentInfo</b> structure is returned suitable for
+streaming I/O: no data is read from the <small>BIO</small>
+<b>in</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+<b><small>CMS_PARTIAL</small></b> flag is set a partial
+<b>CMS_ContentInfo</b> structure is returned to which
+additional recipients and attributes can be added before
+finalization.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The data being
+encrypted is included in the CMS_ContentInfo structure,
+unless <b><small>CMS_DETACHED</small></b> is set in which
+case it is omitted. This is rarely used in practice and is
+not supported by <i>SMIME_write_CMS()</i>.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If the flag
+<b><small>CMS_STREAM</small></b> is set the returned
+<b>CMS_ContentInfo</b> structure is <b>not</b> complete and
+outputting its contents via a function that does not
+properly finalize the <b>CMS_ContentInfo</b> structure will
+give unpredictable results.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Several
+functions including <i>SMIME_write_CMS()</i>,
+<i>i2d_CMS_bio_stream()</i>,
+<i>PEM_write_bio_CMS_stream()</i> finalize the structure.
+Alternatively finalization can be performed by obtaining the
+streaming <small>ASN1 <b>BIO</b></small> directly using
+<i>BIO_new_CMS()</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The recipients
+specified in <b>certs</b> use a <small>CMS</small>
+KeyTransRecipientInfo info structure. KEKRecipientInfo is
+also supported using the flag
+<b><small>CMS_PARTIAL</small></b> and
+<i>CMS_add0_recipient_key()</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The parameter
+<b>certs</b> may be <small>NULL</small> if
+<b><small>CMS_PARTIAL</small></b> is set and recipients
+added later using <i>CMS_add1_recipient_cert()</i> or
+<i>CMS_add0_recipient_key()</i>.</p>
+
+<h2>RETURN VALUES
+<a name="RETURN VALUES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>CMS_encrypt()</i>
+returns either a CMS_ContentInfo structure or
+<small>NULL</small> if an error occurred. The error can be
+obtained from <i>ERR_get_error</i>(3).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>ERR_get_error</i>(3),
+<i>CMS_decrypt</i>(3)</p>
+
+<h2>HISTORY
+<a name="HISTORY"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>CMS_decrypt()</i>
+was added to OpenSSL 0.9.8 The
+<b><small>CMS_STREAM</small></b> flag was first supported in
+OpenSSL 1.0.0.</p>
+<hr>
+</body>
+</html>

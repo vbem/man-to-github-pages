@@ -1,0 +1,169 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:32:49 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Encode::Alias</title>
+
+</head>
+<body>
+
+<h1 align="center">Encode::Alias</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Encode::Alias
+&minus; alias definitions to encodings</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  use Encode;
+  use Encode::Alias;
+  define_alias( &quot;newName&quot; =&gt; ENCODING);
+  define_alias( qr/.../ =&gt; ENCODING);
+  define_alias( sub { return ENCODING if ...; } );</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Allows newName
+to be used as an alias for <small>ENCODING. ENCODING</small>
+may be either the name of an encoding or an encoding object
+(as described in Encode).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Currently the
+first argument to <i>define_alias()</i> can be specified in
+the following ways: <br>
+As a simple string. <br>
+As a qr// compiled regular expression, e.g.:</p>
+
+<pre style="margin-left:17%;">  define_alias( qr/^iso8859&minus;(\d+)$/i =&gt; '&quot;iso&minus;8859&minus;$1&quot;' );</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">In this case,
+if <i><small>ENCODING</small></i> is not a reference, it is
+<tt>&quot;eval&quot;</tt>&minus;ed in order to allow
+<tt>$1</tt> etc. to be substituted. The example is one way
+to alias names as used in X11 fonts to the
+<small>MIME</small> names for the iso&minus;8859&minus;*
+family. Note the double quotes inside the single quotes.</p>
+
+<p style="margin-left:17%; margin-top: 1em">(or, you
+don&rsquo;t have to do this yourself because this example is
+predefined)</p>
+
+<p style="margin-left:17%; margin-top: 1em">If you are
+using a regex here, you have to use the quotes as shown or
+it won&rsquo;t work. Also note that regex handling is tricky
+even for the experienced. Use this feature with caution.</p>
+
+<p style="margin-left:11%;">As a code reference, e.g.:</p>
+
+<pre style="margin-left:17%;">  define_alias( sub {shift =~ /^iso8859&minus;(\d+)$/i ? &quot;iso&minus;8859&minus;$1&quot; : undef } );</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The same effect
+as the example above in a different way. The coderef takes
+the alias name as an argument and returns a canonical name
+on success or undef if not. Note the second argument is
+ignored if provided. Use this with even more caution than
+the regex version.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Changes in
+code reference aliasing</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">As of Encode
+1.87, the older form</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  define_alias( sub { return  /^iso8859&minus;(\d+)$/i ? &quot;iso&minus;8859&minus;$1&quot; : undef } );</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">no longer
+works.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Encode up to
+1.86 internally used &quot;local <tt>$_</tt>&quot; to
+implement ths older form. But consider the code below;</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  use Encode;
+  $_ = &quot;eeeee&quot; ;
+  while (/(e)/g) {
+    my $utf = decode('aliased&minus;encoding&minus;name', $1);
+    print &quot;position:&quot;,pos,&quot;\n&quot;;
+  }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Prior to Encode
+1.86 this fails because of &quot;local
+<tt>$_</tt>&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Alias
+overloading</b> <br>
+You can override predefined aliases by simply applying
+<i>define_alias()</i>. The new alias is always evaluated
+first, and when necessary, <i>define_alias()</i> flushes the
+internal cache to make the new definition available.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  # redirect SHIFT_JIS to MS/IBM Code Page 932, which is a
+  # superset of SHIFT_JIS
+  define_alias( qr/shift.*jis$/i  =&gt; '&quot;cp932&quot;' );
+  define_alias( qr/sjis$/i        =&gt; '&quot;cp932&quot;' );</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+zap all predefined aliases, you can use</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  Encode::Alias&minus;&gt;undef_aliases;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">to do so.
+And</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  Encode::Alias&minus;&gt;init_aliases;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">gets the
+factory settings back.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+<i>define_alias()</i> will not be able to override the
+canonical name of encodings. Encodings are first looked up
+by canonical name before potential aliases are tried.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Encode,
+Encode::Supported</p>
+<hr>
+</body>
+</html>

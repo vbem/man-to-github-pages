@@ -1,0 +1,660 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:34:32 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>GITREMOTE&minus;HELPERS</title>
+
+</head>
+<body>
+
+<h1 align="center">GITREMOTE&minus;HELPERS</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#INVOCATION">INVOCATION</a><br>
+<a href="#INPUT FORMAT">INPUT FORMAT</a><br>
+<a href="#COMMANDS">COMMANDS</a><br>
+<a href="#REF LIST ATTRIBUTES">REF LIST ATTRIBUTES</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#GIT">GIT</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">gitremote-helpers
+&minus; Helper programs to interact with remote
+repositories</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>git
+remote&minus;&lt;transport&gt;</i> &lt;repository&gt;
+[&lt;URL&gt;]</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Remote helper
+programs are normally not used directly by end users, but
+they are invoked by Git when it needs to interact with
+remote repositories Git does not support natively. A given
+helper will implement a subset of the capabilities
+documented here. When Git needs to interact with a
+repository using a remote helper, it spawns the helper as an
+independent process, sends commands to the helper&rsquo;s
+standard input, and expects results from the helper&rsquo;s
+standard output. Because a remote helper runs as an
+independent process from Git, there is no need to
+re&minus;link Git to add a new helper, nor any need to link
+the helper with the implementation of Git.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Every helper
+must support the &quot;capabilities&quot; command, which Git
+uses to determine what other commands the helper will
+accept. Those other commands can be used to discover and
+update remote refs, transport objects between the object
+database and the remote repository, and update the local
+object store.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Git comes with
+a &quot;curl&quot; family of remote helpers, that handle
+various transport protocols, such as
+<i>git&minus;remote&minus;http</i>,
+<i>git&minus;remote&minus;https</i>,
+<i>git&minus;remote&minus;ftp</i> and
+<i>git&minus;remote&minus;ftps</i>. They implement the
+capabilities <i>fetch</i>, <i>option</i>, and
+<i>push</i>.</p>
+
+<h2>INVOCATION
+<a name="INVOCATION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Remote helper
+programs are invoked with one or (optionally) two arguments.
+The first argument specifies a remote repository as in Git;
+it is either the name of a configured remote or a URL. The
+second argument specifies a URL; it is usually of the form
+<i>&lt;transport&gt;://&lt;address&gt;</i>, but any
+arbitrary string is possible. The <i>GIT_DIR</i> environment
+variable is set up for the remote helper and can be used to
+determine where to store additional data or from which
+directory to invoke auxiliary Git commands.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When Git
+encounters a URL of the form
+<i>&lt;transport&gt;://&lt;address&gt;</i>, where
+<i>&lt;transport&gt;</i> is a protocol that it cannot handle
+natively, it automatically invokes <i>git
+remote&minus;&lt;transport&gt;</i> with the full URL as the
+second argument. If such a URL is encountered directly on
+the command line, the first argument is the same as the
+second, and if it is encountered in a configured remote, the
+first argument is the name of that remote.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A URL of the
+form <i>&lt;transport&gt;::&lt;address&gt;</i> explicitly
+instructs Git to invoke <i>git
+remote&minus;&lt;transport&gt;</i> with
+<i>&lt;address&gt;</i> as the second argument. If such a URL
+is encountered directly on the command line, the first
+argument is <i>&lt;address&gt;</i>, and if it is encountered
+in a configured remote, the first argument is the name of
+that remote.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Additionally,
+when a configured remote has <i>remote.&lt;name&gt;.vcs</i>
+set to <i>&lt;transport&gt;</i>, Git explicitly invokes
+<i>git remote&minus;&lt;transport&gt;</i> with
+<i>&lt;name&gt;</i> as the first argument. If set, the
+second argument is <i>remote.&lt;name&gt;.url</i>;
+otherwise, the second argument is omitted.</p>
+
+<h2>INPUT FORMAT
+<a name="INPUT FORMAT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Git sends the
+remote helper a list of commands on standard input, one per
+line. The first command is always the <i>capabilities</i>
+command, in response to which the remote helper must print a
+list of the capabilities it supports (see below) followed by
+a blank line. The response to the capabilities command
+determines what commands Git uses in the remainder of the
+command stream.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The command
+stream is terminated by a blank line. In some cases
+(indicated in the documentation of the relevant commands),
+this blank line is followed by a payload in some other
+protocol (e.g., the pack protocol), while in others it
+indicates the end of input.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Capabilities</b>
+<br>
+Each remote helper is expected to support only a subset of
+commands. The operations a helper supports are declared to
+Git in the response to the capabilities command (see
+COMMANDS, below).</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the
+following, we list all defined capabilities and for each we
+list which commands a helper with that capability must
+provide.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><big>Capabilities
+for Pushing</big></b></p>
+
+<p style="margin-left:17%;"><i>connect</i></p>
+
+<p style="margin-left:23%;">Can attempt to connect to
+<i>git receive&minus;pack</i> (for pushing), <i>git
+upload&minus;pack</i>, etc for communication using
+git&rsquo;s native packfile protocol. This requires a
+bidirectional, full&minus;duplex connection.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Supported
+commands: <i>connect</i>.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><i>push</i></p>
+
+<p style="margin-left:23%;">Can discover remote refs and
+push local commits and the history leading up to them to new
+or existing remote refs.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Supported
+commands: <i>list for&minus;push</i>, <i>push</i>.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><i>export</i></p>
+
+<p style="margin-left:23%;">Can discover remote refs and
+push specified objects from a fast&minus;import stream to
+remote refs.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Supported
+commands: <i>list for&minus;push</i>, <i>export</i>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If a helper
+advertises <i>connect</i>, Git will use it if possible and
+fall back to another capability if the helper requests so
+when connecting (see the <i>connect</i> command under
+COMMANDS). When choosing between <i>push</i> and
+<i>export</i>, Git prefers <i>push</i>. Other frontends may
+have some other order of preference.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><big>Capabilities
+for Fetching</big></b></p>
+
+<p style="margin-left:17%;"><i>connect</i></p>
+
+<p style="margin-left:23%;">Can try to connect to <i>git
+upload&minus;pack</i> (for fetching), <i>git
+receive&minus;pack</i>, etc for communication using the
+Git&rsquo;s native packfile protocol. This requires a
+bidirectional, full&minus;duplex connection.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Supported
+commands: <i>connect</i>.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><i>fetch</i></p>
+
+<p style="margin-left:23%;">Can discover remote refs and
+transfer objects reachable from them to the local object
+store.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Supported
+commands: <i>list</i>, <i>fetch</i>.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><i>import</i></p>
+
+<p style="margin-left:23%;">Can discover remote refs and
+output objects reachable from them as a stream in
+fast&minus;import format.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Supported
+commands: <i>list</i>, <i>import</i>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If a helper
+advertises <i>connect</i>, Git will use it if possible and
+fall back to another capability if the helper requests so
+when connecting (see the <i>connect</i> command under
+COMMANDS). When choosing between <i>fetch</i> and
+<i>import</i>, Git prefers <i>fetch</i>. Other frontends may
+have some other order of preference.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><big>Miscellaneous
+capabilities</big></b></p>
+
+<p style="margin-left:17%;"><i>option</i></p>
+
+<p style="margin-left:23%;">For specifying settings like
+verbosity (how much output to write to stderr) and depth
+(how much history is wanted in the case of a shallow clone)
+that affect how other commands are carried out.</p>
+
+<p style="margin-left:17%; margin-top: 1em"><i>refspec</i>
+&lt;refspec&gt;</p>
+
+<p style="margin-left:23%;">This modifies the <i>import</i>
+capability, allowing the produced fast&minus;import stream
+to modify refs in a private namespace instead of writing to
+refs/heads or refs/remotes directly. It is recommended that
+all importers providing the <i>import</i> capability use
+this.</p>
+
+<p style="margin-left:23%; margin-top: 1em">A helper
+advertising the capability refspec
+refs/heads/*:refs/svn/origin/branches/* is saying that, when
+it is asked to import refs/heads/topic, the stream it
+outputs will update the refs/svn/origin/branches/topic
+ref.</p>
+
+<p style="margin-left:23%; margin-top: 1em">This capability
+can be advertised multiple times. The first applicable
+refspec takes precedence. The left&minus;hand of refspecs
+advertised with this capability must cover all refs reported
+by the list command. If a helper does not need a specific
+<i>refspec</i> capability then it should advertise refspec
+*:*.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><i>bidi&minus;import</i></p>
+
+<p style="margin-left:23%;">This modifies the <i>import</i>
+capability. The fast&minus;import commands
+<i>cat&minus;blob</i> and <i>ls</i> can be used by
+remote&minus;helpers to retrieve information about blobs and
+trees that already exist in fast&minus;import&rsquo;s
+memory. This requires a channel from fast&minus;import to
+the remote&minus;helper. If it is advertised in addition to
+&quot;import&quot;, Git establishes a pipe from
+fast&minus;import to the remote&minus;helper&rsquo;s stdin.
+It follows that Git and fast&minus;import are both connected
+to the remote&minus;helper&rsquo;s stdin. Because Git can
+send multiple commands to the remote&minus;helper it is
+required that helpers that use <i>bidi&minus;import</i>
+buffer all <i>import</i> commands of a batch before sending
+data to fast&minus;import. This is to prevent mixing
+commands and fast&minus;import responses on the
+helper&rsquo;s stdin.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><i>export&minus;marks</i>
+&lt;file&gt;</p>
+
+<p style="margin-left:23%;">This modifies the <i>export</i>
+capability, instructing Git to dump the internal marks table
+to &lt;file&gt; when complete. For details, read up on
+<i>&minus;&minus;export&minus;marks=&lt;file&gt;</i> in
+<b>git-fast-export</b>(1).</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><i>import&minus;marks</i>
+&lt;file&gt;</p>
+
+<p style="margin-left:23%;">This modifies the <i>export</i>
+capability, instructing Git to load the marks specified in
+&lt;file&gt; before processing any input. For details, read
+up on <i>&minus;&minus;import&minus;marks=&lt;file&gt;</i>
+in <b>git-fast-export</b>(1).</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><i>signed&minus;tags</i></p>
+
+<p style="margin-left:23%;">This modifies the <i>export</i>
+capability, instructing Git to pass
+<i>&minus;&minus;signed&minus;tags=verbatim</i> to
+<b>git-fast-export</b>(1). In the absence of this
+capability, Git will use
+<i>&minus;&minus;signed&minus;tags=warn&minus;strip</i>.</p>
+
+<h2>COMMANDS
+<a name="COMMANDS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Commands are
+given by the caller on the helper&rsquo;s standard input,
+one per line.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>capabilities</i></p>
+
+<p style="margin-left:17%;">Lists the capabilities of the
+helper, one per line, ending with a blank line. Each
+capability may be preceded with <i>*</i>, which marks them
+mandatory for Git versions using the remote helper to
+understand. Any unknown mandatory capability is a fatal
+error.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Support for
+this command is mandatory.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>list</i></p>
+
+<p style="margin-left:17%;">Lists the refs, one per line,
+in the format &quot;&lt;value&gt; &lt;name&gt; [&lt;attr&gt;
+...]&quot;. The value may be a hex sha1 hash,
+&quot;@&lt;dest&gt;&quot; for a symref, or &quot;?&quot; to
+indicate that the helper could not get the value of the ref.
+A space&minus;separated list of attributes follows the name;
+unrecognized attributes are ignored. The list ends with a
+blank line.</p>
+
+<p style="margin-left:17%; margin-top: 1em">See REF LIST
+ATTRIBUTES for a list of currently defined attributes.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Supported if
+the helper has the &quot;fetch&quot; or &quot;import&quot;
+capability.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>list
+for&minus;push</i></p>
+
+<p style="margin-left:17%;">Similar to <i>list</i>, except
+that it is used if and only if the caller wants to the
+resulting ref list to prepare push commands. A helper
+supporting both push and fetch can use this to distinguish
+for which operation the output of <i>list</i> is going to be
+used, possibly reducing the amount of work that needs to be
+performed.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Supported if
+the helper has the &quot;push&quot; or &quot;export&quot;
+capability.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>option</i>
+&lt;name&gt; &lt;value&gt;</p>
+
+<p style="margin-left:17%;">Sets the transport helper
+option &lt;name&gt; to &lt;value&gt;. Outputs a single line
+containing one of <i>ok</i> (option successfully set),
+<i>unsupported</i> (option not recognized) or <i>error
+&lt;msg&gt;</i> (option &lt;name&gt; is supported but
+&lt;value&gt; is not valid for it). Options should be set
+before other commands, and may influence the behavior of
+those commands.</p>
+
+<p style="margin-left:17%; margin-top: 1em">See OPTIONS for
+a list of currently defined options.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Supported if
+the helper has the &quot;option&quot; capability.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>fetch</i>
+&lt;sha1&gt; &lt;name&gt;</p>
+
+<p style="margin-left:17%;">Fetches the given object,
+writing the necessary objects to the database. Fetch
+commands are sent in a batch, one per line, terminated with
+a blank line. Outputs a single blank line when all fetch
+commands in the same batch are complete. Only objects which
+were reported in the output of <i>list</i> with a sha1 may
+be fetched this way.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Optionally may
+output a <i>lock &lt;file&gt;</i> line indicating a file
+under GIT_DIR/objects/pack which is keeping a pack until
+refs can be suitably updated.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Supported if
+the helper has the &quot;fetch&quot; capability.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>push</i>
++&lt;src&gt;:&lt;dst&gt;</p>
+
+<p style="margin-left:17%;">Pushes the given local
+&lt;src&gt; commit or branch to the remote branch described
+by &lt;dst&gt;. A batch sequence of one or more <i>push</i>
+commands is terminated with a blank line (if there is only
+one reference to push, a single <i>push</i> command is
+followed by a blank line). For example, the following would
+be two batches of <i>push</i>, the first asking the
+remote&minus;helper to push the local ref <i>master</i> to
+the remote ref <i>master</i> and the local <i>HEAD</i> to
+the remote <i>branch</i>, and the second asking to push ref
+<i>foo</i> to ref <i>bar</i> (forced update requested by the
+<i>+</i>).</p>
+
+<p style="margin-left:23%; margin-top: 1em">push
+refs/heads/master:refs/heads/master <br>
+push HEAD:refs/heads/branch <br>
+\n <br>
+push +refs/heads/foo:refs/heads/bar <br>
+\n</p>
+
+<p style="margin-left:17%; margin-top: 1em">Zero or more
+protocol options may be entered after the last <i>push</i>
+command, before the batch&rsquo;s terminating blank
+line.</p>
+
+<p style="margin-left:17%; margin-top: 1em">When the push
+is complete, outputs one or more <i>ok &lt;dst&gt;</i> or
+<i>error &lt;dst&gt; &lt;why&gt;?</i> lines to indicate
+success or failure of each pushed ref. The status report
+output is terminated by a blank line. The option field
+&lt;why&gt; may be quoted in a C style string if it contains
+an LF.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Supported if
+the helper has the &quot;push&quot; capability.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>import</i>
+&lt;name&gt;</p>
+
+<p style="margin-left:17%;">Produces a fast&minus;import
+stream which imports the current value of the named ref. It
+may additionally import other refs as needed to construct
+the history efficiently. The script writes to a
+helper&minus;specific private namespace. The value of the
+named ref should be written to a location in this namespace
+derived by applying the refspecs from the
+&quot;refspec&quot; capability to the name of the ref.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Especially
+useful for interoperability with a foreign versioning
+system.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Just like
+<i>push</i>, a batch sequence of one or more <i>import</i>
+is terminated with a blank line. For each batch of
+<i>import</i>, the remote helper should produce a
+fast&minus;import stream terminated by a <i>done</i>
+command.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Note that if
+the <i>bidi&minus;import</i> capability is used the complete
+batch sequence has to be buffered before starting to send
+data to fast&minus;import to prevent mixing of commands and
+fast&minus;import responses on the helper&rsquo;s stdin.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Supported if
+the helper has the &quot;import&quot; capability.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>export</i></p>
+
+<p style="margin-left:17%;">Instructs the remote helper
+that any subsequent input is part of a fast&minus;import
+stream (generated by <i>git fast&minus;export</i>)
+containing objects which should be pushed to the remote.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Especially
+useful for interoperability with a foreign versioning
+system.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The
+<i>export&minus;marks</i> and <i>import&minus;marks</i>
+capabilities, if specified, affect this command in so far as
+they are passed on to <i>git fast&minus;export</i>, which
+then will load/store a table of marks for local objects.
+This can be used to implement for incremental
+operations.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Supported if
+the helper has the &quot;export&quot; capability.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>connect</i>
+&lt;service&gt;</p>
+
+<p style="margin-left:17%;">Connects to given service.
+Standard input and standard output of helper are connected
+to specified service (git prefix is included in service name
+so e.g. fetching uses <i>git&minus;upload&minus;pack</i> as
+service) on remote side. Valid replies to this command are
+empty line (connection established), <i>fallback</i> (no
+smart transport support, fall back to dumb transports) and
+just exiting with error message printed (can&rsquo;t
+connect, don&rsquo;t bother trying to fall back). After line
+feed terminating the positive (empty) response, the output
+of service starts. After the connection ends, the remote
+helper exits.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Supported if
+the helper has the &quot;connect&quot; capability.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If a fatal
+error occurs, the program writes the error message to stderr
+and exits. The caller should expect that a suitable error
+message has been printed if the child closes the connection
+without completing a valid response for the current
+command.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Additional
+commands may be supported, as may be determined from
+capabilities reported by the helper.</p>
+
+<h2>REF LIST ATTRIBUTES
+<a name="REF LIST ATTRIBUTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The <i>list</i>
+command produces a list of refs in which each ref may be
+followed by a list of attributes. The following ref list
+attributes are defined.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>unchanged</i></p>
+
+<p style="margin-left:17%;">This ref is unchanged since the
+last import or fetch, although the helper cannot necessarily
+determine what value that produced.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+options are defined and (under suitable circumstances) set
+by Git if the remote helper has the <i>option</i>
+capability.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>option
+verbosity</i> &lt;n&gt;</p>
+
+<p style="margin-left:17%;">Changes the verbosity of
+messages displayed by the helper. A value of 0 for &lt;n&gt;
+means that processes operate quietly, and the helper
+produces only error output. 1 is the default level of
+verbosity, and higher values of &lt;n&gt; correspond to the
+number of &minus;v flags passed on the command line.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>option
+progress</i> {<i>true</i>|<i>false</i>}</p>
+
+<p style="margin-left:17%;">Enables (or disables) progress
+messages displayed by the transport helper during a
+command.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>option
+depth</i> &lt;depth&gt;</p>
+
+<p style="margin-left:17%;">Deepens the history of a
+shallow repository.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>option
+followtags</i> {<i>true</i>|<i>false</i>}</p>
+
+<p style="margin-left:17%;">If enabled the helper should
+automatically fetch annotated tag objects if the object the
+tag points at was transferred during the fetch command. If
+the tag is not fetched by the helper a second fetch command
+will usually be sent to ask for the tag specifically. Some
+helpers may be able to use this option to avoid a second
+network connection.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>option
+dry&minus;run</i> {<i>true</i>|<i>false</i>}: If true,
+pretend the operation completed successfully, but
+don&rsquo;t actually change any repository data. For most
+helpers this only applies to the <i>push</i>, if
+supported.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>option
+servpath
+&lt;c&minus;style&minus;quoted&minus;path&gt;</i></p>
+
+<p style="margin-left:17%;">Sets service path
+(&minus;&minus;upload&minus;pack,
+&minus;&minus;receive&minus;pack etc.) for next connect.
+Remote helper may support this option, but must not rely on
+this option being set before connect request occurs.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>git-remote</b>(1)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>git-remote-testgit</b>(1)</p>
+
+<h2>GIT
+<a name="GIT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Part of the
+<b>git</b>(1) suite</p>
+<hr>
+</body>
+</html>

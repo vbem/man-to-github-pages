@@ -1,0 +1,226 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:38:52 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>RSA_get_ex_new_index</title>
+
+</head>
+<body>
+
+<h1 align="center">RSA_get_ex_new_index</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUES">RETURN VALUES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#HISTORY">HISTORY</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">RSA_get_ex_new_index,
+RSA_set_ex_data, RSA_get_ex_data &minus; add application
+specific data to RSA structures</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> #include &lt;openssl/rsa.h&gt;
+ int RSA_get_ex_new_index(long argl, void *argp,
+                CRYPTO_EX_new *new_func,
+                CRYPTO_EX_dup *dup_func,
+                CRYPTO_EX_free *free_func);
+ int RSA_set_ex_data(RSA *r, int idx, void *arg);
+ void *RSA_get_ex_data(RSA *r, int idx);
+ typedef int CRYPTO_EX_new(void *parent, void *ptr, CRYPTO_EX_DATA *ad,
+                           int idx, long argl, void *argp);
+ typedef void CRYPTO_EX_free(void *parent, void *ptr, CRYPTO_EX_DATA *ad,
+                             int idx, long argl, void *argp);
+ typedef int CRYPTO_EX_dup(CRYPTO_EX_DATA *to, CRYPTO_EX_DATA *from, void *from_d,
+                           int idx, long argl, void *argp);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Several OpenSSL
+structures can have application specific data attached to
+them. This has several potential uses, it can be used to
+cache data associated with a structure (for example the hash
+of some part of the structure) or some additional data (for
+example a handle to the data in an external library).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since the
+application data can be anything at all it is passed and
+retrieved as a <b>void *</b> type.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b><i>RSA_get_ex_new_index()</i></b> function is initially
+called to &quot;register&quot; some new application specific
+data. It takes three optional function pointers which are
+called when the parent structure (in this case an
+<small>RSA</small> structure) is initially created, when it
+is copied and when it is freed up. If any or all of these
+function pointer arguments are not used they should be set
+to <small>NULL.</small> The precise manner in which these
+function pointers are called is described in more detail
+below. <b><i>RSA_get_ex_new_index()</i></b> also takes
+additional long and pointer parameters which will be passed
+to the supplied functions but which otherwise have no
+special meaning. It returns an <b>index</b> which should be
+stored (typically in a static variable) and passed used in
+the <b>idx</b> parameter in the remaining functions. Each
+successful call to <b><i>RSA_get_ex_new_index()</i></b> will
+return an index greater than any previously returned, this
+is important because the optional functions are called in
+order of increasing index value.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><i>RSA_set_ex_data()</i></b>
+is used to set application specific data, the data is
+supplied in the <b>arg</b> parameter and its precise meaning
+is up to the application.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><i>RSA_get_ex_data()</i></b>
+is used to retrieve application specific data. The data is
+returned to the application, this will be the same value as
+supplied to a previous <b><i>RSA_set_ex_data()</i></b>
+call.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><i>new_func()</i></b>
+is called when a structure is initially allocated (for
+example with <b><i>RSA_new()</i></b>. The parent structure
+members will not have any meaningful values at this point.
+This function will typically be used to allocate any
+application specific structure.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><i>free_func()</i></b>
+is called when a structure is being freed up. The dynamic
+parent structure members should not be accessed because they
+will be freed up when this function is called.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><i>new_func()</i></b>
+and <b><i>free_func()</i></b> take the same parameters.
+<b>parent</b> is a pointer to the parent <small>RSA</small>
+structure. <b>ptr</b> is a the application specific data
+(this wont be of much use in <b><i>new_func()</i></b>.
+<b>ad</b> is a pointer to the
+<b><small>CRYPTO_EX_DATA</small></b> structure from the
+parent <small>RSA</small> structure: the functions
+<b><i>CRYPTO_get_ex_data()</i></b> and
+<b><i>CRYPTO_set_ex_data()</i></b> can be called to
+manipulate it. The <b>idx</b> parameter is the index: this
+will be the same value returned by
+<b><i>RSA_get_ex_new_index()</i></b> when the functions were
+initially registered. Finally the <b>argl</b> and
+<b>argp</b> parameters are the values originally passed to
+the same corresponding parameters when
+<b><i>RSA_get_ex_new_index()</i></b> was called.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><i>dup_func()</i></b>
+is called when a structure is being copied. Pointers to the
+destination and source <b><small>CRYPTO_EX_DATA</small></b>
+structures are passed in the <b>to</b> and <b>from</b>
+parameters respectively. The <b>from_d</b> parameter is
+passed a pointer to the source application data when the
+function is called, when the function returns the value is
+copied to the destination: the application can thus modify
+the data pointed to by <b>from_d</b> and have different
+values in the source and destination. The <b>idx</b>,
+<b>argl</b> and <b>argp</b> parameters are the same as those
+in <b><i>new_func()</i></b> and
+<b><i>free_func()</i></b>.</p>
+
+<h2>RETURN VALUES
+<a name="RETURN VALUES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><i>RSA_get_ex_new_index()</i></b>
+returns a new index or &minus;1 on failure (note 0 is a
+valid index value).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><i>RSA_set_ex_data()</i></b>
+returns 1 on success or 0 on failure.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><i>RSA_get_ex_data()</i></b>
+returns the application data or 0 on failure. 0 may also be
+valid application data but currently it can only fail if
+given an invalid <b>idx</b> parameter.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><i>new_func()</i></b>
+and <b><i>dup_func()</i></b> should return 0 for failure and
+1 for success.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On failure an
+error code can be obtained from <i>ERR_get_error</i>(3).</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><i>dup_func()</i></b>
+is currently never called.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The return
+value of <b><i>new_func()</i></b> is ignored.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b><i>new_func()</i></b> function isn&rsquo;t very useful
+because no meaningful values are present in the parent
+<small>RSA</small> structure when it is called.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>rsa</i>(3),
+<i>CRYPTO_set_ex_data</i>(3)</p>
+
+<h2>HISTORY
+<a name="HISTORY"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>RSA_get_ex_new_index()</i>,
+<i>RSA_set_ex_data()</i> and <i>RSA_get_ex_data()</i> are
+available since SSLeay 0.9.0.</p>
+<hr>
+</body>
+</html>

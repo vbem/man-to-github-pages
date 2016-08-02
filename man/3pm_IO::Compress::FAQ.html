@@ -1,0 +1,913 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:35:05 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>IO::Compress::FAQ</title>
+
+</head>
+<body>
+
+<h1 align="center">IO::Compress::FAQ</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#GENERAL">GENERAL</a><br>
+<a href="#ZIP">ZIP</a><br>
+<a href="#GZIP">GZIP</a><br>
+<a href="#ZLIB">ZLIB</a><br>
+<a href="#Bzip2">Bzip2</a><br>
+<a href="#HTTP &amp; NETWORK">HTTP &amp; NETWORK</a><br>
+<a href="#MISC">MISC</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#MODIFICATION HISTORY">MODIFICATION HISTORY</a><br>
+<a href="#COPYRIGHT AND LICENSE">COPYRIGHT AND LICENSE</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">IO::Compress::FAQ
+&minus;&minus; Frequently Asked Questions about
+IO::Compress</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Common
+questions answered.</p>
+
+<h2>GENERAL
+<a name="GENERAL"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Compatibility
+with Unix compress/uncompress.</b> <br>
+Although <tt>&quot;Compress::Zlib&quot;</tt> has a pair of
+functions called <tt>&quot;compress&quot;</tt> and
+<tt>&quot;uncompress&quot;</tt>, they are <i>not</i> related
+to the Unix programs of the same name. The
+<tt>&quot;Compress::Zlib&quot;</tt> module is not compatible
+with Unix <tt>&quot;compress&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you have the
+<tt>&quot;uncompress&quot;</tt> program available, you can
+use this to read compressed files</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open F, &quot;uncompress &minus;c $filename |&quot;;
+    while (&lt;F&gt;)
+    {
+        ...</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Alternatively,
+if you have the <tt>&quot;gunzip&quot;</tt> program
+available, you can use this to read compressed files</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open F, &quot;gunzip &minus;c $filename |&quot;;
+    while (&lt;F&gt;)
+    {
+        ...</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">and this to
+write compress files, if you have the
+<tt>&quot;compress&quot;</tt> program available</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open F, &quot;| compress &minus;c $filename &quot;;
+    print F &quot;data&quot;;
+    ...
+    close F ;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Accessing
+.tar.Z files</b> <br>
+The <tt>&quot;Archive::Tar&quot;</tt> module can optionally
+use <tt>&quot;Compress::Zlib&quot;</tt> (via the
+<tt>&quot;IO::Zlib&quot;</tt> module) to access tar files
+that have been compressed with <tt>&quot;gzip&quot;</tt>.
+Unfortunately tar files compressed with the Unix
+<tt>&quot;compress&quot;</tt> utility cannot be read by
+<tt>&quot;Compress::Zlib&quot;</tt> and so cannot be
+directly accessed by <tt>&quot;Archive::Tar&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+<tt>&quot;uncompress&quot;</tt> or
+<tt>&quot;gunzip&quot;</tt> programs are available, you can
+use one of these workarounds to read
+<tt>&quot;.tar.Z&quot;</tt> files from
+<tt>&quot;Archive::Tar&quot;</tt></p>
+
+<p style="margin-left:11%; margin-top: 1em">Firstly with
+<tt>&quot;uncompress&quot;</tt></p>
+
+<p style="margin-left:11%; margin-top: 1em"><tt>use strict;
+<br>
+use warnings; <br>
+use Archive::Tar; <br>
+open F, &quot;uncompress &minus;c $filename |&quot;; <br>
+my $tar = Archive::Tar&minus;&gt;new(*F); <br>
+...</tt></p>
+
+<p style="margin-left:11%; margin-top: 1em">and this with
+<tt>&quot;gunzip&quot;</tt></p>
+
+<p style="margin-left:11%; margin-top: 1em"><tt>use strict;
+<br>
+use warnings; <br>
+use Archive::Tar; <br>
+open F, &quot;gunzip &minus;c $filename |&quot;; <br>
+my $tar = Archive::Tar&minus;&gt;new(*F); <br>
+...</tt></p>
+
+<p style="margin-left:11%; margin-top: 1em">Similarly, if
+the <tt>&quot;compress&quot;</tt> program is available, you
+can use this to write a <tt>&quot;.tar.Z&quot;</tt> file</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use strict;
+    use warnings;
+    use Archive::Tar;
+    use IO::File;
+    my $fh = new IO::File &quot;| compress &minus;c &gt;$filename&quot;;
+    my $tar = Archive::Tar&minus;&gt;new();
+    ...
+    $tar&minus;&gt;write($fh);
+    $fh&minus;&gt;close ;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+recompress using a different compression?</b> <br>
+This is easier that you might expect if you realise that all
+the <tt>&quot;IO::Compress::*&quot;</tt> objects are derived
+from <tt>&quot;IO::File&quot;</tt> and that all the
+<tt>&quot;IO::Uncompress::*&quot;</tt> modules can read from
+an <tt>&quot;IO::File&quot;</tt> filehandle.</p>
+
+<p style="margin-left:11%; margin-top: 1em">So, for
+example, say you have a file compressed with gzip that you
+want to recompress with bzip2. Here is all that is needed to
+carry out the recompression.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use IO::Uncompress::Gunzip ':all';
+    use IO::Compress::Bzip2 ':all';
+    my $gzipFile = &quot;somefile.gz&quot;;
+    my $bzipFile = &quot;somefile.bz2&quot;;
+    my $gunzip = new IO::Uncompress::Gunzip $gzipFile
+        or die &quot;Cannot gunzip $gzipFile: $GunzipError\n&quot; ;
+    bzip2 $gunzip =&gt; $bzipFile
+        or die &quot;Cannot bzip2 to $bzipFile: $Bzip2Error\n&quot; ;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Note, there is
+a limitation of this technique. Some compression file
+formats store extra information along with the compressed
+data payload. For example, gzip can optionally store the
+original filename and Zip stores a lot of information about
+the original file. If the original compressed file contains
+any of this extra information, it will not be transferred to
+the new compressed file usign the technique above.</p>
+
+<h2>ZIP
+<a name="ZIP"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>What
+Compression Types do IO::Compress::Zip &amp;
+IO::Uncompress::Unzip support?</b> <br>
+The following compression formats are supported by
+<tt>&quot;IO::Compress::Zip&quot;</tt> and
+<tt>&quot;IO::Uncompress::Unzip&quot;</tt></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="6%"></td>
+<td width="25%">
+
+
+<p>Store (method 0)</p></td>
+<td width="57%">
+</td></tr>
+</table>
+
+<p style="margin-left:18%; margin-top: 1em">No compression
+at all.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="6%"></td>
+<td width="28%">
+
+
+<p style="margin-top: 1em">Deflate (method 8)</p></td>
+<td width="54%">
+</td></tr>
+</table>
+
+<p style="margin-left:18%; margin-top: 1em">This is the
+default compression used when creating a zip file with
+<tt>&quot;IO::Compress::Zip&quot;</tt>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="6%"></td>
+<td width="27%">
+
+
+<p style="margin-top: 1em">Bzip2 (method 12)</p></td>
+<td width="55%">
+</td></tr>
+</table>
+
+<p style="margin-left:18%; margin-top: 1em">Only supported
+if the <tt>&quot;IO&minus;Compress&minus;Bzip2&quot;</tt>
+module is installed.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="6%"></td>
+<td width="25%">
+
+
+<p style="margin-top: 1em">Lzma (method 14)</p></td>
+<td width="57%">
+</td></tr>
+</table>
+
+<p style="margin-left:18%; margin-top: 1em">Only supported
+if the <tt>&quot;IO&minus;Compress&minus;Lzma&quot;</tt>
+module is installed.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Can I
+Read/Write Zip files larger the 4 Gig?</b> <br>
+Yes, both the
+<tt>&quot;IO&minus;Compress&minus;Zip&quot;</tt> and
+<tt>&quot;IO&minus;Uncompress&minus;Unzip&quot;</tt> modules
+support the zip feature called <i>Zip64</i>. That allows
+them to read/write files/buffers larger than 4Gig.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you are
+creating a Zip file using the one-shot interface, and any of
+the input files is greater than 4Gig, a zip64 complaint zip
+file will be created.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    zip &quot;really&minus;large&minus;file&quot; =&gt; &quot;my.zip&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Similarly with
+the one-shot interface, if the input is a buffer larger than
+4 Gig, a zip64 complaint zip file will be created.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    zip \$really_large_buffer =&gt; &quot;my.zip&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The one-shot
+interface allows you to force the creation of a zip64 zip
+file by including the <tt>&quot;Zip64&quot;</tt> option.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    zip $filehandle =&gt; &quot;my.zip&quot;, Zip64 =&gt; 1;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+create a zip64 zip file with the <small>OO</small> interface
+you must specify the <tt>&quot;Zip64&quot;</tt> option.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my $zip = new IO::Compress::Zip &quot;whatever&quot;, Zip64 =&gt; 1;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">When
+uncompressing with
+<tt>&quot;IO&minus;Uncompress&minus;Unzip&quot;</tt>, it
+will automatically detect if the zip file is zip64.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you intend
+to manipulate the Zip64 zip files created with
+<tt>&quot;IO&minus;Compress&minus;Zip&quot;</tt> using an
+external zip/unzip, make sure that it supports Zip64.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In particular,
+if you are using Info-Zip you need to have zip version 3.x
+or better to update a Zip64 archive and unzip version 6.x to
+read a zip64 archive.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Can I write
+more that 64K entries is a Zip files?</b> <br>
+Yes. Zip64 allows this. See previous question.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Zip
+Resources</b> <br>
+The primary reference for zip files is the
+&quot;appnote&quot; document available at
+&lt;http://www.pkware.com/documents/casestudies/APPNOTE.TXT&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">An
+alternatively is the Info-Zip appnote. This is available
+from
+&lt;ftp://ftp.info&minus;zip.org/pub/infozip/doc/&gt;</p>
+
+<h2>GZIP
+<a name="GZIP"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Gzip
+Resources</b> <br>
+The primary reference for gzip files is <small>RFC
+1952</small>
+&lt;http://www.faqs.org/rfcs/rfc1952.html&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">The primary
+site for gzip is <i>http://www.gzip.org</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Dealing with
+Concatenated gzip files</b> <br>
+If the gunzip program encounters a file containing multiple
+gzip files concatenated together it will automatically
+uncompress them all. The example below illustrates this
+behaviour</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ echo abc | gzip &minus;c &gt;x.gz
+    $ echo def | gzip &minus;c &gt;&gt;x.gz
+    $ gunzip &minus;c x.gz
+    abc
+    def</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">By default
+<tt>&quot;IO::Uncompress::Gunzip&quot;</tt> will <i>not</i>
+bahave like the gunzip program. It will only uncompress the
+first gzip data stream in the file, as shown below</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl &minus;MIO::Uncompress::Gunzip=:all &minus;e 'gunzip &quot;x.gz&quot; =&gt; \*STDOUT'
+    abc</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To force
+<tt>&quot;IO::Uncompress::Gunzip&quot;</tt> to uncompress
+all the gzip data streams, include the
+<tt>&quot;MultiStream&quot;</tt> option, as shown below</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl &minus;MIO::Uncompress::Gunzip=:all &minus;e 'gunzip &quot;x.gz&quot; =&gt; \*STDOUT, MultiStream =&gt; 1'
+    abc
+    def</pre>
+
+
+<h2>ZLIB
+<a name="ZLIB"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Zlib
+Resources</b> <br>
+The primary site for the <i>zlib</i> compression library is
+<i>http://www.zlib.org</i>.</p>
+
+<h2>Bzip2
+<a name="Bzip2"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Bzip2
+Resources</b> <br>
+The primary site for bzip2 is
+<i>http://www.bzip.org</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Dealing with
+Concatenated bzip2 files</b> <br>
+If the bunzip2 program encounters a file containing multiple
+bzip2 files concatenated together it will automatically
+uncompress them all. The example below illustrates this
+behaviour</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ echo abc | bzip2 &minus;c &gt;x.bz2
+    $ echo def | bzip2 &minus;c &gt;&gt;x.bz2
+    $ bunzip2 &minus;c x.bz2
+    abc
+    def</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">By default
+<tt>&quot;IO::Uncompress::Bunzip2&quot;</tt> will <i>not</i>
+bahave like the bunzip2 program. It will only uncompress the
+first bunzip2 data stream in the file, as shown below</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl &minus;MIO::Uncompress::Bunzip2=:all &minus;e 'bunzip2 &quot;x.bz2&quot; =&gt; \*STDOUT'
+    abc</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To force
+<tt>&quot;IO::Uncompress::Bunzip2&quot;</tt> to uncompress
+all the bzip2 data streams, include the
+<tt>&quot;MultiStream&quot;</tt> option, as shown below</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl &minus;MIO::Uncompress::Bunzip2=:all &minus;e 'bunzip2 &quot;x.bz2&quot; =&gt; \*STDOUT, MultiStream =&gt; 1'
+    abc
+    def</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Interoperating
+with Pbzip2</b> <br>
+Pbzip2 (&lt;http://compression.ca/pbzip2/&gt;) is a parallel
+implementation of bzip2. The output from pbzip2 consists of
+a series of concatenated bzip2 data streams.</p>
+
+<p style="margin-left:11%; margin-top: 1em">By default
+<tt>&quot;IO::Uncompress::Bzip2&quot;</tt> will only
+uncompress the first bzip2 data stream in a pbzip2 file. To
+uncompress the complete pbzip2 file you must include the
+<tt>&quot;MultiStream&quot;</tt> option, like this.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    bunzip2 $input =&gt; \$output, MultiStream =&gt; 1
+        or die &quot;bunzip2 failed: $Bunzip2Error\n&quot;;</pre>
+
+
+<h2>HTTP &amp; NETWORK
+<a name="HTTP &amp; NETWORK"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Apache::GZip
+Revisited</b> <br>
+Below is a mod_perl Apache compression module, called
+<tt>&quot;Apache::GZip&quot;</tt>, taken from
+<i>http://perl.apache.org/docs/tutorials/tips/mod_perl_tricks/mod_perl_tricks.html#On_the_Fly_Compression</i></p>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  package Apache::GZip;
+  #File: Apache::GZip.pm
+  use strict vars;
+  use Apache::Constants ':common';
+  use Compress::Zlib;
+  use IO::File;
+  use constant GZIP_MAGIC =&gt; 0x1f8b;
+  use constant OS_MAGIC =&gt; 0x03;
+  sub handler {
+      my $r = shift;
+      my ($fh,$gz);
+      my $file = $r&minus;&gt;filename;
+      return DECLINED unless $fh=IO::File&minus;&gt;new($file);
+      $r&minus;&gt;header_out('Content&minus;Encoding'=&gt;'gzip');
+      $r&minus;&gt;send_http_header;
+      return OK if $r&minus;&gt;header_only;
+      tie *STDOUT,'Apache::GZip',$r;
+      print($_) while &lt;$fh&gt;;
+      untie *STDOUT;
+      return OK;
+  }
+  sub TIEHANDLE {
+      my($class,$r) = @_;
+      # initialize a deflation stream
+      my $d = deflateInit(&minus;WindowBits=&gt;&minus;MAX_WBITS()) || return undef;
+      # gzip header &minus;&minus; don't ask how I found out
+      $r&minus;&gt;print(pack(&quot;nccVcc&quot;,GZIP_MAGIC,Z_DEFLATED,0,time(),0,OS_MAGIC));
+      return bless { r   =&gt; $r,
+                     crc =&gt;  crc32(undef),
+                     d   =&gt; $d,
+                     l   =&gt;  0
+                   },$class;
+  }
+  sub PRINT {
+      my $self = shift;
+      foreach (@_) {
+        # deflate the data
+        my $data = $self&minus;&gt;{d}&minus;&gt;deflate($_);
+        $self&minus;&gt;{r}&minus;&gt;print($data);
+        # keep track of its length and crc
+        $self&minus;&gt;{l} += length($_);
+        $self&minus;&gt;{crc} = crc32($_,$self&minus;&gt;{crc});
+      }
+  }
+  sub DESTROY {
+     my $self = shift;
+     # flush the output buffers
+     my $data = $self&minus;&gt;{d}&minus;&gt;flush;
+     $self&minus;&gt;{r}&minus;&gt;print($data);
+     # print the CRC and the total length (uncompressed)
+     $self&minus;&gt;{r}&minus;&gt;print(pack(&quot;LL&quot;,@{$self}{qw/crc l/}));
+  }
+  1;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Here&rsquo;s
+the Apache configuration entry you&rsquo;ll need to make use
+of it. Once set it will result in everything in the
+/compressed directory will be compressed automagically.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  &lt;Location /compressed&gt;
+     SetHandler  perl&minus;script
+     PerlHandler Apache::GZip
+  &lt;/Location&gt;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Although at
+first sight there seems to be quite a lot going on in
+<tt>&quot;Apache::GZip&quot;</tt>, you could sum up what the
+code was doing as follows -- read the contents of the file
+in <tt>&quot;$r&minus;&gt;filename&quot;</tt>, compress it
+and write the compressed data to standard output.
+That&rsquo;s all.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This code has
+to jump through a few hoops to achieve this because</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">1.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The gzip support in
+<tt>&quot;Compress::Zlib&quot;</tt> version 1.x can only
+work with a real filesystem filehandle. The filehandles used
+by Apache modules are not associated with the
+filesystem.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>2.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>That means all the gzip support has to be done by hand
+&minus; in this case by creating a tied filehandle to deal
+with creating the gzip header and trailer.</p></td></tr>
+</table>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;IO::Compress::Gzip&quot;</tt>
+doesn&rsquo;t have that filehandle limitation (this was one
+of the reasons for writing it in the first place). So if
+<tt>&quot;IO::Compress::Gzip&quot;</tt> is used instead of
+<tt>&quot;Compress::Zlib&quot;</tt> the whole tied
+filehandle code can be removed. Here is the rewritten
+code.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  package Apache::GZip;
+  use strict vars;
+  use Apache::Constants ':common';
+  use IO::Compress::Gzip;
+  use IO::File;
+  sub handler {
+      my $r = shift;
+      my ($fh,$gz);
+      my $file = $r&minus;&gt;filename;
+      return DECLINED unless $fh=IO::File&minus;&gt;new($file);
+      $r&minus;&gt;header_out('Content&minus;Encoding'=&gt;'gzip');
+      $r&minus;&gt;send_http_header;
+      return OK if $r&minus;&gt;header_only;
+      my $gz = new IO::Compress::Gzip '&minus;', Minimal =&gt; 1
+          or return DECLINED ;
+      print $gz $_ while &lt;$fh&gt;;
+      return OK;
+  }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">or even more
+succinctly, like this, using a one-shot gzip</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  package Apache::GZip;
+  use strict vars;
+  use Apache::Constants ':common';
+  use IO::Compress::Gzip qw(gzip);
+  sub handler {
+      my $r = shift;
+      $r&minus;&gt;header_out('Content&minus;Encoding'=&gt;'gzip');
+      $r&minus;&gt;send_http_header;
+      return OK if $r&minus;&gt;header_only;
+      gzip $r&minus;&gt;filename =&gt; '&minus;', Minimal =&gt; 1
+        or return DECLINED ;
+      return OK;
+  }
+  1;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The use of
+one-shot <tt>&quot;gzip&quot;</tt> above just reads from
+<tt>&quot;$r&minus;&gt;filename&quot;</tt> and writes the
+compressed data to standard output.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note the use of
+the <tt>&quot;Minimal&quot;</tt> option in the code above.
+When using gzip for Content-Encoding you should
+<i>always</i> use this option. In the example above it will
+prevent the filename being included in the gzip header and
+make the size of the gzip data stream a slight bit
+smaller.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Compressed
+files and Net::FTP</b> <br>
+The <tt>&quot;Net::FTP&quot;</tt> module provides two
+low-level methods called <tt>&quot;stor&quot;</tt> and
+<tt>&quot;retr&quot;</tt> that both return filehandles.
+These filehandles can used with the
+<tt>&quot;IO::Compress/Uncompress&quot;</tt> modules to
+compress or uncompress files read from or written to an
+<small>FTP</small> Server on the fly, without having to
+create a temporary file.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Firstly, here
+is code that uses <tt>&quot;retr&quot;</tt> to uncompressed
+a file as it is read from the <small>FTP</small> Server.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Net::FTP;
+    use IO::Uncompress::Gunzip qw(:all);
+    my $ftp = new Net::FTP ...
+    my $retr_fh = $ftp&minus;&gt;retr($compressed_filename);
+    gunzip $retr_fh =&gt; $outFilename, AutoClose =&gt; 1
+        or die &quot;Cannot uncompress '$compressed_file': $GunzipError\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">and this to
+compress a file as it is written to the <small>FTP</small>
+Server</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Net::FTP;
+    use IO::Compress::Gzip qw(:all);
+    my $stor_fh = $ftp&minus;&gt;stor($filename);
+    gzip &quot;filename&quot; =&gt; $stor_fh, AutoClose =&gt; 1
+        or die &quot;Cannot compress '$filename': $GzipError\n&quot;;</pre>
+
+
+<h2>MISC
+<a name="MISC"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Using
+&quot;InputLength&quot; to uncompress data embedded in a
+larger file/buffer.</b> <br>
+A fairly common use-case is where compressed data is
+embedded in a larger file/buffer and you want to read
+both.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As an example
+consider the structure of a zip file. This is a well-defined
+file format that mixes both compressed and uncompressed
+sections of data in a single file.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For the
+purposes of this discussion you can think of a zip file as
+sequence of compressed data streams, each of which is
+prefixed by an uncompressed local header. The local header
+contains information about the compressed data stream,
+including the name of the compressed file and, in
+particular, the length of the compressed data stream.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To illustrate
+how to use <tt>&quot;InputLength&quot;</tt> here is a script
+that walks a zip file and prints out how many lines are in
+each compressed file (if you intend write code to walking
+through a zip file for real see &quot;Walking through a zip
+file&quot; in IO::Uncompress::Unzip ). Also, although this
+example uses the zlib-based compression, the technique can
+be used by the other <tt>&quot;IO::Uncompress::*&quot;</tt>
+modules.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use strict;
+    use warnings;
+    use IO::File;
+    use IO::Uncompress::RawInflate qw(:all);
+    use constant ZIP_LOCAL_HDR_SIG  =&gt; 0x04034b50;
+    use constant ZIP_LOCAL_HDR_LENGTH =&gt; 30;
+    my $file = $ARGV[0] ;
+    my $fh = new IO::File &quot;&lt;$file&quot;
+                or die &quot;Cannot open '$file': $!\n&quot;;
+    while (1)
+    {
+        my $sig;
+        my $buffer;
+        my $x ;
+        ($x = $fh&minus;&gt;read($buffer, ZIP_LOCAL_HDR_LENGTH)) == ZIP_LOCAL_HDR_LENGTH
+            or die &quot;Truncated file: $!\n&quot;;
+        my $signature = unpack (&quot;V&quot;, substr($buffer, 0, 4));
+        last unless $signature == ZIP_LOCAL_HDR_SIG;
+        # Read Local Header
+        my $gpFlag             = unpack (&quot;v&quot;, substr($buffer, 6, 2));
+        my $compressedMethod   = unpack (&quot;v&quot;, substr($buffer, 8, 2));
+        my $compressedLength   = unpack (&quot;V&quot;, substr($buffer, 18, 4));
+        my $uncompressedLength = unpack (&quot;V&quot;, substr($buffer, 22, 4));
+        my $filename_length    = unpack (&quot;v&quot;, substr($buffer, 26, 2));
+        my $extra_length       = unpack (&quot;v&quot;, substr($buffer, 28, 2));
+        my $filename ;
+        $fh&minus;&gt;read($filename, $filename_length) == $filename_length
+            or die &quot;Truncated file\n&quot;;
+        $fh&minus;&gt;read($buffer, $extra_length) == $extra_length
+            or die &quot;Truncated file\n&quot;;
+        if ($compressedMethod != 8 &amp;&amp; $compressedMethod != 0)
+        {
+            warn &quot;Skipping file '$filename' &minus; not deflated $compressedMethod\n&quot;;
+            $fh&minus;&gt;read($buffer, $compressedLength) == $compressedLength
+                or die &quot;Truncated file\n&quot;;
+            next;
+        }
+        if ($compressedMethod == 0 &amp;&amp; $gpFlag &amp; 8 == 8)
+        {
+            die &quot;Streamed Stored not supported for '$filename'\n&quot;;
+        }
+        next if $compressedLength == 0;
+        # Done reading the Local Header
+        my $inf = new IO::Uncompress::RawInflate $fh,
+                            Transparent =&gt; 1,
+                            InputLength =&gt; $compressedLength
+          or die &quot;Cannot uncompress $file [$filename]: $RawInflateError\n&quot;  ;
+        my $line_count = 0;
+        while (&lt;$inf&gt;)
+        {
+            ++ $line_count;
+        }
+        print &quot;$filename: $line_count\n&quot;;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The majority of
+the code above is concerned with reading the zip local
+header data. The code that I want to focus on is at the
+bottom.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    while (1) {
+        # read local zip header data
+        # get $filename
+        # get $compressedLength
+        my $inf = new IO::Uncompress::RawInflate $fh,
+                            Transparent =&gt; 1,
+                            InputLength =&gt; $compressedLength
+          or die &quot;Cannot uncompress $file [$filename]: $RawInflateError\n&quot;  ;
+        my $line_count = 0;
+        while (&lt;$inf&gt;)
+        {
+            ++ $line_count;
+        }
+        print &quot;$filename: $line_count\n&quot;;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The call to
+<tt>&quot;IO::Uncompress::RawInflate&quot;</tt> creates a
+new filehandle <tt>$inf</tt> that can be used to read from
+the parent filehandle <tt>$fh</tt>, uncompressing it as it
+goes. The use of the <tt>&quot;InputLength&quot;</tt> option
+will guarantee that <i>at most</i>
+<tt>$compressedLength</tt> bytes of compressed data will be
+read from the <tt>$fh</tt> filehandle (The only exception is
+for an error case like a truncated file or a corrupt data
+stream).</p>
+
+<p style="margin-left:11%; margin-top: 1em">This means that
+once RawInflate is finished <tt>$fh</tt> will be left at the
+byte directly after the compressed data stream.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Now consider
+what the code looks like without
+<tt>&quot;InputLength&quot;</tt></p>
+
+<p style="margin-left:11%; margin-top: 1em"><tt>while (1) {
+<br>
+# read local zip header data <br>
+# get $filename <br>
+# get $compressedLength <br>
+# read all the compressed data into $data <br>
+read($fh, $data, $compressedLength); <br>
+my $inf = new IO::Uncompress::RawInflate \$data, <br>
+Transparent =&gt; 1, <br>
+or die &quot;Cannot uncompress $file [$filename]:
+$RawInflateError\n&quot; ; <br>
+my $line_count = 0; <br>
+while (&lt;$inf&gt;) <br>
+{ <br>
+++ $line_count; <br>
+} <br>
+print &quot;$filename: $line_count\n&quot;; <br>
+}</tt></p>
+
+<p style="margin-left:11%; margin-top: 1em">The difference
+here is the addition of the temporary variable
+<tt>$data</tt>. This is used to store a copy of the
+compressed data while it is being uncompressed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you know
+that <tt>$compressedLength</tt> isn&rsquo;t that big then
+using temporary storage won&rsquo;t be a problem. But if
+<tt>$compressedLength</tt> is very large or you are writing
+an application that other people will use, and so have no
+idea how big <tt>$compressedLength</tt> will be, it could be
+an issue.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Using
+<tt>&quot;InputLength&quot;</tt> avoids the use of temporary
+storage and means the application can cope with large
+compressed data streams.</p>
+
+<p style="margin-left:11%; margin-top: 1em">One final point
+-- obviously <tt>&quot;InputLength&quot;</tt> can only be
+used whenever you know the length of the compressed data
+beforehand, like here with a zip file.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">Compress::Zlib,
+IO::Compress::Gzip, IO::Uncompress::Gunzip,
+IO::Compress::Deflate, IO::Uncompress::Inflate,
+IO::Compress::RawDeflate, IO::Uncompress::RawInflate,
+IO::Compress::Bzip2, IO::Uncompress::Bunzip2,
+IO::Compress::Lzma, IO::Uncompress::UnLzma,
+IO::Compress::Xz, IO::Uncompress::UnXz, IO::Compress::Lzop,
+IO::Uncompress::UnLzop, IO::Compress::Lzf,
+IO::Uncompress::UnLzf, IO::Uncompress::AnyInflate,
+IO::Uncompress::AnyUncompress</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">IO::Compress::FAQ</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">File::GlobMapper,
+Archive::Zip, Archive::Tar, IO::Zlib</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This module was
+written by Paul Marquess, <i>pmqs@cpan.org</i>.</p>
+
+<h2>MODIFICATION HISTORY
+<a name="MODIFICATION HISTORY"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">See the Changes
+file.</p>
+
+<h2>COPYRIGHT AND LICENSE
+<a name="COPYRIGHT AND LICENSE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (c)
+2005&minus;2013 Paul Marquess. All rights reserved.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This program is
+free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.</p>
+<hr>
+</body>
+</html>

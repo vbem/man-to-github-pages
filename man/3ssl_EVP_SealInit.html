@@ -1,0 +1,165 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:33:23 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>EVP_SealInit</title>
+
+</head>
+<body>
+
+<h1 align="center">EVP_SealInit</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUES">RETURN VALUES</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#HISTORY">HISTORY</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">EVP_SealInit,
+EVP_SealUpdate, EVP_SealFinal &minus; EVP envelope
+encryption</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> #include &lt;openssl/evp.h&gt;
+ int EVP_SealInit(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type,
+                  unsigned char **ek, int *ekl, unsigned char *iv,
+                  EVP_PKEY **pubk, int npubk);
+ int EVP_SealUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
+         int *outl, unsigned char *in, int inl);
+ int EVP_SealFinal(EVP_CIPHER_CTX *ctx, unsigned char *out,
+         int *outl);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<small>EVP</small> envelope routines are a high level
+interface to envelope encryption. They generate a random key
+and <small>IV</small> (if required) then
+&quot;envelope&quot; it by using public key encryption. Data
+can then be encrypted using this key.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>EVP_SealInit()</i>
+initializes a cipher context <b>ctx</b> for encryption with
+cipher <b>type</b> using a random secret key and
+<small>IV.</small> <b>type</b> is normally supplied by a
+function such as <i>EVP_des_cbc()</i>. The secret key is
+encrypted using one or more public keys, this allows the
+same encrypted data to be decrypted using any of the
+corresponding private keys. <b>ek</b> is an array of buffers
+where the public key encrypted secret key will be written,
+each buffer must contain enough room for the corresponding
+encrypted key: that is <b>ek[i]</b> must have room for
+<b>EVP_PKEY_size(pubk[i])</b> bytes. The actual size of each
+encrypted secret key is written to the array <b>ekl</b>.
+<b>pubk</b> is an array of <b>npubk</b> public keys.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <b>iv</b>
+parameter is a buffer where the generated <small>IV</small>
+is written to. It must contain enough room for the
+corresponding cipher&rsquo;s <small>IV,</small> as
+determined by (for example) EVP_CIPHER_iv_length(type).</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the cipher
+does not require an <small>IV</small> then the <b>iv</b>
+parameter is ignored and can be <b><small>NULL</small></b>
+.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>EVP_SealUpdate()</i>
+and <i>EVP_SealFinal()</i> have exactly the same properties
+as the <i>EVP_EncryptUpdate()</i> and
+<i>EVP_EncryptFinal()</i> routines, as documented on the
+<i>EVP_EncryptInit</i>(3) manual page.</p>
+
+<h2>RETURN VALUES
+<a name="RETURN VALUES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>EVP_SealInit()</i>
+returns 0 on error or <b>npubk</b> if successful.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>EVP_SealUpdate()</i>
+and <i>EVP_SealFinal()</i> return 1 for success and 0 for
+failure.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Because a
+random secret key is generated the random number generator
+must be seeded before calling <i>EVP_SealInit()</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The public key
+must be <small>RSA</small> because it is the only OpenSSL
+public key algorithm that supports key transport.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Envelope
+encryption is the usual method of using public key
+encryption on large amounts of data, this is because public
+key encryption is slow but symmetric encryption is fast. So
+symmetric encryption is used for bulk encryption and the
+small random symmetric key used is transferred using public
+key encryption.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is possible
+to call <i>EVP_SealInit()</i> twice in the same way as
+<i>EVP_EncryptInit()</i>. The first call should have
+<b>npubk</b> set to 0 and (after setting any cipher
+parameters) it should be called again with <b>type</b> set
+to <small>NULL.</small></p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>evp</i>(3),
+<i>rand</i>(3), <i>EVP_EncryptInit</i>(3),
+<i>EVP_OpenInit</i>(3)</p>
+
+<h2>HISTORY
+<a name="HISTORY"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>EVP_SealFinal()</i>
+did not return a value before OpenSSL 0.9.7.</p>
+<hr>
+</body>
+</html>

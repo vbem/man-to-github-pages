@@ -1,0 +1,197 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:33:49 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>FUNZIP</title>
+
+</head>
+<body>
+
+<h1 align="center">FUNZIP</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#ARGUMENTS">ARGUMENTS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#URL">URL</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">funzip &minus;
+filter for extracting from a ZIP archive in a pipe</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>funzip</b>
+[<b>&minus;password</b>] [<i>input[.zip|.gz]</i>]</p>
+
+<h2>ARGUMENTS
+<a name="ARGUMENTS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">[<i>&minus;password</i>]</p>
+
+<p style="margin-left:22%;">Optional password to be used if
+ZIP archive is encrypted. Decryption may not be supported at
+some sites. See DESCRIPTION for more details.</p>
+
+<p style="margin-left:11%;">[<i>input[.zip|.gz]</i>]</p>
+
+<p style="margin-left:22%;">Optional input archive file
+specification. See DESCRIPTION for details.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>funzip</i>
+without a file argument acts as a filter; that is, it
+assumes that a ZIP archive (or a <i>gzip</i>&rsquo;d(1)
+file) is being piped into standard input, and it extracts
+the first member from the archive to stdout. When stdin
+comes from a tty device, <i>funzip</i> assumes that this
+cannot be a stream of (binary) compressed data and shows a
+short help text, instead. If there is a file argument, then
+input is read from the specified file instead of from
+stdin.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A password for
+encrypted zip files can be specified on the command line
+(preceding the file name, if any) by prefixing the password
+with a dash. Note that this constitutes a security risk on
+many systems; currently running processes are often visible
+via simple commands (e.g., <i>ps</i>(1) under Unix), and
+command-line histories can be read. If the first entry of
+the zip file is encrypted and no password is specified on
+the command line, then the user is prompted for a password
+and the password is not echoed on the console.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Given the
+limitation on single-member extraction, <i>funzip</i> is
+most useful in conjunction with a secondary archiver program
+such as <i>tar</i>(1). The following section includes an
+example illustrating this usage in the case of disk backups
+to tape.</p>
+
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">To use
+<i>funzip</i> to extract the first member file of the
+archive test.zip and to pipe it into <i>more</i>(1):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">funzip test.zip | more</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To use
+<i>funzip</i> to test the first member file of test.zip (any
+errors will be reported on standard error):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">funzip test.zip &gt; /dev/null</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To use
+<i>zip</i> and <i>funzip</i> in place of <i>compress</i>(1)
+and <i>zcat</i>(1) (or <i>gzip</i>(1L) and <i>gzcat</i>(1L))
+for tape backups:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">tar cf &minus; . | zip &minus;7 | dd of=/dev/nrst0 obs=8k
+dd if=/dev/nrst0 ibs=8k | funzip | tar xf &minus;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">(where, for
+example, nrst0 is a SCSI tape drive).</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">When piping an
+encrypted file into <i>more</i> and allowing <i>funzip</i>
+to prompt for password, the terminal may sometimes be reset
+to a non-echo mode. This is apparently due to a race
+condition between the two programs; <i>funzip</i> changes
+the terminal mode to non-echo before <i>more</i> reads its
+state, and <i>more</i> then
+&lsquo;&lsquo;restores&rsquo;&rsquo; the terminal to this
+mode before exiting. To recover, run <i>funzip</i> on the
+same file but redirect to /dev/null rather than piping into
+more; after prompting again for the password, <i>funzip</i>
+will reset the terminal properly.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is
+presently no way to extract any member but the first from a
+ZIP archive. This would be useful in the case where a ZIP
+archive is included within another archive. In the case
+where the first member is a directory, <i>funzip</i> simply
+creates the directory and exits.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+functionality of <i>funzip</i> should be incorporated into
+<i>unzip</i> itself (future release).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>gzip</i>(1L),
+<i>unzip</i>(1L), <i>unzipsfx</i>(1L), <i>zip</i>(1L),
+<i>zipcloak</i>(1L), <i>zipinfo</i>(1L), <i>zipnote</i>(1L),
+<i>zipsplit</i>(1L)</p>
+
+<h2>URL
+<a name="URL"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The Info-ZIP
+home page is currently at</p>
+
+<pre style="margin-left:11%;">http://www.info-zip.org/pub/infozip/</pre>
+
+
+<p style="margin-left:11%;">or <tt><br>
+ftp://ftp.info-zip.org/pub/infozip/</tt> .</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Mark Adler
+(Info-ZIP)</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:41:24 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>X509_STORE_CTX_set_verify_cb</title>
+
+</head>
+<body>
+
+<h1 align="center">X509_STORE_CTX_set_verify_cb</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#WARNING">WARNING</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#RETURN VALUES">RETURN VALUES</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#HISTORY">HISTORY</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">X509_STORE_CTX_set_verify_cb
+&minus; set verification callback</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> #include &lt;openssl/x509_vfy.h&gt;
+ void X509_STORE_CTX_set_verify_cb(X509_STORE_CTX *ctx,
+                                int (*verify_cb)(int ok, X509_STORE_CTX *ctx));</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>X509_STORE_CTX_set_verify_cb()</i>
+sets the verification callback of <b>ctx</b> to
+<b>verify_cb</b> overwriting any existing callback.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+verification callback can be used to customise the operation
+of certificate verification, either by overriding error
+conditions or logging errors for debugging purposes.</p>
+
+<p style="margin-left:11%; margin-top: 1em">However a
+verification callback is <b>not</b> essential and the
+default operation is often sufficient.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <b>ok</b>
+parameter to the callback indicates the value the callback
+should return to retain the default behaviour. If it is zero
+then and error condition is indicated. If it is 1 then no
+error occurred. If the flag <b>X509_V_FLAG_NOTIFY_POLICY</b>
+is set then <b>ok</b> is set to 2 to indicate the policy
+checking is complete.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <b>ctx</b>
+parameter to the callback is the <b>X509_STORE_CTX</b>
+structure that is performing the verification operation. A
+callback can examine this structure and receive additional
+information about the error, for example by calling
+<i>X509_STORE_CTX_get_current_cert()</i>. Additional
+application data can be passed to the callback via the
+<b>ex_data</b> mechanism.</p>
+
+<h2>WARNING
+<a name="WARNING"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In general a
+verification callback should <b><small>NOT</small></b>
+unconditionally return 1 in all circumstances because this
+will allow verification to succeed no matter what the error.
+This effectively removes all security from the application
+because <b>any</b> certificate (including untrusted
+generated ones) will be accepted.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+verification callback can be set and inherited from the
+parent structure performing the operation. In some cases
+(such as S/MIME verification) the <b>X509_STORE_CTX</b>
+structure is created and destroyed internally and the only
+way to set a custom verification callback is by inheriting
+it from the associated <b>X509_STORE</b>.</p>
+
+<h2>RETURN VALUES
+<a name="RETURN VALUES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>X509_STORE_CTX_set_verify_cb()</i>
+does not return a value.</p>
+
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Default
+callback operation:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> int verify_callback(int ok, X509_STORE_CTX *ctx)
+        {
+        return ok;
+        }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Simple example,
+suppose a certificate in the chain is expired and we wish to
+continue after this error:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> int verify_callback(int ok, X509_STORE_CTX *ctx)
+        {
+        /* Tolerate certificate expiration */
+        if (X509_STORE_CTX_get_error(ctx) == X509_V_ERR_CERT_HAS_EXPIRED)
+                        return 1;
+        /* Otherwise don't override */
+        return ok;
+        }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">More complex
+example, we don&rsquo;t wish to continue after <b>any</b>
+certificate has expired just one specific case:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> int verify_callback(int ok, X509_STORE_CTX *ctx)
+        {
+        int err = X509_STORE_CTX_get_error(ctx);
+        X509 *err_cert = X509_STORE_CTX_get_current_cert(ctx);
+        if (err == X509_V_ERR_CERT_HAS_EXPIRED)
+                {
+                if (check_is_acceptable_expired_cert(err_cert)
+                        return 1;
+                }
+        return ok;
+        }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Full featured
+logging callback. In this case the <b>bio_err</b> is assumed
+to be a global logging <b><small>BIO</small></b> , an
+alternative would to store a <small>BIO</small> in
+<b>ctx</b> using <b>ex_data</b>.</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> int verify_callback(int ok, X509_STORE_CTX *ctx)
+        {
+        X509 *err_cert;
+        int err,depth;
+        err_cert = X509_STORE_CTX_get_current_cert(ctx);
+        err =   X509_STORE_CTX_get_error(ctx);
+        depth = X509_STORE_CTX_get_error_depth(ctx);
+        BIO_printf(bio_err,&quot;depth=%d &quot;,depth);
+        if (err_cert)
+                {
+                X509_NAME_print_ex(bio_err, X509_get_subject_name(err_cert),
+                                        0, XN_FLAG_ONELINE);
+                BIO_puts(bio_err, &quot;\n&quot;);
+                }
+        else
+                BIO_puts(bio_err, &quot;&lt;no cert&gt;\n&quot;);
+        if (!ok)
+                BIO_printf(bio_err,&quot;verify error:num=%d:%s\n&quot;,err,
+                        X509_verify_cert_error_string(err));
+        switch (err)
+                {
+        case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
+                BIO_puts(bio_err,&quot;issuer= &quot;);
+                X509_NAME_print_ex(bio_err, X509_get_issuer_name(err_cert),
+                                        0, XN_FLAG_ONELINE);
+                BIO_puts(bio_err, &quot;\n&quot;);
+                break;
+        case X509_V_ERR_CERT_NOT_YET_VALID:
+        case X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD:
+                BIO_printf(bio_err,&quot;notBefore=&quot;);
+                ASN1_TIME_print(bio_err,X509_get_notBefore(err_cert));
+                BIO_printf(bio_err,&quot;\n&quot;);
+                break;
+        case X509_V_ERR_CERT_HAS_EXPIRED:
+        case X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD:
+                BIO_printf(bio_err,&quot;notAfter=&quot;);
+                ASN1_TIME_print(bio_err,X509_get_notAfter(err_cert));
+                BIO_printf(bio_err,&quot;\n&quot;);
+                break;
+        case X509_V_ERR_NO_EXPLICIT_POLICY:
+                policies_print(bio_err, ctx);
+                break;
+                }
+        if (err == X509_V_OK &amp;&amp; ok == 2)
+                /* print out policies */
+        BIO_printf(bio_err,&quot;verify return:%d\n&quot;,ok);
+        return(ok);
+        }</pre>
+
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>X509_STORE_CTX_get_error</i>(3)
+<i>X509_STORE_set_verify_cb_func</i>(3)
+<i>X509_STORE_CTX_get_ex_new_index</i>(3)</p>
+
+<h2>HISTORY
+<a name="HISTORY"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>X509_STORE_CTX_set_verify_cb()</i>
+is available in all versions of SSLeay and OpenSSL.</p>
+<hr>
+</body>
+</html>

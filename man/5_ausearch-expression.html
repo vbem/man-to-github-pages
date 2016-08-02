@@ -1,0 +1,285 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:30:29 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>AUSEARCH-EXPRESSION</title>
+
+</head>
+<body>
+
+<h1 align="center">AUSEARCH-EXPRESSION</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#OVERVIEW">OVERVIEW</a><br>
+<a href="#LEXICAL STRUCTURE">LEXICAL STRUCTURE</a><br>
+<a href="#EXPRESSION SYNTAX">EXPRESSION SYNTAX</a><br>
+<a href="#VIRTUAL FIELDS">VIRTUAL FIELDS</a><br>
+<a href="#SEMANTICS">SEMANTICS</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
+<a href="#FUTURE DIRECTIONS">FUTURE DIRECTIONS</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">ausearch-expression
+&minus; audit search expression format</p>
+
+<h2>OVERVIEW
+<a name="OVERVIEW"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This man page
+describes the format of &quot;ausearch expressions&quot;.
+Parsing and evaluation of these expressions is provided by
+libauparse and is common to applications that use this
+library.</p>
+
+<h2>LEXICAL STRUCTURE
+<a name="LEXICAL STRUCTURE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">White space
+(ASCII space, tab and new-line characters) between tokens is
+ignored. The following tokens are recognized: <br>
+Punctuation</p>
+
+<p style="margin-left:22%;"><b>( ) \</b></p>
+
+<p style="margin-left:11%;">Logical operators</p>
+
+<p style="margin-left:22%;"><b>! &amp;&amp; ||</b></p>
+
+<p style="margin-left:11%;">Comparison operators</p>
+
+<p style="margin-left:22%;"><b>&lt; &lt;= == &gt; &gt;= !==
+i= i!= r= r!=</b></p>
+
+<p style="margin-left:11%;">Unquoted strings</p>
+
+<p style="margin-left:22%;">Any non-empty sequence of ASCII
+letters, digits, and the <b>_</b> symbol.</p>
+
+<p style="margin-left:11%;">Quoted strings</p>
+
+<p style="margin-left:22%;">A sequence of characters
+surrounded by the <b>&quot;</b> quotes. The <b>\</b>
+character starts an escape sequence. The only defined escape
+sequences are <b>\\</b> and <b>\&quot;</b>. The semantics of
+other escape sequences is undefined.</p>
+
+<p style="margin-left:11%;">Regexps</p>
+
+<p style="margin-left:22%;">A sequence of characters
+surrounded by the <b>/</b> characters. The <b>\</b>
+character starts an escape sequence. The only defined escape
+sequences are <b>\\</b> and <b>\/</b>. The semantics of
+other escape sequences is undefined.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Anywhere an
+unquoted string is valid, a quoted string is valid as well,
+and vice versa. In particular, field names may be specified
+using quoted strings, and field values may be specified
+using unquoted strings.</p>
+
+<h2>EXPRESSION SYNTAX
+<a name="EXPRESSION SYNTAX"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The primary
+expression has one of the following forms:</p>
+
+<p style="margin-left:22%; margin-top: 1em"><i>field
+comparison-operator value</i></p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>\regexp</b>
+<i>string-or-regexp</i></p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>field</i> is
+either a string, which specifies the first field with that
+name within the current audit record, or the <b>\</b> escape
+character followed by a string, which specifies a virtual
+field with the specified name (virtual fields are defined in
+a later section).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>field</i> is
+a string. <i>operator</i> specifies the comparison to
+perform</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>r= r!=</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Get the &quot;raw&quot; string of <i>field</i>, and
+compare it to <i>value</i>. For fields in audit records, the
+&quot;raw&quot; string is the exact string stored in the
+audit record (with all escaping and unprintable character
+encoding left alone); applications can read the
+&quot;raw&quot; string using
+<b>auparse_get_field_str</b>(3). Each virtual field may
+define a &quot;raw&quot; string. If <i>field</i> is not
+present or does not define a &quot;raw&quot; string, the
+result of the comparison is <b>false</b> (regardless of the
+operator).</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>i= i!=</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Get the &quot;interpreted&quot; string of <i>field</i>,
+and compare it to <i>value</i>. For fields in audit records,
+the &quot;interpreted&quot; string is an
+&quot;user-readable&quot; interpretation of the field value;
+applications can read the &quot;interpreted&quot; string
+using <b>auparse_interpret_field</b>(3). Each virtual field
+may define an &quot;interpreted&quot; string. If
+<i>field</i> is not present or does not define an
+&quot;interpreted&quot; string, the result of the comparison
+is <b>false</b> (regardless of the operator).</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>&lt; &lt;= == &gt; &gt;=
+!==</b></p>
+
+<p style="margin-left:22%;">Evaluate the &quot;value&quot;
+of <i>field</i>, and compare it to <i>value</i>. A
+&quot;value&quot; may be defined for any field or virtual
+field, but no &quot;value&quot; is currently defined for any
+audit record field. The rules of parsing <i>value</i> for
+comparing it with the &quot;value&quot; of <i>field</i> are
+specific for each <i>field</i>. If <i>field</i> is not
+present, the result of the comparison is <b>false</b>
+(regardless of the operator). If <i>field</i> does not
+define a &quot;value&quot;, an error is reported when
+parsing the expression.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the special
+case of <b>\regexp</b> <i>regexp-or-string</i>, the current
+audit record is taken as a string (without interpreting
+field values), and matched against <i>regexp-or-string</i>.
+<i>regexp-or-string</i> is an extended regular expression,
+using a string or regexp token (in other words, delimited by
+<b>&quot;</b> or <b>/</b>).</p>
+
+<p style="margin-left:11%; margin-top: 1em">If <i>E1</i>
+and <i>E2</i> are valid expressions, then <b>!</b>
+<i>E1</i>, <i>E1</i> <b>&amp;&amp;</b> <i>E2</i>, and
+<i>E1</i> <b>||</b> <i>E2</i> are valid expressions as well,
+with the usual C semantics and evaluation priorities. Note
+that <b>!</b> <i>field op value</i> is interpreted as
+<b>!(</b><i>field op value</i><b>)</b>, not as
+<b>(!</b><i>field</i><b>)</b> <i>op value</i>.</p>
+
+<h2>VIRTUAL FIELDS
+<a name="VIRTUAL FIELDS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+virtual fields are defined: <b><br>
+\timestamp</b></p>
+
+<p style="margin-left:22%;">The value is the timestamp of
+the current event. <i>value</i> must have the
+<b>ts:</b><i>seconds</i>.<i>milli</i> format, where
+<i>seconds</i> and <i>milli</i> are decimal numbers
+specifying the seconds and milliseconds part of the
+timestamp, respectively.</p>
+
+<p style="margin-left:11%;"><b>\record_type</b></p>
+
+<p style="margin-left:22%;">The value is the type of the
+current record. <i>value</i> is either the record type name,
+or a decimal number specifying the type.</p>
+
+<h2>SEMANTICS
+<a name="SEMANTICS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The expression
+as a whole applies to a single record. The expression is
+<b>true</b> for a specified event if it is <b>true</b> for
+any record associated with the event.</p>
+
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">As a
+demonstration of the semantics of handling missing fields,
+the following expression is <b>true</b> if <i>field</i> is
+present:</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><b>(</b><i>field</i>
+<b>r= &quot;&quot;) || (</b><i>field</i> <b>r!=
+&quot;&quot;)</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">and the same
+expression surrounded by <b>!(</b> and <b>)</b> is
+<b>true</b> if <i>field</i> is not present.</p>
+
+<h2>FUTURE DIRECTIONS
+<a name="FUTURE DIRECTIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">New escape
+sequences for quoted strings may be defined.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For currently
+defined virtual fields that do not define a &quot;raw&quot;
+or &quot;interpreted&quot; string, the definition may be
+added. Therefore, don&rsquo;t rely on the fact that
+comparing the &quot;raw&quot; or &quot;interpreted&quot;
+string of the field with any value is <b>false</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">New formats of
+value constants for the <b>\timestamp</b> virtual field may
+be added.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Miloslav
+Trmac</p>
+<hr>
+</body>
+</html>

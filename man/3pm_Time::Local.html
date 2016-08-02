@@ -1,0 +1,328 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:40:46 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Time::Local</title>
+
+</head>
+<body>
+
+<h1 align="center">Time::Local</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#FUNCTIONS">FUNCTIONS</a><br>
+<a href="#IMPLEMENTATION">IMPLEMENTATION</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SUPPORT">SUPPORT</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Time::Local
+&minus; efficiently compute time from local and GMT time</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">    $time = timelocal( $sec, $min, $hour, $mday, $mon, $year );
+    $time = timegm( $sec, $min, $hour, $mday, $mon, $year );</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This module
+provides functions that are the inverse of built-in perl
+functions <tt>&quot;localtime()&quot;</tt> and
+<tt>&quot;gmtime()&quot;</tt>. They accept a date as a
+six-element array, and return the corresponding
+<tt>time(2)</tt> value in seconds since the system epoch
+(Midnight, January 1, 1970 <small>GMT</small> on Unix, for
+example). This value can be positive or negative, though
+<small>POSIX</small> only requires support for positive
+values, so dates before the system&rsquo;s epoch may not
+work on all operating systems.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is worth
+drawing particular attention to the expected ranges for the
+values provided. The value for the day of the month is the
+actual day (ie 1..31), while the month is the number of
+months since January (0..11). This is consistent with the
+values returned from <tt>&quot;localtime()&quot;</tt> and
+<tt>&quot;gmtime()&quot;</tt>.</p>
+
+<h2>FUNCTIONS
+<a name="FUNCTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;timelocal()&quot;
+and &quot;timegm()&quot;</b> <br>
+This module exports two functions by default,
+<tt>&quot;timelocal()&quot;</tt> and
+<tt>&quot;timegm()&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;timelocal()&quot;</tt> and
+<tt>&quot;timegm()&quot;</tt> functions perform range
+checking on the input <tt>$sec</tt>, <tt>$min</tt>,
+<tt>$hour</tt>, <tt>$mday</tt>, and <tt>$mon</tt> values by
+default.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;timelocal_nocheck()&quot;
+and &quot;timegm_nocheck()&quot;</b> <br>
+If you are working with data you know to be valid, you can
+speed your code up by using the &quot;nocheck&quot;
+variants, <tt>&quot;timelocal_nocheck()&quot;</tt> and
+<tt>&quot;timegm_nocheck()&quot;</tt>. These variants must
+be explicitly imported.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Time::Local 'timelocal_nocheck';
+    # The 365th day of 1999
+    print scalar localtime timelocal_nocheck( 0, 0, 0, 365, 0, 99 );</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you supply
+data which is not valid (month 27, second 1,000) the results
+will be unpredictable (so don&rsquo;t do that).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Year Value
+Interpretation</b> <br>
+Strictly speaking, the year should be specified in a form
+consistent with <tt>&quot;localtime()&quot;</tt>, i.e. the
+offset from 1900. In order to make the interpretation of the
+year easier for humans, however, who are more accustomed to
+seeing years as two-digit or four-digit values, the
+following conventions are followed:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Years greater than 999 are interpreted as being the
+actual year, rather than the offset from 1900. Thus, 1964
+would indicate the year Martin Luther King won the Nobel
+prize, not the year 3864.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Years in the range 100..999 are interpreted as offset
+from 1900, so that 112 indicates 2012. This rule also
+applies to years less than zero (but see note below
+regarding date range).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Years in the range 0..99 are interpreted as shorthand
+for years in the rolling &quot;current century,&quot;
+defined as 50 years on either side of the current year.
+Thus, today, in 1999, 0 would refer to 2000, and 45 to 2045,
+but 55 would refer to 1955. Twenty years from now, 55 would
+instead refer to 2055. This is messy, but matches the way
+people currently think about two digit dates. Whenever
+possible, use an absolute four digit year instead.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The scheme
+above allows interpretation of a wide range of dates,
+particularly if 4&minus;digit years are used.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Limits of
+time_t</b> <br>
+On perl versions older than 5.12.0, the range of dates that
+can be actually be handled depends on the size of
+<tt>&quot;time_t&quot;</tt> (usually a signed integer) on
+the given platform. Currently, this is 32 bits for most
+systems, yielding an approximate range from Dec 1901 to Jan
+2038.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Both
+<tt>&quot;timelocal()&quot;</tt> and
+<tt>&quot;timegm()&quot;</tt> croak if given dates outside
+the supported range.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As of version
+5.12.0, perl has stopped using the underlying time library
+of the operating system it&rsquo;s running on and has its
+own implementation of those routines with a safe range of at
+least +/ 2**52 (about 142 million years).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Ambiguous
+Local Times ( <small>DST</small> )</b> <br>
+Because of <small>DST</small> changes, there are many time
+zones where the same local time occurs for two different
+<small>GMT</small> times on the same day. For example, in
+the &quot;Europe/Paris&quot; time zone, the local time of
+2001&minus;10&minus;28 02:30:00 can represent either
+2001&minus;10&minus;28 00:30:00 <small>GMT,</small>
+<b>or</b> 2001&minus;10&minus;28 01:30:00
+<small>GMT.</small></p>
+
+<p style="margin-left:11%; margin-top: 1em">When given an
+ambiguous local time, the <i>timelocal()</i> function should
+always return the epoch for the <i>earlier</i> of the two
+possible <small>GMT</small> times.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Non-Existent
+Local Times ( <small>DST</small> )</b> <br>
+When a <small>DST</small> change causes a locale clock to
+skip one hour forward, there will be an hour&rsquo;s worth
+of local times that don&rsquo;t exist. Again, for the
+&quot;Europe/Paris&quot; time zone, the local clock jumped
+from 2001&minus;03&minus;25 01:59:59 to
+2001&minus;03&minus;25 03:00:00.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+<tt>&quot;timelocal()&quot;</tt> function is given a
+non-existent local time, it will simply return an epoch
+value for the time one hour later.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Negative
+Epoch Values</b> <br>
+On perl version 5.12.0 and newer, negative epoch values are
+fully supported.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On older
+versions of perl, negative epoch
+(<tt>&quot;time_t&quot;</tt>) values, which are not
+officially supported by the <small>POSIX</small> standards,
+are known not to work on some systems. These include MacOS
+(pre-OSX) and Win32.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On systems
+which do support negative epoch values, this module should
+be able to cope with dates before the start of the epoch,
+down the minimum value of time_t for the system.</p>
+
+<h2>IMPLEMENTATION
+<a name="IMPLEMENTATION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These routines
+are quite efficient and yet are always guaranteed to agree
+with <tt>&quot;localtime()&quot;</tt> and
+<tt>&quot;gmtime()&quot;</tt>. We manage this by caching the
+start times of any months we&rsquo;ve seen before. If we
+know the start time of the month, we can always calculate
+any time within the month. The start times are calculated
+using a mathematical formula. Unlike other algorithms that
+do multiple calls to <tt>&quot;gmtime()&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;timelocal()&quot;</tt> function is implemented
+using the same cache. We just assume that we&rsquo;re
+translating a <small>GMT</small> time, and then fudge it
+when we&rsquo;re done for the timezone and daylight savings
+arguments. Note that the timezone is evaluated for each date
+because countries occasionally change their official
+timezones. Assuming that <tt>&quot;localtime()&quot;</tt>
+corrects for these changes, this routine will also be
+correct.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The whole
+scheme for interpreting two-digit years can be considered a
+bug.</p>
+
+<h2>SUPPORT
+<a name="SUPPORT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Support for
+this module is provided via the datetime@perl.org email
+list. See http://lists.perl.org/ for more details.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Please submit
+bugs to the <small>CPAN RT</small> system at
+http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Time&minus;Local
+or via email at bug&minus;time&minus;local@rt.cpan.org.</p>
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (c)
+1997&minus;2003 Graham Barr, 2003&minus;2007 David Rolsky.
+All rights reserved. This program is free software; you can
+redistribute it and/or modify it under the same terms as
+Perl itself.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The full text
+of the license can be found in the <small>LICENSE</small>
+file included with this module.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This module is
+based on a Perl 4 library, timelocal.pl, that was included
+with Perl 4.036, and was most likely written by Tom
+Christiansen.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The current
+version was written by Graham Barr.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is now being
+maintained separately from the Perl core by Dave Rolsky,
+&lt;autarch@urth.org&gt;.</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,906 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:30:36 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>B::Deparse</title>
+
+</head>
+<body>
+
+<h1 align="center">B::Deparse</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#USING B::Deparse AS A MODULE">USING B::Deparse AS A MODULE</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">B::Deparse
+&minus; Perl compiler backend to produce perl code</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>perl
+&minus;MO=Deparse</b>[<b>,&minus;d</b>][<b>,&minus;f</b>
+<i><small>FILE</small></i>
+][<b>,&minus;p</b>][<b>,&minus;q</b>][<b>,&minus;l</b>] <br>
+[<b>,&minus;s</b> <i><small>LETTERS</small></i>
+][<b>,&minus;x</b> <i><small>LEVEL</small></i> ]
+<i>prog.pl</i></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">B::Deparse is a
+backend module for the Perl compiler that generates perl
+source code, based on the internal compiled structure that
+perl itself creates after parsing a program. The output of
+B::Deparse won&rsquo;t be exactly the same as the original
+source, since perl doesn&rsquo;t keep track of comments or
+whitespace, and there isn&rsquo;t a one-to-one
+correspondence between perl&rsquo;s syntactical
+constructions and their compiled form, but it will often be
+close. When you use the <b>&minus;p</b> option, the output
+also includes parentheses even when they are not required by
+precedence, which can make it easy to see if perl is parsing
+your expressions the way you intended.</p>
+
+<p style="margin-left:11%; margin-top: 1em">While
+B::Deparse goes to some lengths to try to figure out what
+your original program was doing, some parts of the language
+can still trip it up; it still fails even on some parts of
+Perl&rsquo;s own test suite. If you encounter a failure
+other than the most common ones described in the
+<small>BUGS</small> section below, you can help contribute
+to B::Deparse&rsquo;s ongoing development by submitting a
+bug report with a small example.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">As with all
+compiler backend options, these must follow directly after
+the &rsquo;&minus;MO=Deparse&rsquo;, separated by a comma
+but not any white space.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>&minus;d</b></p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>Output data values (when they appear as constants) using
+Data::Dumper. Without this option, B::Deparse will use some
+simple routines of its own for the same purpose. Currently,
+Data::Dumper is better for some kinds of data (such as
+complex structures with sharing and self-reference) while
+the built-in routines are better for others (such as odd
+floating-point values).</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>&minus;f</b>
+<i><small>FILE</small></i></p>
+
+<p style="margin-left:17%;">Normally, B::Deparse deparses
+the main code of a program, and all the subs defined in the
+same file. To include subs defined in other files, pass the
+<b>&minus;f</b> option with the filename. You can pass the
+<b>&minus;f</b> option several times, to include more than
+one secondary file. (Most of the time you don&rsquo;t want
+to use it at all.) You can also use this option to include
+subs which are defined in the scope of a <b>#line</b>
+directive with two parameters.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>&minus;l</b></p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>Add &rsquo;#line&rsquo; declarations to the output based
+on the line and file locations of the original code.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>&minus;p</b></p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>Print extra parentheses. Without this option, B::Deparse
+includes parentheses in its output only when they are
+needed, based on the structure of your program. With
+<b>&minus;p</b>, it uses parentheses (almost) whenever they
+would be legal. This can be useful if you are used to
+<small>LISP</small> , or if you want to see how perl parses
+your input. If you say</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    if ($var &amp; 0x7f == 65) {print &quot;Gimme an A!&quot;}
+    print ($which ? $a : $b), &quot;\n&quot;;
+    $name = $ENV{USER} or &quot;Bob&quot;;</pre>
+
+
+
+<p style="margin-left:17%; margin-top: 1em">&quot;B::Deparse,&minus;p&quot;
+will print</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    if (($var &amp; 0)) {
+        print('Gimme an A!')
+    };
+    (print(($which ? $a : $b)), '???');
+    (($name = $ENV{'USER'}) or '???')</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">which probably
+isn&rsquo;t what you intended (the <tt>'???'</tt> is a sign
+that perl optimized away a constant value).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em"><b>&minus;P</b></p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Disable prototype checking. With
+this option, all function calls are deparsed as if no
+prototype was defined for them. In other words,</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    perl &minus;MO=Deparse,&minus;P &minus;e 'sub foo (\@) { 1 } foo @x'</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">will print</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    sub foo (\@) {
+        1;
+    }
+    &amp;foo(\@x);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">making clear
+how the parameters are actually passed to
+<tt>&quot;foo&quot;</tt>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em"><b>&minus;q</b></p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Expand double-quoted strings
+into the corresponding combinations of concatenation, uc,
+ucfirst, lc, lcfirst, quotemeta, and join. For instance,
+print</p> </td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    print &quot;Hello, $world, @ladies, \u$gentlemen\E, \u\L$me!&quot;;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">as</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    print 'Hello, ' . $world . ', ' . join($&quot;, @ladies) . ', '
+          . ucfirst($gentlemen) . ', ' . ucfirst(lc $me . '!');</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Note that the
+expanded form represents the way perl handles such
+constructions internally -- this option actually turns off
+the reverse translation that B::Deparse usually does. On the
+other hand, note that <tt>&quot;$x =
+&quot;$y&quot;&quot;</tt> is not the same as <tt>&quot;$x =
+$y&quot;</tt>: the former makes the value of <tt>$y</tt>
+into a string before doing the assignment.</p>
+
+<p style="margin-left:11%;"><b>&minus;s</b>
+<i><small>LETTERS</small></i></p>
+
+<p style="margin-left:17%;">Tweak the style of
+B::Deparse&rsquo;s output. The letters should follow
+directly after the &rsquo;s&rsquo;, with no space or
+punctuation. The following options are available:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p><b>C</b></p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>Cuddle <tt>&quot;elsif&quot;</tt>,
+<tt>&quot;else&quot;</tt>, and <tt>&quot;continue&quot;</tt>
+blocks. For example, print</p></td></tr>
+</table>
+
+<pre style="margin-left:23%; margin-top: 1em">    if (...) {
+         ...
+    } else {
+         ...
+    }</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">instead of</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    if (...) {
+         ...
+    }
+    else {
+         ...
+    }</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">The default is
+not to cuddle.</p>
+
+<p style="margin-left:17%;"><b>i</b>
+<i><small>NUMBER</small></i></p>
+
+<p style="margin-left:23%;">Indent lines by multiples of
+<i><small>NUMBER</small></i> columns. The default is 4
+columns.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p><b>T</b></p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>Use tabs for each 8 columns of indent. The default is to
+use only spaces. For instance, if the style options are
+<b>&minus;si4T</b>, a line that&rsquo;s indented 3 times
+will be preceded by one tab and four spaces; if the options
+were <b>&minus;si8T</b>, the same line would be preceded by
+three tabs.</p></td></tr>
+</table>
+
+<p style="margin-left:17%;"><b>v</b>
+<i><small>STRING</small></i> <b>.</b></p>
+
+<p style="margin-left:23%;">Print
+<i><small>STRING</small></i> for the value of a constant
+that can&rsquo;t be determined because it was optimized away
+(mnemonic: this happens when a constant is used in
+<b>v</b>oid context). The end of the string is marked by a
+period. The string should be a valid perl expression,
+generally a constant. Note that unless it&rsquo;s a number,
+it probably needs to be quoted, and on a command line quotes
+need to be protected from the shell. Some conventional
+values include 0, 1, 42, &rsquo;&rsquo;, &rsquo;foo&rsquo;,
+and &rsquo;Useless use of constant omitted&rsquo; (which may
+need to be <b>&minus;sv&quot;&rsquo;Useless use of constant
+omitted&rsquo;.&quot;</b> or something similar depending on
+your shell). The default is &rsquo;???&rsquo;. If
+you&rsquo;re using B::Deparse on a module or other file
+that&rsquo;s require&rsquo;d, you shouldn&rsquo;t use a
+value that evaluates to false, since the customary true
+constant at the end of a module will be in void context when
+the file is compiled as a main program.</p>
+
+<p style="margin-left:11%;"><b>&minus;x</b>
+<i><small>LEVEL</small></i></p>
+
+<p style="margin-left:17%;">Expand conventional syntax
+constructions into equivalent ones that expose their
+internal operation. <i><small>LEVEL</small></i> should be a
+digit, with higher values meaning more expansion. As with
+<b>&minus;q</b>, this actually involves turning off special
+cases in B::Deparse&rsquo;s normal operations.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If
+<i><small>LEVEL</small></i> is at least 3,
+<tt>&quot;for&quot;</tt> loops will be translated into
+equivalent while loops with continue blocks; for
+instance</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    for ($i = 0; $i &lt; 10; ++$i) {
+        print $i;
+    }</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">turns into</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    $i = 0;
+    while ($i &lt; 10) {
+        print $i;
+    } continue {
+        ++$i
+    }</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Note that in a
+few cases this translation can&rsquo;t be perfectly carried
+back into the source code -- if the loop&rsquo;s initializer
+declares a my variable, for instance, it won&rsquo;t have
+the correct scope outside of the loop.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If
+<i><small>LEVEL</small></i> is at least 5,
+<tt>&quot;use&quot;</tt> declarations will be translated
+into <tt>&quot;BEGIN&quot;</tt> blocks containing calls to
+<tt>&quot;require&quot;</tt> and
+<tt>&quot;import&quot;</tt>; for instance,</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    use strict 'refs';</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">turns into</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    sub BEGIN {
+        require strict;
+        do {
+            'strict'&minus;&gt;import('refs')
+        };
+    }</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">If
+<i><small>LEVEL</small></i> is at least 7,
+<tt>&quot;if&quot;</tt> statements will be translated into
+equivalent expressions using
+<tt>&quot;&amp;&amp;&quot;</tt>, <tt>&quot;?:&quot;</tt> and
+<tt>&quot;do {}&quot;</tt>; for instance</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    print 'hi' if $nice;
+    if ($nice) {
+        print 'hi';
+    }
+    if ($nice) {
+        print 'hi';
+    } else {
+        print 'bye';
+    }</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">turns into</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    $nice and print 'hi';
+    $nice and do { print 'hi' };
+    $nice ? do { print 'hi' } : do { print 'bye' };</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Long sequences
+of elsifs will turn into nested ternary operators, which
+B::Deparse doesn&rsquo;t know how to indent nicely.</p>
+
+<h2>USING B::Deparse AS A MODULE
+<a name="USING B::Deparse AS A MODULE"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Synopsis</b></p>
+
+
+<pre style="margin-left:11%;">    use B::Deparse;
+    $deparse = B::Deparse&minus;&gt;new(&quot;&minus;p&quot;, &quot;&minus;sC&quot;);
+    $body = $deparse&minus;&gt;coderef2text(\&amp;func);
+    eval &quot;sub func $body&quot;; # the inverse operation</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Description</b>
+<br>
+B::Deparse can also be used on a sub-by-sub basis from other
+perl programs.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>new</b></p>
+
+<pre style="margin-left:11%;">    $deparse = B::Deparse&minus;&gt;new(OPTIONS)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Create an
+object to store the state of a deparsing operation and any
+options. The options are the same as those that can be given
+on the command line (see &quot; <small>OPTIONS</small>
+&quot;); options that are separated by commas after
+<b>&minus;MO=Deparse</b> should be given as separate
+strings.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>ambient_pragmas</b></p>
+
+
+<pre style="margin-left:11%;">    $deparse&minus;&gt;ambient_pragmas(strict =&gt; 'all', '$[' =&gt; $[);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The compilation
+of a subroutine can be affected by a few compiler
+directives, <b>pragmas</b>. These are:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="55%">
+
+
+<p>use strict;</p></td>
+<td width="28%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="55%">
+
+
+<p>use warnings;</p></td>
+<td width="28%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="55%">
+
+
+<p>Assigning to the special variable $[</p></td>
+<td width="28%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="55%">
+
+
+<p>use integer;</p></td>
+<td width="28%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="55%">
+
+
+<p>use bytes;</p></td>
+<td width="28%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="55%">
+
+
+<p>use utf8;</p></td>
+<td width="28%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="55%">
+
+
+<p>use re;</p></td>
+<td width="28%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Ordinarily, if
+you use B::Deparse on a subroutine which has been compiled
+in the presence of one or more of these pragmas, the output
+will include statements to turn on the appropriate
+directives. So if you then compile the code returned by
+coderef2text, it will behave the same way as the subroutine
+which you deparsed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">However, you
+may know that you intend to use the results in a particular
+context, where some pragmas are already in scope. In this
+case, you use the <b>ambient_pragmas</b> method to describe
+the assumptions you wish to make.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Not all of the
+options currently have any useful effect. See &quot;
+<small>BUGS</small> &quot; for more details.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The parameters
+it accepts are: <br>
+strict</p>
+
+<p style="margin-left:17%;">Takes a string, possibly
+containing several values separated by whitespace. The
+special values &quot;all&quot; and &quot;none&quot; mean
+what you&rsquo;d expect.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    $deparse&minus;&gt;ambient_pragmas(strict =&gt; 'subs refs');</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>$[</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>Takes a number, the value of the array base $[. Cannot
+be non-zero on Perl 5.15.3 or later.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">bytes <br>
+utf8 <br>
+integer</p>
+
+<p style="margin-left:17%;">If the value is true, then the
+appropriate pragma is assumed to be in the ambient scope,
+otherwise not.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>re</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>Takes a string, possibly containing a
+whitespace-separated list of values. The values
+&quot;all&quot; and &quot;none&quot; are special. It&rsquo;s
+also permissible to pass an array reference here.</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    $deparser&minus;&gt;ambient_pragmas(re =&gt; 'eval');</pre>
+
+
+<p style="margin-left:11%;">warnings</p>
+
+<p style="margin-left:17%;">Takes a string, possibly
+containing a whitespace-separated list of values. The values
+&quot;all&quot; and &quot;none&quot; are special, again.
+It&rsquo;s also permissible to pass an array reference
+here.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    $deparser&minus;&gt;ambient_pragmas(warnings =&gt; [qw[void io]]);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">If one of the
+values is the string &quot; <small>FATAL</small> &quot;,
+then all the warnings in that list will be considered fatal,
+just as with the <b>warnings</b> pragma itself. Should you
+need to specify that some warnings are fatal, and others are
+merely enabled, you can pass the <b>warnings</b> parameter
+twice:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    $deparser&minus;&gt;ambient_pragmas(
+        warnings =&gt; 'all',
+        warnings =&gt; [FATAL =&gt; qw/void io/],
+    );</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">See perllexwarn
+for more information about lexical warnings.</p>
+
+<p style="margin-left:11%;">hint_bits <br>
+warning_bits</p>
+
+<p style="margin-left:17%;">These two parameters are used
+to specify the ambient pragmas in the format used by the
+special variables $^H and ${^WARNING_BITS}.</p>
+
+<p style="margin-left:17%; margin-top: 1em">They exist
+principally so that you can write code like:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    { my ($hint_bits, $warning_bits);
+    BEGIN {($hint_bits, $warning_bits) = ($^H, ${^WARNING_BITS})}
+    $deparser&minus;&gt;ambient_pragmas (
+        hint_bits    =&gt; $hint_bits,
+        warning_bits =&gt; $warning_bits,
+        '$['         =&gt; 0 + $[
+    ); }</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">which specifies
+that the ambient pragmas are exactly those which are in
+scope at the point of calling.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p>%^H</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p>This parameter is used to specify the ambient pragmas
+which are stored in the special hash %^H.</p></td></tr>
+</table>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>coderef2text</b></p>
+
+
+<pre style="margin-left:11%;">    $body = $deparse&minus;&gt;coderef2text(\&amp;func)
+    $body = $deparse&minus;&gt;coderef2text(sub ($$) { ... })</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Return source
+code for the body of a subroutine (a block, optionally
+preceded by a prototype in parens), given a reference to the
+sub. Because a subroutine can have no names, or more than
+one name, this method doesn&rsquo;t return a complete
+subroutine definition -- if you want to eval the result, you
+should prepend &quot;sub subname &quot;, or &quot;sub &quot;
+for an anonymous function constructor. Unless the sub was
+defined in the main:: package, the code will include a
+package declaration.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The only pragmas to be
+completely supported are: <tt>&quot;use warnings&quot;</tt>,
+<tt>&quot;use strict&quot;</tt>, <tt>&quot;use
+bytes&quot;</tt>, <tt>&quot;use integer&quot;</tt> and
+<tt>&quot;use feature&quot;</tt>. (<tt>$[</tt>, which
+behaves like a pragma, is also supported.)</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Excepting those
+listed above, we&rsquo;re currently unable to guarantee that
+B::Deparse will produce a pragma at the correct point in the
+program. (Specifically, pragmas at the beginning of a block
+often appear right before the start of the block instead.)
+Since the effects of pragmas are often lexically scoped,
+this can mean that the pragma holds sway over a different
+portion of the program than in the input file.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">In fact, the above is a specific
+instance of a more general problem: we can&rsquo;t guarantee
+to produce <small>BEGIN</small> blocks or
+<tt>&quot;use&quot;</tt> declarations in exactly the right
+place. So if you use a module which affects compilation
+(such as by over-riding keywords, overloading constants or
+whatever) then the output code might not work as
+intended.</p> </td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">This is the
+most serious outstanding problem, and will require some help
+from the Perl core to fix.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Some constants don&rsquo;t print
+correctly either with or without <b>&minus;d</b>. For
+instance, neither B::Deparse nor Data::Dumper know how to
+print dual-valued scalars correctly, as in:</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    use constant E2BIG =&gt; ($!=7); $y = E2BIG; print $y, 0+$y;
+    use constant H =&gt; { &quot;#&quot; =&gt; 1 }; H&minus;&gt;{&quot;#&quot;};</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">An input file that uses source
+filtering probably won&rsquo;t be deparsed into runnable
+code, because it will still include the <b>use</b>
+declaration for the source filtering module, even though the
+code that is produced is already ordinary Perl which
+shouldn&rsquo;t be filtered again.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Optimised away statements are rendered as
+&rsquo;???&rsquo;. This includes statements that have a
+compile-time side-effect, such as the obscure</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    my $x if 0;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">which is not,
+consequently, deparsed correctly.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    foreach my $i (@_) { 0 }
+  =&gt;
+    foreach my $i (@_) { '???' }</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Lexical (my) variables declared
+in scopes external to a subroutine appear in code2ref output
+text as package variables. This is a tricky problem, as perl
+has no native facility for referring to a lexical variable
+defined within a different scope, although PadWalker is a
+good start.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>There are probably many more bugs on non-ASCII platforms
+( <small>EBCDIC</small> ).</p></td></tr>
+</table>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Stephen
+McCamant &lt;smcc@CSUA.Berkeley.EDU&gt;, based on an earlier
+version by Malcolm Beattie &lt;mbeattie@sable.ox.ac.uk&gt;,
+with contributions from Gisle Aas, James Duncan, Albert
+Dvornik, Robin Houston, Dave Mitchell, Hugo van der Sanden,
+Gurusamy Sarathy, Nick Ing-Simmons, and Rafael
+Garcia-Suarez.</p>
+<hr>
+</body>
+</html>

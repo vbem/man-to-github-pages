@@ -1,0 +1,545 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:30:42 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>bigint</title>
+
+</head>
+<body>
+
+<h1 align="center">bigint</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#CAVEATS">CAVEATS</a><br>
+<a href="#MODULES USED">MODULES USED</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
+<a href="#LICENSE">LICENSE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">bigint &minus;
+Transparent BigInteger support for Perl</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  use bigint;
+  $x = 2 + 4.5,&quot;\n&quot;;                    # BigInt 6
+  print 2 ** 512,&quot;\n&quot;;                  # really is what you think it is
+  print inf + 42,&quot;\n&quot;;                  # inf
+  print NaN * 7,&quot;\n&quot;;                   # NaN
+  print hex(&quot;0x1234567890123490&quot;),&quot;\n&quot;; # Perl v5.9.4 or later
+  {
+    no bigint;
+    print 2 ** 256,&quot;\n&quot;;                # a normal Perl scalar now
+  }
+  # Note that this will be global:
+  use bigint qw/hex oct/;
+  print hex(&quot;0x1234567890123490&quot;),&quot;\n&quot;;
+  print oct(&quot;01234567890123490&quot;),&quot;\n&quot;;</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">All operators
+(including basic math operations) are overloaded. Integer
+constants are created as proper BigInts.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Floating point
+constants are truncated to integer. All parts and results of
+expressions are also truncated.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Unlike integer,
+this pragma creates integer constants that are only limited
+in their size by the available memory and <small>CPU</small>
+time.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>use integer
+vs. use bigint</b> <br>
+There is one small difference between <tt>&quot;use
+integer&quot;</tt> and <tt>&quot;use bigint&quot;</tt>: the
+former will not affect assignments to variables and the
+return value of some functions. <tt>&quot;bigint&quot;</tt>
+truncates these results to integer too:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        # perl &minus;Minteger &minus;wle 'print 3.2'
+        3.2
+        # perl &minus;Minteger &minus;wle 'print 3.2 + 0'
+        3
+        # perl &minus;Mbigint &minus;wle 'print 3.2'
+        3
+        # perl &minus;Mbigint &minus;wle 'print 3.2 + 0'
+        3
+        # perl &minus;Mbigint &minus;wle 'print exp(1) + 0'
+        2
+        # perl &minus;Mbigint &minus;wle 'print exp(1)'
+        2
+        # perl &minus;Minteger &minus;wle 'print exp(1)'
+        2.71828182845905
+        # perl &minus;Minteger &minus;wle 'print exp(1) + 0'
+        2</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In practice
+this makes seldom a difference as <b>parts and results</b>
+of expressions will be truncated anyway, but this can, for
+instance, affect the return value of subroutines:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sub three_integer { use integer; return 3.2; }
+    sub three_bigint { use bigint; return 3.2; }
+    print three_integer(), &quot; &quot;, three_bigint(),&quot;\n&quot;;    # prints &quot;3.2 3&quot;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Options</b>
+<br>
+bigint recognizes some options that can be passed while
+loading it via use. The options can (currently) be either a
+single letter form, or the long form. The following options
+exist: <br>
+a or accuracy</p>
+
+<p style="margin-left:14%;">This sets the accuracy for all
+math operations. The argument must be greater than or equal
+to zero. See Math::BigInt&rsquo;s <i>bround()</i> function
+for details.</p>
+
+<pre style="margin-left:14%; margin-top: 1em">        perl &minus;Mbigint=a,2 &minus;le 'print 12345+1'</pre>
+
+
+<p style="margin-left:14%; margin-top: 1em">Note that
+setting precision and accuracy at the same time is not
+possible.</p>
+
+<p style="margin-left:11%;">p or precision</p>
+
+<p style="margin-left:14%;">This sets the precision for all
+math operations. The argument can be any integer. Negative
+values mean a fixed number of digits after the dot, and are
+&lt;B&gt;ignored&lt;/B&gt; since all operations happen in
+integer space. A positive value rounds to this digit left
+from the dot. 0 or 1 mean round to integer and are ignore
+like negative values.</p>
+
+<p style="margin-left:14%; margin-top: 1em">See
+Math::BigInt&rsquo;s <i>bfround()</i> function for
+details.</p>
+
+<pre style="margin-left:14%; margin-top: 1em">        perl &minus;Mbignum=p,5 &minus;le 'print 123456789+123'</pre>
+
+
+<p style="margin-left:14%; margin-top: 1em">Note that
+setting precision and accuracy at the same time is not
+possible.</p>
+
+<p style="margin-left:11%;">t or trace</p>
+
+<p style="margin-left:14%;">This enables a trace mode and
+is primarily for debugging bigint or Math::BigInt.</p>
+
+<p style="margin-left:11%;">hex</p>
+
+<p style="margin-left:14%;">Override the built-in
+<i>hex()</i> method with a version that can handle big
+integers. Note that under Perl v5.9.4 or ealier, this will
+be global and cannot be disabled with &quot;no
+bigint;&quot;.</p>
+
+<p style="margin-left:11%;">oct</p>
+
+<p style="margin-left:14%;">Override the built-in
+<i>oct()</i> method with a version that can handle big
+integers. Note that under Perl v5.9.4 or ealier, this will
+be global and cannot be disabled with &quot;no
+bigint;&quot;.</p>
+
+<p style="margin-left:11%;">l, lib, try or only</p>
+
+<p style="margin-left:14%;">Load a different math lib, see
+&quot;Math Library&quot;.</p>
+
+<pre style="margin-left:14%; margin-top: 1em">        perl &minus;Mbigint=lib,GMP &minus;e 'print 2 ** 512'
+        perl &minus;Mbigint=try,GMP &minus;e 'print 2 ** 512'
+        perl &minus;Mbigint=only,GMP &minus;e 'print 2 ** 512'</pre>
+
+
+<p style="margin-left:14%; margin-top: 1em">Currently there
+is no way to specify more than one library on the command
+line. This means the following does not work:</p>
+
+<pre style="margin-left:14%; margin-top: 1em">        perl &minus;Mbignum=l,GMP,Pari &minus;e 'print 2 ** 512'</pre>
+
+
+<p style="margin-left:14%; margin-top: 1em">This will be
+hopefully fixed soon ;)</p>
+
+<p style="margin-left:11%;">v or version</p>
+
+<p style="margin-left:14%;">This prints out the name and
+version of all modules used and then exits.</p>
+
+<pre style="margin-left:14%; margin-top: 1em">        perl &minus;Mbigint=v</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Math
+Library</b> <br>
+Math with the numbers is done (by default) by a module
+called Math::BigInt::Calc. This is equivalent to saying:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use bigint lib =&gt; 'Calc';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can change
+this by using:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use bignum lib =&gt; 'GMP';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+would first try to find Math::BigInt::Foo, then
+Math::BigInt::Bar, and when this also fails, revert to
+Math::BigInt::Calc:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use bigint lib =&gt; 'Foo,Math::BigInt::Bar';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Using
+<tt>&quot;lib&quot;</tt> warns if none of the specified
+libraries can be found and Math::BigInt did fall back to one
+of the default libraries. To suppress this warning, use
+<tt>&quot;try&quot;</tt> instead:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use bignum try =&gt; 'GMP';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you want the
+code to die instead of falling back, use
+<tt>&quot;only&quot;</tt> instead:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use bignum only =&gt; 'GMP';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Please see
+respective module documentation for further details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Internal
+Format</b> <br>
+The numbers are stored as objects, and their internals might
+change at anytime, especially between math operations. The
+objects also might belong to different classes, like
+Math::BigInt, or Math::BigInt::Lite. Mixing them together,
+even with normal scalars is not extraordinary, but normal
+and expected.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You should not
+depend on the internal format, all accesses must go through
+accessor methods. E.g. looking at
+<tt>$x</tt>&minus;&gt;{sign} is not a good idea since there
+is no guaranty that the object in question has such a hash
+key, nor is a hash underneath at all.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Sign</b>
+<br>
+The sign is either &rsquo;+&rsquo;, &rsquo;&minus;&rsquo;,
+&rsquo;NaN&rsquo;, &rsquo;+inf&rsquo; or
+&rsquo;&minus;inf&rsquo;. You can access it with the
+<i>sign()</i> method.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A sign of
+&rsquo;NaN&rsquo; is used to represent the result when input
+arguments are not numbers or as a result of 0/0.
+&rsquo;+inf&rsquo; and &rsquo;&minus;inf&rsquo; represent
+plus respectively minus infinity. You will get
+&rsquo;+inf&rsquo; when dividing a positive number by 0, and
+&rsquo;&minus;inf&rsquo; when dividing any negative number
+by 0.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Methods</b>
+<br>
+Since all numbers are now objects, you can use all functions
+that are part of the BigInt <small>API</small> . You can
+only use the <i>bxxx()</i> notation, and not the
+<i>fxxx()</i> notation, though. <i><br>
+inf()</i></p>
+
+<p style="margin-left:14%;">A shortcut to return
+Math::BigInt&minus;&gt;<i>binf()</i>. Useful because Perl
+does not always handle bareword <tt>&quot;inf&quot;</tt>
+properly.</p>
+
+<p style="margin-left:11%;"><i>NaN()</i></p>
+
+<p style="margin-left:14%;">A shortcut to return
+Math::BigInt&minus;&gt;<i>bnan()</i>. Useful because Perl
+does not always handle bareword <tt>&quot;NaN&quot;</tt>
+properly.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>e</p></td>
+<td width="14%"></td>
+<td width="49%">
+
+<pre>        # perl &minus;Mbigint=e &minus;wle 'print e'</td>
+<td width="25%">
+</td></tr>
+</table></pre>
+
+<p style="margin-left:14%; margin-top: 1em">Returns
+Euler&rsquo;s number <tt>&quot;e&quot;</tt>, aka
+<i>exp</i>(1). Note that under bigint, this is truncated to
+an integer, and hence simple &rsquo;2&rsquo;.</p>
+
+<p style="margin-left:11%;"><small>PI</small></p>
+
+<pre style="margin-left:14%;">        # perl &minus;Mbigint=PI &minus;wle 'print PI'</pre>
+
+
+<p style="margin-left:14%; margin-top: 1em">Returns
+<small>PI</small> . Note that under bigint, this is
+truncated to an integer, and hence simple
+&rsquo;3&rsquo;.</p>
+
+<p style="margin-left:11%;"><i>bexp()</i></p>
+
+<pre style="margin-left:14%;">        bexp($power,$accuracy);</pre>
+
+
+<p style="margin-left:14%; margin-top: 1em">Returns
+Euler&rsquo;s number <tt>&quot;e&quot;</tt> raised to the
+appropriate power, to the wanted accuracy.</p>
+
+<p style="margin-left:14%; margin-top: 1em">Note that under
+bigint, the result is truncated to an integer.</p>
+
+<p style="margin-left:14%; margin-top: 1em">Example:</p>
+
+<pre style="margin-left:14%; margin-top: 1em">        # perl &minus;Mbigint=bexp &minus;wle 'print bexp(1,80)'</pre>
+
+
+<p style="margin-left:11%;"><i>bpi()</i></p>
+<pre style="margin-left:14%;">        bpi($accuracy);</pre>
+
+<p style="margin-left:14%; margin-top: 1em">Returns
+<small>PI</small> to the wanted accuracy. Note that under
+bigint, this is truncated to an integer, and hence simple
+&rsquo;3&rsquo;.</p>
+
+<p style="margin-left:14%; margin-top: 1em">Example:</p>
+
+<pre style="margin-left:14%; margin-top: 1em">        # perl &minus;Mbigint=bpi &minus;wle 'print bpi(80)'</pre>
+
+
+<p style="margin-left:11%;"><i>upgrade()</i></p>
+
+<p style="margin-left:14%;">Return the class that numbers
+are upgraded to, is in fact returning
+<tt>$Math::BigInt::upgrade</tt>.</p>
+
+<p style="margin-left:11%;"><i>in_effect()</i></p>
+
+<pre style="margin-left:14%;">        use bigint;
+        print &quot;in effect\n&quot; if bigint::in_effect;       # true
+        {
+          no bigint;
+          print &quot;in effect\n&quot; if bigint::in_effect;     # false
+        }</pre>
+
+
+<p style="margin-left:14%; margin-top: 1em">Returns true or
+false if <tt>&quot;bigint&quot;</tt> is in effect in the
+current scope.</p>
+
+<p style="margin-left:14%; margin-top: 1em">This method
+only works on Perl v5.9.4 or later.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>MATH
+LIBRARY</small></b> <br>
+Math with the numbers is done (by default) by a module
+called</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Caveat</b>
+<br>
+But a warning is in order. When using the following to make
+a copy of a number, only a shallow copy will be made.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        $x = 9; $y = $x;
+        $x = $y = 7;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Using the copy
+or the original with overloaded math is okay, e.g. the
+following work:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        $x = 9; $y = $x;
+        print $x + 1, &quot; &quot;, $y,&quot;\n&quot;;     # prints 10 9</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">but calling any
+method that modifies the number directly will result in
+<b>both</b> the original and the copy being destroyed:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        $x = 9; $y = $x;
+        print $x&minus;&gt;badd(1), &quot; &quot;, $y,&quot;\n&quot;;        # prints 10 10
+        $x = 9; $y = $x;
+        print $x&minus;&gt;binc(1), &quot; &quot;, $y,&quot;\n&quot;;        # prints 10 10
+        $x = 9; $y = $x;
+        print $x&minus;&gt;bmul(2), &quot; &quot;, $y,&quot;\n&quot;;        # prints 18 18</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Using methods
+that do not modify, but testthe contents works:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        $x = 9; $y = $x;
+        $z = 9 if $x&minus;&gt;is_zero();                # works fine</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">See the
+documentation about the copy constructor and
+<tt>&quot;=&quot;</tt> in overload, as well as the
+documentation in BigInt for further details.</p>
+
+<h2>CAVEATS
+<a name="CAVEATS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>in_effect()</i></p>
+
+<p style="margin-left:14%;">This method only works on Perl
+v5.9.4 or later.</p>
+
+<p style="margin-left:11%;"><i>hex()</i>/<i>oct()</i></p>
+
+<p style="margin-left:14%;"><tt>&quot;bigint&quot;</tt>
+overrides these routines with versions that can also handle
+big integer values. Under Perl prior to version v5.9.4,
+however, this will not happen unless you specifically ask
+for it with the two import tags &quot;hex&quot; and
+&quot;oct&quot; &minus; and then it will be global and
+cannot be disabled inside a scope with &quot;no
+bigint&quot;:</p>
+
+<pre style="margin-left:14%; margin-top: 1em">        use bigint qw/hex oct/;
+        print hex(&quot;0x1234567890123456&quot;);
+        {
+                no bigint;
+                print hex(&quot;0x1234567890123456&quot;);
+        }</pre>
+
+
+<p style="margin-left:14%; margin-top: 1em">The second call
+to <i>hex()</i> will warn about a non-portable constant.</p>
+
+<p style="margin-left:14%; margin-top: 1em">Compare this
+to:</p>
+
+<pre style="margin-left:14%; margin-top: 1em">        use bigint;
+        # will warn only under Perl older than v5.9.4
+        print hex(&quot;0x1234567890123456&quot;);</pre>
+
+
+<h2>MODULES USED
+<a name="MODULES USED"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;bigint&quot;</tt>
+is just a thin wrapper around various modules of the
+Math::BigInt family. Think of it as the head of the family,
+who runs the shop, and orders the others to do the work.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+modules are currently used by bigint:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        Math::BigInt::Lite      (for speed, and only if it is loadable)
+        Math::BigInt</pre>
+
+
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Some cool
+command line examples to impress the Python crowd ;) You
+might want to compare them to the results under
+&minus;Mbignum or &minus;Mbigrat:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        perl &minus;Mbigint &minus;le 'print sqrt(33)'
+        perl &minus;Mbigint &minus;le 'print 2*255'
+        perl &minus;Mbigint &minus;le 'print 4.5+2*255'
+        perl &minus;Mbigint &minus;le 'print 3/7 + 5/7 + 8/3'
+        perl &minus;Mbigint &minus;le 'print 123&minus;&gt;is_odd()'
+        perl &minus;Mbigint &minus;le 'print log(2)'
+        perl &minus;Mbigint &minus;le 'print 2 ** 0.5'
+        perl &minus;Mbigint=a,65 &minus;le 'print 2 ** 0.2'
+        perl &minus;Mbignum=a,65,l,GMP &minus;le 'print 7 ** 7777'</pre>
+
+
+<h2>LICENSE
+<a name="LICENSE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This program is
+free software; you may redistribute it and/or modify it
+under the same terms as Perl itself.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Especially
+bigrat as in <tt>&quot;perl &minus;Mbigrat &minus;le 'print
+1/3+1/4'&quot;</tt> and bignum as in <tt>&quot;perl
+&minus;Mbignum &minus;le 'print sqrt(2)'&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Math::BigInt,
+Math::BigRat and Math::Big as well as Math::BigInt::BitVect,
+Math::BigInt::Pari and Math::BigInt::GMP.</p>
+
+<h2>AUTHORS
+<a name="AUTHORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">(C) by Tels
+&lt;http://bloodgate.com/&gt; in early 2002 &minus;
+2007.</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:32:06 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>DBD::File::HowTo</title>
+
+</head>
+<body>
+
+<h1 align="center">DBD::File::HowTo</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#CREATING DRIVER CLASSES">CREATING DRIVER CLASSES</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#COPYRIGHT AND LICENSE">COPYRIGHT AND LICENSE</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">DBD::File::HowTo
+&minus; Guide to create DBD::File based driver</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  perldoc DBD::File::HowTo
+  perldoc DBI
+  perldoc DBI::DBD
+  perldoc DBD::File::Developers
+  perldoc DBI::DBD::SqlEngine::Developers
+  perldoc DBI::DBD::SqlEngine
+  perldoc SQL::Eval
+  perldoc DBI::DBD::SqlEngine::HowTo
+  perldoc SQL::Statement::Embed
+  perldoc DBD::File
+  perldoc DBD::File::HowTo
+  perldoc DBD::File::Developers</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+provides a step-by-step guide, how to create a new
+<tt>&quot;DBD::File&quot;</tt> based <small>DBD.</small> It
+expects that you carefully read the <small>DBI</small>
+documentation and that you&rsquo;re familiar with
+<small>DBI::DBD</small> and had read and understood
+DBD::ExampleP.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This document
+addresses experienced developers who are really sure that
+they need to invest time when writing a new
+<small>DBI</small> Driver. Writing a <small>DBI</small>
+Driver is neither a weekend project nor an easy job for
+hobby coders after work. Expect one or two man-month of time
+for the first start.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Those who are
+still reading, should be able to sing the rules of &quot;
+<small>CREATING A NEW DRIVER&quot;</small> in
+<small>DBI::DBD</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">Of course,
+DBD::File is a DBI::DBD::SqlEngine and you surely read
+DBI::DBD::SqlEngine::HowTo before continuing here.</p>
+
+<h2>CREATING DRIVER CLASSES
+<a name="CREATING DRIVER CLASSES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Do you have an
+entry in <small>DBI</small> &rsquo;s <small>DBD</small>
+registry? For this guide, a prefix of
+<tt>&quot;foo_&quot;</tt> is assumed.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Sample
+Skeleton</b></p>
+
+<pre style="margin-left:11%;">    package DBD::Foo;
+    use strict;
+    use warnings;
+    use vars qw(@ISA $VERSION);
+    use base qw(DBD::File);
+    use DBI ();
+    $VERSION = &quot;0.001&quot;;
+    package DBD::Foo::dr;
+    use vars qw(@ISA $imp_data_size);
+    @ISA = qw(DBD::File::dr);
+    $imp_data_size = 0;
+    package DBD::Foo::db;
+    use vars qw(@ISA $imp_data_size);
+    @ISA = qw(DBD::File::db);
+    $imp_data_size = 0;
+    package DBD::Foo::st;
+    use vars qw(@ISA $imp_data_size);
+    @ISA = qw(DBD::File::st);
+    $imp_data_size = 0;
+    package DBD::Foo::Statement;
+    use vars qw(@ISA);
+    @ISA = qw(DBD::File::Statement);
+    package DBD::Foo::Table;
+    use vars qw(@ISA);
+    @ISA = qw(DBD::File::Table);
+    1;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Tiny, eh? And
+all you have now is a <small>DBD</small> named foo which
+will is able to deal with temporary tables, as long as you
+use SQL::Statement. In DBI::SQL::Nano environments, this
+<small>DBD</small> can do nothing.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Start
+over</b> <br>
+Based on DBI::DBD::SqlEngine::HowTo, we&rsquo;re now having
+a driver which could do basic things. Of course, it should
+now derive from DBD::File instead of DBI::DBD::SqlEngine,
+shouldn&rsquo;t it?</p>
+
+<p style="margin-left:11%; margin-top: 1em">DBD::File
+extends DBI::DBD::SqlEngine to deal with any kind of files.
+In principle, the only extensions required are to the table
+class:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    package DBD::Foo::Table;
+    sub bootstrap_table_meta
+    {
+        my ( $self, $dbh, $meta, $table ) = @_;
+        # initialize all $meta attributes which might be relevant for
+        # file2table
+        return $self&minus;&gt;SUPER::bootstrap_table_meta($dbh, $meta, $table);
+    }
+    sub init_table_meta
+    {
+        my ( $self, $dbh, $meta, $table ) = @_;
+        # called after $meta contains the results from file2table
+        # initialize all missing $meta attributes
+        $self&minus;&gt;SUPER::init_table_meta( $dbh, $meta, $table );
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In case
+<tt>&quot;DBD::File::Table::open_file&quot;</tt>
+doesn&rsquo;t open the files as the driver needs that,
+override it!</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sub open_file
+    {
+        my ( $self, $meta, $attrs, $flags ) = @_;
+        # ensure that $meta&minus;&gt;{f_dontopen} is set
+        $self&minus;&gt;SUPER::open_file( $meta, $attrs, $flags );
+        # now do what ever needs to be done
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Combined with
+the methods implemented using the SQL::Statement::Embed
+guide, the table is full working and you could try a start
+over.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>User
+comfort</b> <tt><br>
+&quot;DBD::File&quot;</tt> since <tt>0.39</tt> consolidates
+all persistent meta data of a table into a single structure
+stored in <tt>&quot;$dbh&minus;&gt;{f_meta}&quot;</tt>. With
+<tt>&quot;DBD::File&quot;</tt> version <tt>0.41</tt> and
+<tt>&quot;DBI::DBD::SqlEngine&quot;</tt> version
+<tt>0.05</tt>, this consolidation moves to
+DBI::DBD::SqlEngine. It&rsquo;s still the
+<tt>&quot;$dbh&minus;&gt;{$drv_prefix .
+&quot;_meta&quot;}&quot;</tt> attribute which cares, so what
+you learned at this place before, is still valid.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sub init_valid_attributes
+    {
+        my $dbh = $_[0];
+        $dbh&minus;&gt;SUPER::init_valid_attributes ();
+        $dbh&minus;&gt;{foo_valid_attrs} = { ... };
+        $dbh&minus;&gt;{foo_readonly_attrs} = { ...  };
+        $dbh&minus;&gt;{foo_meta} = &quot;foo_tables&quot;;
+        return $dbh;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">See updates at
+&quot;User comfort&quot; in DBI::DBD::SqlEngine::HowTo.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Testing</b>
+<br>
+Now you should have your own DBD::File based driver. Was
+easy, wasn&rsquo;t it? But does it work well? Prove it by
+writing tests and remember to use dbd_edit_mm_attribs from
+<small>DBI::DBD</small> to ensure testing even rare
+cases.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This guide is
+written by Jens Rehsack. DBD::File is written by Jochen
+Wiedmann and Jeff Zucker.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The module
+DBD::File is currently maintained by</p>
+
+<p style="margin-left:11%; margin-top: 1em">H.Merijn Brand
+&lt; h.m.brand at xs4all.nl &gt; and Jens Rehsack &lt;
+rehsack at googlemail.com &gt;</p>
+
+<h2>COPYRIGHT AND LICENSE
+<a name="COPYRIGHT AND LICENSE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (C)
+2010 by H.Merijn Brand &amp; Jens Rehsack</p>
+
+<p style="margin-left:11%; margin-top: 1em">All rights
+reserved.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You may freely
+distribute and/or modify this module under the terms of
+either the <small>GNU</small> General Public License (
+<small>GPL</small> ) or the Artistic License, as specified
+in the Perl <small>README</small> file.</p>
+<hr>
+</body>
+</html>

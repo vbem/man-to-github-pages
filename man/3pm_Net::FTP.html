@@ -1,0 +1,845 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:36:15 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Net::FTP</title>
+
+</head>
+<body>
+
+<h1 align="center">Net::FTP</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OVERVIEW">OVERVIEW</a><br>
+<a href="#CONSTRUCTOR">CONSTRUCTOR</a><br>
+<a href="#METHODS">METHODS</a><br>
+<a href="#THE dataconn CLASS">THE dataconn CLASS</a><br>
+<a href="#UNIMPLEMENTED">UNIMPLEMENTED</a><br>
+<a href="#REPORTING BUGS">REPORTING BUGS</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#USE EXAMPLES">USE EXAMPLES</a><br>
+<a href="#CREDITS">CREDITS</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Net::FTP
+&minus; FTP Client class</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">    use Net::FTP;
+    $ftp = Net::FTP&minus;&gt;new(&quot;some.host.name&quot;, Debug =&gt; 0)
+      or die &quot;Cannot connect to some.host.name: $@&quot;;
+    $ftp&minus;&gt;login(&quot;anonymous&quot;,'&minus;anonymous@')
+      or die &quot;Cannot login &quot;, $ftp&minus;&gt;message;
+    $ftp&minus;&gt;cwd(&quot;/pub&quot;)
+      or die &quot;Cannot change working directory &quot;, $ftp&minus;&gt;message;
+    $ftp&minus;&gt;get(&quot;that.file&quot;)
+      or die &quot;get failed &quot;, $ftp&minus;&gt;message;
+    $ftp&minus;&gt;quit;</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;Net::FTP&quot;</tt>
+is a class implementing a simple <small>FTP</small> client
+in Perl as described in <small>RFC959</small> . It provides
+wrappers for a subset of the <small>RFC959</small>
+commands.</p>
+
+<h2>OVERVIEW
+<a name="OVERVIEW"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>FTP</small>
+stands for File Transfer Protocol. It is a way of
+transferring files between networked machines. The protocol
+defines a client (whose commands are provided by this
+module) and a server (not implemented in this module).
+Communication is always initiated by the client, and the
+server responds with a message and a status code (and
+sometimes with data).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<small>FTP</small> protocol allows files to be sent to or
+fetched from the server. Each transfer involves a <b>local
+file</b> (on the client) and a <b>remote file</b> (on the
+server). In this module, the same file name will be used for
+both local and remote if only one is specified. This means
+that transferring remote file
+<tt>&quot;/path/to/file&quot;</tt> will try to put that file
+in <tt>&quot;/path/to/file&quot;</tt> locally, unless you
+specify a local file name.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The protocol
+also defines several standard <b>translations</b> which the
+file can undergo during transfer. These are
+<small>ASCII</small> , <small>EBCDIC</small> , binary, and
+byte. <small>ASCII</small> is the default type, and
+indicates that the sender of files will translate the ends
+of lines to a standard representation which the receiver
+will then translate back into their local representation.
+<small>EBCDIC</small> indicates the file being transferred
+is in <small>EBCDIC</small> format. Binary (also known as
+image) format sends the data as a contiguous bit stream.
+Byte format transfers the data as bytes, the values of which
+remain the same regardless of differences in byte size
+between the two machines (in theory &minus; in practice you
+should only use this if you really know what you&rsquo;re
+doing).</p>
+
+<h2>CONSTRUCTOR
+<a name="CONSTRUCTOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">new ([
+<small>HOST</small> ] [, <small>OPTIONS</small> ])</p>
+
+<p style="margin-left:17%;">This is the constructor for a
+new Net::FTP object. <tt>&quot;HOST&quot;</tt> is the name
+of the remote host to which an <small>FTP</small> connection
+is required.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;HOST&quot;</tt>
+is optional. If <tt>&quot;HOST&quot;</tt> is not given then
+it may instead be passed as the <tt>&quot;Host&quot;</tt>
+option described below.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;OPTIONS&quot;</tt>
+are passed in a hash like fashion, using key and value
+pairs. Possible options are:</p>
+
+<p style="margin-left:17%; margin-top: 1em"><b>Host</b>
+&minus; <small>FTP</small> host to connect to. It may be a
+single scalar, as defined for the
+<tt>&quot;PeerAddr&quot;</tt> option in IO::Socket::INET, or
+a reference to an array with hosts to try in turn. The
+&quot;host&quot; method will return the value which was used
+to connect to the host.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><b>Firewall</b>
+&minus; The name of a machine which acts as an
+<small>FTP</small> firewall. This can be overridden by an
+environment variable <tt>&quot;FTP_FIREWALL&quot;</tt>. If
+specified, and the given host cannot be directly connected
+to, then the connection is made to the firewall machine and
+the string <tt>@hostname</tt> is appended to the login
+identifier. This kind of setup is also referred to as an ftp
+proxy.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><b>FirewallType</b>
+&minus; The type of firewall running on the machine
+indicated by <b>Firewall</b>. This can be overridden by an
+environment variable <tt>&quot;FTP_FIREWALL_TYPE&quot;</tt>.
+For a list of permissible types, see the description of
+ftp_firewall_type in Net::Config.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><b>BlockSize</b>
+&minus; This is the block size that Net::FTP will use when
+doing transfers. (defaults to 10240)</p>
+
+<p style="margin-left:17%; margin-top: 1em"><b>Port</b>
+&minus; The port number to connect to on the remote machine
+for the <small>FTP</small> connection</p>
+
+<p style="margin-left:17%; margin-top: 1em"><b>Timeout</b>
+&minus; Set a timeout value (defaults to 120)</p>
+
+<p style="margin-left:17%; margin-top: 1em"><b>Debug</b>
+&minus; debug level (see the debug method in Net::Cmd)</p>
+
+<p style="margin-left:17%; margin-top: 1em"><b>Passive</b>
+&minus; If set to a non-zero value then all data transfers
+will be done using passive mode. If set to zero then data
+transfers will be done using active mode. If the machine is
+connected to the Internet directly, both passive and active
+mode should work equally well. Behind most firewall and
+<small>NAT</small> configurations passive mode has a better
+chance of working. However, in some rare firewall
+configurations, active mode actually works when passive mode
+doesn&rsquo;t. Some really old <small>FTP</small> servers
+might not implement passive transfers. If not specified,
+then the transfer mode is set by the environment variable
+<tt>&quot;FTP_PASSIVE&quot;</tt> or if that one is not set
+by the settings done by the <i>libnetcfg</i> utility. If
+none of these apply then passive mode is used.</p>
+
+<p style="margin-left:17%; margin-top: 1em"><b>Hash</b>
+&minus; If given a reference to a file handle (e.g.,
+<tt>&quot;\*STDERR&quot;</tt>), print hash marks (#) on that
+filehandle every 1024 bytes. This simply invokes the
+<tt>&quot;hash()&quot;</tt> method for you, so that hash
+marks are displayed for all transfers. You can, of course,
+call <tt>&quot;hash()&quot;</tt> explicitly whenever
+you&rsquo;d like.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><b>LocalAddr</b>
+&minus; Local address to use for all socket connections,
+this argument will be passed to IO::Socket::INET</p>
+
+<p style="margin-left:17%; margin-top: 1em">If the
+constructor fails undef will be returned and an error
+message will be in $@</p>
+
+<h2>METHODS
+<a name="METHODS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Unless
+otherwise stated all methods return either a <i>true</i> or
+<i>false</i> value, with <i>true</i> meaning that the
+operation was a success. When a method states that it
+returns a value, failure will be returned as <i>undef</i> or
+an empty list. <br>
+login ([ <small>LOGIN</small> [,PASSWORD [,
+<small>ACCOUNT</small> ] ] ])</p>
+
+<p style="margin-left:17%;">Log into the remote
+<small>FTP</small> server with the given login information.
+If no arguments are given then the
+<tt>&quot;Net::FTP&quot;</tt> uses the
+<tt>&quot;Net::Netrc&quot;</tt> package to lookup the login
+information for the connected host. If no information is
+found then a login of <i>anonymous</i> is used. If no
+password is given and the login is <i>anonymous</i> then
+<i>anonymous@</i> will be used for password.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If the
+connection is via a firewall then the
+<tt>&quot;authorize&quot;</tt> method will be called with no
+arguments.</p>
+
+<p style="margin-left:11%;">authorize ( [
+<small>AUTH</small> [, <small>RESP</small> ]])</p>
+
+<p style="margin-left:17%;">This is a protocol used by some
+firewall ftp proxies. It is used to authorise the user to
+send data out. If both arguments are not specified then
+<tt>&quot;authorize&quot;</tt> uses
+<tt>&quot;Net::Netrc&quot;</tt> to do a lookup.</p>
+
+<p style="margin-left:11%;">site ( <small>ARGS</small>
+)</p>
+
+<p style="margin-left:17%;">Send a <small>SITE</small>
+command to the remote server and wait for a response.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Returns most
+significant digit of the response code.</p>
+
+<p style="margin-left:11%;">ascii</p>
+
+<p style="margin-left:17%;">Transfer file in
+<small>ASCII</small> . <small>CRLF</small> translation will
+be done if required</p>
+
+<p style="margin-left:11%;">binary</p>
+
+<p style="margin-left:17%;">Transfer file in binary mode.
+No transformation will be done.</p>
+
+<p style="margin-left:17%; margin-top: 1em"><b>Hint</b>: If
+both server and client machines use the same line ending for
+text files, then it will be faster to transfer all files in
+binary mode.</p>
+
+<p style="margin-left:11%;">rename ( <small>OLDNAME</small>
+, <small>NEWNAME</small> )</p>
+
+<p style="margin-left:17%;">Rename a file on the remote
+<small>FTP</small> server from <tt>&quot;OLDNAME&quot;</tt>
+to <tt>&quot;NEWNAME&quot;</tt>. This is done by sending the
+<small>RNFR</small> and <small>RNTO</small> commands.</p>
+
+<p style="margin-left:11%;">delete (
+<small>FILENAME</small> )</p>
+
+<p style="margin-left:17%;">Send a request to the server to
+delete <tt>&quot;FILENAME&quot;</tt>.</p>
+
+<p style="margin-left:11%;">cwd ( [ <small>DIR</small> ]
+)</p>
+
+<p style="margin-left:17%;">Attempt to change directory to
+the directory given in <tt>$dir</tt>. If <tt>$dir</tt> is
+<tt>&quot;..&quot;</tt>, the <small>FTP</small>
+<tt>&quot;CDUP&quot;</tt> command is used to attempt to move
+up one directory. If no directory is given then an attempt
+is made to change the directory to the root directory.</p>
+
+<p style="margin-left:11%;">cdup ()</p>
+
+<p style="margin-left:17%;">Change directory to the parent
+of the current directory.</p>
+
+<p style="margin-left:11%;">pwd ()</p>
+
+<p style="margin-left:17%;">Returns the full pathname of
+the current directory.</p>
+
+<p style="margin-left:11%;">restart ( <small>WHERE</small>
+)</p>
+
+<p style="margin-left:17%;">Set the byte offset at which to
+begin the next data transfer. Net::FTP simply records this
+value and uses it when during the next data transfer. For
+this reason this method will not return an error, but
+setting it may cause a subsequent data transfer to fail.</p>
+
+<p style="margin-left:11%;">rmdir ( <small>DIR</small> [,
+<small>RECURSE</small> ])</p>
+
+<p style="margin-left:17%;">Remove the directory with the
+name <tt>&quot;DIR&quot;</tt>. If
+<tt>&quot;RECURSE&quot;</tt> is <i>true</i> then
+<tt>&quot;rmdir&quot;</tt> will attempt to delete everything
+inside the directory.</p>
+
+<p style="margin-left:11%;">mkdir ( <small>DIR</small> [,
+<small>RECURSE</small> ])</p>
+
+<p style="margin-left:17%;">Create a new directory with the
+name <tt>&quot;DIR&quot;</tt>. If
+<tt>&quot;RECURSE&quot;</tt> is <i>true</i> then
+<tt>&quot;mkdir&quot;</tt> will attempt to create all the
+directories in the given path.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Returns the
+full pathname to the new directory.</p>
+
+<p style="margin-left:11%;">alloc ( <small>SIZE</small> [,
+<small>RECORD_SIZE</small> ] )</p>
+
+<p style="margin-left:17%;">The alloc command allows you to
+give the ftp server a hint about the size of the file about
+to be transferred using the <small>ALLO</small> ftp command.
+Some storage systems use this to make intelligent decisions
+about how to store the file. The <tt>&quot;SIZE&quot;</tt>
+argument represents the size of the file in bytes. The
+<tt>&quot;RECORD_SIZE&quot;</tt> argument indicates a
+maximum record or page size for files sent with a record or
+page structure.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The size of the
+file will be determined, and sent to the server
+automatically for normal files so that this method need only
+be called if you are transferring data from a socket, named
+pipe, or other stream not associated with a normal file.</p>
+
+<p style="margin-left:11%;">ls ( [ <small>DIR</small> ]
+)</p>
+
+<p style="margin-left:17%;">Get a directory listing of
+<tt>&quot;DIR&quot;</tt>, or the current directory.</p>
+
+<p style="margin-left:17%; margin-top: 1em">In an array
+context, returns a list of lines returned from the server.
+In a scalar context, returns a reference to a list.</p>
+
+<p style="margin-left:11%;">dir ( [ <small>DIR</small> ]
+)</p>
+
+<p style="margin-left:17%;">Get a directory listing of
+<tt>&quot;DIR&quot;</tt>, or the current directory in long
+format.</p>
+
+<p style="margin-left:17%; margin-top: 1em">In an array
+context, returns a list of lines returned from the server.
+In a scalar context, returns a reference to a list.</p>
+
+<p style="margin-left:11%;">get (
+<small>REMOTE_FILE</small> [, <small>LOCAL_FILE</small> [,
+<small>WHERE</small> ]] )</p>
+
+<p style="margin-left:17%;">Get
+<tt>&quot;REMOTE_FILE&quot;</tt> from the server and store
+locally. <tt>&quot;LOCAL_FILE&quot;</tt> may be a filename
+or a filehandle. If not specified, the file will be stored
+in the current directory with the same leafname as the
+remote file.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If
+<tt>&quot;WHERE&quot;</tt> is given then the first
+<tt>&quot;WHERE&quot;</tt> bytes of the file will not be
+transferred, and the remaining bytes will be appended to the
+local file if it already exists.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Returns
+<tt>&quot;LOCAL_FILE&quot;</tt>, or the generated local file
+name if <tt>&quot;LOCAL_FILE&quot;</tt> is not given. If an
+error was encountered undef is returned.</p>
+
+<p style="margin-left:11%;">put ( <small>LOCAL_FILE</small>
+[, <small>REMOTE_FILE</small> ] )</p>
+
+<p style="margin-left:17%;">Put a file on the remote
+server. <tt>&quot;LOCAL_FILE&quot;</tt> may be a name or a
+filehandle. If <tt>&quot;LOCAL_FILE&quot;</tt> is a
+filehandle then <tt>&quot;REMOTE_FILE&quot;</tt> must be
+specified. If <tt>&quot;REMOTE_FILE&quot;</tt> is not
+specified then the file will be stored in the current
+directory with the same leafname as
+<tt>&quot;LOCAL_FILE&quot;</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Returns
+<tt>&quot;REMOTE_FILE&quot;</tt>, or the generated remote
+filename if <tt>&quot;REMOTE_FILE&quot;</tt> is not
+given.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><b><small>NOTE</small></b>
+: If for some reason the transfer does not complete and an
+error is returned then the contents that had been
+transferred will not be remove automatically.</p>
+
+<p style="margin-left:11%;">put_unique (
+<small>LOCAL_FILE</small> [, <small>REMOTE_FILE</small> ]
+)</p>
+
+<p style="margin-left:17%;">Same as put but uses the
+<tt>&quot;STOU&quot;</tt> command.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Returns the
+name of the file on the server.</p>
+
+<p style="margin-left:11%;">append (
+<small>LOCAL_FILE</small> [, <small>REMOTE_FILE</small> ]
+)</p>
+
+<p style="margin-left:17%;">Same as put but appends to the
+file on the remote server.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Returns
+<tt>&quot;REMOTE_FILE&quot;</tt>, or the generated remote
+filename if <tt>&quot;REMOTE_FILE&quot;</tt> is not
+given.</p>
+
+<p style="margin-left:11%;">unique_name ()</p>
+
+<p style="margin-left:17%;">Returns the name of the last
+file stored on the server using the
+<tt>&quot;STOU&quot;</tt> command.</p>
+
+<p style="margin-left:11%;">mdtm ( <small>FILE</small>
+)</p>
+
+<p style="margin-left:17%;">Returns the <i>modification
+time</i> of the given file</p>
+
+<p style="margin-left:11%;">size ( <small>FILE</small>
+)</p>
+
+<p style="margin-left:17%;">Returns the size in bytes for
+the given file as stored on the remote server.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><b><small>NOTE</small></b>
+: The size reported is the size of the stored file on the
+remote server. If the file is subsequently transferred from
+the server in <small>ASCII</small> mode and the remote
+server and local machine have different ideas about
+&quot;End Of Line&quot; then the size of file on the local
+machine after transfer may be different.</p>
+
+<p style="margin-left:11%;">supported ( <small>CMD</small>
+)</p>
+
+<p style="margin-left:17%;">Returns <small>TRUE</small> if
+the remote server supports the given command.</p>
+
+<p style="margin-left:11%;">hash ( [
+<small>FILEHANDLE_GLOB_REF</small> ],[
+<small>BYTES_PER_HASH_MARK</small> ] )</p>
+
+<p style="margin-left:17%;">Called without parameters, or
+with the first argument false, hash marks are suppressed. If
+the first argument is true but not a reference to a file
+handle glob, then \*STDERR is used. The second argument is
+the number of bytes per hash mark printed, and defaults to
+1024. In all cases the return value is a reference to an
+array of two: the filehandle glob reference and the bytes
+per hash mark.</p>
+
+<p style="margin-left:11%;">feature ( <small>NAME</small>
+)</p>
+
+<p style="margin-left:17%;">Determine if the server
+supports the specified feature. The return value is a list
+of lines the server responded with to describe the options
+that it supports for the given feature. If the feature is
+unsupported then the empty list is returned.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  if ($ftp&minus;&gt;feature( 'MDTM' )) {
+    # Do something
+  }
+  if (grep { /\bTLS\b/ } $ftp&minus;&gt;feature('AUTH')) {
+    # Server supports TLS
+  }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+methods can return different results depending on how they
+are called. If the user explicitly calls either of the
+<tt>&quot;pasv&quot;</tt> or <tt>&quot;port&quot;</tt>
+methods then these methods will return a <i>true</i> or
+<i>false</i> value. If the user does not call either of
+these methods then the result will be a reference to a
+<tt>&quot;Net::FTP::dataconn&quot;</tt> based object. <br>
+nlst ( [ <small>DIR</small> ] )</p>
+
+<p style="margin-left:17%;">Send an
+<tt>&quot;NLST&quot;</tt> command to the server, with an
+optional parameter.</p>
+
+<p style="margin-left:11%;">list ( [ <small>DIR</small> ]
+)</p>
+
+<p style="margin-left:17%;">Same as
+<tt>&quot;nlst&quot;</tt> but using the
+<tt>&quot;LIST&quot;</tt> command</p>
+
+<p style="margin-left:11%;">retr ( <small>FILE</small>
+)</p>
+
+<p style="margin-left:17%;">Begin the retrieval of a file
+called <tt>&quot;FILE&quot;</tt> from the remote server.</p>
+
+<p style="margin-left:11%;">stor ( <small>FILE</small>
+)</p>
+
+<p style="margin-left:17%;">Tell the server that you wish
+to store a file. <tt>&quot;FILE&quot;</tt> is the name of
+the new file that should be created.</p>
+
+<p style="margin-left:11%;">stou ( <small>FILE</small>
+)</p>
+
+<p style="margin-left:17%;">Same as
+<tt>&quot;stor&quot;</tt> but using the
+<tt>&quot;STOU&quot;</tt> command. The name of the unique
+file which was created on the server will be available via
+the <tt>&quot;unique_name&quot;</tt> method after the data
+connection has been closed.</p>
+
+<p style="margin-left:11%;">appe ( <small>FILE</small>
+)</p>
+
+<p style="margin-left:17%;">Tell the server that we want to
+append some data to the end of a file called
+<tt>&quot;FILE&quot;</tt>. If this file does not exist then
+create it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If for some
+reason you want to have complete control over the data
+connection, this includes generating it and calling the
+<tt>&quot;response&quot;</tt> method when required, then the
+user can use these methods to do so.</p>
+
+<p style="margin-left:11%; margin-top: 1em">However calling
+these methods only affects the use of the methods above that
+can return a data connection. They have no effect on methods
+<tt>&quot;get&quot;</tt>, <tt>&quot;put&quot;</tt>,
+<tt>&quot;put_unique&quot;</tt> and those that do not
+require data connections. <br>
+port ( [ <small>PORT</small> ] )</p>
+
+<p style="margin-left:17%;">Send a
+<tt>&quot;PORT&quot;</tt> command to the server. If
+<tt>&quot;PORT&quot;</tt> is specified then it is sent to
+the server. If not, then a listen socket is created and the
+correct information sent to the server.</p>
+
+<p style="margin-left:11%;">pasv ()</p>
+
+<p style="margin-left:17%;">Tell the server to go into
+passive mode. Returns the text that represents the port on
+which the server is listening, this text is in a suitable
+form to sent to another ftp server using the
+<tt>&quot;port&quot;</tt> method.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+methods can be used to transfer files between two remote
+servers, providing that these two servers can connect
+directly to each other. <br>
+pasv_xfer ( <small>SRC_FILE</small> ,
+<small>DEST_SERVER</small> [, <small>DEST_FILE</small> ]
+)</p>
+
+<p style="margin-left:17%;">This method will do a file
+transfer between two remote ftp servers. If
+<tt>&quot;DEST_FILE&quot;</tt> is omitted then the leaf name
+of <tt>&quot;SRC_FILE&quot;</tt> will be used.</p>
+
+<p style="margin-left:11%;">pasv_xfer_unique (
+<small>SRC_FILE</small> , <small>DEST_SERVER</small> [,
+<small>DEST_FILE</small> ] )</p>
+
+<p style="margin-left:17%;">Like
+<tt>&quot;pasv_xfer&quot;</tt> but the file is stored on the
+remote server using the <small>STOU</small> command.</p>
+
+<p style="margin-left:11%;">pasv_wait (
+<small>NON_PASV_SERVER</small> )</p>
+
+<p style="margin-left:17%;">This method can be used to wait
+for a transfer to complete between a passive server and a
+non-passive server. The method should be called on the
+passive server with the <tt>&quot;Net::FTP&quot;</tt> object
+for the non-passive server passed as an argument.</p>
+
+<p style="margin-left:11%;">abort ()</p>
+
+<p style="margin-left:17%;">Abort the current data
+transfer.</p>
+
+<p style="margin-left:11%;">quit ()</p>
+
+<p style="margin-left:17%;">Send the <small>QUIT</small>
+command to the remote <small>FTP</small> server and close
+the socket connection.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Methods for
+the adventurous</b> <tt><br>
+&quot;Net::FTP&quot;</tt> inherits from
+<tt>&quot;Net::Cmd&quot;</tt> so methods defined in
+<tt>&quot;Net::Cmd&quot;</tt> may be used to send commands
+to the remote <small>FTP</small> server. <br>
+quot ( <small>CMD</small> [,ARGS])</p>
+
+<p style="margin-left:17%;">Send a command, that Net::FTP
+does not directly support, to the remote server and wait for
+a response.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Returns most
+significant digit of the response code.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><b><small>WARNING</small></b>
+This call should only be used on commands that do not
+require data connections. Misuse of this method can hang the
+connection.</p>
+
+<h2>THE dataconn CLASS
+<a name="THE dataconn CLASS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Some of the
+methods defined in <tt>&quot;Net::FTP&quot;</tt> return an
+object which will be derived from this class.The dataconn
+class itself is derived from the
+<tt>&quot;IO::Socket::INET&quot;</tt> class, so any normal
+<small>IO</small> operations can be performed. However the
+following methods are defined in the dataconn class and
+<small>IO</small> should be performed using these. <br>
+read ( <small>BUFFER</small> , <small>SIZE</small> [,
+<small>TIMEOUT</small> ] )</p>
+
+<p style="margin-left:17%;">Read <tt>&quot;SIZE&quot;</tt>
+bytes of data from the server and place it into
+<tt>&quot;BUFFER&quot;</tt>, also performing any &lt;
+<small>CRLF</small> &gt; translation necessary.
+<tt>&quot;TIMEOUT&quot;</tt> is optional, if not given, the
+timeout value from the command connection will be used.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Returns the
+number of bytes read before any &lt; <small>CRLF</small>
+&gt; translation.</p>
+
+<p style="margin-left:11%;">write ( <small>BUFFER</small> ,
+<small>SIZE</small> [, <small>TIMEOUT</small> ] )</p>
+
+<p style="margin-left:17%;">Write <tt>&quot;SIZE&quot;</tt>
+bytes of data from <tt>&quot;BUFFER&quot;</tt> to the
+server, also performing any &lt; <small>CRLF</small> &gt;
+translation necessary. <tt>&quot;TIMEOUT&quot;</tt> is
+optional, if not given, the timeout value from the command
+connection will be used.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Returns the
+number of bytes written before any &lt; <small>CRLF</small>
+&gt; translation.</p>
+
+<p style="margin-left:11%;">bytes_read ()</p>
+
+<p style="margin-left:17%;">Returns the number of bytes
+read so far.</p>
+
+<p style="margin-left:11%;">abort ()</p>
+
+<p style="margin-left:17%;">Abort the current data
+transfer.</p>
+
+<p style="margin-left:11%;">close ()</p>
+
+<p style="margin-left:17%;">Close the data connection and
+get a response from the <small>FTP</small> server. Returns
+<i>true</i> if the connection was closed successfully and
+the first digit of the response from the server was a
+&rsquo;2&rsquo;.</p>
+
+<h2>UNIMPLEMENTED
+<a name="UNIMPLEMENTED"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+<small>RFC959</small> commands have not been implemented:
+<b><small><br>
+SMNT</small></b></p>
+
+<p style="margin-left:17%;">Mount a different file system
+structure without changing login or accounting
+information.</p>
+
+<p style="margin-left:11%;"><b><small>HELP</small></b></p>
+
+<p style="margin-left:17%;">Ask the server for
+&quot;helpful information&quot; (that&rsquo;s what the
+<small>RFC</small> says) on the commands it accepts.</p>
+
+<p style="margin-left:11%;"><b><small>MODE</small></b></p>
+
+<p style="margin-left:17%;">Specifies transfer mode
+(stream, block or compressed) for file to be
+transferred.</p>
+
+<p style="margin-left:11%;"><b><small>SYST</small></b></p>
+
+<p style="margin-left:17%;">Request remote server system
+identification.</p>
+
+<p style="margin-left:11%;"><b><small>STAT</small></b></p>
+
+<p style="margin-left:17%;">Request remote server
+status.</p>
+
+<p style="margin-left:11%;"><b><small>STRU</small></b></p>
+
+<p style="margin-left:17%;">Specifies file structure for
+file to be transferred.</p>
+
+<p style="margin-left:11%;"><b><small>REIN</small></b></p>
+
+<p style="margin-left:17%;">Reinitialize the connection,
+flushing all I/O and account information.</p>
+
+<h2>REPORTING BUGS
+<a name="REPORTING BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">When reporting
+bugs/problems please include as much information as
+possible. It may be difficult for me to reproduce the
+problem as almost every setup is different.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A small script
+which yields the problem will probably be of help. It would
+also be useful if this script was run with the extra options
+<tt>&quot;Debug =&quot;</tt> 1&gt; passed to the
+constructor, and the output sent with the bug report. If you
+cannot include a small script then please include a Debug
+trace from a run of your program which does yield the
+problem.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Graham Barr
+&lt;gbarr@pobox.com&gt;</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Net::Netrc
+Net::Cmd</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>ftp</i>(1),
+<i>ftpd</i>(8), <small>RFC</small> 959
+http://www.cis.ohio&minus;state.edu/htbin/rfc/rfc959.html</p>
+
+<h2>USE EXAMPLES
+<a name="USE EXAMPLES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">For an example
+of the use of Net::FTP see <br>
+http://www.csh.rit.edu/~adam/Progs/</p>
+
+<p style="margin-left:17%;"><tt>&quot;autoftp&quot;</tt> is
+a program that can retrieve, send, or list files via the
+<small>FTP</small> protocol in a non-interactive manner.</p>
+
+<h2>CREDITS
+<a name="CREDITS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Henry
+Gabryjelski &lt;henryg@WPI.EDU&gt; &minus; for the
+suggestion of creating directories recursively.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Nathan
+Torkington &lt;gnat@frii.com&gt; &minus; for some input on
+the documentation.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Roderick
+Schertler &lt;roderick@gate.net&gt; &minus; for various
+inputs</p>
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (c)
+1995&minus;2004 Graham Barr. All rights reserved. This
+program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,545 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:30:29 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>AUSEARCH:</title>
+
+</head>
+<body>
+
+<h1 align="center">AUSEARCH:</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#EXIT STATUS">EXIT STATUS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">ausearch
+&minus; a tool to query audit daemon logs</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>ausearch</b>
+[<i>options</i>]</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>ausearch</b>
+is a tool that can query the audit daemon logs based for
+events based on different search criteria. The ausearch
+utility can also take input from stdin as long as the input
+is the raw log data. Each commandline option given forms an
+&quot;and&quot; statement. For example, searching with
+<b>&minus;m</b> and <b>&minus;ui</b> means return events
+that have both the requested type and match the user id
+given. An exception is the <b>&minus;n</b> option; multiple
+nodes are allowed in a search which will return any matching
+node.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It should also
+be noted that each syscall excursion from user space into
+the kernel and back into user space has one event ID that is
+unique. Any auditable event that is triggered during this
+trip share this ID so that they may be correlated.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Different parts
+of the kernel may add supplemental records. For example, an
+audit event on the syscall &quot;open&quot; will also cause
+the kernel to emit a PATH record with the file name. The
+ausearch utility will present all records that make up one
+event together. This could mean that even though you search
+for a specific kind of record, the resulting events may
+contain SYSCALL records.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also be aware
+that not all record types have the requested information.
+For example, a PATH record does not have a hostname or a
+loginuid.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&minus;a</b>,&nbsp;<b>&minus;&minus;event&nbsp;</b><i>audit-event-id</i></p>
+
+<p style="margin-left:22%;">Search for an event based on
+the given <i>event ID</i>. Messages always start with
+something like msg=audit(1116360555.329:2401771). The event
+ID is the number after the &rsquo;:&rsquo;. All audit events
+that are recorded from one application&rsquo;s syscall have
+the same audit event ID. A second syscall made by the same
+application will have a different event ID. This way they
+are unique.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;arch&nbsp;</b><i>CPU</i></p>
+
+<p style="margin-left:22%;">Search for events based on a
+specific CPU architecture. If you do not know the arch of
+your machine but you want to use the 32 bit syscall table
+and your machine supports 32 bits, you can also use
+<b>b32</b> for the arch. The same applies to the 64 bit
+syscall table, you can use <b>b64.</b> The arch of your
+machine can be found by doing &rsquo;uname -m&rsquo;.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;c</b>,&nbsp;<b>&minus;&minus;comm&nbsp;</b><i>comm-name</i></p>
+
+<p style="margin-left:22%;">Search for an event based on
+the given <i>comm name</i>. The comm name is the
+executable&rsquo;s name from the task structure.</p>
+
+<p style="margin-left:11%;"><b>&minus;&minus;debug</b></p>
+
+<p style="margin-left:22%;">Write malformed events that are
+skipped to stderr.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;checkpoint&nbsp;</b><i>checkpoint-file</i></p>
+
+<p style="margin-left:22%;">Checkpoint the output between
+successive invocations of ausearch such that only events not
+previously output will print in subsequent invocations.</p>
+
+<p style="margin-left:22%; margin-top: 1em">An auditd event
+is made up of one or more records. When processing events,
+ausearch defines events as either complete or in-complete. A
+complete event is either a single record event or one whose
+event time occurred 2 seconds in the past compared to the
+event being currently processed.</p>
+
+<p style="margin-left:22%; margin-top: 1em">A checkpoint is
+achieved by recording the last completed event output along
+with the device number and inode of the file the last
+completed event appeared in <i>checkpoint-file</i>. On a
+subsequent invocation, ausearch will load this checkpoint
+data and as it processes the log files, it will discard all
+complete events until it matches the checkpointed one. At
+this point, it will start outputting complete events.</p>
+
+<p style="margin-left:22%; margin-top: 1em">Should the file
+or the last checkpointed event not be found, one of a number
+of errors will result and ausearch will terminate. See
+<b>EXIT STATUS</b> for detail.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;e,&nbsp;</b>&minus;&minus;exit&nbsp;<i>exit-code-or-errno</i></p>
+
+<p style="margin-left:22%;">Search for an event based on
+the given syscall <i>exit code or errno</i>.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;f</b>,&nbsp;<b>&minus;&minus;file&nbsp;</b><i>file-name</i></p>
+
+<p style="margin-left:22%;">Search for an event based on
+the given <i>filename</i>.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;ga</b>,&nbsp;<b>&minus;&minus;gid&minus;all&nbsp;</b><i>all-group-id</i></p>
+
+<p style="margin-left:22%;">Search for an event with either
+effective group ID or group ID matching the given <i>group
+ID</i>.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;ge</b>,&nbsp;<b>&minus;&minus;gid&minus;effective&nbsp;</b><i>effective-group-id</i></p>
+
+<p style="margin-left:22%;">Search for an event with the
+given <i>effective group ID</i> or group name.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;gi</b>,&nbsp;<b>&minus;&minus;gid&nbsp;</b><i>group-id</i></p>
+
+<p style="margin-left:22%;">Search for an event with the
+given <i>group ID</i> or group name.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;h</b>,&nbsp;<b>&minus;&minus;help</b></p>
+
+<p style="margin-left:22%;">Help</p>
+
+
+<p style="margin-left:11%;"><b>&minus;hn</b>,&nbsp;<b>&minus;&minus;host&nbsp;</b><i>host-name</i></p>
+
+<p style="margin-left:22%;">Search for an event with the
+given <i>host name</i>. The hostname can be either a
+hostname, fully qualified domain name, or numeric network
+address. No attempt is made to resolve numeric addresses to
+domain names or aliases.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;i</b>,&nbsp;<b>&minus;&minus;interpret</b></p>
+
+<p style="margin-left:22%;">Interpret numeric entities into
+text. For example, uid is converted to account name. The
+conversion is done using the current resources of the
+machine where the search is being run. If you have renamed
+the accounts, or don&rsquo;t have the same accounts on your
+machine, you could get misleading results.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;if</b>,&nbsp;<b>&minus;&minus;input&nbsp;</b><i>file-name&nbsp;</i>|&nbsp;<i>directory</i></p>
+
+<p style="margin-left:22%;">Use the given <i>file</i> or
+<i>directory</i> instead of the logs. This is to aid
+analysis where the logs have been moved to another machine
+or only part of a log was saved.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;input&minus;logs</b></p>
+
+<p style="margin-left:22%;">Use the log file location from
+auditd.conf as input for searching. This is needed if you
+are using ausearch from a cron job.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;just&minus;one</b></p>
+
+<p style="margin-left:22%;">Stop after emitting the first
+event that matches the search criteria.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;k</b>,&nbsp;<b>&minus;&minus;key&nbsp;</b><i>key-string</i></p>
+
+<p style="margin-left:22%;">Search for an event based on
+the given <i>key string</i>.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;l</b>,&nbsp;<b>&minus;&minus;line&minus;buffered</b></p>
+
+<p style="margin-left:22%;">Flush output on every line.
+Most useful when stdout is connected to a pipe and the
+default block buffering strategy is undesirable. May impose
+a performance penalty.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;m</b>,&nbsp;<b>&minus;&minus;message&nbsp;</b><i>message-type&nbsp;</i>|&nbsp;<i>comma-sep-message-type-list</i></p>
+
+<p style="margin-left:22%;">Search for an event matching
+the given <i>message type</i>. You may also enter a <i>comma
+separated list of message types</i>. There is an <b>ALL</b>
+message type that doesn&rsquo;t exist in the actual logs. It
+allows you to get all messages in the system. The list of
+valid messages types is long. The program will display the
+list whenever no message type is passed with this parameter.
+The message type can be either text or numeric. If you enter
+a list, there can be only commas and no spaces separating
+the list.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;n</b>,&nbsp;<b>&minus;&minus;node&nbsp;</b><i>node-name</i></p>
+
+<p style="margin-left:22%;">Search for events originating
+from <i>node name</i> string. Multiple nodes are allowed,
+and if any nodes match, the event is matched.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;o</b>,&nbsp;<b>&minus;&minus;object&nbsp;</b><i>SE-Linux-context-string</i></p>
+
+<p style="margin-left:22%;">Search for event with
+<i>tcontext</i> (object) matching the string.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;p</b>,&nbsp;<b>&minus;&minus;pid&nbsp;</b><i>process-id</i></p>
+
+<p style="margin-left:22%;">Search for an event matching
+the given <i>process ID</i>.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;pp</b>,&nbsp;<b>&minus;&minus;ppid&nbsp;</b><i>parent-process-id</i></p>
+
+<p style="margin-left:22%;">Search for an event matching
+the given <i>parent process ID</i>.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;r</b>,&nbsp;<b>&minus;&minus;raw</b></p>
+
+<p style="margin-left:22%;">Output is completely
+unformatted. This is useful for extracting records that can
+still be interpreted by audit tools.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;sc</b>,&nbsp;<b>&minus;&minus;syscall&nbsp;</b><i>syscall-name-or-value</i></p>
+
+<p style="margin-left:22%;">Search for an event matching
+the given <i>syscall</i>. You may either give the numeric
+syscall value or the syscall name. If you give the syscall
+name, it will use the syscall table for the machine that you
+are using.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;se</b>,&nbsp;<b>&minus;&minus;context&nbsp;</b><i>SE-Linux-context-string</i></p>
+
+<p style="margin-left:22%;">Search for event with either
+<i>scontext</i>/subject or <i>tcontext</i>/object matching
+the string.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;session&nbsp;</b><i>Login-Session-ID</i></p>
+
+<p style="margin-left:22%;">Search for events matching the
+given Login Session ID. This process attribute is set when a
+user logs in and can tie any process to a particular user
+login.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;su</b>,&nbsp;<b>&minus;&minus;subject&nbsp;</b><i>SE-Linux-context-string</i></p>
+
+<p style="margin-left:22%;">Search for event with
+<i>scontext</i> (subject) matching the string.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;sv</b>,&nbsp;<b>&minus;&minus;success&nbsp;</b><i>success-value</i></p>
+
+<p style="margin-left:22%;">Search for an event matching
+the given <i>success value</i>. Legal values are <b>yes</b>
+and <b>no</b>.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;te</b>,&nbsp;<b>&minus;&minus;end&nbsp;</b>[<i>end-date</i>]&nbsp;[<i>end-time</i>]</p>
+
+<p style="margin-left:22%;">Search for events with time
+stamps equal to or before the given end time. The format of
+end time depends on your locale. If the date is omitted,
+<b>today</b> is assumed. If the time is omitted, <b>now</b>
+is assumed. Use 24 hour clock time rather than AM or PM to
+specify time. An example date using the en_US.utf8 locale is
+09/03/2009. An example of time is 18:00:00. The date format
+accepted is influenced by the LC_TIME environmental
+variable.</p>
+
+<p style="margin-left:22%; margin-top: 1em">You may also
+use the word: <b>now</b>, <b>recent</b>, <b>today</b>,
+<b>yesterday</b>, <b>this&minus;week</b>,
+<b>week&minus;ago</b>, <b>this&minus;month</b>, or
+<b>this&minus;year</b>. <b>Today</b> means starting now.
+<b>Recent</b> is 10 minutes ago. <b>Yesterday</b> is 1
+second after midnight the previous day.
+<b>This&minus;week</b> means starting 1 second after
+midnight on day 0 of the week determined by your locale (see
+<b>localtime</b>). <b>Week&minus;ago</b> means 1 second
+after midnight exactly 7 days ago. <b>This&minus;month</b>
+means 1 second after midnight on day 1 of the month.
+<b>This&minus;year</b> means the 1 second after midnight on
+the first day of the first month.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;ts</b>,&nbsp;<b>&minus;&minus;start&nbsp;</b>[<i>start-date</i>]&nbsp;[<i>start-time</i>]</p>
+
+<p style="margin-left:22%;">Search for events with time
+stamps equal to or after the given start time. The format of
+start time depends on your locale. If the date is omitted,
+<b>today</b> is assumed. If the time is omitted,
+<b>midnight</b> is assumed. Use 24 hour clock time rather
+than AM or PM to specify time. An example date using the
+en_US.utf8 locale is 09/03/2009. An example of time is
+18:00:00. The date format accepted is influenced by the
+LC_TIME environmental variable.</p>
+
+<p style="margin-left:22%; margin-top: 1em">You may also
+use the word: <b>now</b>, <b>recent</b>, <b>today</b>,
+<b>yesterday</b>, <b>this&minus;week</b>,
+<b>week&minus;ago</b>, <b>this&minus;month</b>,
+<b>this&minus;year</b>, or <b>checkpoint</b>. <b>Today</b>
+means starting at 1 second after midnight. <b>Recent</b> is
+10 minutes ago. <b>Yesterday</b> is 1 second after midnight
+the previous day. <b>This&minus;week</b> means starting 1
+second after midnight on day 0 of the week determined by
+your locale (see <b>localtime</b>). <b>Week&minus;ago</b>
+means starting 1 second after midnight exactly 7 days ago.
+<b>This&minus;month</b> means 1 second after midnight on day
+1 of the month. <b>This&minus;year</b> means the 1 second
+after midnight on the first day of the first month.</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><b>checkpoint</b>
+means <i>ausearch</i> will use the timestamp found within a
+valid checkpoint file ignoring the recorded inode, device,
+serial, node and event type also found within a checkpoint
+file. Essentially, this is the recovery action should an
+invocation of <i>ausearch</i> with a checkpoint option fail
+with an exit status of 10, 11 or 12. It could be used in a
+shell script something like:</p>
+
+<p style="margin-left:29%; margin-top: 1em">ausearch
+--checkpoint /etc/audit/auditd_checkpoint.txt -i <br>
+_au_status=$? <br>
+if test ${_au_status} eq 10 -o ${_au_status} eq 11 -o
+${_au_status} eq 12 <br>
+then <br>
+ausearch --checkpoint /etc/audit/auditd_checkpoint.txt
+--start checkpoint -i <br>
+fi</p>
+
+
+<p style="margin-left:11%;"><b>&minus;tm</b>,&nbsp;<b>&minus;&minus;terminal&nbsp;</b><i>terminal</i></p>
+
+<p style="margin-left:22%;">Search for an event matching
+the given <i>terminal</i> value. Some daemons such as cron
+and atd use the daemon name for the terminal.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;ua</b>,&nbsp;<b>&minus;&minus;uid&minus;all&nbsp;</b><i>all-user-id</i></p>
+
+<p style="margin-left:22%;">Search for an event with either
+user ID, effective user ID, or login user ID (auid) matching
+the given <i>user ID</i>.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;ue</b>,&nbsp;<b>&minus;&minus;uid&minus;effective&nbsp;</b><i>effective-user-id</i></p>
+
+<p style="margin-left:22%;">Search for an event with the
+given <i>effective user ID</i>.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;ui</b>,&nbsp;<b>&minus;&minus;uid&nbsp;</b><i>user-id</i></p>
+
+<p style="margin-left:22%;">Search for an event with the
+given <i>user ID</i>.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;ul</b>,&nbsp;<b>&minus;&minus;loginuid&nbsp;</b><i>login-id</i></p>
+
+<p style="margin-left:22%;">Search for an event with the
+given <i>login user ID</i>. All entry point programs that
+are pamified need to be configured with pam_loginuid
+required for the session for searching on loginuid (auid) to
+be accurate.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;uu</b>,&nbsp;<b>&minus;&minus;uuid&nbsp;</b><i>guest-uuid</i></p>
+
+<p style="margin-left:22%;">Search for an event with the
+given <i>guest UUID</i>.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;v</b>,&nbsp;<b>&minus;&minus;version</b></p>
+
+<p style="margin-left:22%;">Print the version and exit</p>
+
+
+<p style="margin-left:11%;"><b>&minus;vm</b>,&nbsp;<b>&minus;&minus;vm-name&nbsp;</b><i>guest-name</i></p>
+
+<p style="margin-left:22%;">Search for an event with the
+given <i>guest name</i>.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;w</b>,&nbsp;<b>&minus;&minus;word</b></p>
+
+<p style="margin-left:22%;">String based matches must match
+the whole word. This category of matches include: filename,
+hostname, terminal, and SE Linux context.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;x</b>,&nbsp;<b>&minus;&minus;executable&nbsp;</b><i>executable</i></p>
+
+<p style="margin-left:22%;">Search for an event matching
+the given <i>executable</i> name.</p>
+
+<h2>EXIT STATUS
+<a name="EXIT STATUS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">0</p></td>
+<td width="4%"></td>
+<td width="82%">
+
+
+<p style="margin-top: 1em">if OK,</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>1</p></td>
+<td width="4%"></td>
+<td width="82%">
+
+
+<p>if nothing found, or argument errors or minor file
+acces/read errors,</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>10</p></td>
+<td width="4%"></td>
+<td width="82%">
+
+
+<p>invalid checkpoint data found in checkpoint file,</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>11</p></td>
+<td width="4%"></td>
+<td width="82%">
+
+
+<p>checkpoint processing error</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>12</p></td>
+<td width="4%"></td>
+<td width="82%">
+
+
+<p>checkpoint event not found in matching log file</p></td></tr>
+</table>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>auditd</b>(8),
+<b>pam_loginuid</b>(8).</p>
+<hr>
+</body>
+</html>

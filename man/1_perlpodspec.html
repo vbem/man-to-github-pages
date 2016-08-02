@@ -1,0 +1,2837 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:37:54 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERLPODSPEC</title>
+
+</head>
+<body>
+
+<h1 align="center">PERLPODSPEC</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#Pod Definitions">Pod Definitions</a><br>
+<a href="#Pod Commands">Pod Commands</a><br>
+<a href="#Pod Formatting Codes">Pod Formatting Codes</a><br>
+<a href="#Notes on Implementing Pod Processors">Notes on Implementing Pod Processors</a><br>
+<a href="#About L&lt;...&gt; Codes">About L&lt;...&gt; Codes</a><br>
+<a href="#About =over...=back Regions">About =over...=back Regions</a><br>
+<a href="#About Data Paragraphs and &quot;=begin/=end&quot; Regions">About Data Paragraphs and &quot;=begin/=end&quot; Regions</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlpodspec
+&minus; Plain Old Documentation: format specification and
+notes</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+is detailed notes on the Pod markup language. Most people
+will only have to read perlpod to know how to write in Pod,
+but this document may answer some incidental questions to do
+with parsing and rendering Pod.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In this
+document, &quot;must&quot; / &quot;must not&quot;,
+&quot;should&quot; / &quot;should not&quot;, and
+&quot;may&quot; have their conventional (cf.
+<small>RFC</small> 2119) meanings: &quot;X must do Y&quot;
+means that if X doesn&rsquo;t do Y, it&rsquo;s against this
+specification, and should really be fixed. &quot;X should do
+Y&quot; means that it&rsquo;s recommended, but X may fail to
+do Y, if there&rsquo;s a good reason. &quot;X may do Y&quot;
+is merely a note that X can do Y at will (although it is up
+to the reader to detect any connotation of &quot;and I think
+it would be <i>nice</i> if X did Y&quot; versus &quot;it
+wouldn&rsquo;t really <i>bother</i> me if X did
+Y&quot;).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Notably, when I
+say &quot;the parser should do Y&quot;, the parser may fail
+to do Y, if the calling application explicitly requests that
+the parser <i>not</i> do Y. I often phrase this as &quot;the
+parser should, by default, do Y.&quot; This doesn&rsquo;t
+<i>require</i> the parser to provide an option for turning
+off whatever feature Y is (like expanding tabs in verbatim
+paragraphs), although it implicates that such an option
+<i>may</i> be provided.</p>
+
+<h2>Pod Definitions
+<a name="Pod Definitions"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod is embedded
+in files, typically Perl source files, although you can
+write a file that&rsquo;s nothing but Pod.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A <b>line</b>
+in a file consists of zero or more non-newline characters,
+terminated by either a newline or the end of the file.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A <b>newline
+sequence</b> is usually a platform-dependent concept, but
+Pod parsers should understand it to mean any of
+<small>CR</small> ( <small>ASCII</small> 13),
+<small>LF</small> ( <small>ASCII</small> 10), or a
+<small>CRLF</small> ( <small>ASCII</small> 13 followed
+immediately by <small>ASCII</small> 10), in addition to any
+other system-specific meaning. The first
+<small>CR/CRLF/LF</small> sequence in the file may be used
+as the basis for identifying the newline sequence for
+parsing the rest of the file.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A <b>blank
+line</b> is a line consisting entirely of zero or more
+spaces ( <small>ASCII</small> 32) or tabs (
+<small>ASCII</small> 9), and terminated by a newline or
+end-of-file. A <b>non-blank line</b> is a line containing
+one or more characters other than space or tab (and
+terminated by a newline or end-of-file).</p>
+
+<p style="margin-left:11%; margin-top: 1em">(<i>Note:</i>
+Many older Pod parsers did not accept a line consisting of
+spaces/tabs and then a newline as a blank line. The only
+lines they considered blank were lines consisting of <i>no
+characters at all</i>, terminated by a newline.)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Whitespace</b>
+is used in this document as a blanket term for spaces, tabs,
+and newline sequences. (By itself, this term usually refers
+to literal whitespace. That is, sequences of whitespace
+characters in Pod source, as opposed to
+&quot;E&lt;32&gt;&quot;, which is a formatting code that
+<i>denotes</i> a whitespace character.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">A <b>Pod
+parser</b> is a module meant for parsing Pod (regardless of
+whether this involves calling callbacks or building a parse
+tree or directly formatting it). A <b>Pod formatter</b> (or
+<b>Pod translator</b>) is a module or program that converts
+Pod to some other format ( <small>HTML</small> , plaintext,
+TeX, PostScript, <small>RTF</small> ). A <b>Pod
+processor</b> might be a formatter or translator, or might
+be a program that does something else with the Pod (like
+counting words, scanning for index points, etc.).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Pod content is
+contained in <b>Pod blocks</b>. A Pod block starts with a
+line that matches &lt;m/\A=[a&minus;zA&minus;Z]/&gt;, and
+continues up to the next line that matches
+<tt>&quot;m/\A=cut/&quot;</tt> or up to the end of the file
+if there is no <tt>&quot;m/\A=cut/&quot;</tt> line.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Within a Pod
+block, there are <b>Pod paragraphs</b>. A Pod paragraph
+consists of non-blank lines of text, separated by one or
+more blank lines.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For purposes of
+Pod processing, there are four types of paragraphs in a Pod
+block:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>A command paragraph (also called a
+&quot;directive&quot;). The first line of this paragraph
+must match <tt>&quot;m/\A=[a&minus;zA&minus;Z]/&quot;</tt>.
+Command paragraphs are typically one line, as in:</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  =head1 NOTES
+  =item *</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">But they may
+span several (non-blank) lines:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =for comment
+  Hm, I wonder what it would look like if
+  you tried to write a BNF for Pod from this.
+  =head3 Dr. Strangelove, or: How I Learned to
+  Stop Worrying and Love the Bomb</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em"><i>Some</i>
+command paragraphs allow formatting codes in their content
+(i.e., after the part that matches
+<tt>&quot;m/\A=[a&minus;zA&minus;Z]\S*\s*/&quot;</tt>), as
+in:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =head1 Did You Remember to C&lt;use strict;&gt;?</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">In other words,
+the Pod processing handler for &quot;head1&quot; will apply
+the same processing to &quot;Did You Remember to C&lt;use
+strict;&gt;?&quot; that it would to an ordinary paragraph
+(i.e., formatting codes like &quot;C&lt;...&gt;&quot;) are
+parsed and presumably formatted appropriately, and
+whitespace in the form of literal spaces and/or tabs is not
+significant.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">A <b>verbatim paragraph</b>. The
+first line of this paragraph must be a literal space or tab,
+and this paragraph must not be inside a &quot;=begin
+<i>identifier</i>&quot;, ... &quot;=end
+<i>identifier</i>&quot; sequence unless
+&quot;<i>identifier</i>&quot; begins with a colon
+(&quot;:&quot;). That is, if a paragraph starts with a
+literal space or tab, but <i>is</i> inside a &quot;=begin
+<i>identifier</i>&quot;, ... &quot;=end
+<i>identifier</i>&quot; region, then it&rsquo;s a data
+paragraph, unless &quot;<i>identifier</i>&quot; begins with
+a colon.</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Whitespace
+<i>is</i> significant in verbatim paragraphs (although, in
+processing, tabs are probably expanded).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">An <b>ordinary paragraph</b>. A
+paragraph is an ordinary paragraph if its first line matches
+neither <tt>&quot;m/\A=[a&minus;zA&minus;Z]/&quot;</tt> nor
+<tt>&quot;m/\A[ \t]/&quot;</tt>, <i>and</i> if it&rsquo;s
+not inside a &quot;=begin <i>identifier</i>&quot;, ...
+&quot;=end <i>identifier</i>&quot; sequence unless
+&quot;<i>identifier</i>&quot; begins with a colon
+(&quot;:&quot;).</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>A <b>data paragraph</b>. This is a paragraph that
+<i>is</i> inside a &quot;=begin <i>identifier</i>&quot; ...
+&quot;=end <i>identifier</i>&quot; sequence where
+&quot;<i>identifier</i>&quot; does <i>not</i> begin with a
+literal colon (&quot;:&quot;). In some sense, a data
+paragraph is not part of Pod at all (i.e., effectively
+it&rsquo;s &quot;out-of-band&quot;), since it&rsquo;s not
+subject to most kinds of Pod parsing; but it is specified
+here, since Pod parsers need to be able to call an event for
+it, or store it in some form in a parse tree, or at least
+just parse <i>around</i> it.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">For example:
+consider the following paragraphs:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  # &lt;&minus; that's the 0th column
+  =head1 Foo
+  Stuff
+    $foo&minus;&gt;bar
+  =cut</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Here,
+&quot;=head1 Foo&quot; and &quot;=cut&quot; are command
+paragraphs because the first line of each matches
+<tt>&quot;m/\A=[a&minus;zA&minus;Z]/&quot;</tt>.
+&quot;<i>[space][space]</i><tt>$foo</tt>&minus;&gt;bar&quot;
+is a verbatim paragraph, because its first line starts with
+a literal whitespace character (and there&rsquo;s no
+&quot;=begin&quot;...&quot;=end&quot; region around).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+&quot;=begin <i>identifier</i>&quot; ... &quot;=end
+<i>identifier</i>&quot; commands stop paragraphs that they
+surround from being parsed as ordinary or verbatim
+paragraphs, if <i>identifier</i> doesn&rsquo;t begin with a
+colon. This is discussed in detail in the section
+&quot;About Data Paragraphs and &quot;=begin/=end&quot;
+Regions&quot;.</p>
+
+<h2>Pod Commands
+<a name="Pod Commands"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This section is
+intended to supplement and clarify the discussion in
+&quot;Command Paragraph&quot; in perlpod. These are the
+currently recognized Pod commands: <br>
+&quot;=head1&quot;, &quot;=head2&quot;, &quot;=head3&quot;,
+&quot;=head4&quot;</p>
+
+<p style="margin-left:17%;">This command indicates that the
+text in the remainder of the paragraph is a heading. That
+text may contain formatting codes. Examples:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =head1 Object Attributes
+  =head3 What B&lt;Not&gt; to Do!</pre>
+
+
+<p style="margin-left:11%;">&quot;=pod&quot;</p>
+
+<p style="margin-left:17%;">This command indicates that
+this paragraph begins a Pod block. (If we are already in the
+middle of a Pod block, this command has no effect at all.)
+If there is any text in this command paragraph after
+&quot;=pod&quot;, it must be ignored. Examples:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =pod
+  This is a plain Pod paragraph.
+  =pod This text is ignored.</pre>
+
+
+<p style="margin-left:11%;">&quot;=cut&quot;</p>
+
+<p style="margin-left:17%;">This command indicates that
+this line is the end of this previously started Pod block.
+If there is any text after &quot;=cut&quot; on the line, it
+must be ignored. Examples:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =cut
+  =cut The documentation ends here.
+  =cut
+  # This is the first line of program text.
+  sub foo { # This is the second.</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">It is an error
+to try to <i>start</i> a Pod block with a &quot;=cut&quot;
+command. In that case, the Pod processor must halt parsing
+of the input file, and must by default emit a warning.</p>
+
+<p style="margin-left:11%;">&quot;=over&quot;</p>
+
+<p style="margin-left:17%;">This command indicates that
+this is the start of a list/indent region. If there is any
+text following the &quot;=over&quot;, it must consist of
+only a nonzero positive numeral. The semantics of this
+numeral is explained in the &quot;About =over...=back
+Regions&quot; section, further below. Formatting codes are
+not expanded. Examples:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =over 3
+  =over 3.5
+  =over</pre>
+
+
+<p style="margin-left:11%;">&quot;=item&quot;</p>
+
+<p style="margin-left:17%;">This command indicates that an
+item in a list begins here. Formatting codes are processed.
+The semantics of the (optional) text in the remainder of
+this paragraph are explained in the &quot;About
+=over...=back Regions&quot; section, further below.
+Examples:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =item
+  =item *
+  =item      *
+  =item 14
+  =item   3.
+  =item C&lt;&lt; $thing&minus;&gt;stuff(I&lt;dodad&gt;) &gt;&gt;
+  =item For transporting us beyond seas to be tried for pretended
+  offenses
+  =item He is at this time transporting large armies of foreign
+  mercenaries to complete the works of death, desolation and
+  tyranny, already begun with circumstances of cruelty and perfidy
+  scarcely paralleled in the most barbarous ages, and totally
+  unworthy the head of a civilized nation.</pre>
+
+
+<p style="margin-left:11%;">&quot;=back&quot;</p>
+
+<p style="margin-left:17%;">This command indicates that
+this is the end of the region begun by the most recent
+&quot;=over&quot; command. It permits no text after the
+&quot;=back&quot; command.</p>
+
+<p style="margin-left:11%;">&quot;=begin formatname&quot;
+<br>
+&quot;=begin formatname parameter&quot;</p>
+
+<p style="margin-left:17%;">This marks the following
+paragraphs (until the matching &quot;=end formatname&quot;)
+as being for some special kind of processing. Unless
+&quot;formatname&quot; begins with a colon, the contained
+non-command paragraphs are data paragraphs. But if
+&quot;formatname&quot; <i>does</i> begin with a colon, then
+non-command paragraphs are ordinary paragraphs or data
+paragraphs. This is discussed in detail in the section
+&quot;About Data Paragraphs and &quot;=begin/=end&quot;
+Regions&quot;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">It is advised
+that formatnames match the regexp
+<tt>&quot;m/\A:?[&minus;a&minus;zA&minus;Z0&minus;9_]+\z/&quot;</tt>.
+Everything following whitespace after the formatname is a
+parameter that may be used by the formatter when dealing
+with this region. This parameter must not be repeated in the
+&quot;=end&quot; paragraph. Implementors should anticipate
+future expansion in the semantics and syntax of the first
+parameter to
+&quot;=begin&quot;/&quot;=end&quot;/&quot;=for&quot;.</p>
+
+<p style="margin-left:11%;">&quot;=end formatname&quot;</p>
+
+<p style="margin-left:17%;">This marks the end of the
+region opened by the matching &quot;=begin formatname&quot;
+region. If &quot;formatname&quot; is not the formatname of
+the most recent open &quot;=begin formatname&quot; region,
+then this is an error, and must generate an error message.
+This is discussed in detail in the section &quot;About Data
+Paragraphs and &quot;=begin/=end&quot; Regions&quot;.</p>
+
+<p style="margin-left:11%;">&quot;=for formatname
+text...&quot;</p>
+
+<p style="margin-left:17%;">This is synonymous with:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">     =begin formatname
+     text...
+     =end formatname</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">That is, it
+creates a region consisting of a single paragraph; that
+paragraph is to be treated as a normal paragraph if
+&quot;formatname&quot; begins with a &quot;:&quot;; if
+&quot;formatname&quot; <i>doesn&rsquo;t</i> begin with a
+colon, then &quot;text...&quot; will constitute a data
+paragraph. There is no way to use &quot;=for formatname
+text...&quot; to express &quot;text...&quot; as a verbatim
+paragraph.</p>
+
+<p style="margin-left:11%;">&quot;=encoding
+encodingname&quot;</p>
+
+<p style="margin-left:17%;">This command, which should
+occur early in the document (at least before any
+non-US-ASCII data!), declares that this document is encoded
+in the encoding <i>encodingname</i>, which must be an
+encoding name that Encode recognizes. (Encode&rsquo;s list
+of supported encodings, in Encode::Supported, is useful
+here.) If the Pod parser cannot decode the declared
+encoding, it should emit a warning and may abort parsing the
+document altogether.</p>
+
+<p style="margin-left:17%; margin-top: 1em">A document
+having more than one &quot;=encoding&quot; line should be
+considered an error. Pod processors may silently tolerate
+this if the not-first &quot;=encoding&quot; lines are just
+duplicates of the first one (e.g., if there&rsquo;s a
+&quot;=encoding utf8&quot; line, and later on another
+&quot;=encoding utf8&quot; line). But Pod processors should
+complain if there are contradictory &quot;=encoding&quot;
+lines in the same document (e.g., if there is a
+&quot;=encoding utf8&quot; early in the document and
+&quot;=encoding big5&quot; later). Pod processors that
+recognize BOMs may also complain if they see an
+&quot;=encoding&quot; line that contradicts the
+<small>BOM</small> (e.g., if a document with a
+<small>UTF&minus;16LE BOM</small> has an &quot;=encoding
+shiftjis&quot; line).</p>
+
+<p style="margin-left:11%; margin-top: 1em">If a Pod
+processor sees any command other than the ones listed above
+(like &quot;=head&quot;, or &quot;=haed1&quot;, or
+&quot;=stuff&quot;, or &quot;=cuttlefish&quot;, or
+&quot;=w123&quot;), that processor must by default treat
+this as an error. It must not process the paragraph
+beginning with that command, must by default warn of this as
+an error, and may abort the parse. A Pod parser may allow a
+way for particular applications to add to the above list of
+known commands, and to stipulate, for each additional
+command, whether formatting codes should be processed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Future versions
+of this specification may add additional commands.</p>
+
+<h2>Pod Formatting Codes
+<a name="Pod Formatting Codes"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">(Note that in
+previous drafts of this document and of perlpod, formatting
+codes were referred to as &quot;interior sequences&quot;,
+and this term may still be found in the documentation for
+Pod parsers, and in error messages from Pod processors.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">There are two
+syntaxes for formatting codes:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>A formatting code starts with a capital letter (just
+US-ASCII [A&minus;Z]) followed by a &quot;&lt;&quot;, any
+number of characters, and ending with the first matching
+&quot;&gt;&quot;. Examples:</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    That's what I&lt;you&gt; think!
+    What's C&lt;dump()&gt; for?
+    X&lt;C&lt;chmod&gt; and C&lt;unlink()&gt; Under Different Operating Systems&gt;</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">A formatting code starts with a
+capital letter (just US-ASCII [A&minus;Z]) followed by two
+or more &quot;&lt;&quot;&rsquo;s, one or more whitespace
+characters, any number of characters, one or more whitespace
+characters, and ending with the first matching sequence of
+two or more &quot;&gt;&quot;&rsquo;s, where the number of
+&quot;&gt;&quot;&rsquo;s equals the number of
+&quot;&lt;&quot;&rsquo;s in the opening of this formatting
+code. Examples:</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    That's what I&lt;&lt; you &gt;&gt; think!
+    C&lt;&lt;&lt; open(X, &quot;&gt;&gt;thing.dat&quot;) || die $! &gt;&gt;&gt;
+    B&lt;&lt; $foo&minus;&gt;bar(); &gt;&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">With this
+syntax, the whitespace character(s) after the
+&quot;C&lt;&lt;&lt;&quot; and before the
+&quot;&gt;&gt;&quot; (or whatever letter) are <i>not</i>
+renderable. They do not signify whitespace, are merely part
+of the formatting codes themselves. That is, these are all
+synonymous:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    C&lt;thing&gt;
+    C&lt;&lt; thing &gt;&gt;
+    C&lt;&lt;           thing     &gt;&gt;
+    C&lt;&lt;&lt;   thing &gt;&gt;&gt;
+    C&lt;&lt;&lt;&lt;
+    thing
+               &gt;&gt;&gt;&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">and so on.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Finally, the
+multiple-angle-bracket form does <i>not</i> alter the
+interpretation of nested formatting codes, meaning that the
+following four example lines are identical in meaning:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  B&lt;example: C&lt;$a E&lt;lt&gt;=E&lt;gt&gt; $b&gt;&gt;
+  B&lt;example: C&lt;&lt; $a &lt;=&gt; $b &gt;&gt;&gt;
+  B&lt;example: C&lt;&lt; $a E&lt;lt&gt;=E&lt;gt&gt; $b &gt;&gt;&gt;
+  B&lt;&lt;&lt; example: C&lt;&lt; $a E&lt;lt&gt;=E&lt;gt&gt; $b &gt;&gt; &gt;&gt;&gt;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In parsing Pod,
+a notably tricky part is the correct parsing of (potentially
+nested!) formatting codes. Implementors should consult the
+code in the <tt>&quot;parse_text&quot;</tt> routine in
+Pod::Parser as an example of a correct implementation. <br>
+&quot;I&lt;text&gt;&quot; -- italic text</p>
+
+<p style="margin-left:17%;">See the brief discussion in
+&quot;Formatting Codes&quot; in perlpod.</p>
+
+<p style="margin-left:11%;">&quot;B&lt;text&gt;&quot; --
+bold text</p>
+
+<p style="margin-left:17%;">See the brief discussion in
+&quot;Formatting Codes&quot; in perlpod.</p>
+
+<p style="margin-left:11%;">&quot;C&lt;code&gt;&quot; --
+code text</p>
+
+<p style="margin-left:17%;">See the brief discussion in
+&quot;Formatting Codes&quot; in perlpod.</p>
+
+<p style="margin-left:11%;">&quot;F&lt;filename&gt;&quot;
+-- style for filenames</p>
+
+<p style="margin-left:17%;">See the brief discussion in
+&quot;Formatting Codes&quot; in perlpod.</p>
+
+<p style="margin-left:11%;">&quot;X&lt;topic name&gt;&quot;
+-- an index entry</p>
+
+<p style="margin-left:17%;">See the brief discussion in
+&quot;Formatting Codes&quot; in perlpod.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This code is
+unusual in that most formatters completely discard this code
+and its content. Other formatters will render it with
+invisible codes that can be used in building an index of the
+current document.</p>
+
+<p style="margin-left:11%;">&quot;Z&lt;&gt;&quot; -- a null
+(zero-effect) formatting code</p>
+
+<p style="margin-left:17%;">Discussed briefly in
+&quot;Formatting Codes&quot; in perlpod.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This code is
+unusual is that it should have no content. That is, a
+processor may complain if it sees
+<tt>&quot;Z&lt;potatoes&gt;&quot;</tt>. Whether or not it
+complains, the <i>potatoes</i> text should ignored.</p>
+
+<p style="margin-left:11%;">&quot;L&lt;name&gt;&quot; -- a
+hyperlink</p>
+
+<p style="margin-left:17%;">The complicated syntaxes of
+this code are discussed at length in &quot;Formatting
+Codes&quot; in perlpod, and implementation details are
+discussed below, in &quot;About L&lt;...&gt; Codes&quot;.
+Parsing the contents of L&lt;content&gt; is tricky. Notably,
+the content has to be checked for whether it looks like a
+<small>URL</small> , or whether it has to be split on
+literal &quot;|&quot; and/or &quot;/&quot; (in the right
+order!), and so on, <i>before</i> E&lt;...&gt; codes are
+resolved.</p>
+
+<p style="margin-left:11%;">&quot;E&lt;escape&gt;&quot; --
+a character escape</p>
+
+<p style="margin-left:17%;">See &quot;Formatting
+Codes&quot; in perlpod, and several points in &quot;Notes on
+Implementing Pod Processors&quot;.</p>
+
+<p style="margin-left:11%;">&quot;S&lt;text&gt;&quot; --
+text contains non-breaking spaces</p>
+
+<p style="margin-left:17%;">This formatting code is
+syntactically simple, but semantically complex. What it
+means is that each space in the printable content of this
+code signifies a non-breaking space.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Consider:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    C&lt;$x ? $y    :  $z&gt;
+    S&lt;C&lt;$x ? $y     :  $z&gt;&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Both signify
+the monospace (c[ode] style) text consisting of
+&quot;$x&quot;, one space, &quot;?&quot;, one space,
+&quot;:&quot;, one space, &quot;$z&quot;. The difference is
+that in the latter, with the S code, those spaces are not
+&quot;normal&quot; spaces, but instead are non-breaking
+spaces.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If a Pod
+processor sees any formatting code other than the ones
+listed above (as in &quot;N&lt;...&gt;&quot;, or
+&quot;Q&lt;...&gt;&quot;, etc.), that processor must by
+default treat this as an error. A Pod parser may allow a way
+for particular applications to add to the above list of
+known formatting codes; a Pod parser might even allow a way
+to stipulate, for each additional command, whether it
+requires some form of special processing, as L&lt;...&gt;
+does.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Future versions
+of this specification may add additional formatting
+codes.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Historical
+note: A few older Pod processors would not see a
+&quot;&gt;&quot; as closing a &quot;C&lt;&quot; code, if the
+&quot;&gt;&quot; was immediately preceded by a
+&quot;&minus;&quot;. This was so that this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    C&lt;$foo&minus;&gt;bar&gt;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">would parse as
+equivalent to this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    C&lt;$foo&minus;E&lt;gt&gt;bar&gt;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">instead of as
+equivalent to a &quot;C&quot; formatting code containing
+only &quot;$foo&minus;&quot;, and then a &quot;bar&gt;&quot;
+outside the &quot;C&quot; formatting code. This problem has
+since been solved by the addition of syntaxes like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    C&lt;&lt; $foo&minus;&gt;bar &gt;&gt;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Compliant
+parsers must not treat &quot;&minus;&gt;&quot; as
+special.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Formatting
+codes absolutely cannot span paragraphs. If a code is opened
+in one paragraph, and no closing code is found by the end of
+that paragraph, the Pod parser must close that formatting
+code, and should complain (as in &quot;Unterminated I code
+in the paragraph starting at line 123: &rsquo;Time objects
+are not...&rsquo;&quot;). So these two paragraphs:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  I&lt;I told you not to do this!
+  Don't make me say it again!&gt;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">...must
+<i>not</i> be parsed as two paragraphs in italics (with the
+I code starting in one paragraph and starting in another.)
+Instead, the first paragraph should generate a warning, but
+that aside, the above code must parse as if it were:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  I&lt;I told you not to do this!&gt;
+  Don't make me say it again!E&lt;gt&gt;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">(In SGMLish
+jargon, all Pod commands are like block-level elements,
+whereas all Pod formatting codes are like inline-level
+elements.)</p>
+
+<h2>Notes on Implementing Pod Processors
+<a name="Notes on Implementing Pod Processors"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+is a long section of miscellaneous requirements and
+suggestions to do with Pod processing.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Pod formatters should tolerate lines in verbatim blocks
+that are of any length, even if that means having to break
+them (possibly several times, for very long lines) to avoid
+text running off the side of the page. Pod formatters may
+warn of such line-breaking. Such warnings are particularly
+appropriate for lines are over 100 characters long, which
+are usually not intentional.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Pod parsers must recognize <i>all</i> of the three
+well-known newline formats: <small>CR</small> ,
+<small>LF</small> , and <small>CRLF</small> . See
+perlport.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Pod parsers should accept input lines that are of any
+length.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Since Perl recognizes a Unicode Byte Order Mark at the
+start of files as signaling that the file is Unicode encoded
+as in <small>UTF&minus;16</small> (whether big-endian or
+little-endian) or <small>UTF&minus;8</small> , Pod parsers
+should do the same. Otherwise, the character encoding should
+be understood as being <small>UTF&minus;8</small> if the
+first highbit byte sequence in the file seems valid as a
+<small>UTF&minus;8</small> sequence, or otherwise as
+Latin&minus;1.</p> </td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Future versions
+of this specification may specify how Pod can accept other
+encodings. Presumably treatment of other encodings in Pod
+parsing would be as in <small>XML</small> parsing: whatever
+the encoding declared by a particular Pod file, content is
+to be stored in memory as Unicode characters.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The well known Unicode Byte
+Order Marks are as follows: if the file begins with the two
+literal byte values 0xFE 0xFF, this is the
+<small>BOM</small> for big-endian
+<small>UTF&minus;16</small> . If the file begins with the
+two literal byte value 0xFF 0xFE, this is the
+<small>BOM</small> for little-endian
+<small>UTF&minus;16</small> . If the file begins with the
+three literal byte values 0xEF 0xBB 0xBF, this is the
+<small>BOM</small> for <small>UTF&minus;8</small> .</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>A naive but sufficient heuristic for testing the first
+highbit byte-sequence in a BOM-less file (whether in code or
+in Pod!), to see whether that sequence is valid as
+<small>UTF&minus;8</small> ( <small>RFC</small> 2279) is to
+check whether that the first byte in the sequence is in the
+range 0xC0 &minus; 0xFD <i>and</i> whether the next byte is
+in the range 0x80 &minus; 0xBF. If so, the parser may
+conclude that this file is in <small>UTF&minus;8</small> ,
+and all highbit sequences in the file should be assumed to
+be <small>UTF&minus;8</small> . Otherwise the parser should
+treat the file as being in Latin&minus;1. In the unlikely
+circumstance that the first highbit sequence in a truly
+non&minus;UTF&minus;8 file happens to appear to be
+<small>UTF&minus;8</small> , one can cater to our heuristic
+(as well as any more intelligent heuristic) by prefacing
+that line with a comment line containing a highbit sequence
+that is clearly <i>not</i> valid as
+<small>UTF&minus;8</small> . A line consisting of simply
+&quot;#&quot;, an e&minus;acute, and any non-highbit byte,
+is sufficient to establish this file&rsquo;s encoding.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>This document&rsquo;s requirements and suggestions about
+encodings do not apply to Pod processors running on
+non-ASCII platforms, notably <small>EBCDIC</small>
+platforms.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Pod processors must treat a &quot;=for [label]
+[content...]&quot; paragraph as meaning the same thing as a
+&quot;=begin [label]&quot; paragraph, content, and an
+&quot;=end [label]&quot; paragraph. (The parser may conflate
+these two constructs, or may leave them distinct, in the
+expectation that the formatter will nevertheless treat them
+the same.)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>When rendering Pod to a format that allows comments
+(i.e., to nearly any format other than plaintext), a Pod
+formatter must insert comment text identifying its name and
+version number, and the name and version numbers of any
+modules it might be using to process the Pod. Minimal
+examples:</p> </td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  %% POD::Pod2PS v3.14159, using POD::Parser v1.92
+  &lt;!&minus;&minus; Pod::HTML v3.14159, using POD::Parser v1.92 &minus;&minus;&gt;
+  {\doccomm generated by Pod::Tree::RTF 3.14159 using Pod::Tree 1.08}
+  .\&quot; Pod::Man version 3.14159, using POD::Parser version 1.92</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Formatters may
+also insert additional comments, including: the release date
+of the Pod formatter program, the contact address for the
+author(s) of the formatter, the current time, the name of
+input file, the formatting options in effect, version of
+Perl used, etc.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Formatters may
+also choose to note errors/warnings as comments, besides or
+instead of emitting them otherwise (as in messages to
+<small>STDERR</small> , or <tt>&quot;die&quot;</tt>ing).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Pod parsers <i>may</i> emit
+warnings or error messages (&quot;Unknown E code
+E&lt;zslig&gt;!&quot;) to <small>STDERR</small> (whether
+through printing to <small>STDERR</small> , or
+<tt>&quot;warn&quot;</tt>ing/<tt>&quot;carp&quot;</tt>ing,
+or
+<tt>&quot;die&quot;</tt>ing/<tt>&quot;croak&quot;</tt>ing),
+but <i>must</i> allow suppressing all such
+<small>STDERR</small> output, and instead allow an option
+for reporting errors/warnings in some other way, whether by
+triggering a callback, or noting errors in some attribute of
+the document object, or some similarly unobtrusive mechanism
+-- or even by appending a &quot;Pod Errors&quot; section to
+the end of the parsed form of the document.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>In cases of exceptionally aberrant documents, Pod
+parsers may abort the parse. Even then, using
+<tt>&quot;die&quot;</tt>ing/<tt>&quot;croak&quot;</tt>ing is
+to be avoided; where possible, the parser library may simply
+close the input file and add text like &quot;*** Formatting
+Aborted ***&quot; to the end of the (partial) in-memory
+document.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>In paragraphs where formatting codes (like E&lt;...&gt;,
+B&lt;...&gt;) are understood (i.e., <i>not</i> verbatim
+paragraphs, but <i>including</i> ordinary paragraphs, and
+command paragraphs that produce renderable text, like
+&quot;=head1&quot;), literal whitespace should generally be
+considered &quot;insignificant&quot;, in that one literal
+space has the same meaning as any (nonzero) number of
+literal spaces, literal newlines, and literal tabs (as long
+as this produces no blank lines, since those would terminate
+the paragraph). Pod parsers should compact literal
+whitespace in each processed paragraph, but may provide an
+option for overriding this (since some processing tasks do
+not require it), or may follow additional special rules (for
+example, specially treating period-space-space or
+period-newline sequences).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Pod parsers should not, by default, try to coerce
+apostrophe (&rsquo;) and quote (&quot;) into smart quotes
+(little 9&rsquo;s, 66&rsquo;s, 99&rsquo;s, etc), nor try to
+turn backtick (&lsquo;) into anything else but a single
+backtick character (distinct from an open quote character!),
+nor &quot;&minus;&minus;&quot; into anything but two minus
+signs. They <i>must never</i> do any of those things to text
+in C&lt;...&gt; formatting codes, and never <i>ever</i> to
+text in verbatim paragraphs.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>When rendering Pod to a format that has two kinds of
+hyphens (&minus;), one that&rsquo;s a non-breaking hyphen,
+and another that&rsquo;s a breakable hyphen (as in
+&quot;object-oriented&quot;, which can be split across lines
+as &quot;object&minus;&quot;, newline,
+&quot;oriented&quot;), formatters are encouraged to
+generally translate &quot;&minus;&quot; to non-breaking
+hyphen, but may apply heuristics to convert some of these to
+breaking hyphens.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Pod formatters should make reasonable efforts to keep
+words of Perl code from being broken across lines. For
+example, &quot;Foo::Bar&quot; in some formatting systems is
+seen as eligible for being broken across lines as
+&quot;Foo::&quot; newline &quot;Bar&quot; or even
+&quot;Foo::&minus;&quot; newline &quot;Bar&quot;. This
+should be avoided where possible, either by disabling all
+line-breaking in mid-word, or by wrapping particular words
+with internal punctuation in &quot;don&rsquo;t break this
+across lines&quot; codes (which in some formats may not be a
+single code, but might be a matter of inserting non-breaking
+zero-width spaces between every pair of characters in a
+word.)</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Pod parsers should, by default, expand tabs in verbatim
+paragraphs as they are processed, before passing them to the
+formatter or other processor. Parsers may also allow an
+option for overriding this.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Pod parsers should, by default, remove newlines from the
+end of ordinary and verbatim paragraphs before passing them
+to the formatter. For example, while the paragraph
+you&rsquo;re reading now could be considered, in Pod source,
+to end with (and contain) the newline(s) that end it, it
+should be processed as ending with (and containing) the
+period character that ends this sentence.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Pod parsers, when reporting errors, should make some
+effort to report an approximate line number (&quot;Nested
+E&lt;&gt;&rsquo;s in Paragraph #52, near line 633 of
+Thing/Foo.pm!&quot;), instead of merely noting the paragraph
+number (&quot;Nested E&lt;&gt;&rsquo;s in Paragraph #52 of
+Thing/Foo.pm!&quot;). Where this is problematic, the
+paragraph number should at least be accompanied by an
+excerpt from the paragraph (&quot;Nested E&lt;&gt;&rsquo;s
+in Paragraph #52 of Thing/Foo.pm, which begins
+&rsquo;Read/write accessor for the C&lt;interest rate&gt;
+attribute...&rsquo;&quot;).</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Pod parsers, when processing a series of verbatim
+paragraphs one after another, should consider them to be one
+large verbatim paragraph that happens to contain blank
+lines. I.e., these two lines, which have a blank line
+between them:</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">        use Foo;
+        print Foo&minus;&gt;VERSION</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">should be
+unified into one paragraph (&quot;\tuse Foo;\n\n\tprint
+Foo&minus;&gt; <small>VERSION</small> &quot;) before being
+passed to the formatter or other processor. Parsers may also
+allow an option for overriding this.</p>
+
+<p style="margin-left:17%; margin-top: 1em">While this
+might be too cumbersome to implement in event-based Pod
+parsers, it is straightforward for parsers that return parse
+trees.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Pod formatters, where feasible,
+are advised to avoid splitting short verbatim paragraphs
+(under twelve lines, say) across pages.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Pod parsers must treat a line with only spaces and/or
+tabs on it as a &quot;blank line&quot; such as separates
+paragraphs. (Some older parsers recognized only two adjacent
+newlines as a &quot;blank line&quot; but would not recognize
+a newline, a space, and a newline, as a blank line. This is
+noncompliant behavior.)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Authors of Pod formatters/processors should make every
+effort to avoid writing their own Pod parser. There are
+already several in <small>CPAN</small> , with a wide range
+of interface styles -- and one of them, Pod::Parser, comes
+with modern versions of Perl.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Characters in Pod documents may be conveyed either as
+literals, or by number in E&lt;n&gt; codes, or by an
+equivalent mnemonic, as in E&lt;eacute&gt; which is exactly
+equivalent to E&lt;233&gt;.</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Characters in
+the range 32&minus;126 refer to those well known US-ASCII
+characters (also defined there by Unicode, with the same
+meaning), which all Pod formatters must render faithfully.
+Characters in the ranges 0&minus;31 and 127&minus;159 should
+not be used (neither as literals, nor as E&lt;number&gt;
+codes), except for the literal byte-sequences for newline
+(13, 13 10, or 10), and tab (9).</p>
+
+<p style="margin-left:17%; margin-top: 1em">Characters in
+the range 160&minus;255 refer to Latin&minus;1 characters
+(also defined there by Unicode, with the same meaning).
+Characters above 255 should be understood to refer to
+Unicode characters.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Be warned that some formatters
+cannot reliably render characters outside 32&minus;126; and
+many are able to handle 32&minus;126 and 160&minus;255, but
+nothing above 255.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Besides the well-known &quot;E&lt;lt&gt;&quot; and
+&quot;E&lt;gt&gt;&quot; codes for less-than and
+greater-than, Pod parsers must understand
+&quot;E&lt;sol&gt;&quot; for &quot;/&quot; (solidus, slash),
+and &quot;E&lt;verbar&gt;&quot; for &quot;|&quot; (vertical
+bar, pipe). Pod parsers should also understand
+&quot;E&lt;lchevron&gt;&quot; and
+&quot;E&lt;rchevron&gt;&quot; as legacy codes for characters
+171 and 187, i.e., &quot;left-pointing double angle
+quotation mark&quot; = &quot;left pointing guillemet&quot;
+and &quot;right-pointing double angle quotation mark&quot; =
+&quot;right pointing guillemet&quot;. (These look like
+little &quot;&lt;&lt;&quot; and &quot;&gt;&gt;&quot;, and
+they are now preferably expressed with the
+<small>HTML/XHTML</small> codes &quot;E&lt;laquo&gt;&quot;
+and &quot;E&lt;raquo&gt;&quot;.)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Pod parsers should understand all
+&quot;E&lt;html&gt;&quot; codes as defined in the entity
+declarations in the most recent <small>XHTML</small>
+specification at <tt>&quot;www.W3.org&quot;</tt>. Pod
+parsers must understand at least the entities that define
+characters in the range 160&minus;255 (Latin&minus;1). Pod
+parsers, when faced with some unknown
+&quot;E&lt;<i>identifier</i>&gt;&quot; code, shouldn&rsquo;t
+simply replace it with nullstring (by default, at least),
+but may pass it through as a string consisting of the
+literal characters E, less-than, <i>identifier</i>,
+greater-than. Or Pod parsers may offer the alternative
+option of processing such unknown
+&quot;E&lt;<i>identifier</i>&gt;&quot; codes by firing an
+event especially for such codes, or by adding a special
+node-type to the in-memory document tree. Such
+&quot;E&lt;<i>identifier</i>&gt;&quot; may have special
+meaning to some processors, or some processors may choose to
+add them to a special error report.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Pod parsers must also support the <small>XHTML</small>
+codes &quot;E&lt;quot&gt;&quot; for character 34
+(doublequote, &quot;), &quot;E&lt;amp&gt;&quot; for
+character 38 (ampersand, &amp;), and
+&quot;E&lt;apos&gt;&quot; for character 39 (apostrophe,
+&rsquo;).</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Note that in all cases of &quot;E&lt;whatever&gt;&quot;,
+<i>whatever</i> (whether an htmlname, or a number in any
+base) must consist only of alphanumeric characters -- that
+is, <i>whatever</i> must watch
+<tt>&quot;m/\A\w+\z/&quot;</tt>. So &quot;E&lt; 0 1 2 3
+&gt;&quot; is invalid, because it contains spaces, which
+aren&rsquo;t alphanumeric characters. This presumably does
+not <i>need</i> special treatment by a Pod processor; &quot;
+0 1 2 3 &quot; doesn&rsquo;t look like a number in any base,
+so it would presumably be looked up in the table of
+HTML-like names. Since there isn&rsquo;t (and cannot be) an
+HTML-like entity called &quot; 0 1 2 3 &quot;, this will be
+treated as an error. However, Pod processors may treat
+&quot;E&lt; 0 1 2 3 &gt;&quot; or
+&quot;E&lt;e&minus;acute&gt;&quot; as <i>syntactically</i>
+invalid, potentially earning a different error message than
+the error message (or warning, or event) generated by a
+merely unknown (but theoretically valid) htmlname, as in
+&quot;E&lt;qacute&gt;&quot; [sic]. However, Pod parsers are
+not required to make this distinction.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Note that E&lt;number&gt; <i>must not</i> be interpreted
+as simply &quot;codepoint <i>number</i> in the
+current/native character set&quot;. It always means only
+&quot;the character represented by codepoint <i>number</i>
+in Unicode.&quot; (This is identical to the semantics of
+&amp;#<i>number</i>; in <small>XML</small> .)</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">This will
+likely require many formatters to have tables mapping from
+treatable Unicode codepoints (such as the &quot;\xE9&quot;
+for the e&minus;acute character) to the escape sequences or
+codes necessary for conveying such sequences in the target
+output format. A converter to *roff would, for example know
+that &quot;\xE9&quot; (whether conveyed literally, or via a
+E&lt;...&gt; sequence) is to be conveyed as
+&quot;e\\*&rsquo;&quot;. Similarly, a program rendering Pod
+in a Mac <small>OS</small> application window, would
+presumably need to know that &quot;\xE9&quot; maps to
+codepoint 142 in MacRoman encoding that (at time of writing)
+is native for Mac <small>OS</small> . Such Unicode2whatever
+mappings are presumably already widely available for common
+output formats. (Such mappings may be incomplete!
+Implementers are not expected to bend over backwards in an
+attempt to render Cherokee syllabics, Etruscan runes,
+Byzantine musical symbols, or any of the other weird things
+that Unicode can encode.) And if a Pod document uses a
+character not found in such a mapping, the formatter should
+consider it an unrenderable character.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">If, surprisingly, the
+implementor of a Pod formatter can&rsquo;t find a
+satisfactory pre-existing table mapping from Unicode
+characters to escapes in the target format (e.g., a decent
+table of Unicode characters to *roff escapes), it will be
+necessary to build such a table. If you are in this
+circumstance, you should begin with the characters in the
+range 0x00A0 &minus; 0x00FF, which is mostly the heavily
+used accented characters. Then proceed (as patience permits
+and fastidiousness compels) through the characters that the
+(X)HTML standards groups judged important enough to merit
+mnemonics for. These are declared in the (X)HTML
+specifications at the www.W3.org site. At time of writing
+(September 2001), the most recent entity declaration files
+are:</p> </td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  http://www.w3.org/TR/xhtml1/DTD/xhtml&minus;lat1.ent
+  http://www.w3.org/TR/xhtml1/DTD/xhtml&minus;special.ent
+  http://www.w3.org/TR/xhtml1/DTD/xhtml&minus;symbol.ent</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Then you can
+progress through any remaining notable Unicode characters in
+the range 0x2000&minus;0x204D (consult the character tables
+at www.unicode.org), and whatever else strikes your fancy.
+For example, in <i>xhtml&minus;symbol.ent</i>, there is the
+entry:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;!ENTITY infin    &quot;&amp;#8734;&quot;&gt; &lt;!&minus;&minus; infinity, U+221E ISOtech &minus;&minus;&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">While the
+mapping &quot;infin&quot; to the character
+&quot;\x{221E}&quot; will (hopefully) have been already
+handled by the Pod parser, the presence of the character in
+this file means that it&rsquo;s reasonably important enough
+to include in a formatter&rsquo;s table that maps from
+notable Unicode characters to the codes necessary for
+rendering them. So for a Unicode&minus;to&minus;*roff
+mapping, for example, this would merit the entry:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &quot;\x{221E}&quot; =&gt; '\(in',</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">It is eagerly
+hoped that in the future, increasing numbers of formats (and
+formatters) will support Unicode characters directly (as
+(X)HTML does with <tt>&quot;&amp;infin;&quot;</tt>,
+<tt>&quot;&amp;#8734;&quot;</tt>, or
+<tt>&quot;&amp;#x221E;&quot;</tt>), reducing the need for
+idiosyncratic mappings of
+Unicode&minus;to&minus;<i>my_escapes</i>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">It is up to individual Pod
+formatter to display good judgement when confronted with an
+unrenderable character (which is distinct from an unknown
+E&lt;thing&gt; sequence that the parser couldn&rsquo;t
+resolve to anything, renderable or not). It is good practice
+to map Latin letters with diacritics (like
+&quot;E&lt;eacute&gt;&quot;/&quot;E&lt;233&gt;&quot;) to the
+corresponding unaccented US-ASCII letters (like a simple
+character 101, &quot;e&quot;), but clearly this is often not
+feasible, and an unrenderable character may be represented
+as &quot;?&quot;, or the like. In attempting a sane fallback
+(as from E&lt;233&gt; to &quot;e&quot;), Pod formatters may
+use the <tt>%Latin1Code_to_fallback</tt> table in
+Pod::Escapes, or Text::Unidecode, if available.</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">For example,
+this Pod text:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  magic is enabled if you set C&lt;$Currency&gt; to 'E&lt;euro&gt;'.</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">may be rendered
+as: &quot;magic is enabled if you set <tt>$Currency</tt> to
+&rsquo;<i>?</i>&rsquo;&quot; or as &quot;magic is enabled if
+you set <tt>$Currency</tt> to
+&rsquo;<b>[euro]</b>&rsquo;&quot;, or as &quot;magic is
+enabled if you set <tt>$Currency</tt> to
+&rsquo;[x20AC]&rsquo;, etc.</p>
+
+<p style="margin-left:17%; margin-top: 1em">A Pod formatter
+may also note, in a comment or warning, a list of what
+unrenderable characters were encountered.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">E&lt;...&gt; may freely appear
+in any formatting code (other than in another E&lt;...&gt;
+or in an Z&lt;&gt;). That is, &quot;X&lt;The
+E&lt;euro&gt;1,000,000 Solution&gt;&quot; is valid, as is
+&quot;L&lt;The E&lt;euro&gt;1,000,000
+Solution|Million::Euros&gt;&quot;.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Some Pod formatters output to formats that implement
+non-breaking spaces as an individual character (which
+I&rsquo;ll call &quot; <small>NBSP</small> &quot;), and
+others output to formats that implement non-breaking spaces
+just as spaces wrapped in a &quot;don&rsquo;t break this
+across lines&quot; code. Note that at the level of Pod, both
+sorts of codes can occur: Pod can contain a
+<small>NBSP</small> character (whether as a literal, or as a
+&quot;E&lt;160&gt;&quot; or &quot;E&lt;nbsp&gt;&quot; code);
+and Pod can contain &quot;S&lt;foo I&lt;bar&gt;
+baz&gt;&quot; codes, where &quot;mere spaces&quot;
+(character 32) in such codes are taken to represent
+non-breaking spaces. Pod parsers should consider supporting
+the optional parsing of &quot;S&lt;foo I&lt;bar&gt;
+baz&gt;&quot; as if it were &quot;foo
+<i><small>NBSP</small></i> I&lt;bar&gt;
+<i><small>NBSP</small></i> baz&quot;, and, going the other
+way, the optional parsing of groups of words joined by
+<small>NBSP</small> &rsquo;s as if each group were in a
+S&lt;...&gt; code, so that formatters may use the
+representation that maps best to what the output format
+demands.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Some processors may find that the
+<tt>&quot;S&lt;...&gt;&quot;</tt> code is easiest to
+implement by replacing each space in the parse tree under
+the content of the S, with an <small>NBSP</small> . But
+note: the replacement should apply <i>not</i> to spaces in
+<i>all</i> text, but <i>only</i> to spaces in
+<i>printable</i> text. (This distinction may or may not be
+evident in the particular tree/event model implemented by
+the Pod parser.) For example, consider this unusual
+case:</p> </td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">   S&lt;L&lt;/Autoloaded Functions&gt;&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">This means that
+the space in the middle of the visible link text must not be
+broken across lines. In other words, it&rsquo;s the same as
+this:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">   L&lt;&quot;AutoloadedE&lt;160&gt;Functions&quot;/Autoloaded Functions&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">However, a
+misapplied space-to-NBSP replacement could (wrongly) produce
+something equivalent to this:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">   L&lt;&quot;AutoloadedE&lt;160&gt;Functions&quot;/AutoloadedE&lt;160&gt;Functions&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">...which is
+almost definitely not going to work as a hyperlink (assuming
+this formatter outputs a format supporting hypertext).</p>
+
+<p style="margin-left:17%; margin-top: 1em">Formatters may
+choose to just not support the S format code, especially in
+cases where the output format simply has no
+<small>NBSP</small> character/code and no code for
+&quot;don&rsquo;t break this stuff across lines&quot;.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Besides the <small>NBSP</small>
+character discussed above, implementors are reminded of the
+existence of the other &quot;special&quot; character in
+Latin&minus;1, the &quot;soft hyphen&quot; character, also
+known as &quot;discretionary hyphen&quot;, i.e.
+<tt>&quot;E&lt;173&gt;&quot;</tt> =
+<tt>&quot;E&lt;0xAD&gt;&quot;</tt> =
+<tt>&quot;E&lt;shy&gt;&quot;</tt>). This character expresses
+an optional hyphenation point. That is, it normally renders
+as nothing, but may render as a &quot;&minus;&quot; if a
+formatter breaks the word at that point. Pod formatters
+should, as appropriate, do one of the following: 1) render
+this with a code with the same meaning (e.g.,
+&quot;\&minus;&quot; in <small>RTF</small> ), 2) pass it
+through in the expectation that the formatter understands
+this character as such, or 3) delete it.</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">For
+example:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  sigE&lt;shy&gt;action
+  manuE&lt;shy&gt;script
+  JarkE&lt;shy&gt;ko HieE&lt;shy&gt;taE&lt;shy&gt;nieE&lt;shy&gt;mi</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">These signal to
+a formatter that if it is to hyphenate &quot;sigaction&quot;
+or &quot;manuscript&quot;, then it should be done as
+&quot;sig&minus;<i>[linebreak]</i>action&quot; or
+&quot;manu&minus;<i>[linebreak]</i>script&quot; (and if it
+doesn&rsquo;t hyphenate it, then the
+<tt>&quot;E&lt;shy&gt;&quot;</tt> doesn&rsquo;t show up at
+all). And if it is to hyphenate &quot;Jarkko&quot; and/or
+&quot;Hietaniemi&quot;, it can do so only at the points
+where there is a <tt>&quot;E&lt;shy&gt;&quot;</tt> code.</p>
+
+<p style="margin-left:17%; margin-top: 1em">In practice, it
+is anticipated that this character will not be used often,
+but formatters should either support it, or delete it.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">If you think that you want to
+add a new command to Pod (like, say, a &quot;=biblio&quot;
+command), consider whether you could get the same effect
+with a for or begin/end sequence: &quot;=for biblio
+...&quot; or &quot;=begin biblio&quot; ... &quot;=end
+biblio&quot;. Pod processors that don&rsquo;t understand
+&quot;=for biblio&quot;, etc, will simply ignore it, whereas
+they may complain loudly if they see
+&quot;=biblio&quot;.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Throughout this document, &quot;Pod&quot; has been the
+preferred spelling for the name of the documentation format.
+One may also use &quot; <small>POD</small> &quot; or
+&quot;pod&quot;. For the documentation that is (typically)
+in the Pod format, you may use &quot;pod&quot;, or
+&quot;Pod&quot;, or &quot; <small>POD</small> &quot;.
+Understanding these distinctions is useful; but obsessing
+over how to spell them, usually is not.</p></td></tr>
+</table>
+
+<h2>About L&lt;...&gt; Codes
+<a name="About L&lt;...&gt; Codes"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">As you can tell
+from a glance at perlpod, the L&lt;...&gt; code is the most
+complex of the Pod formatting codes. The points below will
+hopefully clarify what it means and how processors should
+deal with it.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">In parsing an L&lt;...&gt; code,
+Pod parsers must distinguish at least four attributes:</p></td></tr>
+</table>
+
+<p style="margin-left:17%;">First:</p>
+
+<p style="margin-left:23%;">The link-text. If there is
+none, this must be undef. (E.g., in &quot;L&lt;Perl
+Functions|perlfunc&gt;&quot;, the link-text is &quot;Perl
+Functions&quot;. In &quot;L&lt;Time::HiRes&gt;&quot; and
+even &quot;L&lt;|Time::HiRes&gt;&quot;, there is no link
+text. Note that link text may contain formatting.)</p>
+
+<p style="margin-left:17%;">Second:</p>
+
+<p style="margin-left:23%;">The possibly inferred
+link-text; i.e., if there was no real link text, then this
+is the text that we&rsquo;ll infer in its place. (E.g., for
+&quot;L&lt;Getopt::Std&gt;&quot;, the inferred link text is
+&quot;Getopt::Std&quot;.)</p>
+
+<p style="margin-left:17%;">Third:</p>
+
+<p style="margin-left:23%;">The name or <small>URL</small>
+, or undef if none. (E.g., in &quot;L&lt;Perl
+Functions|perlfunc&gt;&quot;, the name (also sometimes
+called the page) is &quot;perlfunc&quot;. In
+&quot;L&lt;/CAVEATS&gt;&quot;, the name is undef.)</p>
+
+<p style="margin-left:17%;">Fourth:</p>
+
+<p style="margin-left:23%;">The section (
+<small>AKA</small> &quot;item&quot; in older perlpods), or
+undef if none. E.g., in
+&quot;L&lt;Getopt::Std/DESCRIPTION&gt;&quot;, &quot;
+<small>DESCRIPTION</small> &quot; is the section. (Note that
+this is not the same as a manpage section like the
+&quot;5&quot; in &quot;man 5 crontab&quot;. &quot;Section
+Foo&quot; in the Pod sense means the part of the text
+that&rsquo;s introduced by the heading or item whose text is
+&quot;Foo&quot;.)</p>
+
+<p style="margin-left:17%; margin-top: 1em">Pod parsers may
+also note additional attributes including: <br>
+Fifth:</p>
+
+<p style="margin-left:23%;">A flag for whether item 3 (if
+present) is a <small>URL</small> (like
+&quot;http://lists.perl.org&quot; is), in which case there
+should be no section attribute; a Pod name (like
+&quot;perldoc&quot; and &quot;Getopt::Std&quot; are); or
+possibly a man page name (like &quot;<i>crontab</i>(5)&quot;
+is).</p>
+
+<p style="margin-left:17%;">Sixth:</p>
+
+<p style="margin-left:23%;">The raw original L&lt;...&gt;
+content, before text is split on &quot;|&quot;,
+&quot;/&quot;, etc, and before E&lt;...&gt; codes are
+expanded.</p>
+
+<p style="margin-left:17%; margin-top: 1em">(The above were
+numbered only for concise reference below. It is not a
+requirement that these be passed as an actual list or
+array.)</p>
+
+<p style="margin-left:17%; margin-top: 1em">For
+example:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  L&lt;Foo::Bar&gt;
+    =&gt;  undef,                          # link text
+        &quot;Foo::Bar&quot;,                     # possibly inferred link text
+        &quot;Foo::Bar&quot;,                     # name
+        undef,                          # section
+        'pod',                          # what sort of link
+        &quot;Foo::Bar&quot;                      # original content
+  L&lt;Perlport's section on NL's|perlport/Newlines&gt;
+    =&gt;  &quot;Perlport's section on NL's&quot;,   # link text
+        &quot;Perlport's section on NL's&quot;,   # possibly inferred link text
+        &quot;perlport&quot;,                     # name
+        &quot;Newlines&quot;,                     # section
+        'pod',                          # what sort of link
+        &quot;Perlport's section on NL's|perlport/Newlines&quot; # orig. content
+  L&lt;perlport/Newlines&gt;
+    =&gt;  undef,                          # link text
+        '&quot;Newlines&quot; in perlport',       # possibly inferred link text
+        &quot;perlport&quot;,                     # name
+        &quot;Newlines&quot;,                     # section
+        'pod',                          # what sort of link
+        &quot;perlport/Newlines&quot;             # original content
+  L&lt;crontab(5)/&quot;DESCRIPTION&quot;&gt;
+    =&gt;  undef,                          # link text
+        '&quot;DESCRIPTION&quot; in crontab(5)',  # possibly inferred link text
+        &quot;crontab(5)&quot;,                   # name
+        &quot;DESCRIPTION&quot;,                  # section
+        'man',                          # what sort of link
+        'crontab(5)/&quot;DESCRIPTION&quot;'      # original content
+  L&lt;/Object Attributes&gt;
+    =&gt;  undef,                          # link text
+        '&quot;Object Attributes&quot;',          # possibly inferred link text
+        undef,                          # name
+        &quot;Object Attributes&quot;,            # section
+        'pod',                          # what sort of link
+        &quot;/Object Attributes&quot;            # original content
+  L&lt;http://www.perl.org/&gt;
+    =&gt;  undef,                          # link text
+        &quot;http://www.perl.org/&quot;,         # possibly inferred link text
+        &quot;http://www.perl.org/&quot;,         # name
+        undef,                          # section
+        'url',                          # what sort of link
+        &quot;http://www.perl.org/&quot;          # original content
+  L&lt;Perl.org|http://www.perl.org/&gt;
+    =&gt;  &quot;Perl.org&quot;,                     # link text
+        &quot;http://www.perl.org/&quot;,         # possibly inferred link text
+        &quot;http://www.perl.org/&quot;,         # name
+        undef,                          # section
+        'url',                          # what sort of link
+        &quot;Perl.org|http://www.perl.org/&quot; # original content</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Note that you
+can distinguish URL-links from anything else by the fact
+that they match <tt>&quot;m/\A\w+:[^:\s]\S*\z/&quot;</tt>.
+So <tt>&quot;L&lt;http://www.perl.com&gt;&quot;</tt> is a
+<small>URL</small> , but
+<tt>&quot;L&lt;HTTP::Response&gt;&quot;</tt>
+isn&rsquo;t.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>In case of L&lt;...&gt; codes with no &quot;text|&quot;
+part in them, older formatters have exhibited great
+variation in actually displaying the link or cross
+reference. For example, L&lt;<i>crontab</i>(5)&gt; would
+render as &quot;the <tt>crontab(5)</tt> manpage&quot;, or
+&quot;in the <tt>crontab(5)</tt> manpage&quot; or just
+&quot;<tt>crontab(5)</tt>&quot;.</p> </td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Pod processors
+must now treat &quot;text|&quot;&minus;less links as
+follows:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  L&lt;name&gt;         =&gt;  L&lt;name|name&gt;
+  L&lt;/section&gt;     =&gt;  L&lt;&quot;section&quot;|/section&gt;
+  L&lt;name/section&gt; =&gt;  L&lt;&quot;section&quot; in name|name/section&gt;</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Note that section names might
+contain markup. I.e., if a section starts with:</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  =head2 About the C&lt;&minus;M&gt; Operator</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">or with:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =item About the C&lt;&minus;M&gt; Operator</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">then a link to
+it would look like this:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  L&lt;somedoc/About the C&lt;&minus;M&gt; Operator&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Formatters may
+choose to ignore the markup for purposes of resolving the
+link and use only the renderable characters in the section
+name, as in:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;h1&gt;&lt;a name=&quot;About_the_&minus;M_Operator&quot;&gt;About the &lt;code&gt;&minus;M&lt;/code&gt;
+  Operator&lt;/h1&gt;
+  ...
+  &lt;a href=&quot;somedoc#About_the_&minus;M_Operator&quot;&gt;About the &lt;code&gt;&minus;M&lt;/code&gt;
+  Operator&quot; in somedoc&lt;/a&gt;</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Previous versions of perlpod
+distinguished
+<tt>&quot;L&lt;name/&quot;section&quot;&gt;&quot;</tt> links
+from <tt>&quot;L&lt;name/item&gt;&quot;</tt> links (and
+their targets). These have been merged syntactically and
+semantically in the current specification, and
+<i>section</i> can refer either to a &quot;=head<i>n</i>
+Heading Content&quot; command or to a &quot;=item Item
+Content&quot; command. This specification does not specify
+what behavior should be in the case of a given document
+having several things all seeming to produce the same
+<i>section</i> identifier (e.g., in <small>HTML</small> ,
+several things all producing the same <i>anchorname</i> in
+&lt;a name=&quot;<i>anchorname</i>&quot;&gt;...&lt;/a&gt;
+elements). Where Pod processors can control this behavior,
+they should use the first such anchor. That is,
+<tt>&quot;L&lt;Foo/Bar&gt;&quot;</tt> refers to the
+<i>first</i> &quot;Bar&quot; section in Foo.</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">But for some
+processors/formats this cannot be easily controlled; as with
+the <small>HTML</small> example, the behavior of multiple
+ambiguous &lt;a
+name=&quot;<i>anchorname</i>&quot;&gt;...&lt;/a&gt; is most
+easily just left up to browsers to decide.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">In a
+<tt>&quot;L&lt;text|...&gt;&quot;</tt> code, text may
+contain formatting codes for formatting or for E&lt;...&gt;
+escapes, as in:</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  L&lt;B&lt;ummE&lt;234&gt;stuff&gt;|...&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">For
+<tt>&quot;L&lt;...&gt;&quot;</tt> codes without a
+&quot;name|&quot; part, only
+<tt>&quot;E&lt;...&gt;&quot;</tt> and
+<tt>&quot;Z&lt;&gt;&quot;</tt> codes may occur. That is,
+authors should not use
+&quot;<tt>&quot;L&lt;B&lt;Foo::Bar&gt;&gt;&quot;</tt>&quot;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Note, however,
+that formatting codes and Z&lt;&gt;&rsquo;s can occur in any
+and all parts of an L&lt;...&gt; (i.e., in <i>name</i>,
+<i>section</i>, <i>text</i>, and <i>url</i>).</p>
+
+<p style="margin-left:17%; margin-top: 1em">Authors must
+not nest L&lt;...&gt; codes. For example, &quot;L&lt;The
+L&lt;Foo::Bar&gt; man page&gt;&quot; should be treated as an
+error.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Note that Pod authors may use
+formatting codes inside the &quot;text&quot; part of
+&quot;L&lt;text|name&gt;&quot; (and so on for
+L&lt;text|/&quot;sec&quot;&gt;).</p> </td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">In other words,
+this is valid:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  Go read L&lt;the docs on C&lt;$.&gt;|perlvar/&quot;$.&quot;&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Some output
+formats that do allow rendering &quot;L&lt;...&gt;&quot;
+codes as hypertext, might not allow the link-text to be
+formatted; in that case, formatters will have to just ignore
+that formatting.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">At time of writing,
+<tt>&quot;L&lt;name&gt;&quot;</tt> values are of two types:
+either the name of a Pod page like
+<tt>&quot;L&lt;Foo::Bar&gt;&quot;</tt> (which might be a
+real Perl module or program in an <tt>@INC</tt> /
+<small>PATH</small> directory, or a .pod file in those
+places); or the name of a Unix man page, like
+<tt>&quot;L&lt;crontab(5)&gt;&quot;</tt>. In theory,
+<tt>&quot;L&lt;chmod&gt;&quot;</tt> in ambiguous between a
+Pod page called &quot;chmod&quot;, or the Unix man page
+&quot;chmod&quot; (in whatever man-section). However, the
+presence of a string in parens, as in
+&quot;<i>crontab</i>(5)&quot;, is sufficient to signal that
+what is being discussed is not a Pod page, and so is
+presumably a Unix man page. The distinction is of no
+importance to many Pod processors, but some processors that
+render to hypertext formats may need to distinguish them in
+order to know how to render a given
+<tt>&quot;L&lt;foo&gt;&quot;</tt> code.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Previous versions of perlpod allowed for a
+<tt>&quot;L&lt;section&gt;&quot;</tt> syntax (as in
+<tt>&quot;L&lt;Object Attributes&gt;&quot;</tt>), which was
+not easily distinguishable from
+<tt>&quot;L&lt;name&gt;&quot;</tt> syntax and for
+<tt>&quot;L&lt;&quot;section&quot;&gt;&quot;</tt> which was
+only slightly less ambiguous. This syntax is no longer in
+the specification, and has been replaced by the
+<tt>&quot;L&lt;/section&gt;&quot;</tt> syntax (where the
+slash was formerly optional). Pod parsers should tolerate
+the <tt>&quot;L&lt;&quot;section&quot;&gt;&quot;</tt>
+syntax, for a while at least. The suggested heuristic for
+distinguishing <tt>&quot;L&lt;section&gt;&quot;</tt> from
+<tt>&quot;L&lt;name&gt;&quot;</tt> is that if it contains
+any whitespace, it&rsquo;s a <i>section</i>. Pod processors
+should warn about this being deprecated syntax.</p></td></tr>
+</table>
+
+<h2>About =over...=back Regions
+<a name="About =over...=back Regions"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">&quot;=over&quot;...&quot;=back&quot;
+regions are used for various kinds of list-like structures.
+(I use the term &quot;region&quot; here simply as a
+collective term for everything from the &quot;=over&quot; to
+the matching &quot;=back&quot;.)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The non-zero numeric
+<i>indentlevel</i> in &quot;=over <i>indentlevel</i>&quot;
+... &quot;=back&quot; is used for giving the formatter a
+clue as to how many &quot;spaces&quot; (ems, or roughly
+equivalent units) it should tab over, although many
+formatters will have to convert this to an absolute
+measurement that may not exactly match with the size of
+spaces (or M&rsquo;s) in the document&rsquo;s base font.
+Other formatters may have to completely ignore the number.
+The lack of any explicit <i>indentlevel</i> parameter is
+equivalent to an <i>indentlevel</i> value of 4. Pod
+processors may complain if <i>indentlevel</i> is present but
+is not a positive number matching
+<tt>&quot;m/\A(\d*\.)?\d+\z/&quot;</tt>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Authors of Pod formatters are reminded that
+&quot;=over&quot; ... &quot;=back&quot; may map to several
+different constructs in your output format. For example, in
+converting Pod to (X)HTML, it can map to any of
+&lt;ul&gt;...&lt;/ul&gt;, &lt;ol&gt;...&lt;/ol&gt;,
+&lt;dl&gt;...&lt;/dl&gt;, or
+&lt;blockquote&gt;...&lt;/blockquote&gt;. Similarly,
+&quot;=item&quot; can map to &lt;li&gt; or &lt;dt&gt;.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Each &quot;=over&quot; ... &quot;=back&quot; region
+should be one of the following:</p></td></tr>
+</table>
+
+<p style="margin-left:17%;">&bull;</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="23%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">An &quot;=over&quot; ...
+&quot;=back&quot; region containing only &quot;=item *&quot;
+commands, each followed by some number of ordinary/verbatim
+paragraphs, other nested &quot;=over&quot; ...
+&quot;=back&quot; regions, &quot;=for...&quot; paragraphs,
+and &quot;=begin&quot;...&quot;=end&quot; regions.</p></td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">(Pod processors
+must tolerate a bare &quot;=item&quot; as if it were
+&quot;=item *&quot;.) Whether &quot;*&quot; is rendered as a
+literal asterisk, an &quot;o&quot;, or as some kind of real
+bullet character, is left up to the Pod formatter, and may
+depend on the level of nesting.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">An &quot;=over&quot; ...
+&quot;=back&quot; region containing only
+<tt>&quot;m/\A=item\s+\d+\.?\s*\z/&quot;</tt> paragraphs,
+each one (or each group of them) followed by some number of
+ordinary/verbatim paragraphs, other nested &quot;=over&quot;
+... &quot;=back&quot; regions, &quot;=for...&quot;
+paragraphs, and/or &quot;=begin&quot;...&quot;=end&quot;
+codes. Note that the numbers must start at 1 in each
+section, and must proceed in order and without skipping
+numbers.</p> </td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">(Pod processors
+must tolerate lines like &quot;=item 1&quot; as if they were
+&quot;=item 1.&quot;, with the period.)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">An &quot;=over&quot; ...
+&quot;=back&quot; region containing only &quot;=item
+[text]&quot; commands, each one (or each group of them)
+followed by some number of ordinary/verbatim paragraphs,
+other nested &quot;=over&quot; ... &quot;=back&quot;
+regions, or &quot;=for...&quot; paragraphs, and
+&quot;=begin&quot;...&quot;=end&quot; regions.</p></td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">The &quot;=item
+[text]&quot; paragraph should not match
+<tt>&quot;m/\A=item\s+\d+\.?\s*\z/&quot;</tt> or
+<tt>&quot;m/\A=item\s+\*\s*\z/&quot;</tt>, nor should it
+match just <tt>&quot;m/\A=item\s*\z/&quot;</tt>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">An &quot;=over&quot; ...
+&quot;=back&quot; region containing no &quot;=item&quot;
+paragraphs at all, and containing only some number of
+ordinary/verbatim paragraphs, and possibly also some nested
+&quot;=over&quot; ... &quot;=back&quot; regions,
+&quot;=for...&quot; paragraphs, and
+&quot;=begin&quot;...&quot;=end&quot; regions. Such an
+itemless &quot;=over&quot; ... &quot;=back&quot; region in
+Pod is equivalent in meaning to a
+&quot;&lt;blockquote&gt;...&lt;/blockquote&gt;&quot; element
+in <small>HTML</small> .</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Note that with
+all the above cases, you can determine which type of
+&quot;=over&quot; ... &quot;=back&quot; you have, by
+examining the first (non&minus;&quot;=cut&quot;,
+non&minus;&quot;=pod&quot;) Pod paragraph after the
+&quot;=over&quot; command.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Pod formatters <i>must</i>
+tolerate arbitrarily large amounts of text in the
+&quot;=item <i>text...</i>&quot; paragraph. In practice,
+most such paragraphs are short, as in:</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  =item For cutting off our trade with all parts of the world</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">But they may be
+arbitrarily long:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =item For transporting us beyond seas to be tried for pretended
+  offenses
+  =item He is at this time transporting large armies of foreign
+  mercenaries to complete the works of death, desolation and
+  tyranny, already begun with circumstances of cruelty and perfidy
+  scarcely paralleled in the most barbarous ages, and totally
+  unworthy the head of a civilized nation.</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Pod processors should tolerate
+&quot;=item *&quot; / &quot;=item <i>number</i>&quot;
+commands with no accompanying paragraph. The middle item is
+an example:</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  =over
+  =item 1
+  Pick up dry cleaning.
+  =item 2
+  =item 3
+  Stop by the store.  Get Abba Zabas, Stoli, and cheap lawn chairs.
+  =back</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">No &quot;=over&quot; ...
+&quot;=back&quot; region can contain headings. Processors
+may treat such a heading as an error.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Note that an &quot;=over&quot; ... &quot;=back&quot;
+region should have some content. That is, authors should not
+have an empty region like this:</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  =over
+  =back</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Pod processors
+seeing such a contentless &quot;=over&quot; ...
+&quot;=back&quot; region, may ignore it, or may report it as
+an error.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Processors must tolerate an
+&quot;=over&quot; list that goes off the end of the document
+(i.e., which has no matching &quot;=back&quot;), but they
+may warn about such a list.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Authors of Pod formatters should note that this
+construct:</p> </td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  =item Neque
+  =item Porro
+  =item Quisquam Est
+  Qui dolorem ipsum quia dolor sit amet, consectetur, adipisci
+  velit, sed quia non numquam eius modi tempora incidunt ut
+  labore et dolore magnam aliquam quaerat voluptatem.
+  =item Ut Enim</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">is semantically
+ambiguous, in a way that makes formatting decisions a bit
+difficult. On the one hand, it could be mention of an item
+&quot;Neque&quot;, mention of another item
+&quot;Porro&quot;, and mention of another item
+&quot;Quisquam Est&quot;, with just the last one requiring
+the explanatory paragraph &quot;Qui dolorem ipsum quia
+dolor...&quot;; and then an item &quot;Ut Enim&quot;. In
+that case, you&rsquo;d want to format it like so:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  Neque
+  Porro
+  Quisquam Est
+    Qui dolorem ipsum quia dolor sit amet, consectetur, adipisci
+    velit, sed quia non numquam eius modi tempora incidunt ut
+    labore et dolore magnam aliquam quaerat voluptatem.
+  Ut Enim</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">But it could
+equally well be a discussion of three (related or
+equivalent) items, &quot;Neque&quot;, &quot;Porro&quot;, and
+&quot;Quisquam Est&quot;, followed by a paragraph explaining
+them all, and then a new item &quot;Ut Enim&quot;. In that
+case, you&rsquo;d probably want to format it like so:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  Neque
+  Porro
+  Quisquam Est
+    Qui dolorem ipsum quia dolor sit amet, consectetur, adipisci
+    velit, sed quia non numquam eius modi tempora incidunt ut
+    labore et dolore magnam aliquam quaerat voluptatem.
+  Ut Enim</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">But (for the
+foreseeable future), Pod does not provide any way for Pod
+authors to distinguish which grouping is meant by the above
+&quot;=item&quot;&minus;cluster structure. So formatters
+should format it like so:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  Neque
+  Porro
+  Quisquam Est
+    Qui dolorem ipsum quia dolor sit amet, consectetur, adipisci
+    velit, sed quia non numquam eius modi tempora incidunt ut
+    labore et dolore magnam aliquam quaerat voluptatem.
+  Ut Enim</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">That is, there
+should be (at least roughly) equal spacing between items as
+between paragraphs (although that spacing may well be less
+than the full height of a line of text). This leaves it to
+the reader to use (con)textual cues to figure out whether
+the &quot;Qui dolorem ipsum...&quot; paragraph applies to
+the &quot;Quisquam Est&quot; item or to all three items
+&quot;Neque&quot;, &quot;Porro&quot;, and &quot;Quisquam
+Est&quot;. While not an ideal situation, this is preferable
+to providing formatting cues that may be actually contrary
+to the author&rsquo;s intent.</p>
+
+<h2>About Data Paragraphs and &quot;=begin/=end&quot; Regions
+<a name="About Data Paragraphs and &quot;=begin/=end&quot; Regions"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Data paragraphs
+are typically used for inlining non-Pod data that is to be
+used (typically passed through) when rendering the document
+to a specific format:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  =begin rtf
+  \par{\pard\qr\sa4500{\i Printed\~\chdate\~\chtime}\par}
+  =end rtf</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The exact same
+effect could, incidentally, be achieved with a single
+&quot;=for&quot; paragraph:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  =for rtf \par{\pard\qr\sa4500{\i Printed\~\chdate\~\chtime}\par}</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">(Although that
+is not formally a data paragraph, it has the same meaning as
+one, and Pod parsers may parse it as one.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Another example
+of a data paragraph:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  =begin html
+  I like &lt;em&gt;PIE&lt;/em&gt;!
+  &lt;hr&gt;Especially pecan pie!
+  =end html</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If these were
+ordinary paragraphs, the Pod parser would try to expand the
+&quot;E&lt;/em&gt;&quot; (in the first paragraph) as a
+formatting code, just like &quot;E&lt;lt&gt;&quot; or
+&quot;E&lt;eacute&gt;&quot;. But since this is in a
+&quot;=begin <i>identifier</i>&quot;...&quot;=end
+<i>identifier</i>&quot; region <i>and</i> the identifier
+&quot;html&quot; doesn&rsquo;t begin have a &quot;:&quot;
+prefix, the contents of this region are stored as data
+paragraphs, instead of being processed as ordinary
+paragraphs (or if they began with a spaces and/or tabs, as
+verbatim paragraphs).</p>
+
+<p style="margin-left:11%; margin-top: 1em">As a further
+example: At time of writing, no &quot;biblio&quot;
+identifier is supported, but suppose some processor were
+written to recognize it as a way of (say) denoting a
+bibliographic reference (necessarily containing formatting
+codes in ordinary paragraphs). The fact that
+&quot;biblio&quot; paragraphs were meant for ordinary
+processing would be indicated by prefacing each
+&quot;biblio&quot; identifier with a colon:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  =begin :biblio
+  Wirth, Niklaus.  1976.  I&lt;Algorithms + Data Structures =
+  Programs.&gt;  Prentice&minus;Hall, Englewood Cliffs, NJ.
+  =end :biblio</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This would
+signal to the parser that paragraphs in this begin...end
+region are subject to normal handling as ordinary/verbatim
+paragraphs (while still tagged as meant only for processors
+that understand the &quot;biblio&quot; identifier). The same
+effect could be had with:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  =for :biblio
+  Wirth, Niklaus.  1976.  I&lt;Algorithms + Data Structures =
+  Programs.&gt;  Prentice&minus;Hall, Englewood Cliffs, NJ.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+&quot;:&quot; on these identifiers means simply
+&quot;process this stuff normally, even though the result
+will be for some special target&quot;. I suggest that parser
+APIs report &quot;biblio&quot; as the target identifier, but
+also report that it had a &quot;:&quot; prefix. (And
+similarly, with the above &quot;html&quot;, report
+&quot;html&quot; as the target identifier, and note the
+<i>lack</i> of a &quot;:&quot; prefix.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that a
+&quot;=begin <i>identifier</i>&quot;...&quot;=end
+<i>identifier</i>&quot; region where <i>identifier</i>
+begins with a colon, <i>can</i> contain commands. For
+example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  =begin :biblio
+  Wirth's classic is available in several editions, including:
+  =for comment
+   hm, check abebooks.com for how much used copies cost.
+  =over
+  =item
+  Wirth, Niklaus.  1975.  I&lt;Algorithmen und Datenstrukturen.&gt;
+  Teubner, Stuttgart.  [Yes, it's in German.]
+  =item
+  Wirth, Niklaus.  1976.  I&lt;Algorithms + Data Structures =
+  Programs.&gt;  Prentice&minus;Hall, Englewood Cliffs, NJ.
+  =back
+  =end :biblio</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Note, however,
+a &quot;=begin <i>identifier</i>&quot;...&quot;=end
+<i>identifier</i>&quot; region where <i>identifier</i> does
+<i>not</i> begin with a colon, should not directly contain
+&quot;=head1&quot; ... &quot;=head4&quot; commands, nor
+&quot;=over&quot;, nor &quot;=back&quot;, nor
+&quot;=item&quot;. For example, this may be considered
+invalid:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  =begin somedata
+  This is a data paragraph.
+  =head1 Don't do this!
+  This is a data paragraph too.
+  =end somedata</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">A Pod processor
+may signal that the above (specifically the
+&quot;=head1&quot; paragraph) is an error. Note, however,
+that the following should <i>not</i> be treated as an
+error:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  =begin somedata
+  This is a data paragraph.
+  =cut
+  # Yup, this isn't Pod anymore.
+  sub excl { (rand() &gt; .5) ? &quot;hoo!&quot; : &quot;hah!&quot; }
+  =pod
+  This is a data paragraph too.
+  =end somedata</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">And this too is
+valid:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  =begin someformat
+  This is a data paragraph.
+    And this is a data paragraph.
+  =begin someotherformat
+  This is a data paragraph too.
+    And this is a data paragraph too.
+  =begin :yetanotherformat
+  =head2 This is a command paragraph!
+  This is an ordinary paragraph!
+    And this is a verbatim paragraph!
+  =end :yetanotherformat
+  =end someotherformat
+  Another data paragraph!
+  =end someformat</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The contents of
+the above &quot;=begin :yetanotherformat&quot; ...
+&quot;=end :yetanotherformat&quot; region
+<i>aren&rsquo;t</i> data paragraphs, because the immediately
+containing region&rsquo;s identifier
+(&quot;:yetanotherformat&quot;) begins with a colon. In
+practice, most regions that contain data paragraphs will
+contain <i>only</i> data paragraphs; however, the above
+nesting is syntactically valid as Pod, even if it is rare.
+However, the handlers for some formats, like
+&quot;html&quot;, will accept only data paragraphs, not
+nested regions; and they may complain if they see (targeted
+for them) nested regions, or commands, other than
+&quot;=end&quot;, &quot;=pod&quot;, and
+&quot;=cut&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also consider
+this valid structure:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  =begin :biblio
+  Wirth's classic is available in several editions, including:
+  =over
+  =item
+  Wirth, Niklaus.  1975.  I&lt;Algorithmen und Datenstrukturen.&gt;
+  Teubner, Stuttgart.  [Yes, it's in German.]
+  =item
+  Wirth, Niklaus.  1976.  I&lt;Algorithms + Data Structures =
+  Programs.&gt;  Prentice&minus;Hall, Englewood Cliffs, NJ.
+  =back
+  Buy buy buy!
+  =begin html
+  &lt;img src='wirth_spokesmodeling_book.png'&gt;
+  &lt;hr&gt;
+  =end html
+  Now now now!
+  =end :biblio</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">There, the
+&quot;=begin html&quot;...&quot;=end html&quot; region is
+nested inside the larger &quot;=begin
+:biblio&quot;...&quot;=end :biblio&quot; region. Note that
+the content of the &quot;=begin html&quot;...&quot;=end
+html&quot; region is data paragraph(s), because the
+immediately containing region&rsquo;s identifier
+(&quot;html&quot;) <i>doesn&rsquo;t</i> begin with a
+colon.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Pod parsers,
+when processing a series of data paragraphs one after
+another (within a single region), should consider them to be
+one large data paragraph that happens to contain blank
+lines. So the content of the above &quot;=begin
+html&quot;...&quot;=end html&quot; <i>may</i> be stored as
+two data paragraphs (one consisting of &quot;&lt;img
+src=&rsquo;wirth_spokesmodeling_book.png&rsquo;&gt;\n&quot;
+and another consisting of &quot;&lt;hr&gt;\n&quot;), but
+<i>should</i> be stored as a single data paragraph
+(consisting of &quot;&lt;img
+src=&rsquo;wirth_spokesmodeling_book.png&rsquo;&gt;\n\n&lt;hr&gt;\n&quot;).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Pod processors
+should tolerate empty &quot;=begin
+<i>something</i>&quot;...&quot;=end <i>something</i>&quot;
+regions, empty &quot;=begin
+:<i>something</i>&quot;...&quot;=end :<i>something</i>&quot;
+regions, and contentless &quot;=for <i>something</i>&quot;
+and &quot;=for :<i>something</i>&quot; paragraphs. I.e.,
+these should be tolerated:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  =for html
+  =begin html
+  =end html
+  =begin :biblio
+  =end :biblio</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Incidentally,
+note that there&rsquo;s no easy way to express a data
+paragraph starting with something that looks like a command.
+Consider:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  =begin stuff
+  =shazbot
+  =end stuff</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">There,
+&quot;=shazbot&quot; will be parsed as a Pod command
+&quot;shazbot&quot;, not as a data paragraph
+&quot;=shazbot\n&quot;. However, you can express a data
+paragraph consisting of &quot;=shazbot\n&quot; using this
+code:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  =for stuff =shazbot</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The situation
+where this is necessary, is presumably quite rare.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that =end
+commands must match the currently open =begin command. That
+is, they must properly nest. For example, this is valid:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  =begin outer
+  X
+  =begin inner
+  Y
+  =end inner
+  Z
+  =end outer</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">while this is
+invalid:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  =begin outer
+  X
+  =begin inner
+  Y
+  =end outer
+  Z
+  =end inner</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This latter is
+improper because when the &quot;=end outer&quot; command is
+seen, the currently open region has the formatname
+&quot;inner&quot;, not &quot;outer&quot;. (It just happens
+that &quot;outer&quot; is the format name of a higher-up
+region.) This is an error. Processors must by default report
+this as an error, and may halt processing the document
+containing that error. A corollary of this is that regions
+cannot &quot;overlap&quot;. That is, the latter block above
+does not represent a region called &quot;outer&quot; which
+contains X and Y, overlapping a region called
+&quot;inner&quot; which contains Y and Z. But because it is
+invalid (as all apparently overlapping regions would be), it
+doesn&rsquo;t represent that, or anything at all.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Similarly, this
+is invalid:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  =begin thing
+  =end hting</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is an
+error because the region is opened by &quot;thing&quot;, and
+the &quot;=end&quot; tries to close &quot;hting&quot;
+[sic].</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is also
+invalid:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  =begin thing
+  =end</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is invalid
+because every &quot;=end&quot; command must have a
+formatname parameter.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlpod,
+&quot;PODs: Embedded Documentation&quot; in perlsyn,
+podchecker</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Sean M.
+Burke</p>
+<hr>
+</body>
+</html>

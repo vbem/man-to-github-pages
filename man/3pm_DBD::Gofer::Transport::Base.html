@@ -1,0 +1,246 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:32:07 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>DBD::Gofer::Transport::Base</title>
+
+</head>
+<body>
+
+<h1 align="center">DBD::Gofer::Transport::Base</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#ATTRIBUTES">ATTRIBUTES</a><br>
+<a href="#RETRY ON ERROR">RETRY ON ERROR</a><br>
+<a href="#TRACING">TRACING</a><br>
+<a href="#METHODS">METHODS</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#LICENCE AND COPYRIGHT">LICENCE AND COPYRIGHT</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">DBD::Gofer::Transport::Base
+&minus; base class for DBD::Gofer client transports</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  my $remote_dsn = &quot;...&quot;
+  DBI&minus;&gt;connect(&quot;dbi:Gofer:transport=...;url=...;timeout=...;retry_limit=...;dsn=$remote_dsn&quot;,...)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">or, enable by
+setting the <small>DBI_AUTOPROXY</small> environment
+variable:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  export DBI_AUTOPROXY='dbi:Gofer:transport=...;url=...'</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">which will
+force <i>all</i> <small>DBI</small> connections to be made
+via that Gofer server.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is the
+base class for all DBD::Gofer client transports.</p>
+
+<h2>ATTRIBUTES
+<a name="ATTRIBUTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Gofer transport
+attributes can be specified either in the attributes
+parameter of the <i>connect()</i> method call, or in the
+<small>DSN</small> string. When used in the
+<small>DSN</small> string, attribute names don&rsquo;t have
+the <tt>&quot;go_&quot;</tt> prefix.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>go_dsn</b>
+<br>
+The full <small>DBI DSN</small> that the Gofer server should
+connect to on your behalf.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When used in
+the <small>DSN</small> it must be the last element in the
+<small>DSN</small> string.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>go_timeout</b>
+<br>
+A time limit for sending a request and receiving a response.
+Some drivers may implement sending and receiving as separate
+steps, in which case (currently) the timeout applies to each
+separately.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If a request
+needs to be resent then the timeout is restarted for each
+sending of a request and receiving of a response.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>go_retry_limit</b>
+<br>
+The maximum number of times an request may be retried. The
+default is 2.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>go_retry_hook</b>
+<br>
+This subroutine reference is called, if defined, for each
+response received where <tt>$response</tt>&minus;&gt;err is
+true.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The subroutine
+is pass three parameters: the request object, the response
+object, and the transport object.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If it returns
+an undefined value then the default retry behaviour is used.
+See &quot; <small>RETRY ON ERROR&quot;</small> below.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If it returns a
+defined but false value then the request is not resent.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If it returns
+true value then the request is resent, so long as the number
+of retries does not exceed
+<tt>&quot;go_retry_limit&quot;</tt>.</p>
+
+<h2>RETRY ON ERROR
+<a name="RETRY ON ERROR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The default
+retry on error behaviour is:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> &minus; Retry if the error was due to DBI_GOFER_RANDOM. See L&lt;DBI::Gofer::Execute&gt;.
+ &minus; Retry if $request&minus;&gt;is_idempotent returns true. See L&lt;DBI::Gofer::Request&gt;.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">A retry
+won&rsquo;t be allowed if the number of previous retries has
+reached <tt>&quot;go_retry_limit&quot;</tt>.</p>
+
+<h2>TRACING
+<a name="TRACING"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Tracing of
+gofer requests and responses can be enabled by setting the
+<tt>&quot;DBD_GOFER_TRACE&quot;</tt> environment variable. A
+value of 1 gives a reasonably compact summary of each
+request and response. A value of 2 or more gives a detailed,
+and voluminous, dump.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The trace is
+written using <small>DBI&minus;</small>
+&gt;<i>trace_msg()</i> and so is written to the default
+<small>DBI</small> trace output, which is usually
+<small>STDERR.</small></p>
+
+<h2>METHODS
+<a name="METHODS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>This section
+is currently far from complete.</i></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>response_retry_preference</b></p>
+
+
+<pre style="margin-left:11%;">  $retry = $transport&minus;&gt;response_retry_preference($request, $response);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+response_retry_preference is called by DBD::Gofer when
+considering if a request should be retried after an
+error.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Returns true
+(would like to retry), false (must not retry), undef (no
+preference).</p>
+
+<p style="margin-left:11%; margin-top: 1em">If a true value
+is returned in the form of a <small>CODE</small> ref then,
+if DBD::Gofer does decide to retry the request, it calls the
+code ref passing <tt>$retry_count</tt>,
+<tt>$retry_limit</tt>. Can be used for logging and/or to
+implement exponential backoff behaviour. Currently the
+called code must return using <tt>&quot;return;&quot;</tt>
+to allow for future extensions.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Tim Bunce,
+&lt;http://www.tim.bunce.name&gt;</p>
+
+<h2>LICENCE AND COPYRIGHT
+<a name="LICENCE AND COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (c)
+2007&minus;2008, Tim Bunce, Ireland. All rights
+reserved.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This module is
+free software; you can redistribute it and/or modify it
+under the same terms as Perl itself. See perlartistic.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">DBD::Gofer,
+DBI::Gofer::Request, DBI::Gofer::Response,
+DBI::Gofer::Execute.</p>
+
+<p style="margin-left:11%; margin-top: 1em">and some
+example transports:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">DBD::Gofer::Transport::stream</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">DBD::Gofer::Transport::http</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">DBI::Gofer::Transport::mod_perl</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:40:43 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Thread::Semaphore</title>
+
+</head>
+<body>
+
+<h1 align="center">Thread::Semaphore</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#VERSION">VERSION</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#METHODS">METHODS</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#MAINTAINER">MAINTAINER</a><br>
+<a href="#LICENSE">LICENSE</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">Thread::Semaphore
+&minus; Thread&minus;safe semaphores</p>
+
+<h2>VERSION
+<a name="VERSION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+describes Thread::Semaphore version 2.12</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">    use Thread::Semaphore;
+    my $s = Thread::Semaphore&minus;&gt;new();
+    $s&minus;&gt;down();   # Also known as the semaphore P operation.
+    # The guarded section is here
+    $s&minus;&gt;up();     # Also known as the semaphore V operation.
+    # Decrement the semaphore only if it would immediately succeed.
+    if ($s&minus;&gt;down_nb()) {
+        # The guarded section is here
+        $s&minus;&gt;up();
+    }
+    # Forcefully decrement the semaphore even if its count goes below 0.
+    $s&minus;&gt;down_force();
+    # The default value for semaphore operations is 1
+    my $s = Thread::Semaphore&minus;&gt;new($initial_value);
+    $s&minus;&gt;down($down_value);
+    $s&minus;&gt;up($up_value);
+    if ($s&minus;&gt;down_nb($down_value)) {
+        ...
+        $s&minus;&gt;up($up_value);
+    }
+    $s&minus;&gt;down_force($down_value);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Semaphores
+provide a mechanism to regulate access to resources. Unlike
+locks, semaphores aren&rsquo;t tied to particular scalars,
+and so may be used to control access to anything you care to
+use them for.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Semaphores
+don&rsquo;t limit their values to zero and one, so they can
+be used to control access to some resource that there may be
+more than one of (e.g., filehandles). Increment and
+decrement amounts aren&rsquo;t fixed at one either, so
+threads can reserve or return multiple resources at
+once.</p>
+
+<h2>METHODS
+<a name="METHODS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p style="margin-top: 1em">&minus;&gt;<i>new()</i></p></td>
+<td width="78%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">&minus;&gt;new(
+<small>NUMBER</small> )</p>
+
+<p style="margin-left:23%;"><tt>&quot;new&quot;</tt>
+creates a new semaphore, and initializes its count to the
+specified number (which must be an integer). If no number is
+specified, the semaphore&rsquo;s count defaults to 1.</p>
+
+<p style="margin-left:11%;">&minus;&gt;<i>down()</i> <br>
+&minus;&gt;down( <small>NUMBER</small> )</p>
+
+<p style="margin-left:23%;">The <tt>&quot;down&quot;</tt>
+method decreases the semaphore&rsquo;s count by the
+specified number (which must be an integer &gt;= 1), or by
+one if no number is specified.</p>
+
+<p style="margin-left:23%; margin-top: 1em">If the
+semaphore&rsquo;s count would drop below zero, this method
+will block until such time as the semaphore&rsquo;s count is
+greater than or equal to the amount you&rsquo;re
+<tt>&quot;down&quot;</tt>ing the semaphore&rsquo;s count
+by.</p>
+
+<p style="margin-left:23%; margin-top: 1em">This is the
+semaphore &quot;P operation&quot; (the name derives from the
+Dutch word &quot;pak&quot;, which means &quot;capture&quot;
+-- the semaphore operations were named by the late Dijkstra,
+who was Dutch).</p>
+
+<p style="margin-left:11%;">&minus;&gt;<i>down_nb()</i>
+<br>
+&minus;&gt;down_nb( <small>NUMBER</small> )</p>
+
+<p style="margin-left:23%;">The
+<tt>&quot;down_nb&quot;</tt> method attempts to decrease the
+semaphore&rsquo;s count by the specified number (which must
+be an integer &gt;= 1), or by one if no number is
+specified.</p>
+
+<p style="margin-left:23%; margin-top: 1em">If the
+semaphore&rsquo;s count would drop below zero, this method
+will return <i>false</i>, and the semaphore&rsquo;s count
+remains unchanged. Otherwise, the semaphore&rsquo;s count is
+decremented and this method returns <i>true</i>.</p>
+
+<p style="margin-left:11%;">&minus;&gt;<i>down_force()</i>
+<br>
+&minus;&gt;down_force( <small>NUMBER</small> )</p>
+
+<p style="margin-left:23%;">The
+<tt>&quot;down_force&quot;</tt> method decreases the
+semaphore&rsquo;s count by the specified number (which must
+be an integer &gt;= 1), or by one if no number is specified.
+This method does not block, and may cause the
+semaphore&rsquo;s count to drop below zero.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>&minus;&gt;<i>up()</i></p></td>
+<td width="80%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">&minus;&gt;up(
+<small>NUMBER</small> )</p>
+
+<p style="margin-left:23%;">The <tt>&quot;up&quot;</tt>
+method increases the semaphore&rsquo;s count by the number
+specified (which must be an integer &gt;= 1), or by one if
+no number is specified.</p>
+
+<p style="margin-left:23%; margin-top: 1em">This will
+unblock any thread that is blocked trying to
+<tt>&quot;down&quot;</tt> the semaphore if the
+<tt>&quot;up&quot;</tt> raises the semaphore&rsquo;s count
+above the amount that the <tt>&quot;down&quot;</tt> is
+trying to decrement it by. For example, if three threads are
+blocked trying to <tt>&quot;down&quot;</tt> a semaphore by
+one, and another thread <tt>&quot;up&quot;</tt>s the
+semaphore by two, then two of the blocked threads (which two
+is indeterminate) will become unblocked.</p>
+
+<p style="margin-left:23%; margin-top: 1em">This is the
+semaphore &quot;V operation&quot; (the name derives from the
+Dutch word &quot;vrij&quot;, which means
+&quot;release&quot;).</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Semaphores
+created by Thread::Semaphore can be used in both threaded
+and non-threaded applications. This allows you to write
+modules and packages that potentially make use of
+semaphores, and that will function in either
+environment.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">Thread::Semaphore
+Discussion Forum on <small>CPAN:</small>
+http://www.cpanforum.com/dist/Thread&minus;Semaphore
+&lt;http://www.cpanforum.com/dist/Thread-Semaphore&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">threads,
+threads::shared</p>
+
+<h2>MAINTAINER
+<a name="MAINTAINER"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Jerry D.
+Hedden, &lt;jdhedden&nbsp; <small>AT&nbsp;</small>
+cpan&nbsp; <small>DOT&nbsp;</small> org&gt;</p>
+
+<h2>LICENSE
+<a name="LICENSE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This program is
+free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.</p>
+<hr>
+</body>
+</html>

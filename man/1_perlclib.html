@@ -1,0 +1,289 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:37:25 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERLCLIB</title>
+
+</head>
+<body>
+
+<h1 align="center">PERLCLIB</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlclib
+&minus; Internal replacements for standard C library
+functions</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">One thing Perl
+porters should note is that <i>perl</i> doesn&rsquo;t tend
+to use that much of the C standard library internally;
+you&rsquo;ll see very little use of, for example, the
+<i>ctype.h</i> functions in there. This is because Perl
+tends to reimplement or abstract standard library functions,
+so that we know exactly how they&rsquo;re going to
+operate.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is a
+reference card for people who are familiar with the C
+library and who want to do things the Perl way; to tell them
+which functions they ought to use instead of the more normal
+C functions.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Conventions</b>
+<br>
+In the following tables: <br>
+&quot;t&quot;</p>
+
+<p style="margin-left:15%;">is a type.</p>
+
+<p style="margin-left:11%;">&quot;p&quot;</p>
+
+<p style="margin-left:15%;">is a pointer.</p>
+
+<p style="margin-left:11%;">&quot;n&quot;</p>
+
+<p style="margin-left:15%;">is a number.</p>
+
+<p style="margin-left:11%;">&quot;s&quot;</p>
+
+<p style="margin-left:15%;">is a string.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;sv&quot;</tt>,
+<tt>&quot;av&quot;</tt>, <tt>&quot;hv&quot;</tt>, etc.
+represent variables of their respective types.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>File
+Operations</b> <br>
+Instead of the <i>stdio.h</i> functions, you should use the
+Perl abstraction layer. Instead of
+<tt>&quot;FILE*&quot;</tt> types, you need to be handling
+<tt>&quot;PerlIO*&quot;</tt> types. Don&rsquo;t forget that
+with the new PerlIO layered I/O abstraction
+<tt>&quot;FILE*&quot;</tt> types may not even be available.
+See also the <tt>&quot;perlapio&quot;</tt> documentation for
+more information about the following functions:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Instead Of:                 Use:
+    stdin                       PerlIO_stdin()
+    stdout                      PerlIO_stdout()
+    stderr                      PerlIO_stderr()
+    fopen(fn, mode)             PerlIO_open(fn, mode)
+    freopen(fn, mode, stream)   PerlIO_reopen(fn, mode, perlio) (Deprecated)
+    fflush(stream)              PerlIO_flush(perlio)
+    fclose(stream)              PerlIO_close(perlio)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>File Input
+and Output</b></p>
+
+<pre style="margin-left:11%;">    Instead Of:                 Use:
+    fprintf(stream, fmt, ...)   PerlIO_printf(perlio, fmt, ...)
+    [f]getc(stream)             PerlIO_getc(perlio)
+    [f]putc(stream, n)          PerlIO_putc(perlio, n)
+    ungetc(n, stream)           PerlIO_ungetc(perlio, n)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Note that the
+PerlIO equivalents of <tt>&quot;fread&quot;</tt> and
+<tt>&quot;fwrite&quot;</tt> are slightly different from
+their C library counterparts:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    fread(p, size, n, stream)   PerlIO_read(perlio, buf, numbytes)
+    fwrite(p, size, n, stream)  PerlIO_write(perlio, buf, numbytes)
+    fputs(s, stream)            PerlIO_puts(perlio, s)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">There is no
+equivalent to <tt>&quot;fgets&quot;</tt>; one should use
+<tt>&quot;sv_gets&quot;</tt> instead:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    fgets(s, n, stream)         sv_gets(sv, perlio, append)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>File
+Positioning</b></p>
+
+<pre style="margin-left:11%;">    Instead Of:                 Use:
+    feof(stream)                PerlIO_eof(perlio)
+    fseek(stream, n, whence)    PerlIO_seek(perlio, n, whence)
+    rewind(stream)              PerlIO_rewind(perlio)
+    fgetpos(stream, p)          PerlIO_getpos(perlio, sv)
+    fsetpos(stream, p)          PerlIO_setpos(perlio, sv)
+    ferror(stream)              PerlIO_error(perlio)
+    clearerr(stream)            PerlIO_clearerr(perlio)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Memory
+Management and String Handling</b></p>
+
+<pre style="margin-left:11%;">    Instead Of:                         Use:
+    t* p = malloc(n)                    Newx(id, p, n, t)
+    t* p = calloc(n, s)                 Newxz(id, p, n, t)
+    p = realloc(p, n)                   Renew(p, n, t)
+    memcpy(dst, src, n)                 Copy(src, dst, n, t)
+    memmove(dst, src, n)                Move(src, dst, n, t)
+    memcpy(dst, src, sizeof(t))         StructCopy(src, dst, t)
+    memset(dst, 0, n * sizeof(t))       Zero(dst, n, t)
+    memzero(dst, 0)                     Zero(dst, n, char)
+    free(p)                             Safefree(p)
+    strdup(p)                   savepv(p)
+    strndup(p, n)               savepvn(p, n) (Hey, strndup doesn't exist!)
+    strstr(big, little)         instr(big, little)
+    strcmp(s1, s2)              strLE(s1, s2) / strEQ(s1, s2) / strGT(s1,s2)
+    strncmp(s1, s2, n)          strnNE(s1, s2, n) / strnEQ(s1, s2, n)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Notice the
+different order of arguments to <tt>&quot;Copy&quot;</tt>
+and <tt>&quot;Move&quot;</tt> than used in
+<tt>&quot;memcpy&quot;</tt> and
+<tt>&quot;memmove&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Most of the
+time, though, you&rsquo;ll want to be dealing with SVs
+internally instead of raw <tt>&quot;char *&quot;</tt>
+strings:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    strlen(s)                   sv_len(sv)
+    strcpy(dt, src)             sv_setpv(sv, s)
+    strncpy(dt, src, n)         sv_setpvn(sv, s, n)
+    strcat(dt, src)             sv_catpv(sv, s)
+    strncat(dt, src)            sv_catpvn(sv, s)
+    sprintf(s, fmt, ...)        sv_setpvf(sv, fmt, ...)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Note also the
+existence of <tt>&quot;sv_catpvf&quot;</tt> and
+<tt>&quot;sv_vcatpvfn&quot;</tt>, combining concatenation
+with formatting.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Sometimes
+instead of zeroing the allocated heap by using
+<i>Newxz()</i> you should consider &quot;poisoning&quot; the
+data. This means writing a bit pattern into it that should
+be illegal as pointers (and floating point numbers), and
+also hopefully surprising enough as integers, so that any
+code attempting to use the data without forethought will
+break sooner rather than later. Poisoning can be done using
+the <i>Poison()</i> macros, which have similar arguments to
+<i>Zero()</i>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    PoisonWith(dst, n, t, b)    scribble memory with byte b
+    PoisonNew(dst, n, t)        equal to PoisonWith(dst, n, t, 0xAB)
+    PoisonFree(dst, n, t)       equal to PoisonWith(dst, n, t, 0xEF)
+    Poison(dst, n, t)           equal to PoisonFree(dst, n, t)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Character
+Class Tests</b> <br>
+There are two types of character class tests that Perl
+implements: one type deals in <tt>&quot;char&quot;</tt>s and
+are thus <b>not</b> Unicode aware (and hence deprecated
+unless you <b>know</b> you should use them) and the other
+type deal in <tt>&quot;UV&quot;</tt>s and know about Unicode
+properties. In the following table, <tt>&quot;c&quot;</tt>
+is a <tt>&quot;char&quot;</tt>, and <tt>&quot;u&quot;</tt>
+is a Unicode codepoint.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Instead Of:                 Use:            But better use:
+    isalnum(c)                  isALNUM(c)      isALNUM_uni(u)
+    isalpha(c)                  isALPHA(c)      isALPHA_uni(u)
+    iscntrl(c)                  isCNTRL(c)      isCNTRL_uni(u)
+    isdigit(c)                  isDIGIT(c)      isDIGIT_uni(u)
+    isgraph(c)                  isGRAPH(c)      isGRAPH_uni(u)
+    islower(c)                  isLOWER(c)      isLOWER_uni(u)
+    isprint(c)                  isPRINT(c)      isPRINT_uni(u)
+    ispunct(c)                  isPUNCT(c)      isPUNCT_uni(u)
+    isspace(c)                  isSPACE(c)      isSPACE_uni(u)
+    isupper(c)                  isUPPER(c)      isUPPER_uni(u)
+    isxdigit(c)                 isXDIGIT(c)     isXDIGIT_uni(u)
+    tolower(c)                  toLOWER(c)      toLOWER_uni(u)
+    toupper(c)                  toUPPER(c)      toUPPER_uni(u)</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>stdlib.h</i>
+<b>functions</b></p>
+
+<pre style="margin-left:11%;">    Instead Of:                 Use:
+    atof(s)                     Atof(s)
+    atol(s)                     Atol(s)
+    strtod(s, &amp;p)               Nothing.  Just don't use it.
+    strtol(s, &amp;p, n)            Strtol(s, &amp;p, n)
+    strtoul(s, &amp;p, n)           Strtoul(s, &amp;p, n)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Notice also the
+<tt>&quot;grok_bin&quot;</tt>,
+<tt>&quot;grok_hex&quot;</tt>, and
+<tt>&quot;grok_oct&quot;</tt> functions in <i>numeric.c</i>
+for converting strings representing numbers in the
+respective bases into <tt>&quot;NV&quot;</tt>s.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In theory
+<tt>&quot;Strtol&quot;</tt> and <tt>&quot;Strtoul&quot;</tt>
+may not be defined if the machine perl is built on
+doesn&rsquo;t actually have strtol and strtoul. But as those
+2 functions are part of the 1989 <small>ANSI</small> C spec
+we suspect you&rsquo;ll find them everywhere by now.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    int rand()                  double Drand01()
+    srand(n)                    { seedDrand01((Rand_seed_t)n);
+                                  PL_srand_called = TRUE; }
+    exit(n)                     my_exit(n)
+    system(s)                   Don't. Look at pp_system or use my_popen
+    getenv(s)                   PerlEnv_getenv(s)
+    setenv(s, val)              my_putenv(s, val)</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Miscellaneous
+functions</b> <br>
+You should not even <b>want</b> to use <i>setjmp.h</i>
+functions, but if you think you do, use the
+<tt>&quot;JMPENV&quot;</tt> stack in <i>scope.h</i>
+instead.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+<tt>&quot;signal&quot;</tt>/<tt>&quot;sigaction&quot;</tt>,
+use <tt>&quot;rsignal(signo, handler)&quot;</tt>.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlapi,
+perlapio, perlguts</p>
+<hr>
+</body>
+</html>

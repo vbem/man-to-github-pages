@@ -1,0 +1,275 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:34:22 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>GIT&minus;RECEIVE&minus;PACK</title>
+
+</head>
+<body>
+
+<h1 align="center">GIT&minus;RECEIVE&minus;PACK</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#PRE-RECEIVE HOOK">PRE-RECEIVE HOOK</a><br>
+<a href="#UPDATE HOOK">UPDATE HOOK</a><br>
+<a href="#POST-RECEIVE HOOK">POST-RECEIVE HOOK</a><br>
+<a href="#POST-UPDATE HOOK">POST-UPDATE HOOK</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#GIT">GIT</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">git-receive-pack
+&minus; Receive what is pushed into the repository</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>git&minus;receive&minus;pack</i>
+&lt;directory&gt;</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Invoked by
+<i>git send&minus;pack</i> and updates the repository with
+the information fed from the remote end.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This command is
+usually not invoked directly by the end user. The UI for the
+protocol is on the <i>git send&minus;pack</i> side, and the
+program pair is meant to be used to push updates to remote
+repository. For pull operations, see
+<b>git-fetch-pack</b>(1).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The command
+allows for creation and fast&minus;forwarding of sha1 refs
+(heads/tags) on the remote end (strictly speaking, it is the
+local end <i>git&minus;receive&minus;pack</i> runs, but to
+the user who is sitting at the send&minus;pack end, it is
+updating the remote. Confused?)</p>
+
+<p style="margin-left:11%; margin-top: 1em">There are other
+real&minus;world examples of using update and
+post&minus;update hooks found in the Documentation/howto
+directory.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>git&minus;receive&minus;pack</i>
+honours the receive.denyNonFastForwards config option, which
+tells it if updates to a ref should be denied if they are
+not fast&minus;forwards.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">&lt;directory&gt;</p>
+
+<p style="margin-left:17%;">The repository to sync
+into.</p>
+
+<h2>PRE-RECEIVE HOOK
+<a name="PRE-RECEIVE HOOK"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Before any ref
+is updated, if $GIT_DIR/hooks/pre&minus;receive file exists
+and is executable, it will be invoked once with no
+parameters. The standard input of the hook will be one line
+per ref to be updated:</p>
+
+<p style="margin-left:17%; margin-top: 1em">sha1&minus;old
+SP sha1&minus;new SP refname LF</p>
+
+<p style="margin-left:11%; margin-top: 1em">The refname
+value is relative to $GIT_DIR; e.g. for the master head this
+is &quot;refs/heads/master&quot;. The two sha1 values before
+each refname are the object names for the refname before and
+after the update. Refs to be created will have
+sha1&minus;old equal to 0{40}, while refs to be deleted will
+have sha1&minus;new equal to 0{40}, otherwise sha1&minus;old
+and sha1&minus;new should be valid objects in the
+repository.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This hook is
+called before any refname is updated and before any
+fast&minus;forward checks are performed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+pre&minus;receive hook exits with a non&minus;zero exit
+status no updates will be performed, and the update,
+post&minus;receive and post&minus;update hooks will not be
+invoked either. This can be useful to quickly bail out if
+the update is not to be supported.</p>
+
+<h2>UPDATE HOOK
+<a name="UPDATE HOOK"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Before each ref
+is updated, if $GIT_DIR/hooks/update file exists and is
+executable, it is invoked once per ref, with three
+parameters:</p>
+
+
+<p style="margin-left:17%; margin-top: 1em">$GIT_DIR/hooks/update
+refname sha1&minus;old sha1&minus;new</p>
+
+<p style="margin-left:11%; margin-top: 1em">The refname
+parameter is relative to $GIT_DIR; e.g. for the master head
+this is &quot;refs/heads/master&quot;. The two sha1
+arguments are the object names for the refname before and
+after the update. Note that the hook is called before the
+refname is updated, so either sha1&minus;old is 0{40}
+(meaning there is no such ref yet), or it should match what
+is recorded in refname.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The hook should
+exit with non&minus;zero status if it wants to disallow
+updating the named ref. Otherwise it should exit with
+zero.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Successful
+execution (a zero exit status) of this hook does not ensure
+the ref will actually be updated, it is only a prerequisite.
+As such it is not a good idea to send notices (e.g. email)
+from this hook. Consider using the post&minus;receive hook
+instead.</p>
+
+<h2>POST-RECEIVE HOOK
+<a name="POST-RECEIVE HOOK"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">After all refs
+were updated (or attempted to be updated), if any ref update
+was successful, and if $GIT_DIR/hooks/post&minus;receive
+file exists and is executable, it will be invoked once with
+no parameters. The standard input of the hook will be one
+line for each successfully updated ref:</p>
+
+<p style="margin-left:17%; margin-top: 1em">sha1&minus;old
+SP sha1&minus;new SP refname LF</p>
+
+<p style="margin-left:11%; margin-top: 1em">The refname
+value is relative to $GIT_DIR; e.g. for the master head this
+is &quot;refs/heads/master&quot;. The two sha1 values before
+each refname are the object names for the refname before and
+after the update. Refs that were created will have
+sha1&minus;old equal to 0{40}, while refs that were deleted
+will have sha1&minus;new equal to 0{40}, otherwise
+sha1&minus;old and sha1&minus;new should be valid objects in
+the repository.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Using this
+hook, it is easy to generate mails describing the updates to
+the repository. This example script sends one mail message
+per ref listing the commits pushed to the repository:</p>
+
+<p style="margin-left:17%; margin-top: 1em">#!/bin/sh <br>
+# mail out commit update information. <br>
+while read oval nval ref <br>
+do <br>
+if expr &quot;$oval&quot; : '0*$' &gt;/dev/null <br>
+then <br>
+echo &quot;Created a new ref, with the following
+commits:&quot; <br>
+git rev&minus;list &minus;&minus;pretty &quot;$nval&quot;
+<br>
+else <br>
+echo &quot;New commits:&quot; <br>
+git rev&minus;list &minus;&minus;pretty &quot;$nval&quot;
+&quot;^$oval&quot; <br>
+fi | <br>
+mail &minus;s &quot;Changes to ref $ref&quot;
+commit&minus;list@mydomain <br>
+done <br>
+exit 0</p>
+
+<p style="margin-left:11%; margin-top: 1em">The exit code
+from this hook invocation is ignored, however a
+non&minus;zero exit code will generate an error message.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that it is
+possible for refname to not have sha1&minus;new when this
+hook runs. This can easily occur if another user modifies
+the ref after it was updated by
+<i>git&minus;receive&minus;pack</i>, but before the hook was
+able to evaluate it. It is recommended that hooks rely on
+sha1&minus;new rather than the current value of refname.</p>
+
+<h2>POST-UPDATE HOOK
+<a name="POST-UPDATE HOOK"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">After all other
+processing, if at least one ref was updated, and if
+$GIT_DIR/hooks/post&minus;update file exists and is
+executable, then post&minus;update will be called with the
+list of refs that have been updated. This can be used to
+implement any repository wide cleanup tasks.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The exit code
+from this hook invocation is ignored; the only thing left
+for <i>git&minus;receive&minus;pack</i> to do at that point
+is to exit itself anyway.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This hook can
+be used, for example, to run git
+update&minus;server&minus;info if the repository is packed
+and is served via a dumb transport.</p>
+
+<p style="margin-left:17%; margin-top: 1em">#!/bin/sh <br>
+exec git update&minus;server&minus;info</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>git-send-pack</b>(1),
+<b>gitnamespaces</b>(7)</p>
+
+<h2>GIT
+<a name="GIT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Part of the
+<b>git</b>(1) suite</p>
+<hr>
+</body>
+</html>

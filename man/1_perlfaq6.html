@@ -1,0 +1,1365 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:37:33 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERLFAQ6</title>
+
+</head>
+<body>
+
+<h1 align="center">PERLFAQ6</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#AUTHOR AND COPYRIGHT">AUTHOR AND COPYRIGHT</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlfaq6
+&minus; Regular Expressions</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This section is
+surprisingly small because the rest of the
+<small>FAQ</small> is littered with answers involving
+regular expressions. For example, decoding a
+<small>URL</small> and checking whether something is a
+number can be handled with regular expressions, but those
+answers are found elsewhere in this document (in perlfaq9:
+&quot;How do I decode or create those %&minus;encodings on
+the web&quot; and perlfaq4: &quot;How do I determine whether
+a scalar is a number/whole/integer/float&quot;, to be
+precise).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can I
+hope to use regular expressions without creating illegible
+and unmaintainable code?</b> <br>
+Three techniques can make regular expressions maintainable
+and understandable. <br>
+Comments Outside the Regex</p>
+
+<p style="margin-left:17%;">Describe what you&rsquo;re
+doing and how you&rsquo;re doing it, using normal Perl
+comments.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    # turn the line into the first word, a colon, and the
+    # number of characters on the rest of the line
+    s/^(\w+)(.*)/ lc($1) . &quot;:&quot; . length($2) /meg;</pre>
+
+
+<p style="margin-left:11%;">Comments Inside the Regex</p>
+
+<p style="margin-left:17%;">The <tt>&quot;/x&quot;</tt>
+modifier causes whitespace to be ignored in a regex pattern
+(except in a character class and a few other places), and
+also allows you to use normal comments there, too. As you
+can imagine, whitespace and comments help a lot.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;/x&quot;</tt>
+lets you turn this:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    s{&lt;(?:[^&gt;'&quot;]*|&quot;.*?&quot;|'.*?')+&gt;}{}gs;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">into this:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    s{ &lt;                    # opening angle bracket
+        (?:                 # Non&minus;backreffing grouping paren
+            [^&gt;'&quot;] *        # 0 or more things that are neither &gt; nor ' nor &quot;
+                |           #    or else
+            &quot;.*?&quot;           # a section between double quotes (stingy match)
+                |           #    or else
+            '.*?'           # a section between single quotes (stingy match)
+        ) +                 #   all occurring one or more times
+        &gt;                   # closing angle bracket
+    }{}gsx;                 # replace with nothing, i.e. delete</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">It&rsquo;s
+still not quite so clear as prose, but it is very useful for
+describing the meaning of each part of the pattern.</p>
+
+<p style="margin-left:11%;">Different Delimiters</p>
+
+<p style="margin-left:17%;">While we normally think of
+patterns as being delimited with <tt>&quot;/&quot;</tt>
+characters, they can be delimited by almost any character.
+perlre describes this. For example, the
+<tt>&quot;s///&quot;</tt> above uses braces as delimiters.
+Selecting another delimiter can avoid quoting the delimiter
+within the pattern:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    s/\/usr\/local/\/usr\/share/g;    # bad delimiter choice
+    s#/usr/local#/usr/share#g;        # better</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Using logically
+paired delimiters can be even more readable:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    s{/usr/local/}{/usr/share}g;      # better still</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>I&rsquo;m
+having trouble matching over more than one line.
+What&rsquo;s wrong?</b> <br>
+Either you don&rsquo;t have more than one line in the string
+you&rsquo;re looking at (probably), or else you aren&rsquo;t
+using the correct modifier(s) on your pattern
+(possibly).</p>
+
+<p style="margin-left:11%; margin-top: 1em">There are many
+ways to get multiline data into a string. If you want it to
+happen automatically while reading input, you&rsquo;ll want
+to set $/ (probably to &rsquo;&rsquo; for paragraphs or
+<tt>&quot;undef&quot;</tt> for the whole file) to allow you
+to read more than one line at a time.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Read perlre to
+help you decide which of <tt>&quot;/s&quot;</tt> and
+<tt>&quot;/m&quot;</tt> (or both) you might want to use:
+<tt>&quot;/s&quot;</tt> allows dot to include newline, and
+<tt>&quot;/m&quot;</tt> allows caret and dollar to match
+next to a newline, not just at the end of the string. You do
+need to make sure that you&rsquo;ve actually got a multiline
+string in there.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For example,
+this program detects duplicate words, even when they span
+line breaks (but not paragraph ones). For this example, we
+don&rsquo;t need <tt>&quot;/s&quot;</tt> because we
+aren&rsquo;t using dot in a regular expression that we want
+to cross line boundaries. Neither do we need
+<tt>&quot;/m&quot;</tt> because we don&rsquo;t want caret or
+dollar to match at any point inside the record next to
+newlines. But it&rsquo;s imperative that $/ be set to
+something other than the default, or else we won&rsquo;t
+actually ever have a multiline record read in.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $/ = '';          # read in whole paragraph, not just one line
+    while ( &lt;&gt; ) {
+        while ( /\b([\w'&minus;]+)(\s+\g1)+\b/gi ) {     # word starts alpha
+            print &quot;Duplicate $1 at paragraph $.\n&quot;;
+        }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Here&rsquo;s
+some code that finds sentences that begin with &quot;From
+&quot; (which would be mangled by many mailers):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $/ = '';          # read in whole paragraph, not just one line
+    while ( &lt;&gt; ) {
+        while ( /^From /gm ) { # /m makes ^ match next to \n
+        print &quot;leading from in paragraph $.\n&quot;;
+        }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Here&rsquo;s
+code that finds everything between <small>START</small> and
+<small>END</small> in a paragraph:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    undef $/;          # read in whole file, not just one line or paragraph
+    while ( &lt;&gt; ) {
+        while ( /START(.*?)END/sgm ) { # /s makes . cross line boundaries
+            print &quot;$1\n&quot;;
+        }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can I
+pull out lines between two patterns that are themselves on
+different lines?</b> <br>
+You can use Perl&rsquo;s somewhat exotic
+<tt>&quot;..&quot;</tt> operator (documented in perlop):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    perl &minus;ne 'print if /START/ .. /END/' file1 file2 ...</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you wanted
+text and not lines, you would use</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    perl &minus;0777 &minus;ne 'print &quot;$1\n&quot; while /START(.*?)END/gs' file1 file2 ...</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">But if you want
+nested occurrences of <tt>&quot;START&quot;</tt> through
+<tt>&quot;END&quot;</tt>, you&rsquo;ll run up against the
+problem described in the question in this section on
+matching balanced text.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here&rsquo;s
+another example of using <tt>&quot;..&quot;</tt>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    while (&lt;&gt;) {
+        my $in_header =   1  .. /^$/;
+        my $in_body   = /^$/ .. eof;
+    # now choose between them
+    } continue {
+        $. = 0 if eof;    # fix $.
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+match <small>XML</small> , <small>HTML</small> , or other
+nasty, ugly things with a regex?</b> <br>
+Do not use regexes. Use a module and forget about the
+regular expressions. The XML::LibXML, HTML::TokeParser and
+HTML::TreeBuilder modules are good starts, although each
+namespace has other parsing modules specialized for certain
+tasks and different ways of doing it. Start at
+<small>CPAN</small> Search ( &lt;http://metacpan.org/&gt; )
+and wonder at all the work people have done for you already!
+:)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>I put a
+regular expression into $/ but it didn&rsquo;t work.
+What&rsquo;s wrong?</b> <br>
+$/ has to be a string. You can use these examples if you
+really need to do this.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you have
+File::Stream, this is easy.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use File::Stream;
+    my $stream = File::Stream&minus;&gt;new(
+        $filehandle,
+        separator =&gt; qr/\s*,\s*/,
+        );
+    print &quot;$_\n&quot; while &lt;$stream&gt;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you
+don&rsquo;t have File::Stream, you have to do a little more
+work.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can use the
+four-argument form of sysread to continually add to a
+buffer. After you add to the buffer, you check if you have a
+complete line (using your regular expression).</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    local $_ = &quot;&quot;;
+    while( sysread FH, $_, 8192, length ) {
+        while( s/^((?s).*?)your_pattern// ) {
+            my $record = $1;
+            # do stuff here.
+        }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can do the
+same thing with foreach and a match using the c flag and the
+\G anchor, if you do not mind your entire file being in
+memory at the end.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    local $_ = &quot;&quot;;
+    while( sysread FH, $_, 8192, length ) {
+        foreach my $record ( m/\G((?s).*?)your_pattern/gc ) {
+            # do stuff here.
+        }
+        substr( $_, 0, pos ) = &quot;&quot; if pos;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+substitute case-insensitively on the <small>LHS</small>
+while preserving case on the <small>RHS</small> ?</b> <br>
+Here&rsquo;s a lovely Perlish solution by Larry Rosler. It
+exploits properties of bitwise xor on <small>ASCII</small>
+strings.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $_= &quot;this is a TEsT case&quot;;
+    $old = 'test';
+    $new = 'success';
+    s{(\Q$old\E)}
+    { uc $new | (uc $1 ^ $1) .
+        (uc(substr $1, &minus;1) ^ substr $1, &minus;1) x
+        (length($new) &minus; length $1)
+    }egi;
+    print;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">And here it is
+as a subroutine, modeled after the above:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sub preserve_case($$) {
+        my ($old, $new) = @_;
+        my $mask = uc $old ^ $old;
+        uc $new | $mask .
+            substr($mask, &minus;1) x (length($new) &minus; length($old))
+    }
+    $string = &quot;this is a TEsT case&quot;;
+    $string =~ s/(test)/preserve_case($1, &quot;success&quot;)/egi;
+    print &quot;$string\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This
+prints:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    this is a SUcCESS case</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">As an
+alternative, to keep the case of the replacement word if it
+is longer than the original, you can use this code, by Jeff
+Pinyan:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sub preserve_case {
+        my ($from, $to) = @_;
+        my ($lf, $lt) = map length, @_;
+        if ($lt &lt; $lf) { $from = substr $from, 0, $lt }
+        else { $from .= substr $to, $lf }
+        return uc $to | ($from ^ uc $from);
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This changes
+the sentence to &quot;this is a SUcCess case.&quot;</p>
+
+<p style="margin-left:11%; margin-top: 1em">Just to show
+that C programmers can write C in any programming language,
+if you prefer a more C&minus;like solution, the following
+script makes the substitution have the same case, letter by
+letter, as the original. (It also happens to run about 240%
+slower than the Perlish solution runs.) If the substitution
+has more characters than the string being substituted, the
+case of the last character is used for the rest of the
+substitution.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    # Original by Nathan Torkington, massaged by Jeffrey Friedl
+    #
+    sub preserve_case($$)
+    {
+        my ($old, $new) = @_;
+        my $state = 0; # 0 = no change; 1 = lc; 2 = uc
+        my ($i, $oldlen, $newlen, $c) = (0, length($old), length($new));
+        my $len = $oldlen &lt; $newlen ? $oldlen : $newlen;
+        for ($i = 0; $i &lt; $len; $i++) {
+            if ($c = substr($old, $i, 1), $c =~ /[\W\d_]/) {
+                $state = 0;
+            } elsif (lc $c eq $c) {
+                substr($new, $i, 1) = lc(substr($new, $i, 1));
+                $state = 1;
+            } else {
+                substr($new, $i, 1) = uc(substr($new, $i, 1));
+                $state = 2;
+            }
+        }
+        # finish up with any remaining new (for when new is longer than old)
+        if ($newlen &gt; $oldlen) {
+            if ($state == 1) {
+                substr($new, $oldlen) = lc(substr($new, $oldlen));
+            } elsif ($state == 2) {
+                substr($new, $oldlen) = uc(substr($new, $oldlen));
+            }
+        }
+        return $new;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can I
+make &quot;\w&quot; match national character sets?</b> <br>
+Put <tt>&quot;use locale;&quot;</tt> in your script. The \w
+character class is taken from the current locale.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See perllocale
+for details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can I
+match a locale-smart version of
+&quot;/[a&minus;zA&minus;Z]/&quot;?</b> <br>
+You can use the <small>POSIX</small> character class syntax
+<tt>&quot;/[[:alpha:]]/&quot;</tt> documented in perlre.</p>
+
+<p style="margin-left:11%; margin-top: 1em">No matter which
+locale you are in, the alphabetic characters are the
+characters in \w without the digits and the underscore. As a
+regex, that looks like <tt>&quot;/[^\W\d_]/&quot;</tt>. Its
+complement, the non-alphabetics, is then everything in \W
+along with the digits and the underscore, or
+<tt>&quot;/[\W\d_]/&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can I
+quote a variable to use in a regex?</b> <br>
+The Perl parser will expand <tt>$variable</tt> and
+<tt>@variable</tt> references in regular expressions unless
+the delimiter is a single quote. Remember, too, that the
+right-hand side of a <tt>&quot;s///&quot;</tt> substitution
+is considered a double-quoted string (see perlop for more
+details). Remember also that any regex special characters
+will be acted on unless you precede the substitution with
+\Q. Here&rsquo;s an example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $string = &quot;Placido P. Octopus&quot;;
+    $regex  = &quot;P.&quot;;
+    $string =~ s/$regex/Polyp/;
+    # $string is now &quot;Polypacido P. Octopus&quot;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Because
+<tt>&quot;.&quot;</tt> is special in regular expressions,
+and can match any single character, the regex
+<tt>&quot;P.&quot;</tt> here has matched the &lt;Pl&gt; in
+the original string.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To escape the
+special meaning of <tt>&quot;.&quot;</tt>, we use
+<tt>&quot;\Q&quot;</tt>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $string = &quot;Placido P. Octopus&quot;;
+    $regex  = &quot;P.&quot;;
+    $string =~ s/\Q$regex/Polyp/;
+    # $string is now &quot;Placido Polyp Octopus&quot;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The use of
+<tt>&quot;\Q&quot;</tt> causes the &lt;.&gt; in the regex to
+be treated as a regular character, so that
+<tt>&quot;P.&quot;</tt> matches a <tt>&quot;P&quot;</tt>
+followed by a dot.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>What is
+&quot;/o&quot; really for?</b> <br>
+(contributed by brian d foy)</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;/o&quot;</tt> option for regular expressions
+(documented in perlop and perlreref) tells Perl to compile
+the regular expression only once. This is only useful when
+the pattern contains a variable. Perls 5.6 and later handle
+this automatically if the pattern does not change.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since the match
+operator <tt>&quot;m//&quot;</tt>, the substitution operator
+<tt>&quot;s///&quot;</tt>, and the regular expression
+quoting operator <tt>&quot;qr//&quot;</tt> are
+double-quotish constructs, you can interpolate variables
+into the pattern. See the answer to &quot;How can I quote a
+variable to use in a regex?&quot; for more details.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This example
+takes a regular expression from the argument list and prints
+the lines of input that match it:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my $pattern = shift @ARGV;
+    while( &lt;&gt; ) {
+        print if m/$pattern/;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Versions of
+Perl prior to 5.6 would recompile the regular expression for
+each iteration, even if <tt>$pattern</tt> had not changed.
+The <tt>&quot;/o&quot;</tt> would prevent this by telling
+Perl to compile the pattern the first time, then reuse that
+for subsequent iterations:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my $pattern = shift @ARGV;
+    while( &lt;&gt; ) {
+        print if m/$pattern/o; # useful for Perl &lt; 5.6
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In versions 5.6
+and later, Perl won&rsquo;t recompile the regular expression
+if the variable hasn&rsquo;t changed, so you probably
+don&rsquo;t need the <tt>&quot;/o&quot;</tt> option. It
+doesn&rsquo;t hurt, but it doesn&rsquo;t help either. If you
+want any version of Perl to compile the regular expression
+only once even if the variable changes (thus, only using its
+initial value), you still need the
+<tt>&quot;/o&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can watch
+Perl&rsquo;s regular expression engine at work to verify for
+yourself if Perl is recompiling a regular expression. The
+<tt>&quot;use re 'debug'&quot;</tt> pragma (comes with Perl
+5.005 and later) shows the details. With Perls before 5.6,
+you should see <tt>&quot;re&quot;</tt> reporting that its
+compiling the regular expression on each iteration. With
+Perl 5.6 or later, you should only see
+<tt>&quot;re&quot;</tt> report that for the first
+iteration.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use re 'debug';
+    my $regex = 'Perl';
+    foreach ( qw(Perl Java Ruby Python) ) {
+        print STDERR &quot;&minus;&quot; x 73, &quot;\n&quot;;
+        print STDERR &quot;Trying $_...\n&quot;;
+        print STDERR &quot;\t$_ is good!\n&quot; if m/$regex/;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I use
+a regular expression to strip C&minus;style comments from a
+file?</b> <br>
+While this actually can be done, it&rsquo;s much harder than
+you&rsquo;d think. For example, this one-liner</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    perl &minus;0777 &minus;pe 's{/\*.*?\*/}{}gs' foo.c</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">will work in
+many but not all cases. You see, it&rsquo;s too
+simple-minded for certain kinds of C programs, in
+particular, those with what appear to be comments in quoted
+strings. For that, you&rsquo;d need something like this,
+created by Jeffrey Friedl and later modified by Fred
+Curtis.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $/ = undef;
+    $_ = &lt;&gt;;
+    s#/\*[^*]*\*+([^/*][^*]*\*+)*/|(&quot;(\\.|[^&quot;\\])*&quot;|'(\\.|[^'\\])*'|.[^/&quot;'\\]*)#defined $2 ? $2 : &quot;&quot;#gse;
+    print;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This could, of
+course, be more legibly written with the
+<tt>&quot;/x&quot;</tt> modifier, adding whitespace and
+comments. Here it is expanded, courtesy of Fred Curtis.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    s{
+       /\*         ##  Start of /* ... */ comment
+       [^*]*\*+    ##  Non&minus;* followed by 1&minus;or&minus;more *'s
+       (
+         [^/*][^*]*\*+
+       )*          ##  0&minus;or&minus;more things which don't start with /
+                   ##    but do end with '*'
+       /           ##  End of /* ... */ comment
+     |         ##     OR  various things which aren't comments:
+       (
+         &quot;           ##  Start of &quot; ... &quot; string
+         (
+           \\.           ##  Escaped char
+         |               ##    OR
+           [^&quot;\\]        ##  Non &quot;\
+         )*
+         &quot;           ##  End of &quot; ... &quot; string
+       |         ##     OR
+         '           ##  Start of ' ... ' string
+         (
+           \\.           ##  Escaped char
+         |               ##    OR
+           [^'\\]        ##  Non '\
+         )*
+         '           ##  End of ' ... ' string
+       |         ##     OR
+         .           ##  Anything other char
+         [^/&quot;'\\]*   ##  Chars which doesn't start a comment, string or escape
+       )
+     }{defined $2 ? $2 : &quot;&quot;}gxse;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">A slight
+modification also removes C <small>++</small> comments,
+possibly spanning multiple lines using a continuation
+character:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> s#/\*[^*]*\*+([^/*][^*]*\*+)*/|//([^\\]|[^\n][\n]?)*?\n|(&quot;(\\.|[^&quot;\\])*&quot;|'(\\.|[^'\\])*'|.[^/&quot;'\\]*)#defined $3 ? $3 : &quot;&quot;#gse;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Can I use
+Perl regular expressions to match balanced text?</b> <br>
+(contributed by brian d foy)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Your first try
+should probably be the Text::Balanced module, which is in
+the Perl standard library since Perl 5.8. It has a variety
+of functions to deal with tricky text. The Regexp::Common
+module can also help by providing canned patterns you can
+use.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As of Perl
+5.10, you can match balanced text with regular expressions
+using recursive patterns. Before Perl 5.10, you had to
+resort to various tricks such as using Perl code in
+<tt>&quot;(??{})&quot;</tt> sequences.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here&rsquo;s an
+example using a recursive regular expression. The goal is to
+capture all of the text within angle brackets, including the
+text in nested angle brackets. This sample text has two
+&quot;major&quot; groups: a group with one level of nesting
+and a group with two levels of nesting. There are five total
+groups in angle brackets:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    I have some &lt;brackets in &lt;nested brackets&gt; &gt; and
+    &lt;another group &lt;nested once &lt;nested twice&gt; &gt; &gt;
+    and that's it.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The regular
+expression to match the balanced text uses two new (to Perl
+5.10) regular expression features. These are covered in
+perlre and this example is a modified version of one in that
+documentation.</p>
+
+<p style="margin-left:11%; margin-top: 1em">First, adding
+the new possessive <tt>&quot;+&quot;</tt> to any quantifier
+finds the longest match and does not backtrack. That&rsquo;s
+important since you want to handle any angle brackets
+through the recursion, not backtracking. The group
+<tt>&quot;[^&lt;&gt;]++&quot;</tt> finds one or more
+non-angle brackets without backtracking.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Second, the new
+<tt>&quot;(?PARNO)&quot;</tt> refers to the sub-pattern in
+the particular capture group given by
+<tt>&quot;PARNO&quot;</tt>. In the following regex, the
+first capture group finds (and remembers) the balanced text,
+and you need that same pattern within the first buffer to
+get past the nested text. That&rsquo;s the recursive part.
+The <tt>&quot;(?1)&quot;</tt> uses the pattern in the outer
+capture group as an independent part of the regex.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Putting it all
+together, you have:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    #!/usr/local/bin/perl5.10.0
+    my $string =&lt;&lt;&quot;HERE&quot;;
+    I have some &lt;brackets in &lt;nested brackets&gt; &gt; and
+    &lt;another group &lt;nested once &lt;nested twice&gt; &gt; &gt;
+    and that's it.
+    HERE
+    my @groups = $string =~ m/
+            (                   # start of capture group 1
+            &lt;                   # match an opening angle bracket
+                (?:
+                    [^&lt;&gt;]++     # one or more non angle brackets, non backtracking
+                      |
+                    (?1)        # found &lt; or &gt;, so recurse to capture group 1
+                )*
+            &gt;                   # match a closing angle bracket
+            )                   # end of capture group 1
+            /xg;
+    $&quot; = &quot;\n\t&quot;;
+    print &quot;Found:\n\t@groups\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The output
+shows that Perl found the two major groups:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Found:
+        &lt;brackets in &lt;nested brackets&gt; &gt;
+        &lt;another group &lt;nested once &lt;nested twice&gt; &gt; &gt;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">With a little
+extra work, you can get the all of the groups in angle
+brackets even if they are in other angle brackets too. Each
+time you get a balanced match, remove its outer delimiter
+(that&rsquo;s the one you just matched so don&rsquo;t match
+it again) and add it to a queue of strings to process. Keep
+doing that until you get no matches:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    #!/usr/local/bin/perl5.10.0
+    my @queue =&lt;&lt;&quot;HERE&quot;;
+    I have some &lt;brackets in &lt;nested brackets&gt; &gt; and
+    &lt;another group &lt;nested once &lt;nested twice&gt; &gt; &gt;
+    and that's it.
+    HERE
+    my $regex = qr/
+            (                   # start of bracket 1
+            &lt;                   # match an opening angle bracket
+                (?:
+                    [^&lt;&gt;]++     # one or more non angle brackets, non backtracking
+                      |
+                    (?1)        # recurse to bracket 1
+                )*
+            &gt;                   # match a closing angle bracket
+            )                   # end of bracket 1
+            /x;
+    $&quot; = &quot;\n\t&quot;;
+    while( @queue ) {
+        my $string = shift @queue;
+        my @groups = $string =~ m/$regex/g;
+        print &quot;Found:\n\t@groups\n\n&quot; if @groups;
+        unshift @queue, map { s/^&lt;//; s/&gt;$//; $_ } @groups;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The output
+shows all of the groups. The outermost matches show up first
+and the nested matches so up later:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Found:
+        &lt;brackets in &lt;nested brackets&gt; &gt;
+        &lt;another group &lt;nested once &lt;nested twice&gt; &gt; &gt;
+    Found:
+        &lt;nested brackets&gt;
+    Found:
+        &lt;nested once &lt;nested twice&gt; &gt;
+    Found:
+        &lt;nested twice&gt;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>What does it
+mean that regexes are greedy? How can I get around it?</b>
+<br>
+Most people mean that greedy regexes match as much as they
+can. Technically speaking, it&rsquo;s actually the
+quantifiers (<tt>&quot;?&quot;</tt>, <tt>&quot;*&quot;</tt>,
+<tt>&quot;+&quot;</tt>, <tt>&quot;{}&quot;</tt>) that are
+greedy rather than the whole pattern; Perl prefers local
+greed and immediate gratification to overall greed. To get
+non-greedy versions of the same quantifiers, use
+(<tt>&quot;??&quot;</tt>, <tt>&quot;*?&quot;</tt>,
+<tt>&quot;+?&quot;</tt>, <tt>&quot;{}?&quot;</tt>).</p>
+
+<p style="margin-left:11%; margin-top: 1em">An example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my $s1 = my $s2 = &quot;I am very very cold&quot;;
+    $s1 =~ s/ve.*y //;      # I am cold
+    $s2 =~ s/ve.*?y //;     # I am very cold</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Notice how the
+second substitution stopped matching as soon as it
+encountered &quot;y &quot;. The <tt>&quot;*?&quot;</tt>
+quantifier effectively tells the regular expression engine
+to find a match as quickly as possible and pass control on
+to whatever is next in line, as you would if you were
+playing hot potato.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+process each word on each line?</b> <br>
+Use the split function:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    while (&lt;&gt;) {
+        foreach my $word ( split ) {
+            # do something with $word here
+        }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Note that this
+isn&rsquo;t really a word in the English sense; it&rsquo;s
+just chunks of consecutive non-whitespace characters.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To work with
+only alphanumeric sequences (including underscores), you
+might consider</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    while (&lt;&gt;) {
+        foreach $word (m/(\w+)/g) {
+            # do something with $word here
+        }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can I
+print out a word-frequency or line-frequency summary?</b>
+<br>
+To do this, you have to parse out each word in the input
+stream. We&rsquo;ll pretend that by word you mean chunk of
+alphabetics, hyphens, or apostrophes, rather than the
+non-whitespace chunk idea of a word given in the previous
+question:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my (%seen);
+    while (&lt;&gt;) {
+        while ( /(\b[^\W_\d][\w'&minus;]+\b)/g ) {   # misses &quot;`sheep'&quot;
+            $seen{$1}++;
+        }
+    }
+    while ( my ($word, $count) = each %seen ) {
+        print &quot;$count $word\n&quot;;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you wanted
+to do the same thing for lines, you wouldn&rsquo;t need a
+regular expression:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my (%seen);
+    while (&lt;&gt;) {
+        $seen{$_}++;
+    }
+    while ( my ($line, $count) = each %seen ) {
+        print &quot;$count $line&quot;;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you want
+these output in a sorted order, see perlfaq4: &quot;How do I
+sort a hash (optionally by value instead of key)?&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can I do
+approximate matching?</b> <br>
+See the module String::Approx available from
+<small>CPAN</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+efficiently match many regular expressions at once?</b> <br>
+(contributed by brian d foy)</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you have
+Perl 5.10 or later, this is almost trivial. You just smart
+match against an array of regular expression objects:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my @patterns = ( qr/Fr.d/, qr/B.rn.y/, qr/W.lm./ );
+    if( $string ~~ @patterns ) {
+        ...
+    };</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The smart match
+stops when it finds a match, so it doesn&rsquo;t have to try
+every expression.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Earlier than
+Perl 5.10, you have a bit of work to do. You want to avoid
+compiling a regular expression every time you want to match
+it. In this example, perl must recompile the regular
+expression for every iteration of the
+<tt>&quot;foreach&quot;</tt> loop since it has no way to
+know what <tt>$pattern</tt> will be:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my @patterns = qw( foo bar baz );
+    LINE: while( &lt;DATA&gt; ) {
+        foreach $pattern ( @patterns ) {
+            if( /\b$pattern\b/i ) {
+                print;
+                next LINE;
+            }
+        }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;qr//&quot;</tt> operator showed up in perl 5.005.
+It compiles a regular expression, but doesn&rsquo;t apply
+it. When you use the pre-compiled version of the regex, perl
+does less work. In this example, I inserted a
+<tt>&quot;map&quot;</tt> to turn each pattern into its
+pre-compiled form. The rest of the script is the same, but
+faster:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my @patterns = map { qr/\b$_\b/i } qw( foo bar baz );
+    LINE: while( &lt;&gt; ) {
+        foreach $pattern ( @patterns ) {
+            if( /$pattern/ ) {
+                print;
+                next LINE;
+            }
+        }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In some cases,
+you may be able to make several patterns into a single
+regular expression. Beware of situations that require
+backtracking though.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my $regex = join '|', qw( foo bar baz );
+    LINE: while( &lt;&gt; ) {
+        print if /\b(?:$regex)\b/i;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">For more
+details on regular expression efficiency, see <i>Mastering
+Regular Expressions</i> by Jeffrey Friedl. He explains how
+the regular expressions engine works and why some patterns
+are surprisingly inefficient. Once you understand how perl
+applies regular expressions, you can tune them for
+individual situations.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Why
+don&rsquo;t word-boundary searches with &quot;\b&quot; work
+for me?</b> <br>
+(contributed by brian d foy)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Ensure that you
+know what \b really does: it&rsquo;s the boundary between a
+word character, \w, and something that isn&rsquo;t a word
+character. That thing that isn&rsquo;t a word character
+might be \W, but it can also be the start or end of the
+string.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It&rsquo;s not
+(not!) the boundary between whitespace and non-whitespace,
+and it&rsquo;s not the stuff between words we use to create
+sentences.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In regex speak,
+a word boundary (\b) is a &quot;zero width assertion&quot;,
+meaning that it doesn&rsquo;t represent a character in the
+string, but a condition at a certain position.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For the regular
+expression, /\bPerl\b/, there has to be a word boundary
+before the &quot;P&quot; and after the &quot;l&quot;. As
+long as something other than a word character precedes the
+&quot;P&quot; and succeeds the &quot;l&quot;, the pattern
+will match. These strings match /\bPerl\b/.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    &quot;Perl&quot;    # no word char before P or after l
+    &quot;Perl &quot;   # same as previous (space is not a word char)
+    &quot;'Perl'&quot;  # the ' char is not a word char
+    &quot;Perl's&quot;  # no word char before P, non&minus;word char after &quot;l&quot;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">These strings
+do not match /\bPerl\b/.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    &quot;Perl_&quot;   # _ is a word char!
+    &quot;Perler&quot;  # no word char before P, but one after l</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You don&rsquo;t
+have to use \b to match words though. You can look for
+non-word characters surrounded by word characters. These
+strings match the pattern /\b&rsquo;\b/.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    &quot;don't&quot;   # the ' char is surrounded by &quot;n&quot; and &quot;t&quot;
+    &quot;qep'a'&quot;  # the ' char is surrounded by &quot;p&quot; and &quot;a&quot;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">These strings
+do not match /\b&rsquo;\b/.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    &quot;foo'&quot;    # there is no word char after non&minus;word '</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can also
+use the complement of \b, \B, to specify that there should
+not be a word boundary.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the pattern
+/\Bam\B/, there must be a word character before the
+&quot;a&quot; and after the &quot;m&quot;. These patterns
+match /\Bam\B/:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    &quot;llama&quot;   # &quot;am&quot; surrounded by word chars
+    &quot;Samuel&quot;  # same</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">These strings
+do not match /\Bam\B/</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    &quot;Sam&quot;      # no word boundary before &quot;a&quot;, but one after &quot;m&quot;
+    &quot;I am Sam&quot; # &quot;am&quot; surrounded by non&minus;word chars</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Why does
+using $&amp;, $&lsquo;, or $&rsquo; slow my program
+down?</b> <br>
+(contributed by Anno Siegel)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Once Perl sees
+that you need one of these variables anywhere in the
+program, it provides them on each and every pattern match.
+That means that on every pattern match the entire string
+will be copied, part of it to $&lsquo;, part to $&amp;, and
+part to $&rsquo;. Thus the penalty is most severe with long
+strings and patterns that match often. Avoid $&amp;,
+$&rsquo;, and $&lsquo; if you can, but if you can&rsquo;t,
+once you&rsquo;ve used them at all, use them at will because
+you&rsquo;ve already paid the price. Remember that some
+algorithms really appreciate them. As of the 5.005 release,
+the $&amp; variable is no longer &quot;expensive&quot; the
+way the other two are.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since Perl
+5.6.1 the special variables @&minus; and @+ can functionally
+replace $&lsquo;, $&amp; and $&rsquo;. These arrays contain
+pointers to the beginning and end of each match (see perlvar
+for the full story), so they give you essentially the same
+information, but without the risk of excessive string
+copying.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl 5.10 added
+three specials, <tt>&quot;${^MATCH}&quot;</tt>,
+<tt>&quot;${^PREMATCH}&quot;</tt>, and
+<tt>&quot;${^POSTMATCH}&quot;</tt> to do the same job but
+without the global performance penalty. Perl 5.10 only sets
+these variables if you compile or execute the regular
+expression with the <tt>&quot;/p&quot;</tt> modifier.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>What good is
+&quot;\G&quot; in a regular expression?</b> <br>
+You use the <tt>&quot;\G&quot;</tt> anchor to start the next
+match on the same string where the last match left off. The
+regular expression engine cannot skip over any characters to
+find the next match with this anchor, so
+<tt>&quot;\G&quot;</tt> is similar to the beginning of
+string anchor, <tt>&quot;^&quot;</tt>. The
+<tt>&quot;\G&quot;</tt> anchor is typically used with the
+<tt>&quot;g&quot;</tt> flag. It uses the value of
+<tt>&quot;pos()&quot;</tt> as the position to start the next
+match. As the match operator makes successive matches, it
+updates <tt>&quot;pos()&quot;</tt> with the position of the
+next character past the last match (or the first character
+of the next match, depending on how you like to look at it).
+Each string has its own <tt>&quot;pos()&quot;</tt>
+value.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Suppose you
+want to match all of consecutive pairs of digits in a string
+like &quot;1122a44&quot; and stop matching when you
+encounter non-digits. You want to match <tt>11</tt> and
+<tt>22</tt> but the letter &lt;a&gt; shows up between
+<tt>22</tt> and <tt>44</tt> and you want to stop at
+<tt>&quot;a&quot;</tt>. Simply matching pairs of digits
+skips over the <tt>&quot;a&quot;</tt> and still matches
+<tt>44</tt>.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $_ = &quot;1122a44&quot;;
+    my @pairs = m/(\d\d)/g;   # qw( 11 22 44 )</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you use the
+<tt>&quot;\G&quot;</tt> anchor, you force the match after
+<tt>22</tt> to start with the <tt>&quot;a&quot;</tt>. The
+regular expression cannot match there since it does not find
+a digit, so the next match fails and the match operator
+returns the pairs it already found.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $_ = &quot;1122a44&quot;;
+    my @pairs = m/\G(\d\d)/g; # qw( 11 22 )</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can also
+use the <tt>&quot;\G&quot;</tt> anchor in scalar context.
+You still need the <tt>&quot;g&quot;</tt> flag.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $_ = &quot;1122a44&quot;;
+    while( m/\G(\d\d)/g ) {
+        print &quot;Found $1\n&quot;;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">After the match
+fails at the letter <tt>&quot;a&quot;</tt>, perl resets
+<tt>&quot;pos()&quot;</tt> and the next match on the same
+string starts at the beginning.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $_ = &quot;1122a44&quot;;
+    while( m/\G(\d\d)/g ) {
+        print &quot;Found $1\n&quot;;
+    }
+    print &quot;Found $1 after while&quot; if m/(\d\d)/g; # finds &quot;11&quot;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can disable
+<tt>&quot;pos()&quot;</tt> resets on fail with the
+<tt>&quot;c&quot;</tt> flag, documented in perlop and
+perlreref. Subsequent matches start where the last
+successful match ended (the value of
+<tt>&quot;pos()&quot;</tt>) even if a match on the same
+string has failed in the meantime. In this case, the match
+after the <tt>&quot;while()&quot;</tt> loop starts at the
+<tt>&quot;a&quot;</tt> (where the last match stopped), and
+since it does not use any anchor it can skip over the
+<tt>&quot;a&quot;</tt> to find <tt>44</tt>.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $_ = &quot;1122a44&quot;;
+    while( m/\G(\d\d)/gc ) {
+        print &quot;Found $1\n&quot;;
+    }
+    print &quot;Found $1 after while&quot; if m/(\d\d)/g; # finds &quot;44&quot;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Typically you
+use the <tt>&quot;\G&quot;</tt> anchor with the
+<tt>&quot;c&quot;</tt> flag when you want to try a different
+match if one fails, such as in a tokenizer. Jeffrey Friedl
+offers this example which works in 5.004 or later.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    while (&lt;&gt;) {
+        chomp;
+        PARSER: {
+            m/ \G( \d+\b    )/gcx   &amp;&amp; do { print &quot;number: $1\n&quot;;  redo; };
+            m/ \G( \w+      )/gcx   &amp;&amp; do { print &quot;word:   $1\n&quot;;  redo; };
+            m/ \G( \s+      )/gcx   &amp;&amp; do { print &quot;space:  $1\n&quot;;  redo; };
+            m/ \G( [^\w\d]+ )/gcx   &amp;&amp; do { print &quot;other:  $1\n&quot;;  redo; };
+        }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">For each line,
+the <tt>&quot;PARSER&quot;</tt> loop first tries to match a
+series of digits followed by a word boundary. This match has
+to start at the place the last match left off (or the
+beginning of the string on the first match). Since
+<tt>&quot;m/ \G( \d+\b )/gcx&quot;</tt> uses the
+<tt>&quot;c&quot;</tt> flag, if the string does not match
+that regular expression, perl does not reset <i>pos()</i>
+and the next match starts at the same position to try a
+different pattern.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Are Perl
+regexes DFAs or NFAs? Are they <small>POSIX</small>
+compliant?</b> <br>
+While it&rsquo;s true that Perl&rsquo;s regular expressions
+resemble the DFAs (deterministic finite automata) of the
+<i>egrep</i>(1) program, they are in fact implemented as
+NFAs (non-deterministic finite automata) to allow
+backtracking and backreferencing. And they aren&rsquo;t
+POSIX-style either, because those guarantee worst-case
+behavior for all cases. (It seems that some people prefer
+guarantees of consistency, even when what&rsquo;s guaranteed
+is slowness.) See the book &quot;Mastering Regular
+Expressions&quot; (from O&rsquo;Reilly) by Jeffrey Friedl
+for all the details you could ever hope to know on these
+matters (a full citation appears in perlfaq2).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>What&rsquo;s
+wrong with using grep in a void context?</b> <br>
+The problem is that grep builds a return list, regardless of
+the context. This means you&rsquo;re making Perl go to the
+trouble of building a list that you then just throw away. If
+the list is large, you waste both time and space. If your
+intent is to iterate over the list, then use a for loop for
+this purpose.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In perls older
+than 5.8.1, map suffers from this problem as well. But since
+5.8.1, this has been fixed, and map is context aware &minus;
+in void context, no lists are constructed.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can I
+match strings with multibyte characters?</b> <br>
+Starting from Perl 5.6 Perl has had some level of multibyte
+character support. Perl 5.8 or later is recommended.
+Supported multibyte character repertoires include Unicode,
+and legacy encodings through the Encode module. See
+perluniintro, perlunicode, and Encode.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you are
+stuck with older Perls, you can do Unicode with the
+Unicode::String module, and character conversions using the
+Unicode::Map8 and Unicode::Map modules. If you are using
+Japanese encodings, you might try using the jperl
+5.005_03.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Finally, the
+following set of approaches was offered by Jeffrey Friedl,
+whose article in issue #5 of The Perl Journal talks about
+this very matter.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Let&rsquo;s
+suppose you have some weird Martian encoding where pairs of
+<small>ASCII</small> uppercase letters encode single Martian
+letters (i.e. the two bytes &quot; <small>CV</small> &quot;
+make a single Martian letter, as do the two bytes &quot;
+<small>SG</small> &quot;, &quot; <small>VS</small> &quot;,
+&quot; <small>XX</small> &quot;, etc.). Other bytes
+represent single characters, just like <small>ASCII</small>
+.</p>
+
+<p style="margin-left:11%; margin-top: 1em">So, the string
+of Martian &quot;I am <small>CVSGXX</small> !&quot; uses 12
+bytes to encode the nine characters &rsquo;I&rsquo;, &rsquo;
+&rsquo;, &rsquo;a&rsquo;, &rsquo;m&rsquo;, &rsquo; &rsquo;,
+&rsquo; <small>CV</small> &rsquo;, &rsquo; <small>SG</small>
+&rsquo;, &rsquo; <small>XX</small> &rsquo;,
+&rsquo;!&rsquo;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Now, say you
+want to search for the single character
+<tt>&quot;/GX/&quot;</tt>. Perl doesn&rsquo;t know about
+Martian, so it&rsquo;ll find the two bytes &quot;
+<small>GX</small> &quot; in the &quot;I am
+<small>CVSGXX</small> !&quot; string, even though that
+character isn&rsquo;t there: it just looks like it is
+because &quot; <small>SG</small> &quot; is next to &quot;
+<small>XX</small> &quot;, but there&rsquo;s no real &quot;
+<small>GX</small> &quot;. This is a big problem.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here are a few
+ways, all painful, to deal with it:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    # Make sure adjacent &quot;martian&quot; bytes are no longer adjacent.
+    $martian =~ s/([A&minus;Z][A&minus;Z])/ $1 /g;
+    print &quot;found GX!\n&quot; if $martian =~ /GX/;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Or like
+this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my @chars = $martian =~ m/([A&minus;Z][A&minus;Z]|[^A&minus;Z])/g;
+    # above is conceptually similar to:     my @chars = $text =~ m/(.)/g;
+    #
+    foreach my $char (@chars) {
+        print &quot;found GX!\n&quot;, last if $char eq 'GX';
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Or like
+this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    while ($martian =~ m/\G([A&minus;Z][A&minus;Z]|.)/gs) {  # \G probably unneeded
+        if ($1 eq 'GX') {
+            print &quot;found GX!\n&quot;;
+            last;
+        }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Here&rsquo;s
+another, slightly less painful, way to do it from Benjamin
+Goldberg, who uses a zero-width negative look-behind
+assertion.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    print &quot;found GX!\n&quot; if    $martian =~ m/
+        (?&lt;![A&minus;Z])
+        (?:[A&minus;Z][A&minus;Z])*?
+        GX
+        /x;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This succeeds
+if the &quot;martian&quot; character <small>GX</small> is in
+the string, and fails otherwise. If you don&rsquo;t like
+using (?&lt;!), a zero-width negative look-behind assertion,
+you can replace (?&lt;![A&minus;Z]) with
+(?:^|[^A&minus;Z]).</p>
+
+<p style="margin-left:11%; margin-top: 1em">It does have
+the drawback of putting the wrong thing in $&minus;[0] and
+$+[0], but this usually can be worked around.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+match a regular expression that&rsquo;s in a variable?</b>
+<br>
+(contributed by brian d foy)</p>
+
+<p style="margin-left:11%; margin-top: 1em">We don&rsquo;t
+have to hard-code patterns into the match operator (or
+anything else that works with regular expressions). We can
+put the pattern in a variable for later use.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The match
+operator is a double quote context, so you can interpolate
+your variable just like a double quoted string. In this
+case, you read the regular expression as user input and
+store it in <tt>$regex</tt>. Once you have the pattern in
+<tt>$regex</tt>, you use that variable in the match
+operator.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    chomp( my $regex = &lt;STDIN&gt; );
+    if( $string =~ m/$regex/ ) { ... }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Any regular
+expression special characters in <tt>$regex</tt> are still
+special, and the pattern still has to be valid or Perl will
+complain. For instance, in this pattern there is an unpaired
+parenthesis.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my $regex = &quot;Unmatched ( paren&quot;;
+    &quot;Two parens to bind them all&quot; =~ m/$regex/;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">When Perl
+compiles the regular expression, it treats the parenthesis
+as the start of a memory match. When it doesn&rsquo;t find
+the closing parenthesis, it complains:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Unmatched ( in regex; marked by &lt;&minus;&minus; HERE in m/Unmatched ( &lt;&minus;&minus; HERE  paren/ at script line 3.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can get
+around this in several ways depending on our situation.
+First, if you don&rsquo;t want any of the characters in the
+string to be special, you can escape them with
+<tt>&quot;quotemeta&quot;</tt> before you use the
+string.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    chomp( my $regex = &lt;STDIN&gt; );
+    $regex = quotemeta( $regex );
+    if( $string =~ m/$regex/ ) { ... }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can also do
+this directly in the match operator using the
+<tt>&quot;\Q&quot;</tt> and <tt>&quot;\E&quot;</tt>
+sequences. The <tt>&quot;\Q&quot;</tt> tells Perl where to
+start escaping special characters, and the
+<tt>&quot;\E&quot;</tt> tells it where to stop (see perlop
+for more details).</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    chomp( my $regex = &lt;STDIN&gt; );
+    if( $string =~ m/\Q$regex\E/ ) { ... }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Alternately,
+you can use <tt>&quot;qr//&quot;</tt>, the regular
+expression quote operator (see perlop for more details). It
+quotes and perhaps compiles the pattern, and you can apply
+regular expression flags to the pattern.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    chomp( my $input = &lt;STDIN&gt; );
+    my $regex = qr/$input/is;
+    $string =~ m/$regex/  # same as m/$input/is;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You might also
+want to trap any errors by wrapping an
+<tt>&quot;eval&quot;</tt> block around the whole thing.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    chomp( my $input = &lt;STDIN&gt; );
+    eval {
+        if( $string =~ m/\Q$input\E/ ) { ... }
+    };
+    warn $@ if $@;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Or...</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my $regex = eval { qr/$input/is };
+    if( defined $regex ) {
+        $string =~ m/$regex/;
+    }
+    else {
+        warn $@;
+    }</pre>
+
+
+<h2>AUTHOR AND COPYRIGHT
+<a name="AUTHOR AND COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (c)
+1997&minus;2010 Tom Christiansen, Nathan Torkington, and
+other authors as noted. All rights reserved.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This
+documentation is free; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Irrespective of
+its distribution, all code examples in this file are hereby
+placed into the public domain. You are permitted and
+encouraged to use this code in your own programs for fun or
+for profit as you see fit. A simple comment in the code
+giving credit would be courteous but is not required.</p>
+<hr>
+</body>
+</html>

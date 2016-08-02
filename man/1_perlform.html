@@ -1,0 +1,591 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:37:35 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERLFORM</title>
+
+</head>
+<body>
+
+<h1 align="center">PERLFORM</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#WARNINGS">WARNINGS</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlform
+&minus; Perl formats</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Perl has a
+mechanism to help you generate simple reports and charts. To
+facilitate this, Perl helps you code up your output page
+close to how it will look when it&rsquo;s printed. It can
+keep track of things like how many lines are on a page, what
+page you&rsquo;re on, when to print page headers, etc.
+Keywords are borrowed from <small>FORTRAN:</small>
+<i>format()</i> to declare and <i>write()</i> to execute;
+see their entries in perlfunc. Fortunately, the layout is
+much more legible, more like <small>BASIC</small> &rsquo;s
+<small>PRINT USING</small> statement. Think of it as a poor
+man&rsquo;s <i>nroff</i>(1).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Formats, like
+packages and subroutines, are declared rather than executed,
+so they may occur at any point in your program. (Usually
+it&rsquo;s best to keep them all together though.) They have
+their own namespace apart from all the other
+&quot;types&quot; in Perl. This means that if you have a
+function named &quot;Foo&quot;, it is not the same thing as
+having a format named &quot;Foo&quot;. However, the default
+name for the format associated with a given filehandle is
+the same as the name of the filehandle. Thus, the default
+format for <small>STDOUT</small> is named &quot;
+<small>STDOUT</small> &quot;, and the default format for
+filehandle <small>TEMP</small> is named &quot;
+<small>TEMP</small> &quot;. They just look the same. They
+aren&rsquo;t.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Output record
+formats are declared as follows:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    format NAME =
+    FORMLIST
+    .</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If the name is
+omitted, format &quot; <small>STDOUT</small> &quot; is
+defined. A single &quot;.&quot; in column 1 is used to
+terminate a format. <small>FORMLIST</small> consists of a
+sequence of lines, each of which may be one of three
+types:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>1.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>A comment, indicated by putting a &rsquo;#&rsquo; in the
+first column.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>2.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>A &quot;picture&quot; line giving the format for one
+output line.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>3.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>An argument line supplying values to plug into the
+previous picture line.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Picture lines
+contain output field definitions, intermingled with literal
+text. These lines do not undergo any kind of variable
+interpolation. Field definitions are made up from a set of
+characters, for starting and extending a field to its
+desired width. This is the complete set of characters for
+field definitions:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   @    start of regular field
+   ^    start of special field
+   &lt;    pad character for left justification
+   |    pad character for centering
+   &gt;    pad character for right justification
+   #    pad character for a right&minus;justified numeric field
+   0    instead of first #: pad number with leading zeroes
+   .    decimal point within a numeric field
+   ...  terminate a text field, show &quot;...&quot; as truncation evidence
+   @*   variable width field for a multi&minus;line value
+   ^*   variable width field for next line of a multi&minus;line value
+   ~    suppress line with all fields empty
+   ~~   repeat line until all fields are exhausted</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Each field in a
+picture line starts with either &quot;@&quot; (at) or
+&quot;^&quot; (caret), indicating what we&rsquo;ll call,
+respectively, a &quot;regular&quot; or &quot;special&quot;
+field. The choice of pad characters determines whether a
+field is textual or numeric. The tilde operators are not
+part of a field. Let&rsquo;s look at the various
+possibilities in detail.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Text
+Fields</b> <br>
+The length of the field is supplied by padding out the field
+with multiple &quot;&lt;&quot;, &quot;&gt;&quot;, or
+&quot;|&quot; characters to specify a non-numeric field
+with, respectively, left justification, right justification,
+or centering. For a regular field, the value (up to the
+first newline) is taken and printed according to the
+selected justification, truncating excess characters. If you
+terminate a text field with &quot;...&quot;, three dots will
+be shown if the value is truncated. A special text field may
+be used to do rudimentary multi-line text block filling; see
+&quot;Using Fill Mode&quot; for details.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   Example:
+      format STDOUT =
+      @&lt;&lt;&lt;&lt;&lt;&lt;   @||||||   @&gt;&gt;&gt;&gt;&gt;&gt;
+      &quot;left&quot;,   &quot;middle&quot;, &quot;right&quot;
+      .
+   Output:
+      left      middle    right</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Numeric
+Fields</b> <br>
+Using &quot;#&quot; as a padding character specifies a
+numeric field, with right justification. An optional
+&quot;.&quot; defines the position of the decimal point.
+With a &quot;0&quot; (zero) instead of the first
+&quot;#&quot;, the formatted number will be padded with
+leading zeroes if necessary. A special numeric field is
+blanked out if the value is undefined. If the resulting
+value would exceed the width specified the field is filled
+with &quot;#&quot; as overflow evidence.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   Example:
+      format STDOUT =
+      @###   @.###   @##.###  @###   @###   ^####
+       42,   3.1415,  undef,    0, 10000,   undef
+      .
+   Output:
+        42   3.142     0.000     0   ####</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>The Field @*
+for Variable-Width Multi-Line Text</b> <br>
+The field &quot;@*&quot; can be used for printing
+multi-line, nontruncated values; it should (but need not)
+appear by itself on a line. A final line feed is chomped
+off, but all other characters are emitted verbatim.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>The Field ^*
+for Variable-Width One-line-at-a-time Text</b> <br>
+Like &quot;@*&quot;, this is a variable-width field. The
+value supplied must be a scalar variable. Perl puts the
+first line (up to the first &quot;\n&quot;) of the text into
+the field, and then chops off the front of the string so
+that the next time the variable is referenced, more of the
+text can be printed. The variable will <i>not</i> be
+restored.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   Example:
+      $text = &quot;line 1\nline 2\nline 3&quot;;
+      format STDOUT =
+      Text: ^*
+            $text
+      ~~    ^*
+            $text
+      .
+   Output:
+      Text: line 1
+            line 2
+            line 3</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Specifying
+Values</b> <br>
+The values are specified on the following format line in the
+same order as the picture fields. The expressions providing
+the values must be separated by commas. They are all
+evaluated in a list context before the line is processed, so
+a single list expression could produce multiple list
+elements. The expressions may be spread out to more than one
+line if enclosed in braces. If so, the opening brace must be
+the first token on the first line. If an expression
+evaluates to a number with a decimal part, and if the
+corresponding picture specifies that the decimal part should
+appear in the output (that is, any picture except multiple
+&quot;#&quot; characters <b>without</b> an embedded
+&quot;.&quot;), the character used for the decimal point is
+determined by the current <small>LC_NUMERIC</small> locale
+if <tt>&quot;use locale&quot;</tt> is in effect. This means
+that, if, for example, the run-time environment happens to
+specify a German locale, &quot;,&quot; will be used instead
+of the default &quot;.&quot;. See perllocale and &quot;
+<small>WARNINGS</small> &quot; for more information.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Using Fill
+Mode</b> <br>
+On text fields the caret enables a kind of fill mode.
+Instead of an arbitrary expression, the value supplied must
+be a scalar variable that contains a text string. Perl puts
+the next portion of the text into the field, and then chops
+off the front of the string so that the next time the
+variable is referenced, more of the text can be printed.
+(Yes, this means that the variable itself is altered during
+execution of the <i>write()</i> call, and is not restored.)
+The next portion of text is determined by a crude
+line-breaking algorithm. You may use the carriage return
+character (<tt>&quot;\r&quot;</tt>) to force a line break.
+You can change which characters are legal to break on by
+changing the variable <tt>$:</tt> (that&rsquo;s
+<tt>$FORMAT_LINE_BREAK_CHARACTERS</tt> if you&rsquo;re using
+the English module) to a list of the desired characters.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Normally you
+would use a sequence of fields in a vertical stack
+associated with the same scalar variable to print out a
+block of text. You might wish to end the final field with
+the text &quot;...&quot;, which will appear in the output if
+the text was too long to appear in its entirety.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Suppressing
+Lines Where All Fields Are Void</b> <br>
+Using caret fields can produce lines where all fields are
+blank. You can suppress such lines by putting a
+&quot;~&quot; (tilde) character anywhere in the line. The
+tilde will be translated to a space upon output.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Repeating
+Format Lines</b> <br>
+If you put two contiguous tilde characters &quot;~~&quot;
+anywhere into a line, the line will be repeated until all
+the fields on the line are exhausted, i.e. undefined. For
+special (caret) text fields this will occur sooner or later,
+but if you use a text field of the at variety, the
+expression you supply had better not give the same value
+every time forever! (<tt>&quot;shift(@f)&quot;</tt> is a
+simple example that would work.) Don&rsquo;t use a regular
+(at) numeric field in such lines, because it will never go
+blank.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Top of Form
+Processing</b> <br>
+Top-of-form processing is by default handled by a format
+with the same name as the current filehandle with
+&quot;_TOP&quot; concatenated to it. It&rsquo;s triggered at
+the top of each page. See &quot;write&quot; in perlfunc.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Examples:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> # a report on the /etc/passwd file
+ format STDOUT_TOP =
+                         Passwd File
+ Name                Login    Office   Uid   Gid Home
+ &minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;
+ .
+ format STDOUT =
+ @&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; @||||||| @&lt;&lt;&lt;&lt;&lt;&lt;@&gt;&gt;&gt;&gt; @&gt;&gt;&gt;&gt; @&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+ $name,              $login,  $office,$uid,$gid, $home
+ .
+ # a report from a bug report form
+ format STDOUT_TOP =
+                         Bug Reports
+ @&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;     @|||         @&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;
+ $system,                      $%,         $date
+ &minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;
+ .
+ format STDOUT =
+ Subject: @&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+          $subject
+ Index: @&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; ^&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+        $index,                       $description
+ Priority: @&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; Date: @&lt;&lt;&lt;&lt;&lt;&lt;&lt; ^&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+           $priority,        $date,   $description
+ From: @&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; ^&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+       $from,                         $description
+ Assigned to: @&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; ^&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+              $programmer,            $description
+ ~                                    ^&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+                                      $description
+ ~                                    ^&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+                                      $description
+ ~                                    ^&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+                                      $description
+ ~                                    ^&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+                                      $description
+ ~                                    ^&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;...
+                                      $description
+ .</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">It is possible
+to intermix <i>print()</i>s with <i>write()</i>s on the same
+output channel, but you&rsquo;ll have to handle
+<tt>&quot;$&minus;&quot;</tt> (<tt>$FORMAT_LINES_LEFT</tt>)
+yourself.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Format
+Variables</b> <br>
+The current format name is stored in the variable
+<tt>$~</tt> (<tt>$FORMAT_NAME</tt>), and the current top of
+form format name is in <tt>$^</tt>
+(<tt>$FORMAT_TOP_NAME</tt>). The current output page number
+is stored in <tt>$%</tt> (<tt>$FORMAT_PAGE_NUMBER</tt>), and
+the number of lines on the page is in <tt>$=</tt>
+(<tt>$FORMAT_LINES_PER_PAGE</tt>). Whether to autoflush
+output on this handle is stored in <tt>$|</tt>
+(<tt>$OUTPUT_AUTOFLUSH</tt>). The string output before each
+top of page (except the first) is stored in <tt>$^L</tt>
+(<tt>$FORMAT_FORMFEED</tt>). These variables are set on a
+per-filehandle basis, so you&rsquo;ll need to
+<i>select()</i> into a different one to affect them:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    select((select(OUTF),
+            $~ = &quot;My_Other_Format&quot;,
+            $^ = &quot;My_Top_Format&quot;
+           )[0]);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pretty ugly,
+eh? It&rsquo;s a common idiom though, so don&rsquo;t be too
+surprised when you see it. You can at least use a temporary
+variable to hold the previous filehandle: (this is a much
+better approach in general, because not only does legibility
+improve, you now have an intermediary stage in the
+expression to single-step the debugger through):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ofh = select(OUTF);
+    $~ = &quot;My_Other_Format&quot;;
+    $^ = &quot;My_Top_Format&quot;;
+    select($ofh);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you use the
+English module, you can even read the variable names:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use English '&minus;no_match_vars';
+    $ofh = select(OUTF);
+    $FORMAT_NAME     = &quot;My_Other_Format&quot;;
+    $FORMAT_TOP_NAME = &quot;My_Top_Format&quot;;
+    select($ofh);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">But you still
+have those funny <i>select()</i>s. So just use the
+FileHandle module. Now, you can access these special
+variables using lowercase method names instead:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use FileHandle;
+    format_name     OUTF &quot;My_Other_Format&quot;;
+    format_top_name OUTF &quot;My_Top_Format&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Much
+better!</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Because the
+values line may contain arbitrary expressions (for at
+fields, not caret fields), you can farm out more
+sophisticated processing to other functions, like
+<i>sprintf()</i> or one of your own. For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    format Ident =
+        @&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+        &amp;commify($n)
+    .</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To get a real
+at or caret into the field, do this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    format Ident =
+    I have an @ here.
+            &quot;@&quot;
+    .</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To center a
+whole line of text, do something like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    format Ident =
+    @|||||||||||||||||||||||||||||||||||||||||||||||
+            &quot;Some text line&quot;
+    .</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">There is no
+builtin way to say &quot;float this to the right hand side
+of the page, however wide it is.&quot; You have to specify
+where it goes. The truly desperate can generate their own
+format on the fly, based on the current number of columns,
+and then <i>eval()</i> it:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $format  = &quot;format STDOUT = \n&quot;
+             . '^' . '&lt;' x $cols . &quot;\n&quot;
+             . '$entry' . &quot;\n&quot;
+             . &quot;\t^&quot; . &quot;&lt;&quot; x ($cols&minus;8) . &quot;~~\n&quot;
+             . '$entry' . &quot;\n&quot;
+             . &quot;.\n&quot;;
+    print $format if $Debugging;
+    eval $format;
+    die $@ if $@;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Which would
+generate a format looking something like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> format STDOUT =
+ ^&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+ $entry
+         ^&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;~~
+ $entry
+ .</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Here&rsquo;s a
+little program that&rsquo;s somewhat like <i>fmt</i>(1):</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> format =
+ ^&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; ~~
+ $_
+ .
+ $/ = '';
+ while (&lt;&gt;) {
+     s/\s*\n\s*/ /g;
+     write;
+ }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Footers</b>
+<br>
+While <tt>$FORMAT_TOP_NAME</tt> contains the name of the
+current header format, there is no corresponding mechanism
+to automatically do the same thing for a footer. Not knowing
+how big a format is going to be until you evaluate it is one
+of the major problems. It&rsquo;s on the <small>TODO</small>
+list.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here&rsquo;s
+one strategy: If you have a fixed-size footer, you can get
+footers by checking <tt>$FORMAT_LINES_LEFT</tt> before each
+<i>write()</i> and print the footer yourself if
+necessary.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here&rsquo;s
+another strategy: Open a pipe to yourself, using
+<tt>&quot;open(MYSELF, &quot;|&minus;&quot;)&quot;</tt> (see
+&quot;open&quot; in perlfunc) and always <i>write()</i> to
+<small>MYSELF</small> instead of <small>STDOUT</small> .
+Have your child process massage its <small>STDIN</small> to
+rearrange headers and footers however you like. Not very
+convenient, but doable.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Accessing
+Formatting Internals</b> <br>
+For low-level access to the formatting mechanism. you may
+use <i>formline()</i> and access <tt>$^A</tt> (the
+<tt>$ACCUMULATOR</tt> variable) directly.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $str = formline &lt;&lt;'END', 1,2,3;
+    @&lt;&lt;&lt;  @|||  @&gt;&gt;&gt;
+    END
+    print &quot;Wow, I just stored '$^A' in the accumulator!\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Or to make an
+<i>swrite()</i> subroutine, which is to <i>write()</i> what
+<i>sprintf()</i> is to <i>printf()</i>, do this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Carp;
+    sub swrite {
+        croak &quot;usage: swrite PICTURE ARGS&quot; unless @_;
+        my $format = shift;
+        $^A = &quot;&quot;;
+        formline($format,@_);
+        return $^A;
+    }
+    $string = swrite(&lt;&lt;'END', 1, 2, 3);
+ Check me out
+ @&lt;&lt;&lt;  @|||  @&gt;&gt;&gt;
+ END
+    print $string;</pre>
+
+
+<h2>WARNINGS
+<a name="WARNINGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The lone dot
+that ends a format can also prematurely end a mail message
+passing through a misconfigured Internet mailer (and based
+on experience, such misconfiguration is the rule, not the
+exception). So when sending format code through mail, you
+should indent it so that the format-ending dot is not on the
+left margin; this will prevent <small>SMTP</small>
+cutoff.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Lexical
+variables (declared with &quot;my&quot;) are not visible
+within a format unless the format is declared within the
+scope of the lexical variable. (They weren&rsquo;t visible
+at all before version 5.001.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">If a
+program&rsquo;s environment specifies an
+<small>LC_NUMERIC</small> locale and <tt>&quot;use
+locale&quot;</tt> is in effect when the format is declared,
+the locale is used to specify the decimal point character in
+formatted output. Formatted output cannot be controlled by
+<tt>&quot;use locale&quot;</tt> at the time when
+<i>write()</i> is called. See perllocale for further
+discussion of locale handling.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Within strings
+that are to be displayed in a fixed-length text field, each
+control character is substituted by a space. (But remember
+the special meaning of <tt>&quot;\r&quot;</tt> when using
+fill mode.) This is done to avoid misalignment when control
+characters &quot;disappear&quot; on some output media.</p>
+<hr>
+</body>
+</html>

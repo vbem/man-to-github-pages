@@ -1,0 +1,301 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:40:39 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>ReadKey</title>
+
+</head>
+<body>
+
+<h1 align="center">ReadKey</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Term::ReadKey
+&minus; A perl module for simple terminal control</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">        use Term::ReadKey;
+        ReadMode 4; # Turn off controls keys
+        while (not defined ($key = ReadKey(&minus;1))) {
+                # No key yet
+        }
+        print &quot;Get key $key\n&quot;;
+        ReadMode 0; # Reset tty mode before exiting</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Term::ReadKey
+is a compiled perl module dedicated to providing simple
+control over terminal driver modes (cbreak, raw, cooked,
+etc.,) support for non-blocking reads, if the architecture
+allows, and some generalized handy functions for working
+with terminals. One of the main goals is to have the
+functions as portable as possible, so you can just plug in
+&quot;use Term::ReadKey&quot; on any architecture and have a
+good likelyhood of it working. <br>
+ReadMode <small>MODE</small> [, Filehandle]</p>
+
+<p style="margin-left:23%;">Takes an integer argument,
+which can currently be one of the following values:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    0    Restore original settings.
+    1    Change to cooked mode.
+    2    Change to cooked mode with echo off.
+          (Good for passwords)
+    3    Change to cbreak mode.
+    4    Change to raw mode.
+    5    Change to ultra&minus;raw mode.
+          (LF to CR/LF translation turned off)
+    Or, you may use the synonyms:
+    restore
+    normal
+    noecho
+    cbreak
+    raw
+    ultra&minus;raw</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">These functions
+are automatically applied to the <small>STDIN</small> handle
+if no other handle is supplied. Modes 0 and 5 have some
+special properties worth mentioning: not only will mode 0
+restore original settings, but it cause the next ReadMode
+call to save a new set of default settings. Mode 5 is
+similar to mode 4, except no <small>CR/LF</small>
+translation is performed, and if possible, parity will be
+disabled (only if not being used by the terminal, however.
+It is no different from mode 4 under Windows.)</p>
+
+<p style="margin-left:23%; margin-top: 1em">If you are
+executing another program that may be changing the terminal
+mode, you will either want to say</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    ReadMode 1
+    system('someprogram');
+    ReadMode 1;</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">which resets
+the settings after the program has run, or:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    $somemode=1;
+    ReadMode 0;
+    system('someprogram');
+    ReadMode 1;</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">which records
+any changes the program may have made, before resetting the
+mode.</p>
+
+<p style="margin-left:11%;">ReadKey <small>MODE</small> [,
+Filehandle]</p>
+
+<p style="margin-left:23%;">Takes an integer argument,
+which can currently be one of the following values:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    0    Perform a normal read using getc
+    &minus;1   Perform a non&minus;blocked read
+    &gt;0   Perform a timed read</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">(If the
+filehandle is not supplied, it will default to
+<small>STDIN.</small> ) If there is nothing waiting in the
+buffer during a non-blocked read, then undef will be
+returned. Note that if the <small>OS</small> does not
+provide any known mechanism for non-blocking reads, then a
+<tt>&quot;ReadKey &minus;1&quot;</tt> can die with a fatal
+error. This will hopefully not be common.</p>
+
+<p style="margin-left:23%; margin-top: 1em">If
+<small>MODE</small> is greater then zero, then ReadKey will
+use it as a timeout value in seconds (fractional seconds are
+allowed), and won&rsquo;t return <tt>&quot;undef&quot;</tt>
+until that time expires. (Note, again, that some
+<small>OS</small> &rsquo;s may not support this timeout
+behaviour.) If <small>MODE</small> is less then zero, then
+this is treated as a timeout of zero, and thus will return
+immediately if no character is waiting. A
+<small>MODE</small> of zero, however, will act like a normal
+getc.</p>
+
+<p style="margin-left:23%; margin-top: 1em">There are
+currently some limitations with this call under Windows. It
+may be possible that non-blocking reads will fail when
+reading repeating keys from more then one console.</p>
+
+<p style="margin-left:11%;">ReadLine <small>MODE</small> [,
+Filehandle]</p>
+
+<p style="margin-left:23%;">Takes an integer argument,
+which can currently be one of the following values:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    0    Perform a normal read using scalar(&lt;FileHandle&gt;)
+    &minus;1   Perform a non&minus;blocked read
+    &gt;0   Perform a timed read</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">If there is
+nothing waiting in the buffer during a non-blocked read,
+then undef will be returned. Note that if the
+<small>OS</small> does not provide any known mechanism for
+non-blocking reads, then a <tt>&quot;ReadLine 1&quot;</tt>
+can die with a fatal error. This will hopefully not be
+common. Note that a non-blocking test is only performed for
+the first character in the line, not the entire line. This
+call will probably <b>not</b> do what you assume, especially
+with ReadMode&rsquo;s higher then 1. For example, pressing
+Space and then Backspace would appear to leave you where you
+started, but any timeouts would now be suspended.</p>
+
+<p style="margin-left:23%; margin-top: 1em">This call is
+currently not available under Windows.</p>
+
+<p style="margin-left:11%;">GetTerminalSize
+[Filehandle]</p>
+
+<p style="margin-left:23%;">Returns either an empty array
+if this operation is unsupported, or a four element array
+containing: the width of the terminal in characters, the
+height of the terminal in character, the width in pixels,
+and the height in pixels. (The pixel size will only be valid
+in some environments.)</p>
+
+<p style="margin-left:23%; margin-top: 1em">Under Windows,
+this function must be called with an &quot;output&quot;
+filehandle, such as <small>STDOUT,</small> or a handle
+opened to <small>CONOUT$.</small></p>
+
+<p style="margin-left:11%;">SetTerminalSize
+<small>WIDTH,HEIGHT,XPIX,YPIX</small> [, Filehandle]</p>
+
+<p style="margin-left:23%;">Return &minus;1 on failure, 0
+otherwise. Note that this terminal size is only for
+<b>informative</b> value, and changing the size via this
+mechanism will <b>not</b> change the size of the screen. For
+example, XTerm uses a call like this when it resizes the
+screen. If any of the new measurements vary from the old,
+the <small>OS</small> will probably send a
+<small>SIGWINCH</small> signal to anything reading that tty
+or pty.</p>
+
+<p style="margin-left:23%; margin-top: 1em">This call does
+not work under Windows.</p>
+
+<p style="margin-left:11%;">GetSpeeds [, Filehandle]</p>
+
+<p style="margin-left:23%;">Returns either an empty array
+if the operation is unsupported, or a two value array
+containing the terminal in and out speeds, in
+<b>decimal</b>. E.g, an in speed of 9600 baud and an out
+speed of 4800 baud would be returned as (9600,4800). Note
+that currently the in and out speeds will always be
+identical in some <small>OS</small> &rsquo;s. No speeds are
+reported under Windows.</p>
+
+<p style="margin-left:11%;">GetControlChars [,
+Filehandle]</p>
+
+<p style="margin-left:23%;">Returns an array containing
+key/value pairs suitable for a hash. The pairs consist of a
+key, the name of the control character/signal, and the value
+of that character, as a single character. This call does
+nothing under Windows.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Each key will
+be an entry from the following list:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">        DISCARD
+        DSUSPEND
+        EOF
+        EOL
+        EOL2
+        ERASE
+        ERASEWORD
+        INTERRUPT
+        KILL
+        MIN
+        QUIT
+        QUOTENEXT
+        REPRINT
+        START
+        STATUS
+        STOP
+        SUSPEND
+        SWITCH
+        TIME</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">Thus, the
+following will always return the current interrupt
+character, regardless of platform.</p>
+
+<pre style="margin-left:23%; margin-top: 1em">        %keys = GetControlChars;
+        $int = $keys{INTERRUPT};</pre>
+
+
+<p style="margin-left:11%;">SetControlChars [,
+Filehandle]</p>
+
+<p style="margin-left:23%;">Takes an array containing
+key/value pairs, as a hash will produce. The pairs should
+consist of a key that is the name of a legal control
+character/signal, and the value should be either a single
+character, or a number in the range 0&minus;255.
+SetControlChars will die with a runtime error if an invalid
+character name is passed or there is an error changing the
+settings. The list of valid names is easily available
+via</p>
+
+<pre style="margin-left:23%; margin-top: 1em">        %cchars = GetControlChars();
+        @cnames = keys %cchars;</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">This call does
+nothing under Windows.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Kenneth
+Albanowski &lt;kjahds@kjahds.com&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">Currently
+maintained by Jonathan Stowe &lt;jns@gellyfish.com&gt;</p>
+<hr>
+</body>
+</html>

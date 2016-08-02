@@ -1,0 +1,1706 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:36:11 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>MYSQLDUMP</title>
+
+</head>
+<body>
+
+<h1 align="center">MYSQLDUMP</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mysqldump
+&minus; a database backup program</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="67%">
+
+
+<p style="margin-top: 1em"><b>mysqldump
+[</b><i>options</i><b>] [</b><i>db_name</i>
+<b>[</b><i>tbl_name</i> <b>...]]</b></p></td>
+<td width="22%">
+</td></tr>
+</table>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>mysqldump</b> client is a backup program originally
+written by Igor Romanenko. It can be used to dump a database
+or a collection of databases for backup or transfer to
+another SQL server (not necessarily a MySQL server). The
+dump typically contains SQL statements to create the table,
+populate it, or both. However, <b>mysqldump</b> can also be
+used to generate files in CSV, other delimited text, or XML
+format.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you are
+doing a backup on the server and your tables all are MyISAM
+tables, consider using the <b>mysqlhotcopy</b> instead
+because it can accomplish faster backups and faster
+restores. See <b>mysqlhotcopy</b>(1).</p>
+
+<p style="margin-left:11%; margin-top: 1em">There are three
+general ways to invoke <b>mysqldump</b>:</p>
+
+<p style="margin-left:17%; margin-top: 1em">shell&gt;
+<b>mysqldump [</b><i>options</i><b>]</b> <i>db_name</i>
+<b>[</b><i>tbl_name</i> <b>...]</b> <br>
+shell&gt; <b>mysqldump [</b><i>options</i><b>]
+&minus;&minus;databases</b> <i>db_name</i> <b>...</b> <br>
+shell&gt; <b>mysqldump [</b><i>options</i><b>]
+&minus;&minus;all&minus;databases</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">If you do not
+name any tables following <i>db_name</i> or if you use the
+<b>&minus;&minus;databases</b> or
+<b>&minus;&minus;all&minus;databases</b> option, entire
+databases are dumped.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mysqldump</b>
+does not dump the INFORMATION_SCHEMA database by default. As
+of MySQL 5.1.38, <b>mysqldump</b> dumps INFORMATION_SCHEMA
+if you name it explicitly on the command line, although
+currently you must also use the
+<b>&minus;&minus;skip&minus;lock&minus;tables</b> option.
+Before 5.1.38, <b>mysqldump</b> silently ignores
+INFORMATION_SCHEMA even if you name it explicitly on the
+command line.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To see a list
+of the options your version of <b>mysqldump</b> supports,
+execute <b>mysqldump &minus;&minus;help</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Some
+<b>mysqldump</b> options are shorthand for groups of other
+options:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; Use of
+<b>&minus;&minus;opt</b> is the same as specifying
+<b>&minus;&minus;add&minus;drop&minus;table</b>,
+<b>&minus;&minus;add&minus;locks</b>,
+<b>&minus;&minus;create&minus;options</b>,
+<b>&minus;&minus;disable&minus;keys</b>,
+<b>&minus;&minus;extended&minus;insert</b>,
+<b>&minus;&minus;lock&minus;tables</b>,
+<b>&minus;&minus;quick</b>, and
+<b>&minus;&minus;set&minus;charset</b>. All of the options
+that <b>&minus;&minus;opt</b> stands for also are on by
+default because <b>&minus;&minus;opt</b> is on by
+default.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; Use of
+<b>&minus;&minus;compact</b> is the same as specifying
+<b>&minus;&minus;skip&minus;add&minus;drop&minus;table</b>,
+<b>&minus;&minus;skip&minus;add&minus;locks</b>,
+<b>&minus;&minus;skip&minus;comments</b>,
+<b>&minus;&minus;skip&minus;disable&minus;keys</b>, and
+<b>&minus;&minus;skip&minus;set&minus;charset</b>
+options.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To reverse the
+effect of a group option, uses its
+<b>&minus;&minus;skip&minus;</b><i>xxx</i> form
+(<b>&minus;&minus;skip&minus;opt</b> or
+<b>&minus;&minus;skip&minus;compact</b>). It is also
+possible to select only part of the effect of a group option
+by following it with options that enable or disable specific
+features. Here are some examples:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; To
+select the effect of <b>&minus;&minus;opt</b> except for
+some features, use the <b>&minus;&minus;skip</b> option for
+each feature. To disable extended inserts and memory
+buffering, use <b>&minus;&minus;opt
+&minus;&minus;skip&minus;extended&minus;insert
+&minus;&minus;skip&minus;quick</b>. (Actually,
+<b>&minus;&minus;skip&minus;extended&minus;insert
+&minus;&minus;skip&minus;quick</b> is sufficient because
+<b>&minus;&minus;opt</b> is on by default.)</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; To
+reverse <b>&minus;&minus;opt</b> for all features except
+index disabling and table locking, use
+<b>&minus;&minus;skip&minus;opt
+&minus;&minus;disable&minus;keys
+&minus;&minus;lock&minus;tables</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When you
+selectively enable or disable the effect of a group option,
+order is important because options are processed first to
+last. For example, <b>&minus;&minus;disable&minus;keys
+&minus;&minus;lock&minus;tables
+&minus;&minus;skip&minus;opt</b> would not have the intended
+effect; it is the same as
+<b>&minus;&minus;skip&minus;opt</b> by itself.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mysqldump</b>
+can retrieve and dump table contents row by row, or it can
+retrieve the entire content from a table and buffer it in
+memory before dumping it. Buffering in memory can be a
+problem if you are dumping large tables. To dump tables row
+by row, use the <b>&minus;&minus;quick</b> option (or
+<b>&minus;&minus;opt</b>, which enables
+<b>&minus;&minus;quick</b>). The <b>&minus;&minus;opt</b>
+option (and hence <b>&minus;&minus;quick</b>) is enabled by
+default, so to enable memory buffering, use
+<b>&minus;&minus;skip&minus;quick</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you are
+using a recent version of <b>mysqldump</b> to generate a
+dump to be reloaded into a very old MySQL server, you should
+not use the <b>&minus;&minus;opt</b> or
+<b>&minus;&minus;extended&minus;insert</b> option. Use
+<b>&minus;&minus;skip&minus;opt</b> instead.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><b><big>Note</big>
+<br>
+mysqldump</b> from MySQL 5.1.21 cannot be used to create
+dumps from MySQL server 5.1.20 and older. This issue is
+fixed in MySQL 5.1.22.
+(<b><font color="#0000FF">Bug#30123</font></b>
+<small><font color="#000000">[1]</font></small>
+<font color="#000000">)</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>mysqldump</b>
+supports the following options, which can be specified on
+the command line or in the [mysqldump] and [client] option
+file groups. <b>mysqldump</b> also supports the options for
+processing option files described at Section&nbsp;4.2.3.3.1,
+&ldquo;Command-Line Options that Affect Option-File
+Handling&rdquo;.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;help</b>, <b>&minus;?</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Display
+a help message and exit.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;add&minus;drop&minus;database</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Add
+a DROP DATABASE statement before each CREATE DATABASE
+statement. This option is typically used in conjunction with
+the <b>&minus;&minus;all&minus;databases</b> or
+<b>&minus;&minus;databases</b> option because no CREATE
+DATABASE statements are written unless one of those options
+is specified.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;add&minus;drop&minus;table</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Add
+a DROP TABLE statement before each CREATE TABLE
+statement.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;add&minus;locks</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Surround
+each table dump with LOCK TABLES and UNLOCK TABLES
+statements. This results in faster inserts when the dump
+file is reloaded. See Section&nbsp;7.2.21, &ldquo;Speed of
+INSERT Statements&rdquo;.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;all&minus;databases</b>,
+<b>&minus;A</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Dump
+all tables in all databases. This is the same as using the
+<b>&minus;&minus;databases</b> option and naming all the
+databases on the command line.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;all&minus;tablespaces</b>,
+<b>&minus;Y</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Adds
+to a table dump all SQL statements needed to create any
+tablespaces used by an NDBCLUSTER table. This information is
+not otherwise included in the output from <b>mysqldump</b>.
+This option is currently relevant only to MySQL Cluster
+tables.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">This
+option was added in MySQL 5.1.6.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;allow&minus;keywords</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Allow
+creation of column names that are keywords. This works by
+prefixing each column name with the table name.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;character&minus;sets&minus;dir=</b><i>path</i></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">The
+directory where character sets are installed. See
+Section&nbsp;9.5, &ldquo;Character Set
+Configuration&rdquo;.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;comments</b>, <b>&minus;i</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Write
+additional information in the dump file such as program
+version, server version, and host. This option is enabled by
+default. To suppress this additional information, use
+<b>&minus;&minus;skip&minus;comments</b>.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;compact</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Produce
+more compact output. This option enables the
+<b>&minus;&minus;skip&minus;add&minus;drop&minus;table</b>,
+<b>&minus;&minus;skip&minus;add&minus;locks</b>,
+<b>&minus;&minus;skip&minus;comments</b>,
+<b>&minus;&minus;skip&minus;disable&minus;keys</b>, and
+<b>&minus;&minus;skip&minus;set&minus;charset</b>
+options.</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000"><b><big>Note</big></b>
+<br>
+Prior to MySQL 5.1.21, this option did not create valid SQL
+if the database dump contained views. The recreation of
+views requires the creation and removal of temporary tables
+and this option suppressed the removal of those temporary
+tables. As a workaround, use <b>&minus;&minus;compact</b>
+with the <b>&minus;&minus;add&minus;drop&minus;table</b>
+option and then manually adjust the dump file.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;compatible=</b><i>name</i></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Produce
+output that is more compatible with other database systems
+or with older MySQL servers. The value of <i>name</i> can be
+ansi, mysql323, mysql40, postgresql, oracle, mssql, db2,
+maxdb, no_key_options, no_table_options, or
+no_field_options. To use several values, separate them by
+commas. These values have the same meaning as the
+corresponding options for setting the server SQL mode. See
+Section&nbsp;5.1.8, &ldquo;Server SQL
+Modes&rdquo;.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">This
+option does not guarantee compatibility with other servers.
+It only enables those SQL mode values that are currently
+available for making dump output more compatible. For
+example, <b>&minus;&minus;compatible=oracle</b> does not map
+data types to Oracle types or use Oracle comment
+syntax.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><i>This
+option requires a server version of 4.1.0 or higher</i>.
+With older servers, it does nothing.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;complete&minus;insert</b>,
+<b>&minus;c</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Use
+complete INSERT statements that include column
+names.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;compress</b>, <b>&minus;C</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Compress
+all information sent between the client and the server if
+both support compression.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;create&minus;options</b>,
+<b>&minus;a</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Include
+all MySQL&minus;specific table options in the CREATE TABLE
+statements.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;databases</b>, <b>&minus;B</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Dump
+several databases. Normally, <b>mysqldump</b> treats the
+first name argument on the command line as a database name
+and following names as table names. With this option, it
+treats all name arguments as database names. CREATE DATABASE
+and USE statements are included in the output before each
+new database.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;debug[=</b><i>debug_options</i><b>]</b>,
+<b>&minus;# [</b><i>debug_options</i><b>]</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Write
+a debugging log. A typical <i>debug_options</i> string is
+&acute;d:t:o,<i>file_name</i>&acute;. The default value is
+&acute;d:t:o,/tmp/mysqldump.trace&acute;.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;debug&minus;check</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Print
+some debugging information when the program exits. This
+option was added in MySQL 5.1.21.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;debug&minus;info</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Print
+debugging information and memory and CPU usage statistics
+when the program exits. This option was added in MySQL
+5.1.14.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;default&minus;character&minus;set=</b><i>charset_name</i></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Use
+<i>charset_name</i> as the default character set. See
+Section&nbsp;9.5, &ldquo;Character Set Configuration&rdquo;.
+If no character set is specified, <b>mysqldump</b> uses
+utf8, and earlier versions use latin1.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Prior
+to MySQL 5.1.38, this option has no effect for output data
+files produced by using the <b>&minus;&minus;tab</b> option.
+See the description for that option.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;defaults&minus;extra&minus;file=</b><i>filename</i></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Set
+<i>filename</i> as the file to read default options from
+after the global defaults files has been read. Must be given
+as first option.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;defaults&minus;file=</b><i>filename</i></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Set
+<i>filename</i> as the file to read default options from,
+override global defaults files. Must be given as first
+option.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;delayed&minus;insert</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Write
+INSERT DELAYED statements rather than INSERT
+statements.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;delete&minus;master&minus;logs</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">On
+a master replication server, delete the binary logs by
+sending a PURGE BINARY LOGS statement to the server after
+performing the dump operation. This option automatically
+enables <b>&minus;&minus;master&minus;data</b>.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;disable&minus;keys</b>,
+<b>&minus;K</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">For
+each table, surround the INSERT statements with /*!40000
+ALTER TABLE <i>tbl_name</i> DISABLE KEYS */; and /*!40000
+ALTER TABLE <i>tbl_name</i> ENABLE KEYS */; statements. This
+makes loading the dump file faster because the indexes are
+created after all rows are inserted. This option is
+effective only for nonunique indexes of MyISAM
+tables.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;dump&minus;date</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">If
+the <b>&minus;&minus;comments</b> option is given,
+<b>mysqldump</b> produces a comment at the end of the dump
+of the following form:</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">&minus;&minus;
+Dump completed on <i>DATE</i></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">However,
+the date causes dump files taken at different times to
+appear to be different, even if the data are otherwise
+identical. <b>&minus;&minus;dump&minus;date</b> and
+<b>&minus;&minus;skip&minus;dump&minus;date</b> control
+whether the date is added to the comment. The default is
+<b>&minus;&minus;dump&minus;date</b> (include the date in
+the comment).
+<b>&minus;&minus;skip&minus;dump&minus;date</b> suppresses
+date printing. This option was added in MySQL
+5.1.23.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;events</b>, <b>&minus;E</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Include
+Event Scheduler events for the dumped databases in the
+output. This option was added in MySQL 5.1.8.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;extended&minus;insert</b>,
+<b>&minus;e</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Use
+multiple&minus;row INSERT syntax that include several VALUES
+lists. This results in a smaller dump file and speeds up
+inserts when the file is reloaded.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;fields&minus;terminated&minus;by=...</b>,
+<b>&minus;&minus;fields&minus;enclosed&minus;by=...</b>,
+<b>&minus;&minus;fields&minus;optionally&minus;enclosed&minus;by=...</b>,
+<b>&minus;&minus;fields&minus;escaped&minus;by=...</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">These
+options are used with the <b>&minus;&minus;tab</b> option
+and have the same meaning as the corresponding FIELDS
+clauses for LOAD DATA INFILE. See Section&nbsp;12.2.6,
+&ldquo;LOAD DATA INFILE Syntax&rdquo;.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;first&minus;slave</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Deprecated.
+Use <b>&minus;&minus;lock&minus;all&minus;tables</b>
+instead. <b>&minus;&minus;first&minus;slave</b> is removed
+in MySQL 5.5.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;flush&minus;logs</b>,
+<b>&minus;F</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Flush
+the MySQL server log files before starting the dump. This
+option requires the RELOAD privilege. If you use this option
+in combination with the
+<b>&minus;&minus;all&minus;databases</b> option, the logs
+are flushed <i>for each database dumped</i>. The exception
+is when using
+<b>&minus;&minus;lock&minus;all&minus;tables</b> or
+<b>&minus;&minus;master&minus;data</b>: In this case, the
+logs are flushed only once, corresponding to the moment that
+all tables are locked. If you want your dump and the log
+flush to happen at exactly the same moment, you should use
+<b>&minus;&minus;flush&minus;logs</b> together with either
+<b>&minus;&minus;lock&minus;all&minus;tables</b> or
+<b>&minus;&minus;master&minus;data</b>.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;flush&minus;privileges</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Send
+a FLUSH PRIVILEGES statement to the server after dumping the
+mysql database. This option should be used any time the dump
+contains the mysql database and any other database that
+depends on the data in the mysql database for proper
+restoration. This option was added in MySQL
+5.1.12.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;force</b>, <b>&minus;f</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Continue
+even if an SQL error occurs during a table dump.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">One
+use for this option is to cause <b>mysqldump</b> to continue
+executing even when it encounters a view that has become
+invalid because the definition refers to a table that has
+been dropped. Without <b>&minus;&minus;force</b>,
+<b>mysqldump</b> exits with an error message. With
+<b>&minus;&minus;force</b>, <b>mysqldump</b> prints the
+error message, but it also writes an SQL comment containing
+the view definition to the dump output and continues
+executing.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;host=</b><i>host_name</i>, <b>&minus;h</b>
+<i>host_name</i></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Dump
+data from the MySQL server on the given host. The default
+host is localhost.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;hex&minus;blob</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Dump
+binary columns using hexadecimal notation (for example,
+&acute;abc&acute; becomes 0x616263). The affected data types
+are BINARY, VARBINARY, the BLOB types, and BIT.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;ignore&minus;table=</b><i>db_name.tbl_name</i></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Do
+not dump the given table, which must be specified using both
+the database and table names. To ignore multiple tables, use
+this option multiple times. This option also can be used to
+ignore views.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;insert&minus;ignore</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Write
+INSERT IGNORE statements rather than INSERT
+statements.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;lines&minus;terminated&minus;by=...</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">This
+option is used with the <b>&minus;&minus;tab</b> option and
+has the same meaning as the corresponding LINES clause for
+LOAD DATA INFILE. See Section&nbsp;12.2.6, &ldquo;LOAD DATA
+INFILE Syntax&rdquo;.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;lock&minus;all&minus;tables</b>,
+<b>&minus;x</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Lock
+all tables across all databases. This is achieved by
+acquiring a global read lock for the duration of the whole
+dump. This option automatically turns off
+<b>&minus;&minus;single&minus;transaction</b> and
+<b>&minus;&minus;lock&minus;tables</b>.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;lock&minus;tables</b>,
+<b>&minus;l</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">For
+each dumped database, lock all tables to be dumped before
+dumping them. The tables are locked with READ LOCAL to allow
+concurrent inserts in the case of MyISAM tables. For
+transactional tables such as InnoDB,
+<b>&minus;&minus;single&minus;transaction</b> is a much
+better option than <b>&minus;&minus;lock&minus;tables</b>
+because it does not need to lock the tables at
+all.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Because
+<b>&minus;&minus;lock&minus;tables</b> locks tables for each
+database separately, this option does not guarantee that the
+tables in the dump file are logically consistent between
+databases. Tables in different databases may be dumped in
+completely different states.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;log&minus;error=</b><i>file_name</i></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Log
+warnings and errors by appending them to the named file. The
+default is to do no logging. This option was added in MySQL
+5.1.18.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;master&minus;data[=</b><i>value</i><b>]</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Use
+this option to dump a master replication server to produce a
+dump file that can be used to set up another server as a
+slave of the master. It causes the dump output to include a
+CHANGE MASTER TO statement that indicates the binary log
+coordinates (file name and position) of the dumped server.
+These are the master server coordinates from which the slave
+should start replicating after you load the dump file into
+the slave.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">If
+the option value is 2, the CHANGE MASTER TO statement is
+written as an SQL comment, and thus is informative only; it
+has no effect when the dump file is reloaded. If the option
+value is 1, the statement is not written as a comment and
+takes effect when the dump file is reloaded. If no option
+value is specified, the default value is 1.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">This
+option requires the RELOAD privilege and the binary log must
+be enabled.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">The
+<b>&minus;&minus;master&minus;data</b> option automatically
+turns off <b>&minus;&minus;lock&minus;tables</b>. It also
+turns on <b>&minus;&minus;lock&minus;all&minus;tables</b>,
+unless <b>&minus;&minus;single&minus;transaction</b> also is
+specified, in which case, a global read lock is acquired
+only for a short time at the beginning of the dump (see the
+description for
+<b>&minus;&minus;single&minus;transaction</b>). In all
+cases, any action on logs happens at the exact moment of the
+dump.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">It
+is also possible to set up a slave by dumping an existing
+slave of the master. To do this, use the following procedure
+on the existing slave:</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">1.
+Stop the slave&acute;s SQL thread and get its current
+status:</font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000">mysql&gt;
+<b>STOP SLAVE SQL_THREAD;</b> <br>
+mysql&gt; <b>SHOW SLAVE STATUS;</b></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">2.
+From the output of the SHOW SLAVE STATUS statement, the
+binary log coordinates of the master server from which the
+new slave should start replicating are the values of the
+Relay_Master_Log_File and Exec_Master_Log_Pos fields. Denote
+those values as <i>file_name</i> and
+<i>file_pos</i>.</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">3.
+Dump the slave server:</font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000">shell&gt;
+<b>mysqldump &minus;&minus;master&minus;data=2
+&minus;&minus;all&minus;databases &gt;
+dumpfile</b></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">4.
+Restart the slave:</font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000">mysql&gt;
+<b>START SLAVE;</b></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">5.
+On the new slave, load the dump file:</font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000">shell&gt;
+<b>mysql &lt; dumpfile</b></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">6.
+On the new slave, set the replication coordinates to those
+of the master server obtained earlier:</font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000">mysql&gt;
+<b>CHANGE MASTER TO</b> <br>
+&minus;&gt; <b>MASTER_LOG_FILE =
+&acute;</b><i>file_name</i><b>&acute;, MASTER_LOG_POS =</b>
+<i>file_pos</i><b>;</b></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">The
+CHANGE MASTER TO statement might also need other parameters,
+such as MASTER_HOST to point the slave to the correct master
+server host. Add any such parameters as
+necessary.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;max&minus;allowed&minus;packet=</b><i>length</i></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Sets
+the maximum packet length to send to or recieve from
+server.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;net&minus;buffer&minus;length=</b><i>length</i></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Sets
+the buffer size for TCP/IP and socket
+communication.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;no&minus;autocommit</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Enclose
+the INSERT statements for each dumped table within SET
+autocommit = 0 and COMMIT statements.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;no&minus;create&minus;db</b>,
+<b>&minus;n</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">This
+option suppresses the CREATE DATABASE statements that are
+otherwise included in the output if the
+<b>&minus;&minus;databases</b> or
+<b>&minus;&minus;all&minus;databases</b> option is
+given.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;no&minus;create&minus;info</b>,
+<b>&minus;t</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Do
+not write CREATE TABLE statements that re&minus;create each
+dumped table.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;no&minus;data</b>,
+<b>&minus;d</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Do
+not write any table row information (that is, do not dump
+table contents). This is useful if you want to dump only the
+CREATE TABLE statement for the table (for example, to create
+an empty copy of the table by loading the dump
+file).</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;no&minus;defaults</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Do
+not read default options from any option file. This must be
+given as the first argument.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;no&minus;set&minus;names</b>,
+<b>&minus;N</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">This
+has the same effect as
+<b>&minus;&minus;skip&minus;set&minus;charset</b>.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;opt</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">This
+option is shorthand. It is the same as specifying
+<b>&minus;&minus;add&minus;drop&minus;table
+&minus;&minus;add&minus;locks
+&minus;&minus;create&minus;options
+&minus;&minus;disable&minus;keys
+&minus;&minus;extended&minus;insert
+&minus;&minus;lock&minus;tables &minus;&minus;quick
+&minus;&minus;set&minus;charset</b>. It should give you a
+fast dump operation and produce a dump file that can be
+reloaded into a MySQL server quickly.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><i>The</i>
+<b>&minus;&minus;opt</b> <i>option is enabled by default.
+Use</i> <b>&minus;&minus;skip&minus;opt</b> <i>to disable
+it.</i> See the discussion at the beginning of this section
+for information about selectively enabling or disabling a
+subset of the options affected by
+<b>&minus;&minus;opt</b>.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;order&minus;by&minus;primary</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Dump
+each table&acute;s rows sorted by its primary key, or by its
+first unique index, if such an index exists. This is useful
+when dumping a MyISAM table to be loaded into an InnoDB
+table, but will make the dump operation take considerably
+longer.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;password[=</b><i>password</i><b>]</b>,
+<b>&minus;p[</b><i>password</i><b>]</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">The
+password to use when connecting to the server. If you use
+the short option form (<b>&minus;p</b>), you <i>cannot</i>
+have a space between the option and the password. If you
+omit the <i>password</i> value following the
+<b>&minus;&minus;password</b> or <b>&minus;p</b> option on
+the command line, <b>mysqldump</b> prompts for
+one.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Specifying
+a password on the command line should be considered
+insecure. See Section&nbsp;5.3.2.2, &ldquo;End-User
+Guidelines for Password Security&rdquo;. You can use an
+option file to avoid giving the password on the command
+line.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;pipe</b>, <b>&minus;W</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">On
+Windows, connect to the server via a named pipe. This option
+applies only if the server supports named&minus;pipe
+connections.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;port=</b><i>port_num</i>, <b>&minus;P</b>
+<i>port_num</i></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">The
+TCP/IP port number to use for the connection.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;protocol={TCP|SOCKET|PIPE|MEMORY}</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">The
+connection protocol to use for connecting to the server. It
+is useful when the other connection parameters normally
+would cause a protocol to be used other than the one you
+want. For details on the allowable values, see
+Section&nbsp;4.2.2, &ldquo;Connecting to the MySQL
+Server&rdquo;.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;quick</b>, <b>&minus;q</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">This
+option is useful for dumping large tables. It forces
+<b>mysqldump</b> to retrieve rows for a table from the
+server a row at a time rather than retrieving the entire row
+set and buffering it in memory before writing it
+out.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;print&minus;defaults</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Print
+the program argument list and exit. This must begiven as the
+first argument.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;quote&minus;names</b>,
+<b>&minus;Q</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Quote
+identifiers (such as database, table, and column names)
+within &ldquo;&lsquo;&rdquo; characters. If the ANSI_QUOTES
+SQL mode is enabled, identifiers are quoted within
+&ldquo;&quot;&rdquo; characters. This option is enabled by
+default. It can be disabled with
+<b>&minus;&minus;skip&minus;quote&minus;names</b>, but this
+option should be given after any option such as
+<b>&minus;&minus;compatible</b> that may enable
+<b>&minus;&minus;quote&minus;names</b>.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;replace</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Write
+REPLACE statements rather than INSERT statements. This
+option was added in MySQL 5.1.3.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;result&minus;file=</b><i>file_name</i>,
+<b>&minus;r</b> <i>file_name</i></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Direct
+output to a given file. This option should be used on
+Windows to prevent newline &ldquo;\n&rdquo; characters from
+being converted to &ldquo;\r\n&rdquo; carriage
+return/newline sequences. The result file is created and its
+previous contents overwritten, even if an error occurs while
+generating the dump.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;routines</b>, <b>&minus;R</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Included
+stored routines (procedures and functions) for the dumped
+databases in the output. Use of this option requires the
+SELECT privilege for the mysql.proc table. The output
+generated by using <b>&minus;&minus;routines</b> contains
+CREATE PROCEDURE and CREATE FUNCTION statements to
+re&minus;create the routines. However, these statements do
+not include attributes such as the routine creation and
+modification timestamps. This means that when the routines
+are reloaded, they will be created with the timestamps equal
+to the reload time.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">If
+you require routines to be re&minus;created with their
+original timestamp attributes, do not use
+<b>&minus;&minus;routines</b>. Instead, dump and reload the
+contents of the mysql.proc table directly, using a MySQL
+account that has appropriate privileges for the mysql
+database.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">This
+option was added in MySQL 5.1.2. Before that, stored
+routines are not dumped. Routine DEFINER values are not
+dumped until MySQL 5.1.8. This means that before 5.1.8, when
+routines are reloaded, they will be created with the definer
+set to the reloading user. If you require routines to be
+re&minus;created with their original definer, dump and load
+the contents of the mysql.proc table directly as described
+earlier.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;set&minus;charset</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Add
+SET NAMES <i>default_character_set</i> to the output. This
+option is enabled by default. To suppress the SET NAMES
+statement, use
+<b>&minus;&minus;skip&minus;set&minus;charset</b>.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;single&minus;transaction</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">This
+option sends a START TRANSACTION SQL statement to the server
+before dumping data. It is useful only with transactional
+tables such as InnoDB, because then it dumps the consistent
+state of the database at the time when BEGIN was issued
+without blocking any applications.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">When
+using this option, you should keep in mind that only InnoDB
+tables are dumped in a consistent state. For example, any
+MyISAM or MEMORY tables dumped while using this option may
+still change state.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">While
+a <b>&minus;&minus;single&minus;transaction</b> dump is in
+process, to ensure a valid dump file (correct table contents
+and binary log coordinates), no other connection should use
+the following statements: ALTER TABLE, CREATE TABLE, DROP
+TABLE, RENAME TABLE, TRUNCATE TABLE. A consistent read is
+not isolated from those statements, so use of them on a
+table to be dumped can cause the SELECT that is performed by
+<b>mysqldump</b> to retrieve the table contents to obtain
+incorrect contents or fail.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">The
+<b>&minus;&minus;single&minus;transaction</b> option and the
+<b>&minus;&minus;lock&minus;tables</b> option are mutually
+exclusive because LOCK TABLES causes any pending
+transactions to be committed implicitly.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">This
+option is not supported for MySQL Cluster tables; the
+results cannot be guaranteed to be consistent due to the
+fact that the NDBCLUSTER storage engine supports only the
+READ_COMMITTED transaction isolation level. You should
+always use NDB backup and restore instead.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">To
+dump large tables, you should combine the
+<b>&minus;&minus;single&minus;transaction</b> option with
+<b>&minus;&minus;quick</b>.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;skip&minus;comments</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">See
+the description for the <b>&minus;&minus;comments</b>
+option.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;skip&minus;opt</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">See
+the description for the <b>&minus;&minus;opt</b>
+option.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;socket=</b><i>path</i>, <b>&minus;S</b>
+<i>path</i></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">For
+connections to localhost, the Unix socket file to use, or,
+on Windows, the name of the named pipe to use.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;ssl*</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Options
+that begin with <b>&minus;&minus;ssl</b> specify whether to
+connect to the server via SSL and indicate where to find SSL
+keys and certificates. See Section&nbsp;5.5.6.3, &ldquo;SSL
+Command Options&rdquo;.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;tab=</b><i>path</i>, <b>&minus;T</b>
+<i>path</i></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Produce
+tab&minus;separated text&minus;format data files. For each
+dumped table, <b>mysqldump</b> creates a <i>tbl_name</i>.sql
+file that contains the CREATE TABLE statement that creates
+the table, and the server writes a <i>tbl_name</i>.txt file
+that contains its data. The option value is the directory in
+which to write the files.</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000"><b><big>Note</big></b>
+<br>
+This option should be used only when <b>mysqldump</b> is run
+on the same machine as the <b>mysqld</b> server. You must
+have the FILE privilege, and the server must have permission
+to write files in the directory that you specify.</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">By
+default, the .txt data files are formatted using tab
+characters between column values and a newline at the end of
+each line. The format can be specified explicitly using the
+<b>&minus;&minus;fields&minus;</b><i>xxx</i> and
+<b>&minus;&minus;lines&minus;terminated&minus;by</b>
+options.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">As
+of MySQL 5.1.38, column values are converted to the
+character set specified by the
+<b>&minus;&minus;default&minus;character&minus;set</b>
+option. Prior to 5.1.38 or if no such option is present,
+values are dumped using the binary character set. In effect,
+there is no character set conversion. If a table contains
+columns in several character sets, the output data file will
+as well and you may not be able to reload the file
+correctly.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;tables</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Override
+the <b>&minus;&minus;databases</b> or <b>&minus;B</b>
+option. <b>mysqldump</b> regards all name arguments
+following the option as table names.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;triggers</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Include
+triggers for each dumped table in the output. This option is
+enabled by default; disable it with
+<b>&minus;&minus;skip&minus;triggers</b>.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;tz&minus;utc</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">This
+option enables TIMESTAMP columns to be dumped and reloaded
+between servers in different time zones. <b>mysqldump</b>
+sets its connection time zone to UTC and adds SET
+TIME_ZONE=&acute;+00:00&acute; to the dump file. Without
+this option, TIMESTAMP columns are dumped and reloaded in
+the time zones local to the source and destination servers,
+which can cause the values to change if the servers are in
+different time zones. <b>&minus;&minus;tz&minus;utc</b> also
+protects against changes due to daylight saving time.
+<b>&minus;&minus;tz&minus;utc</b> is enabled by default. To
+disable it, use
+<b>&minus;&minus;skip&minus;tz&minus;utc</b>. This option
+was added in MySQL 5.1.2.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;user=</b><i>user_name</i>, <b>&minus;u</b>
+<i>user_name</i></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">The
+MySQL user name to use when connecting to the
+server.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;verbose</b>, <b>&minus;v</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Verbose
+mode. Print more information about what the program
+does.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;version</b>, <b>&minus;V</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Display
+version information and exit.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;where=&acute;</b><i>where_condition</i><b>&acute;</b>,
+<b>&minus;w
+&acute;</b><i>where_condition</i><b>&acute;</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Dump
+only rows selected by the given WHERE condition. Quotes
+around the condition are mandatory if it contains spaces or
+other characters that are special to your command
+interpreter.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Examples:</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">&minus;&minus;where=&quot;user=&acute;jimf&acute;&quot;
+<br>
+&minus;w&quot;userid&gt;1&quot; <br>
+&minus;w&quot;userid&lt;1&quot;</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+<b>&minus;&minus;xml</b>, <b>&minus;X</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Write
+dump output as well&minus;formed XML.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><b>NULL,
+&acute;NULL&acute;, and Empty Values</b>: For a column named
+<i>column_name</i>, the NULL value, an empty string, and the
+string value &acute;NULL&acute; are distinguished from one
+another in the output generated by this option as
+follows.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Beginning
+with MySQL 5.1.12, the output from the <b>mysql</b> client
+when run using the <b>&minus;&minus;xml</b> option also
+follows the preceding rules. (See the section called
+&ldquo;MYSQL OPTIONS&rdquo;.)</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Beginning
+with MySQL 5.1.18, XML output from <b>mysqldump</b> includes
+the XML namespace, as shown here:</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">shell&gt;
+<b>mysqldump &minus;&minus;xml &minus;u root world City</b>
+<br>
+&lt;?xml version=&quot;1.0&quot;?&gt; <br>
+&lt;mysqldump
+xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema&minus;instance&quot;&gt;
+<br>
+&lt;database name=&quot;world&quot;&gt; <br>
+&lt;table_structure name=&quot;City&quot;&gt; <br>
+&lt;field Field=&quot;ID&quot; Type=&quot;int(11)&quot;
+Null=&quot;NO&quot; Key=&quot;PRI&quot;
+Extra=&quot;auto_increment&quot; /&gt; <br>
+&lt;field Field=&quot;Name&quot; Type=&quot;char(35)&quot;
+Null=&quot;NO&quot; Key=&quot;&quot; Default=&quot;&quot;
+Extra=&quot;&quot; /&gt; <br>
+&lt;field Field=&quot;CountryCode&quot;
+Type=&quot;char(3)&quot; Null=&quot;NO&quot;
+Key=&quot;&quot; Default=&quot;&quot; Extra=&quot;&quot;
+/&gt; <br>
+&lt;field Field=&quot;District&quot;
+Type=&quot;char(20)&quot; Null=&quot;NO&quot;
+Key=&quot;&quot; Default=&quot;&quot; Extra=&quot;&quot;
+/&gt; <br>
+&lt;field Field=&quot;Population&quot;
+Type=&quot;int(11)&quot; Null=&quot;NO&quot;
+Key=&quot;&quot; Default=&quot;0&quot; Extra=&quot;&quot;
+/&gt; <br>
+&lt;key Table=&quot;City&quot; Non_unique=&quot;0&quot;
+Key_name=&quot;PRIMARY&quot; Seq_in_index=&quot;1&quot;
+Column_name=&quot;ID&quot; <br>
+Collation=&quot;A&quot; Cardinality=&quot;4079&quot;
+Null=&quot;&quot; Index_type=&quot;BTREE&quot;
+Comment=&quot;&quot; /&gt; <br>
+&lt;options Name=&quot;City&quot; Engine=&quot;MyISAM&quot;
+Version=&quot;10&quot; Row_format=&quot;Fixed&quot;
+Rows=&quot;4079&quot; <br>
+Avg_row_length=&quot;67&quot; Data_length=&quot;273293&quot;
+Max_data_length=&quot;18858823439613951&quot; <br>
+Index_length=&quot;43008&quot; Data_free=&quot;0&quot;
+Auto_increment=&quot;4080&quot; <br>
+Create_time=&quot;2007&minus;03&minus;31 01:47:01&quot;
+Update_time=&quot;2007&minus;03&minus;31 01:47:02&quot; <br>
+Collation=&quot;latin1_swedish_ci&quot;
+Create_options=&quot;&quot; Comment=&quot;&quot; /&gt; <br>
+&lt;/table_structure&gt; <br>
+&lt;table_data name=&quot;City&quot;&gt; <br>
+&lt;row&gt; <br>
+&lt;field name=&quot;ID&quot;&gt;1&lt;/field&gt; <br>
+&lt;field name=&quot;Name&quot;&gt;Kabul&lt;/field&gt; <br>
+&lt;field name=&quot;CountryCode&quot;&gt;AFG&lt;/field&gt;
+<br>
+&lt;field name=&quot;District&quot;&gt;Kabol&lt;/field&gt;
+<br>
+&lt;field
+name=&quot;Population&quot;&gt;1780000&lt;/field&gt; <br>
+&lt;/row&gt; <i><br>
+...</i> <br>
+&lt;row&gt; <br>
+&lt;field name=&quot;ID&quot;&gt;4079&lt;/field&gt; <br>
+&lt;field name=&quot;Name&quot;&gt;Rafah&lt;/field&gt; <br>
+&lt;field name=&quot;CountryCode&quot;&gt;PSE&lt;/field&gt;
+<br>
+&lt;field name=&quot;District&quot;&gt;Rafah&lt;/field&gt;
+<br>
+&lt;field name=&quot;Population&quot;&gt;92020&lt;/field&gt;
+<br>
+&lt;/row&gt; <br>
+&lt;/table_data&gt; <br>
+&lt;/database&gt; <br>
+&lt;/mysqldump&gt;</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>You
+can also set the following variables by using
+<b>&minus;&minus;</b><i>var_name</i><b>=</b><i>value</i>
+syntax:</big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big>&bull;
+max_allowed_packet</big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big>The
+maximum size of the buffer for client/server communication.
+The maximum is 1GB.</big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big>&bull;
+net_buffer_length</big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big>The
+initial size of the buffer for client/server communication.
+When creating multiple&minus;row INSERT statements (as with
+the <b>&minus;&minus;extended&minus;insert</b> or
+<b>&minus;&minus;opt</b> option), <b>mysqldump</b> creates
+rows up to net_buffer_length length. If you increase this
+variable, you should also ensure that the net_buffer_length
+variable in the MySQL server is at least this
+large.</big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>A
+common use of <b>mysqldump</b> is for making a backup of an
+entire database:</big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big>shell&gt;
+<b>mysqldump</b> <i>db_name</i> <b>&gt;</b>
+<i>backup&minus;file.sql</i></big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>You
+can load the dump file back into the server like
+this:</big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big>shell&gt;
+<b>mysql</b> <i>db_name</i> <b>&lt;</b>
+<i>backup&minus;file.sql</i></big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>Or
+like this:</big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big>shell&gt;
+<b>mysql &minus;e &quot;source</b>
+<i>/path&minus;to&minus;backup/backup&minus;file.sql</i><b>&quot;</b>
+<i>db_name</i></big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big><b>mysqldump</b>
+is also very useful for populating databases by copying data
+from one MySQL server to another:</big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big>shell&gt;
+<b>mysqldump &minus;&minus;opt</b> <i>db_name</i> <b>| mysql
+&minus;&minus;host=</b><i>remote_host</i> <b>&minus;C</b>
+<i>db_name</i></big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>It
+is possible to dump several databases with one
+command:</big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big>shell&gt;
+<b>mysqldump &minus;&minus;databases</b> <i>db_name1</i>
+<b>[</b><i>db_name2</i> <b>...] &gt;
+my_databases.sql</b></big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>To
+dump all databases, use the
+<b>&minus;&minus;all&minus;databases</b>
+option:</big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big>shell&gt;
+<b>mysqldump &minus;&minus;all&minus;databases &gt;
+all_databases.sql</b></big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>For
+InnoDB tables, <b>mysqldump</b> provides a way of making an
+online backup:</big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big>shell&gt;
+<b>mysqldump &minus;&minus;all&minus;databases
+&minus;&minus;single&minus;transaction &gt;
+all_databases.sql</b></big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>This
+backup acquires a global read lock on all tables (using
+FLUSH TABLES WITH READ LOCK) at the beginning of the dump.
+As soon as this lock has been acquired, the binary log
+coordinates are read and the lock is released. If long
+updating statements are running when the FLUSH statement is
+issued, the MySQL server may get stalled until those
+statements finish. After that, the dump becomes lock free
+and does not disturb reads and writes on the tables. If the
+update statements that the MySQL server receives are short
+(in terms of execution time), the initial lock period should
+not be noticeable, even with many updates.</big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>For
+point&minus;in&minus;time recovery (also known as
+&ldquo;roll&minus;forward,&rdquo; when you need to restore
+an old backup and replay the changes that happened since
+that backup), it is often useful to rotate the binary log
+(see Section&nbsp;5.2.4, &ldquo;The Binary Log&rdquo;) or at
+least know the binary log coordinates to which the dump
+corresponds:</big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big>shell&gt;
+<b>mysqldump &minus;&minus;all&minus;databases
+&minus;&minus;master&minus;data=2 &gt;
+all_databases.sql</b></big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>Or:</big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big>shell&gt;
+<b>mysqldump &minus;&minus;all&minus;databases
+&minus;&minus;flush&minus;logs
+&minus;&minus;master&minus;data=2 <br>
+&gt; all_databases.sql</b></big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>The
+<b>&minus;&minus;master&minus;data</b> and
+<b>&minus;&minus;single&minus;transaction</b> options can be
+used simultaneously, which provides a convenient way to make
+an online backup suitable for use prior to
+point&minus;in&minus;time recovery if tables are stored
+using the InnoDB storage engine.</big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>For
+more information on making backups, see Section&nbsp;6.2,
+&ldquo;Database Backup Methods&rdquo;, and Section&nbsp;6.3,
+&ldquo;Example Backup and Recovery
+Strategy&rdquo;.</big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>If
+you encounter problems backing up views, please read the
+section that covers restrictions on views which describes a
+workaround for backing up views when this fails due to
+insufficient privileges. See Section&nbsp;D.4,
+&ldquo;Restrictions on Views&rdquo;.</big></font></p>
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>Copyright
+2007-2008 MySQL AB, 2008-2010 Sun Microsystems,
+Inc.</big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>This
+documentation is free software; you can redistribute it
+and/or modify it only under the terms of the GNU General
+Public License as published by the Free Software Foundation;
+version 2 of the License.</big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>This
+documentation is distributed in the hope that it will be
+useful, but WITHOUT ANY WARRANTY; without even the implied
+warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE. See the GNU General Public License for more
+details.</big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>You
+should have received a copy of the GNU General Public
+License along with the program; if not, write to the Free
+Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA 02110-1301 USA or see
+http://www.gnu.org/licenses/.</big></font></p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000"><big>1.</big></font></p> </td>
+<td width="2%"></td>
+<td width="14%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000"><big>Bug#30123</big></font></p> </td>
+<td width="69%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000"><big>http://bugs.mysql.com/bug.php?id=30123</big></font></p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>For
+more information, please refer to the MySQL Reference
+Manual, which may already be installed locally and which is
+also available online at
+http://dev.mysql.com/doc/.</big></font></p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>Sun
+Microsystems, Inc. (http://www.mysql.com/).</big></font></p>
+<hr>
+</body>
+</html>

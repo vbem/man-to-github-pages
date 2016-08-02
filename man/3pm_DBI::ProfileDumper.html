@@ -1,0 +1,279 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:32:14 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>DBI::ProfileDumper</title>
+
+</head>
+<body>
+
+<h1 align="center">DBI::ProfileDumper</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#USAGE">USAGE</a><br>
+<a href="#METHODS">METHODS</a><br>
+<a href="#DATA FORMAT">DATA FORMAT</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#COPYRIGHT AND LICENSE">COPYRIGHT AND LICENSE</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">DBI::ProfileDumper
+&minus; profile DBI usage and output data to a file</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">To profile an
+existing program using DBI::ProfileDumper, set the
+<small>DBI_PROFILE</small> environment variable and run your
+program as usual. For example, using bash:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  DBI_PROFILE=2/DBI::ProfileDumper program.pl</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Then analyze
+the generated file (<i>dbi.prof</i>) with dbiprof:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  dbiprof</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can also
+activate DBI::ProfileDumper from within your code:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  use DBI;
+  # profile with default path (2) and output file (dbi.prof)
+  $dbh&minus;&gt;{Profile} = &quot;!Statement/DBI::ProfileDumper&quot;;
+  # same thing, spelled out
+  $dbh&minus;&gt;{Profile} = &quot;!Statement/DBI::ProfileDumper/File:dbi.prof&quot;;
+  # another way to say it
+  use DBI::ProfileDumper;
+  $dbh&minus;&gt;{Profile} = DBI::ProfileDumper&minus;&gt;new(
+                        Path =&gt; [ '!Statement' ],
+                        File =&gt; 'dbi.prof' );
+  # using a custom path
+  $dbh&minus;&gt;{Profile} = DBI::ProfileDumper&minus;&gt;new(
+      Path =&gt; [ &quot;foo&quot;, &quot;bar&quot; ],
+      File =&gt; 'dbi.prof',
+  );</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">DBI::ProfileDumper
+is a subclass of DBI::Profile which dumps profile data to
+disk instead of printing a summary to your screen. You can
+then use dbiprof to analyze the data in a number of
+interesting ways, or you can roll your own analysis using
+DBI::ProfileData.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>NOTE:</small></b>
+For Apache/mod_perl applications, use
+DBI::ProfileDumper::Apache.</p>
+
+<h2>USAGE
+<a name="USAGE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">One way to use
+this module is just to enable it in your <tt>$dbh</tt>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $dbh&minus;&gt;{Profile} = &quot;1/DBI::ProfileDumper&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This will write
+out profile data by statement into a file called
+<i>dbi.prof</i>. If you want to modify either of these
+properties, you can construct the DBI::ProfileDumper object
+yourself:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  use DBI::ProfileDumper;
+  $dbh&minus;&gt;{Profile} = DBI::ProfileDumper&minus;&gt;new(
+      Path =&gt; [ '!Statement' ],
+      File =&gt; 'dbi.prof'
+  );</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;Path&quot;</tt> option takes the same values as in
+DBI::Profile. The <tt>&quot;File&quot;</tt> option gives the
+name of the file where results will be collected. If it
+already exists it will be overwritten.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can also
+activate this module by setting the
+<small>DBI_PROFILE</small> environment variable:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $ENV{DBI_PROFILE} = &quot;!Statement/DBI::ProfileDumper&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This will cause
+all <small>DBI</small> handles to share the same profiling
+object.</p>
+
+<h2>METHODS
+<a name="METHODS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+methods are available to be called using the profile object.
+You can get access to the profile object from the Profile
+key in any <small>DBI</small> handle:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  my $profile = $dbh&minus;&gt;{Profile};</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>flush_to_disk</b></p>
+
+
+<pre style="margin-left:11%;">  $profile&minus;&gt;flush_to_disk()</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Flushes all
+collected profile data to disk and empties the Data hash.
+Returns the filename writen to. If no profile data has been
+collected then the file is not written and
+<i>flush_to_disk()</i> returns undef.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The file is
+locked while it&rsquo;s being written. A process
+&rsquo;consuming&rsquo; the files while they&rsquo;re being
+written to, should rename the file first, then lock it, then
+read it, then close and delete it. The
+<tt>&quot;DeleteFiles&quot;</tt> option to DBI::ProfileData
+does the right thing.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This method may
+be called multiple times during a program run.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>empty</b></p>
+
+
+<pre style="margin-left:11%;">  $profile&minus;&gt;empty()</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Clears the Data
+hash without writing to disk.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>filename</b></p>
+
+
+<pre style="margin-left:11%;">  $filename = $profile&minus;&gt;filename();</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Get or set the
+filename.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The filename
+can be specified as a <small>CODE</small> reference, in
+which case the referenced code should return the filename to
+be used. The code will be called with the profile object as
+its first argument.</p>
+
+<h2>DATA FORMAT
+<a name="DATA FORMAT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The data format
+written by DBI::ProfileDumper starts with a header
+containing the version number of the module used to generate
+it. Then a block of variable declarations describes the
+profile. After two newlines, the profile data forms the body
+of the file. For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  DBI::ProfileDumper 2.003762
+  Path = [ '!Statement', '!MethodName' ]
+  Program = t/42profile_data.t
+  + 1 SELECT name FROM users WHERE id = ?
+  + 2 prepare
+  = 1 0.0312958955764771 0.000490069389343262 0.000176072120666504 0.00140702724456787 1023115819.83019 1023115819.86576
+  + 2 execute
+  1 0.0312958955764771 0.000490069389343262 0.000176072120666504 0.00140702724456787 1023115819.83019 1023115819.86576
+  + 2 fetchrow_hashref
+  = 1 0.0312958955764771 0.000490069389343262 0.000176072120666504 0.00140702724456787 1023115819.83019 1023115819.86576
+  + 1 UPDATE users SET name = ? WHERE id = ?
+  + 2 prepare
+  = 1 0.0312958955764771 0.000490069389343262 0.000176072120666504 0.00140702724456787 1023115819.83019 1023115819.86576
+  + 2 execute
+  = 1 0.0312958955764771 0.000490069389343262 0.000176072120666504 0.00140702724456787 1023115819.83019 1023115819.86576</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The lines
+beginning with <tt>&quot;+&quot;</tt> signs signify keys.
+The number after the <tt>&quot;+&quot;</tt> sign shows the
+nesting level of the key. Lines beginning with
+<tt>&quot;=&quot;</tt> are the actual profile data, in the
+same order as in DBI::Profile.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that the
+same path may be present multiple times in the data file
+since <tt>&quot;format()&quot;</tt> may be called more than
+once. When read by DBI::ProfileData the data points will be
+merged to produce a single data set for each distinct
+path.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The key strings
+are transformed in three ways. First, all backslashes are
+doubled. Then all newlines and carriage-returns are
+transformed into <tt>&quot;\n&quot;</tt> and
+<tt>&quot;\r&quot;</tt> respectively. Finally, any
+<small>NULL</small> bytes (<tt>&quot;\0&quot;</tt>) are
+entirely removed. When DBI::ProfileData reads the file the
+first two transformations will be reversed, but
+<small>NULL</small> bytes will not be restored.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Sam Tregar
+&lt;sam@tregar.com&gt;</p>
+
+<h2>COPYRIGHT AND LICENSE
+<a name="COPYRIGHT AND LICENSE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (C)
+2002 Sam Tregar</p>
+
+<p style="margin-left:11%; margin-top: 1em">This program is
+free software; you can redistribute it and/or modify it
+under the same terms as Perl 5 itself.</p>
+<hr>
+</body>
+</html>

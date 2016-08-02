@@ -1,0 +1,388 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:41:04 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Unicode::Collate::Locale</title>
+
+</head>
+<body>
+
+<h1 align="center">Unicode::Collate::Locale</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#INSTALL">INSTALL</a><br>
+<a href="#CAVEAT">CAVEAT</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">Unicode::Collate::Locale
+&minus; Linguistic tailoring for DUCET via
+Unicode::Collate</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  use Unicode::Collate::Locale;
+  #construct
+  $Collator = Unicode::Collate::Locale&minus;&gt;
+      new(locale =&gt; $locale_name, %tailoring);
+  #sort
+  @sorted = $Collator&minus;&gt;sort(@not_sorted);
+  #compare
+  $result = $Collator&minus;&gt;cmp($a, $b); # returns 1, 0, or &minus;1.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Note:</b>
+Strings in <tt>@not_sorted</tt>, <tt>$a</tt> and <tt>$b</tt>
+are interpreted according to Perl&rsquo;s Unicode support.
+See perlunicode, perluniintro, perlunitut, perlunifaq, utf8.
+Otherwise you can use <tt>&quot;preprocess&quot;</tt> (cf.
+<tt>&quot;Unicode::Collate&quot;</tt>) or should decode them
+before.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This module
+provides linguistic tailoring for it taking advantage of
+<tt>&quot;Unicode::Collate&quot;</tt>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Constructor</b>
+<br>
+The <tt>&quot;new&quot;</tt> method returns a collator
+object.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A parameter
+list for the constructor is a hash, which can include a
+special key <tt>&quot;locale&quot;</tt> and its value
+(case-insensitive) standing for a Unicode base language code
+(two or three-letter). For example,
+<tt>&quot;Unicode::Collate::Locale&minus;&gt;new(locale
+=&gt; 'FR')&quot;</tt> returns a collator tailored for
+French.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>$locale_name</tt>
+may be suffixed with a Unicode script code (four-letter), a
+Unicode region code, a Unicode language variant code. These
+codes are case-insensitive, and separated with <tt>'_'</tt>
+or <tt>'&minus;'</tt>. E.g. <tt>&quot;en_US&quot;</tt> for
+English in <small>USA</small> , <tt>&quot;az_Cyrl&quot;</tt>
+for Azerbaijani in the Cyrillic script,
+<tt>&quot;es_ES_traditional&quot;</tt> for Spanish in Spain
+(Traditional).</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<tt>$locale_name</tt> is not available, fallback is selected
+in the following order:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    1. language with a variant code
+    2. language with a script code
+    3. language with a region code
+    4. language
+    5. default</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Tailoring tags
+provided by <tt>&quot;Unicode::Collate&quot;</tt> are
+allowed as long as they are not used for
+<tt>&quot;locale&quot;</tt> support. Esp. the
+<tt>&quot;table&quot;</tt> tag is always untailorable, since
+it is reserved for <small>DUCET</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">E.g. a collator
+for French, which ignores diacritics and case difference
+(i.e. level 1), with reversed case ordering and no
+normalization.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Unicode::Collate::Locale&minus;&gt;new(
+        level =&gt; 1,
+        locale =&gt; 'fr',
+        upper_before_lower =&gt; 1,
+        normalization =&gt; undef
+    )</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Overriding a
+behavior already tailored by <tt>&quot;locale&quot;</tt> is
+disallowed if such a tailoring is passed to
+<tt>&quot;new()&quot;</tt>.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Unicode::Collate::Locale&minus;&gt;new(
+        locale =&gt; 'da',
+        upper_before_lower =&gt; 0, # causes error as reserved by 'da'
+    )</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">However
+<tt>&quot;change()&quot;</tt> inherited from
+<tt>&quot;Unicode::Collate&quot;</tt> allows such a
+tailoring that is reserved by <tt>&quot;locale&quot;</tt>.
+Examples:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    new(locale =&gt; 'ca')&minus;&gt;change(backwards =&gt; undef)
+    new(locale =&gt; 'da')&minus;&gt;change(upper_before_lower =&gt; 0)
+    new(locale =&gt; 'ja')&minus;&gt;change(overrideCJK =&gt; undef)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Methods</b>
+<tt><br>
+&quot;Unicode::Collate::Locale&quot;</tt> is a subclass of
+<tt>&quot;Unicode::Collate&quot;</tt> and methods other than
+<tt>&quot;new&quot;</tt> are inherited from
+<tt>&quot;Unicode::Collate&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here is a list
+of additional methods: <br>
+&quot;$Collator&minus;&gt;getlocale&quot;</p>
+
+<p style="margin-left:17%;">Returns a language code
+accepted and used actually on collation. If linguistic
+tailoring is not provided for a language code you passed
+(intensionally for some languages, or due to the incomplete
+implementation), this method returns a string
+<tt>'default'</tt> meaning no special tailoring.</p>
+
+
+<p style="margin-left:11%;">&quot;$Collator&minus;&gt;locale_version&quot;</p>
+
+<p style="margin-left:17%;">(Since Unicode::Collate::Locale
+0.87) Returns the version number (perhaps
+<tt>&quot;/\d\.\d\d/&quot;</tt>) of the locale, as that of
+<i>Locale/*.pl</i>.</p>
+
+<p style="margin-left:17%; margin-top: 1em"><b>Note:</b>
+<i>Locale/*.pl</i> that a collator uses should be identified
+by a combination of return values from
+<tt>&quot;getlocale&quot;</tt> and
+<tt>&quot;locale_version&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>A list of
+tailorable locales</b></p>
+
+<pre style="margin-left:11%;">      locale name       description
+    &minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;
+      af                Afrikaans
+      ar                Arabic
+      as                Assamese
+      az                Azerbaijani (Azeri)
+      be                Belarusian
+      bg                Bulgarian
+      bn                Bengali
+      bs                Bosnian
+      ca                Catalan
+      cs                Czech
+      cy                Welsh
+      da                Danish
+      de__phonebook     German (umlaut as 'ae', 'oe', 'ue')
+      eo                Esperanto
+      es                Spanish
+      es__traditional   Spanish ('ch' and 'll' as a grapheme)
+      et                Estonian
+      fa                Persian
+      fi                Finnish (v and w are primary equal)
+      fi__phonebook     Finnish (v and w as separate characters)
+      fil               Filipino
+      fo                Faroese
+      fr                French
+      gu                Gujarati
+      ha                Hausa
+      haw               Hawaiian
+      hi                Hindi
+      hr                Croatian
+      hu                Hungarian
+      hy                Armenian
+      ig                Igbo
+      is                Icelandic
+      ja                Japanese [1]
+      kk                Kazakh
+      kl                Kalaallisut
+      kn                Kannada
+      ko                Korean [2]
+      kok               Konkani
+      ln                Lingala
+      lt                Lithuanian
+      lv                Latvian
+      mk                Macedonian
+      ml                Malayalam
+      mr                Marathi
+      mt                Maltese
+      nb                Norwegian Bokmal
+      nn                Norwegian Nynorsk
+      nso               Northern Sotho
+      om                Oromo
+      or                Oriya
+      pa                Punjabi
+      pl                Polish
+      ro                Romanian
+      ru                Russian
+      sa                Sanskrit
+      se                Northern Sami
+      si                Sinhala
+      si__dictionary    Sinhala (U+0DA5 = U+0DA2,0DCA,0DA4)
+      sk                Slovak
+      sl                Slovenian
+      sq                Albanian
+      sr                Serbian
+      sr_Latn           Serbian in Latin (tailored as Croatian)
+      sv                Swedish (v and w are primary equal)
+      sv__reformed      Swedish (v and w as separate characters)
+      ta                Tamil
+      te                Telugu
+      th                Thai
+      tn                Tswana
+      to                Tonga
+      tr                Turkish
+      uk                Ukrainian
+      ur                Urdu
+      vi                Vietnamese
+      wae               Walser
+      wo                Wolof
+      yo                Yoruba
+      zh                Chinese
+      zh__big5han       Chinese (ideographs: big5 order)
+      zh__gb2312han     Chinese (ideographs: GB&minus;2312 order)
+      zh__pinyin        Chinese (ideographs: pinyin order) [3]
+      zh__stroke        Chinese (ideographs: stroke order) [3]
+    &minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Locales
+according to the default <small>UCA</small> rules include
+chr (Cherokee), de (German), en (English), ga (Irish), id
+(Indonesian), it (Italian), ka (Georgian), ms (Malay), nl
+(Dutch), pt (Portuguese), st (Southern Sotho), sw (Swahili),
+xh (Xhosa), zu (Zulu).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Note</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">[1] ja:
+Ideographs are sorted in <small>JIS</small> X 0208 order.
+Fullwidth and halfwidth forms are identical to their normal
+form. The difference between hiragana and katakana is at the
+4th level, the comparison also requires <tt>&quot;(variable
+=&gt; 'Non&minus;ignorable')&quot;</tt>, and then
+<tt>&quot;katakana_before_hiragana&quot;</tt> has no
+effect.</p>
+
+<p style="margin-left:11%; margin-top: 1em">[2] ko: Plenty
+of ideographs are sorted by their reading. Such an ideograph
+is primary (level 1) equal to, and secondary (level 2)
+greater than, the corresponding hangul syllable.</p>
+
+<p style="margin-left:11%; margin-top: 1em">[3] zh__pinyin
+and zh__stroke: implemented alt=&rsquo;short&rsquo;, where a
+smaller number of ideographs are tailored.</p>
+
+<h2>INSTALL
+<a name="INSTALL"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Installation of
+<tt>&quot;Unicode::Collate::Locale&quot;</tt> requires
+<i>Collate/Locale.pm</i>, <i>Collate/Locale/*.pm</i>,
+<i>Collate/CJK/*.pm</i> and <i>Collate/allkeys.txt</i>. On
+building, <tt>&quot;Unicode::Collate::Locale&quot;</tt>
+doesn&rsquo;t require any of <i>data/*.txt</i>,
+<i>gendata/*</i>, and <i>mklocale</i>. Tests for
+<tt>&quot;Unicode::Collate::Locale&quot;</tt> are named
+<i>t/loc_*.t</i>.</p>
+
+<h2>CAVEAT
+<a name="CAVEAT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">tailoring is
+not maximum</p>
+
+<p style="margin-left:17%;">Even if a certain letter is
+tailored, its equivalent would not always tailored as well
+as it. For example, even though W is tailored, fullwidth W
+(<tt>&quot;U+FF37&quot;</tt>), W with acute
+(<tt>&quot;U+1E82&quot;</tt>), etc. are not tailored. The
+result may depend on whether source strings are normalized
+or not, and whether decomposed or composed. Thus
+<tt>&quot;(normalization =&gt; undef)&quot;</tt> is less
+preferred.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+Unicode::Collate::Locale module for perl was written by
+<small>SADAHIRO</small> Tomoyuki, &lt;SADAHIRO@cpan.org&gt;.
+This module is Copyright(C) 2004&minus;2012,
+<small>SADAHIRO</small> Tomoyuki. Japan. All rights
+reserved.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This module is
+free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Unicode
+Collation Algorithm &minus; <small>UTS</small> #10</p>
+
+
+<p style="margin-left:17%;">&lt;http://www.unicode.org/reports/tr10/&gt;</p>
+
+<p style="margin-left:11%;">The Default Unicode Collation
+Element Table ( <small>DUCET</small> )</p>
+
+
+<p style="margin-left:17%;">&lt;http://www.unicode.org/Public/UCA/latest/allkeys.txt&gt;</p>
+
+<p style="margin-left:11%;">Unicode Locale Data Markup
+Language ( <small>LDML</small> ) &minus; <small>UTS</small>
+#35</p>
+
+
+<p style="margin-left:17%;">&lt;http://www.unicode.org/reports/tr35/&gt;</p>
+
+<p style="margin-left:11%;"><small>CLDR</small> &minus;
+Unicode Common Locale Data Repository</p>
+
+
+<p style="margin-left:17%;">&lt;http://cldr.unicode.org/&gt;</p>
+
+<p style="margin-left:11%;">Unicode::Collate <br>
+ Unicode::Normalize</p>
+<hr>
+</body>
+</html>

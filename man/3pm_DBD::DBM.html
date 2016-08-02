@@ -1,0 +1,1220 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:32:06 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>DBD::DBM</title>
+
+</head>
+<body>
+
+<h1 align="center">DBD::DBM</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#QUICK START">QUICK START</a><br>
+<a href="#USAGE">USAGE</a><br>
+<a href="#DBI database handle attributes">DBI database handle attributes</a><br>
+<a href="#DBI database handle methods">DBI database handle methods</a><br>
+<a href="#EXTENSIBILITY">EXTENSIBILITY</a><br>
+<a href="#GOTCHAS AND WARNINGS">GOTCHAS AND WARNINGS</a><br>
+<a href="#BUGS AND LIMITATIONS">BUGS AND LIMITATIONS</a><br>
+<a href="#GETTING HELP, MAKING SUGGESTIONS, AND REPORTING BUGS">GETTING HELP, MAKING SUGGESTIONS, AND REPORTING BUGS</a><br>
+<a href="#ACKNOWLEDGEMENTS">ACKNOWLEDGEMENTS</a><br>
+<a href="#AUTHOR AND COPYRIGHT">AUTHOR AND COPYRIGHT</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">DBD::DBM
+&minus; a DBI driver for DBM &amp; MLDBM files</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> use DBI;
+ $dbh = DBI&minus;&gt;connect('dbi:DBM:');                    # defaults to SDBM_File
+ $dbh = DBI&minus;&gt;connect('DBI:DBM(RaiseError=1):');      # defaults to SDBM_File
+ $dbh = DBI&minus;&gt;connect('dbi:DBM:dbm_type=DB_File');    # defaults to DB_File
+ $dbh = DBI&minus;&gt;connect('dbi:DBM:dbm_mldbm=Storable');  # MLDBM with SDBM_File
+ # or
+ $dbh = DBI&minus;&gt;connect('dbi:DBM:', undef, undef);
+ $dbh = DBI&minus;&gt;connect('dbi:DBM:', undef, undef, {
+     f_ext              =&gt; '.db/r',
+     f_dir              =&gt; '/path/to/dbfiles/',
+     f_lockfile         =&gt; '.lck',
+     dbm_type           =&gt; 'BerkeleyDB',
+     dbm_mldbm          =&gt; 'FreezeThaw',
+     dbm_store_metadata =&gt; 1,
+     dbm_berkeley_flags =&gt; {
+         '&minus;Cachesize' =&gt; 1000, # set a ::Hash flag
+     },
+ });</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">and other
+variations on <i>connect()</i> as shown in the
+<small>DBI</small> docs, DBD::File metadata and
+&quot;Metadata&quot; shown below.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Use standard
+<small>DBI</small> prepare, execute, fetch, placeholders,
+etc., see &quot; <small>QUICK START&quot;</small> for an
+example.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>DBD::DBM</small>
+is a database management system that works right out of the
+box. If you have a standard installation of Perl and
+<small>DBI</small> you can begin creating, accessing, and
+modifying simple database tables without any further
+modules. You can add other modules (e.g., SQL::Statement,
+DB_File etc) for improved functionality.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The module uses
+a <small>DBM</small> file storage layer. <small>DBM</small>
+file storage is common on many platforms and files can be
+created with it in many programming languages using
+different APIs. That means, in addition to creating files
+with <small>DBI/SQL,</small> you can also use
+<small>DBI/SQL</small> to access and modify files created by
+other <small>DBM</small> modules and programs and vice
+versa. <b>Note</b> that in those cases it might be necessary
+to use a common subset of the provided features.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>DBM</small>
+files are stored in binary format optimized for quick
+retrieval when using a key field. That optimization can be
+used advantageously to make <small>DBD::DBM SQL</small>
+operations that use key fields very fast. There are several
+different &quot;flavors&quot; of <small>DBM</small> which
+use different storage formats supported by perl modules such
+as SDBM_File and <small>MLDBM.</small> This module supports
+all of the flavors that perl supports and, when used with
+<small>MLDBM,</small> supports tables with any number of
+columns and insertion of Perl objects into tables.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>DBD::DBM</small>
+has been tested with the following <small>DBM</small> types:
+SDBM_File, NDBM_File, ODBM_File, GDBM_File, DB_File,
+BerkeleyDB. Each type was tested both with and without
+<small>MLDBM</small> and with the Data::Dumper, Storable,
+FreezeThaw, <small>YAML</small> and <small>JSON</small>
+serializers using the DBI::SQL::Nano or the SQL::Statement
+engines.</p>
+
+<h2>QUICK START
+<a name="QUICK START"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>DBD::DBM</small>
+operates like all other <small>DBD</small> drivers &minus;
+it&rsquo;s basic syntax and operation is specified by
+<small>DBI.</small> If you&rsquo;re not familiar with
+<small>DBI,</small> you should start by reading
+<small>DBI</small> and the documents it points to and then
+come back and read this file. If you are familiar with
+<small>DBI,</small> you already know most of what you need
+to know to operate this module. Just jump in and create a
+test script something like the one shown below.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You should be
+aware that there are several options for the
+<small>SQL</small> engine underlying
+<small>DBD::DBM,</small> see &quot;Supported
+<small>SQL</small> syntax&quot;. There are also many options
+for <small>DBM</small> support, see especially the section
+on &quot;Adding multi-column support with
+<small>MLDBM&quot;</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">But
+here&rsquo;s a sample to get you started.</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> use DBI;
+ my $dbh = DBI&minus;&gt;connect('dbi:DBM:');
+ $dbh&minus;&gt;{RaiseError} = 1;
+ for my $sql( split /;\n+/,&quot;
+     CREATE TABLE user ( user_name TEXT, phone TEXT );
+     INSERT INTO user VALUES ('Fred Bloggs','233&minus;7777');
+     INSERT INTO user VALUES ('Sanjay Patel','777&minus;3333');
+     INSERT INTO user VALUES ('Junk','xxx&minus;xxxx');
+     DELETE FROM user WHERE user_name = 'Junk';
+     UPDATE user SET phone = '999&minus;4444' WHERE user_name = 'Sanjay Patel';
+     SELECT * FROM user
+ &quot;){
+     my $sth = $dbh&minus;&gt;prepare($sql);
+     $sth&minus;&gt;execute;
+     $sth&minus;&gt;dump_results if $sth&minus;&gt;{NUM_OF_FIELDS};
+ }
+ $dbh&minus;&gt;disconnect;</pre>
+
+
+<h2>USAGE
+<a name="USAGE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This section
+will explain some usage cases in more detail. To get an
+overview about the available attributes, see
+&quot;Metadata&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Specifying
+Files and Directories</b> <small><br>
+DBD::DBM</small> will automatically supply an appropriate
+file extension for the type of <small>DBM</small> you are
+using. For example, if you use SDBM_File, a table called
+&quot;fruit&quot; will be stored in two files called
+&quot;fruit.pag&quot; and &quot;fruit.dir&quot;. You should
+<b>never</b> specify the file extensions in your
+<small>SQL</small> statements.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>DBD::DBM</small>
+recognizes following default extensions for following types:
+<br>
+.pag/r</p>
+
+<p style="margin-left:17%;">Chosen for dbm_type
+<tt>&quot;SDBM_File&quot;</tt>,
+<tt>&quot;ODBM_File&quot;</tt> and
+<tt>&quot;NDBM_File&quot;</tt> when an implementation is
+detected which wraps <tt>&quot;&minus;ldbm&quot;</tt> for
+<tt>&quot;NDBM_File&quot;</tt> (e.g. Solaris, <small>AIX,
+...</small> ).</p>
+
+<p style="margin-left:17%; margin-top: 1em">For those
+types, the <tt>&quot;.dir&quot;</tt> extension is
+recognized, too (for being deleted when dropping a
+table).</p>
+
+<p style="margin-left:11%;">.db/r</p>
+
+<p style="margin-left:17%;">Chosen for dbm_type
+<tt>&quot;NDBM_File&quot;</tt> when an implementation is
+detected which wraps BerkeleyDB 1.x for
+<tt>&quot;NDBM_File&quot;</tt> (typically <small>BSD</small>
+&rsquo;s, Darwin).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;GDBM_File&quot;</tt>,
+<tt>&quot;DB_File&quot;</tt> and
+<tt>&quot;BerkeleyDB&quot;</tt> don&rsquo;t usually use a
+file extension.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If your
+<small>DBM</small> type uses an extension other than one of
+the recognized types of extensions, you should set the
+<i>f_ext</i> attribute to the extension <b>and</b> file a
+bug report as described in <small>DBI</small> with the name
+of the implementation and extension so we can add it to
+<small>DBD::DBM.</small> Thanks in advance for that
+:&minus;).</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $dbh = DBI&minus;&gt;connect('dbi:DBM:f_ext=.db');  # .db extension is used
+  $dbh = DBI&minus;&gt;connect('dbi:DBM:f_ext=');     # no extension is used
+  # or
+  $dbh&minus;&gt;{f_ext}='.db';                       # global setting
+  $dbh&minus;&gt;{f_meta}&minus;&gt;{'qux'}&minus;&gt;{f_ext}='.db';    # setting for table 'qux'</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">By default
+files are assumed to be in the current working directory. To
+use other directories specify the <i>f_dir</i> attribute in
+either the connect string or by setting the database handle
+attribute.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For example,
+this will look for the file /foo/bar/fruit (or
+/foo/bar/fruit.pag for <small>DBM</small> types that use
+that extension)</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  my $dbh = DBI&minus;&gt;connect('dbi:DBM:f_dir=/foo/bar');
+  # and this will too:
+  my $dbh = DBI&minus;&gt;connect('dbi:DBM:');
+  $dbh&minus;&gt;{f_dir} = '/foo/bar';
+  # but this is recommended
+  my $dbh = DBI&minus;&gt;connect('dbi:DBM:', undef, undef, { f_dir =&gt; '/foo/bar' } );
+  # now you can do
+  my $ary = $dbh&minus;&gt;selectall_arrayref(q{ SELECT x FROM fruit });</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can also
+use delimited identifiers to specify paths directly in
+<small>SQL</small> statements. This looks in the same place
+as the two examples above but without setting
+<i>f_dir</i>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   my $dbh = DBI&minus;&gt;connect('dbi:DBM:');
+   my $ary = $dbh&minus;&gt;selectall_arrayref(q{
+       SELECT x FROM &quot;/foo/bar/fruit&quot;
+   });</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can also
+tell <small>DBD::DBM</small> to use a specified path for a
+specific table:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $dbh&minus;&gt;{dbm_tables}&minus;&gt;{f}&minus;&gt;{file} = q(/foo/bar/fruit);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Please be aware
+that you cannot specify this during connection.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you have
+SQL::Statement installed, you can use table aliases:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   my $dbh = DBI&minus;&gt;connect('dbi:DBM:');
+   my $ary = $dbh&minus;&gt;selectall_arrayref(q{
+       SELECT f.x FROM &quot;/foo/bar/fruit&quot; AS f
+   });</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">See the &quot;
+<small>GOTCHAS AND WARNINGS&quot;</small> for using
+<small>DROP</small> on tables.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Table
+locking and</b> <i>flock()</i> <br>
+Table locking is accomplished using a lockfile which has the
+same basename as the table&rsquo;s file but with the file
+extension &rsquo;.lck&rsquo; (or a lockfile extension that
+you supply, see below). This lock file is created with the
+table during a <small>CREATE</small> and removed during a
+<small>DROP.</small> Every time the table itself is opened,
+the lockfile is <i>flocked()</i>. For <small>SELECT,</small>
+this is a shared lock. For all other operations, it is an
+exclusive lock (except when you specify something different
+using the <i>f_lock</i> attribute).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since the
+locking depends on <i>flock()</i>, it only works on
+operating systems that support <i>flock()</i>. In cases
+where <i>flock()</i> is not implemented,
+<small>DBD::DBM</small> will simply behave as if the
+<i>flock()</i> had occurred although no actual locking will
+happen. Read the documentation for <i>flock()</i> for more
+information.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Even on those
+systems that do support <i>flock()</i>, locking is only
+advisory &minus; as is always the case with <i>flock()</i>.
+This means that if another program tries to access the table
+file while <small>DBD::DBM</small> has the table locked,
+that other program will *succeed* at opening unless it is
+also using flock on the &rsquo;.lck&rsquo; file. As a result
+<small>DBD::DBM</small> &rsquo;s locking only really applies
+to other programs using <small>DBD::DBM</small> or other
+program written to cooperate with <small>DBD::DBM</small>
+locking.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Specifying
+the <small>DBM</small> type</b> <br>
+Each &quot;flavor&quot; of <small>DBM</small> stores its
+files in a different format and has different capabilities
+and limitations. See AnyDBM_File for a comparison of
+<small>DBM</small> types.</p>
+
+<p style="margin-left:11%; margin-top: 1em">By default,
+<small>DBD::DBM</small> uses the
+<tt>&quot;SDBM_File&quot;</tt> type of storage since
+<tt>&quot;SDBM_File&quot;</tt> comes with Perl itself. If
+you have other types of <small>DBM</small> storage
+available, you can use any of them with
+<small>DBD::DBM.</small> It is strongly recommended to use
+at least <tt>&quot;DB_File&quot;</tt>, because
+<tt>&quot;SDBM_File&quot;</tt> has quirks and limitations
+and <tt>&quot;ODBM_file&quot;</tt>,
+<tt>&quot;NDBM_File&quot;</tt> and
+<tt>&quot;GDBM_File&quot;</tt> are not always available.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can specify
+the <small>DBM</small> type using the <i>dbm_type</i>
+attribute which can be set in the connection string or with
+<tt>&quot;$dbh&minus;&gt;{dbm_type}&quot;</tt> and
+<tt>&quot;$dbh&minus;&gt;{f_meta}&minus;&gt;{$table_name}&minus;&gt;{type}&quot;</tt>
+for per-table settings in cases where a single script is
+accessing more than one kind of <small>DBM</small> file.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the
+connection string, just set
+<tt>&quot;dbm_type=TYPENAME&quot;</tt> where
+<tt>&quot;TYPENAME&quot;</tt> is any <small>DBM</small> type
+such as GDBM_File, DB_File, etc. Do <i>not</i> use
+<small>MLDBM</small> as your <i>dbm_type</i> as that is set
+differently, see below.</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> my $dbh=DBI&minus;&gt;connect('dbi:DBM:');                # uses the default SDBM_File
+ my $dbh=DBI&minus;&gt;connect('dbi:DBM:dbm_type=GDBM_File'); # uses the GDBM_File
+ # You can also use $dbh&minus;&gt;{dbm_type} to set the DBM type for the connection:
+ $dbh&minus;&gt;{dbm_type} = 'DB_File';    # set the global DBM type
+ print $dbh&minus;&gt;{dbm_type};          # display the global DBM type</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you have
+several tables in your script that use different
+<small>DBM</small> types, you can use the
+<tt>$dbh</tt>&minus;&gt;{dbm_tables} hash to store different
+settings for the various tables. You can even use this to
+perform joins on files that have completely different
+storage mechanisms.</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> # sets global default of GDBM_File
+ my $dbh&minus;&gt;('dbi:DBM:type=GDBM_File');
+ # overrides the global setting, but only for the tables called
+ # I&lt;foo&gt; and I&lt;bar&gt;
+ my $dbh&minus;&gt;{f_meta}&minus;&gt;{foo}&minus;&gt;{dbm_type} = 'DB_File';
+ my $dbh&minus;&gt;{f_meta}&minus;&gt;{bar}&minus;&gt;{dbm_type} = 'BerkeleyDB';
+ # prints the dbm_type for the table &quot;foo&quot;
+ print $dbh&minus;&gt;{f_meta}&minus;&gt;{foo}&minus;&gt;{dbm_type};</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Note</b>
+that you must change the <i>dbm_type</i> of a table before
+you access it for first time.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Adding
+multi-column support with <small>MLDBM</small></b> <br>
+Most of the <small>DBM</small> types only support two
+columns and even if it would support more,
+<small>DBD::DBM</small> would only use two. However a
+<small>CPAN</small> module called <small>MLDBM</small>
+overcomes this limitation by allowing more than two columns.
+<small>MLDBM</small> does this by serializing the data
+&minus; basically it puts a reference to an array into the
+second column. It can also put almost any kind of Perl
+object or even <b>Perl coderefs</b> into columns.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you want
+more than two columns, you <b>must</b> install
+<small>MLDBM.</small> It&rsquo;s available for many
+platforms and is easy to install.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>MLDBM</small>
+is by default distributed with three serializers &minus;
+Data::Dumper, Storable, and FreezeThaw. Data::Dumper is the
+default and Storable is the fastest. <small>MLDBM</small>
+can also make use of user-defined serialization methods or
+other serialization modules (e.g. <small>YAML::MLDBM</small>
+or MLDBM::Serializer::JSON. You select the serializer using
+the <i>dbm_mldbm</i> attribute.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Some
+examples:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> $dbh=DBI&minus;&gt;connect('dbi:DBM:dbm_mldbm=Storable');  # use MLDBM with Storable
+ $dbh=DBI&minus;&gt;connect(
+    'dbi:DBM:dbm_mldbm=MySerializer' # use MLDBM with a user defined module
+ );
+ $dbh=DBI&minus;&gt;connect('dbi::dbm:', undef,
+     undef, { dbm_mldbm =&gt; 'YAML' }); # use 3rd party serializer
+ $dbh&minus;&gt;{dbm_mldbm} = 'YAML'; # same as above
+ print $dbh&minus;&gt;{dbm_mldbm} # show the MLDBM serializer
+ $dbh&minus;&gt;{f_meta}&minus;&gt;{foo}&minus;&gt;{dbm_mldbm}='Data::Dumper';   # set Data::Dumper for table &quot;foo&quot;
+ print $dbh&minus;&gt;{f_meta}&minus;&gt;{foo}&minus;&gt;{mldbm}; # show serializer for table &quot;foo&quot;</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>MLDBM</small>
+works on top of other <small>DBM</small> modules so you can
+also set a <small>DBM</small> type along with setting
+dbm_mldbm. The examples above would default to using
+SDBM_File with <small>MLDBM.</small> If you wanted GDBM_File
+instead, here&rsquo;s how:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> # uses DB_File with MLDBM and Storable
+ $dbh = DBI&minus;&gt;connect('dbi:DBM:', undef, undef, {
+     dbm_type  =&gt; 'DB_File',
+     dbm_mldbm =&gt; 'Storable',
+ });</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">SDBM_File, the
+default <i>dbm_type</i> is quite limited, so if you are
+going to use <small>MLDBM,</small> you should probably use a
+different type, see AnyDBM_File.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See below for
+some &quot; <small>GOTCHAS AND WARNINGS&quot;</small> about
+<small>MLDBM.</small></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Support for
+Berkeley <small>DB</small></b> <br>
+The Berkeley <small>DB</small> storage type is supported
+through two different Perl modules &minus; DB_File (which
+supports only features in old versions of Berkeley
+<small>DB</small> ) and BerkeleyDB (which supports all
+versions). <small>DBD::DBM</small> supports specifying
+either &quot;DB_File&quot; or &quot;BerkeleyDB&quot; as a
+<i>dbm_type</i>, with or without <small>MLDBM</small>
+support.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+&quot;BerkeleyDB&quot; dbm_type is experimental and
+it&rsquo;s interface is likely to change. It currently
+defaults to BerkeleyDB::Hash and does not currently support
+::Btree or ::Recno.</p>
+
+<p style="margin-left:11%; margin-top: 1em">With
+BerkeleyDB, you can specify initialization flags by setting
+them in your script like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> use BerkeleyDB;
+ my $env = new BerkeleyDB::Env &minus;Home =&gt; $dir;  # and/or other Env flags
+ $dbh = DBI&minus;&gt;connect('dbi:DBM:', undef, undef, {
+     dbm_type  =&gt; 'BerkeleyDB',
+     dbm_mldbm =&gt; 'Storable',
+     dbm_berkeley_flags =&gt; {
+         'DB_CREATE'  =&gt; DB_CREATE,  # pass in constants
+         'DB_RDONLY'  =&gt; DB_RDONLY,  # pass in constants
+         '&minus;Cachesize' =&gt; 1000,       # set a ::Hash flag
+         '&minus;Env'       =&gt; $env,       # pass in an environment
+     },
+ });</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Do <i>not</i>
+set the &minus;Flags or &minus;Filename flags as those are
+determined and overwritten by the <small>SQL</small> (e.g.
+&minus;Flags =&gt; <small>DB_RDONLY</small> is set
+automatically when you issue a <small>SELECT</small>
+statement).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Time has not
+permitted us to provide support in this release of
+<small>DBD::DBM</small> for further Berkeley
+<small>DB</small> features such as transactions,
+concurrency, locking, etc. We will be working on these in
+the future and would value suggestions, patches, etc.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See DB_File and
+BerkeleyDB for further details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Optimizing
+the use of key fields</b> <br>
+Most &quot;flavors&quot; of <small>DBM</small> have only two
+physical columns (but can contain multiple logical columns
+as explained above in &quot;Adding multi-column support with
+<small>MLDBM&quot;</small> ). They work similarly to a Perl
+hash with the first column serving as the key. Like a Perl
+hash, <small>DBM</small> files permit you to do quick
+lookups by specifying the key and thus avoid looping through
+all records (supported by DBI::SQL::Nano only). Also like a
+Perl hash, the keys must be unique. It is impossible to
+create two records with the same key. To put this more
+simply and in <small>SQL</small> terms, the key column
+functions as the <i><small>PRIMARY KEY</small></i> or
+<small>UNIQUE INDEX.</small></p>
+
+<p style="margin-left:11%; margin-top: 1em">In
+<small>DBD::DBM,</small> you can take advantage of the speed
+of keyed lookups by using DBI::SQL::Nano and a
+<small>WHERE</small> clause with a single equal comparison
+on the key field. For example, the following
+<small>SQL</small> statements are optimized for keyed
+lookup:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> CREATE TABLE user ( user_name TEXT, phone TEXT);
+ INSERT INTO user VALUES ('Fred Bloggs','233&minus;7777');
+ # ... many more inserts
+ SELECT phone FROM user WHERE user_name='Fred Bloggs';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+&quot;user_name&quot; column is the key column since it is
+the first column. The <small>SELECT</small> statement uses
+the key column in a single equal comparison &minus;
+&quot;user_name=&rsquo;Fred Bloggs&rsquo;&quot; &minus; so
+the search will find it very quickly without having to loop
+through all the names which were inserted into the
+table.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In contrast,
+these searches on the same table are not optimized:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> 1. SELECT phone FROM user WHERE user_name &lt; 'Fred';
+ 2. SELECT user_name FROM user WHERE phone = '233&minus;7777';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In #1, the
+operation uses a less-than (&lt;) comparison rather than an
+equals comparison, so it will not be optimized for key
+searching. In #2, the key field &quot;user_name&quot; is not
+specified in the <small>WHERE</small> clause, and therefore
+the search will need to loop through all rows to find the
+requested row(s).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Note</b>
+that the underlying <small>DBM</small> storage needs to loop
+over all <i>key/value</i> pairs when the optimized fetch is
+used. SQL::Statement has a massively improved where clause
+evaluation which costs around 15% of the evaluation in
+DBI::SQL::Nano &minus; combined with the loop in the
+<small>DBM</small> storage the speed improvement isn&rsquo;t
+so impressive.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Even if lookups
+are faster by around 50%, DBI::SQL::Nano and SQL::Statement
+can benefit from the key field optimizations on updating and
+deleting rows &minus; and here the improved where clause
+evaluation of SQL::Statement might beat DBI::SQL::Nano every
+time the where clause contains not only the key field (or
+more than one).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Supported
+<small>SQL</small> syntax</b> <small><br>
+DBD::DBM</small> uses a subset of <small>SQL.</small> The
+robustness of that subset depends on what other modules you
+have installed. Both options support basic
+<small>SQL</small> operations including <small>CREATE TABLE,
+DROP TABLE, INSERT, DELETE, UPDATE,</small> and
+<small>SELECT.</small></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Option
+#1:</b> By default, this module inherits its
+<small>SQL</small> support from DBI::SQL::Nano that comes
+with <small>DBI.</small> Nano is, as its name implies, a
+*very* small <small>SQL</small> engine. Although limited in
+scope, it is faster than option #2 for some operations
+(especially single <i>primary key</i> lookups). See
+DBI::SQL::Nano for a description of the <small>SQL</small>
+it supports and comparisons of it with option #2.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Option
+#2:</b> If you install the pure Perl <small>CPAN</small>
+module SQL::Statement, <small>DBD::DBM</small> will use it
+instead of Nano. This adds support for table aliases,
+functions, joins, and much more. If you&rsquo;re going to
+use <small>DBD::DBM</small> for anything other than very
+simple tables and queries, you should install
+SQL::Statement. You don&rsquo;t have to change
+<small>DBD::DBM</small> or your scripts in any way, simply
+installing SQL::Statement will give you the more robust
+<small>SQL</small> capabilities without breaking scripts
+written for DBI::SQL::Nano. See SQL::Statement for a
+description of the <small>SQL</small> it supports.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To find out
+which <small>SQL</small> module is working in a given
+script, you can use the <i>dbm_versions()</i> method or, if
+you don&rsquo;t need the full output and version numbers,
+just do this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> print $dbh&minus;&gt;{sql_handler}, &quot;\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">That will print
+out either &quot;SQL::Statement&quot; or
+&quot;DBI::SQL::Nano&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Baring the
+section about optimized access to the <small>DBM</small>
+storage in mind, comparing the benefits of both engines:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  # DBI::SQL::Nano is faster
+  $sth = $dbh&minus;&gt;prepare( &quot;update foo set value='new' where key=15&quot; );
+  $sth&minus;&gt;execute();
+  $sth = $dbh&minus;&gt;prepare( &quot;delete from foo where key=27&quot; );
+  $sth&minus;&gt;execute();
+  $sth = $dbh&minus;&gt;prepare( &quot;select * from foo where key='abc'&quot; );
+  # SQL::Statement might faster (depending on DB size)
+  $sth = $dbh&minus;&gt;prepare( &quot;update foo set value='new' where key=?&quot; );
+  $sth&minus;&gt;execute(15);
+  $sth = $dbh&minus;&gt;prepare( &quot;update foo set value=? where key=15&quot; );
+  $sth&minus;&gt;execute('new');
+  $sth = $dbh&minus;&gt;prepare( &quot;delete from foo where key=?&quot; );
+  $sth&minus;&gt;execute(27);
+  # SQL::Statement is faster
+  $sth = $dbh&minus;&gt;prepare( &quot;update foo set value='new' where value='old'&quot; );
+  $sth&minus;&gt;execute();
+  # must be expressed using &quot;where key = 15 or key = 27 or key = 42 or key = 'abc'&quot;
+  # in DBI::SQL::Nano
+  $sth = $dbh&minus;&gt;prepare( &quot;delete from foo where key in (15,27,42,'abc')&quot; );
+  $sth&minus;&gt;execute();
+  # must be expressed using &quot;where key &gt; 10 and key &lt; 90&quot; in DBI::SQL::Nano
+  $sth = $dbh&minus;&gt;prepare( &quot;select * from foo where key between (10,90)&quot; );
+  $sth&minus;&gt;execute();
+  # only SQL::Statement can handle
+  $sth&minus;&gt;prepare( &quot;select * from foo,bar where foo.name = bar.name&quot; );
+  $sth&minus;&gt;execute();
+  $sth&minus;&gt;prepare( &quot;insert into foo values ( 1, 'foo' ), ( 2, 'bar' )&quot; );
+  $sth&minus;&gt;execute();</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Specifying
+Column Names</b> <small><br>
+DBM</small> files don&rsquo;t have a standard way to store
+column names. <small>DBD::DBM</small> gets around this issue
+with a <small>DBD::DBM</small> specific way of storing the
+column names. <b>If you are working only with
+<small>DBD::DBM</small> and not using files created by or
+accessed with other <small>DBM</small> programs, you can
+ignore this section.</b></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>DBD::DBM</small>
+stores column names as a row in the file with the key
+<i>_metadata \0</i>. So this code</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> my $dbh = DBI&minus;&gt;connect('dbi:DBM:');
+ $dbh&minus;&gt;do(&quot;CREATE TABLE baz (foo CHAR(10), bar INTEGER)&quot;);
+ $dbh&minus;&gt;do(&quot;INSERT INTO baz (foo,bar) VALUES ('zippy',1)&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Will create a
+file that has a structure something like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  _metadata \0 | &lt;dbd_metadata&gt;&lt;schema&gt;&lt;/schema&gt;&lt;col_names&gt;foo,bar&lt;/col_names&gt;&lt;/dbd_metadata&gt;
+  zippy        | 1</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The next time
+you access this table with <small>DBD::DBM,</small> it will
+treat the <i>_metadata \0</i> row as a header rather than as
+data and will pull the column names from there. However, if
+you access the file with something other than
+<small>DBD::DBM,</small> the row will be treated as a
+regular data row.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you do not
+want the column names stored as a data row in the table you
+can set the <i>dbm_store_metadata</i> attribute to 0.</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> my $dbh = DBI&minus;&gt;connect('dbi:DBM:', undef, undef, { dbm_store_metadata =&gt; 0 });
+ # or
+ $dbh&minus;&gt;{dbm_store_metadata} = 0;
+ # or for per&minus;table setting
+ $dbh&minus;&gt;{f_meta}&minus;&gt;{qux}&minus;&gt;{dbm_store_metadata} = 0;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">By default,
+<small>DBD::DBM</small> assumes that you have two columns
+named &quot;k&quot; and &quot;v&quot; (short for
+&quot;key&quot; and &quot;value&quot;). So if you have
+<i>dbm_store_metadata</i> set to 1 and you want to use
+alternate column names, you need to specify the column names
+like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> my $dbh = DBI&minus;&gt;connect('dbi:DBM:', undef, undef, {
+     dbm_store_metadata =&gt; 0,
+     dbm_cols =&gt; [ qw(foo bar) ],
+ });
+ # or
+ $dbh&minus;&gt;{dbm_store_metadata} = 0;
+ $dbh&minus;&gt;{dbm_cols}           = 'foo,bar';
+ # or to set the column names on per&minus;table basis, do this:
+ # sets the column names only for table &quot;qux&quot;
+ $dbh&minus;&gt;{f_meta}&minus;&gt;{qux}&minus;&gt;{dbm_store_metadata} = 0;
+ $dbh&minus;&gt;{f_meta}&minus;&gt;{qux}&minus;&gt;{col_names}          = [qw(foo bar)];</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you have a
+file that was created by another <small>DBM</small> program
+or created with <i>dbm_store_metadata</i> set to zero and
+you want to convert it to using <small>DBD::DBM</small>
+&rsquo;s column name storage, just use one of the methods
+above to name the columns but *without* specifying
+<i>dbm_store_metadata</i> as zero. You only have to do that
+once &minus; thereafter you can get by without setting
+either <i>dbm_store_metadata</i> or setting <i>dbm_cols</i>
+because the names will be stored in the file.</p>
+
+<h2>DBI database handle attributes
+<a name="DBI database handle attributes"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Metadata</b>
+<i><br>
+Statement handle ($sth) attributes and methods</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Most statement
+handle attributes such as <small>NAME,
+NUM_OF_FIELDS,</small> etc. are available only after an
+execute. The same is true of <tt>$sth</tt>&minus;&gt;rows
+which is available after the execute but does <i>not</i>
+require a fetch.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Driver
+handle ($dbh) attributes</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">It is not
+supported anymore to use dbm-attributes without the
+dbm_&minus;prefix. Currently, if an <small>DBD::DBM</small>
+private attribute is accessed without an underscore in
+it&rsquo;s name, dbm_ is prepended to that attribute and
+it&rsquo;s processed further. If the resulting attribute
+name is invalid, an error is thrown.</p>
+
+<p style="margin-left:11%; margin-top: 1em">dbm_cols</p>
+
+<p style="margin-left:11%; margin-top: 1em">Contains a
+comma separated list of column names or an array reference
+to the column names.</p>
+
+<p style="margin-left:11%; margin-top: 1em">dbm_type</p>
+
+<p style="margin-left:11%; margin-top: 1em">Contains the
+<small>DBM</small> storage type. Currently known supported
+type are <tt>&quot;ODBM_File&quot;</tt>,
+<tt>&quot;NDBM_File&quot;</tt>,
+<tt>&quot;SDBM_File&quot;</tt>,
+<tt>&quot;GDBM_File&quot;</tt>, <tt>&quot;DB_File&quot;</tt>
+and <tt>&quot;BerkeleyDB&quot;</tt>. It is not recommended
+to use one of the first three types &minus; even if
+<tt>&quot;SDBM_File&quot;</tt> is the most commonly
+available <i>dbm_type</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">dbm_mldbm</p>
+
+<p style="margin-left:11%; margin-top: 1em">Contains the
+serializer for <small>DBM</small> storage (value column).
+Requires the <small>CPAN</small> module <small>MLDBM</small>
+installed. Currently known supported serializers are: <br>
+Data::Dumper</p>
+
+<p style="margin-left:23%;">Default serializer. Deployed
+with Perl core.</p>
+
+<p style="margin-left:11%;">Storable</p>
+
+<p style="margin-left:23%;">Faster serializer. Deployed
+with Perl core.</p>
+
+<p style="margin-left:11%;">FreezeThaw</p>
+
+<p style="margin-left:23%;">Pure Perl serializer, requires
+FreezeThaw to be installed.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p><small>YAML</small></p></td>
+<td width="6%"></td>
+<td width="77%">
+
+
+<p>Portable serializer (between languages but not
+architectures). Requires <small>YAML::MLDBM</small>
+installation.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p><small>JSON</small></p></td>
+<td width="6%"></td>
+<td width="77%">
+
+
+<p>Portable, fast serializer (between languages but not
+architectures). Requires MLDBM::Serializer::JSON
+installation.</p> </td></tr>
+</table>
+
+
+<p style="margin-left:11%; margin-top: 1em">dbm_store_metadata</p>
+
+<p style="margin-left:11%; margin-top: 1em">Boolean value
+which determines if the metadata in <small>DBM</small> is
+stored or not.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">dbm_berkeley_flags</p>
+
+<p style="margin-left:11%; margin-top: 1em">Hash reference
+with additional flags for BerkeleyDB::Hash
+instantiation.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">dbm_version</p>
+
+<p style="margin-left:11%; margin-top: 1em">Readonly
+attribute containing the version of
+<small>DBD::DBM.</small></p>
+
+<p style="margin-left:11%; margin-top: 1em">f_meta</p>
+
+<p style="margin-left:11%; margin-top: 1em">In addition to
+the attributes DBD::File recognizes, <small>DBD::DBM</small>
+knows about the (public) attributes
+<tt>&quot;col_names&quot;</tt> (<b>Note</b> not
+<i>dbm_cols</i> here!), <tt>&quot;dbm_type&quot;</tt>,
+<tt>&quot;dbm_mldbm&quot;</tt>,
+<tt>&quot;dbm_store_metadata&quot;</tt> and
+<tt>&quot;dbm_berkeley_flags&quot;</tt>. As in DBD::File,
+there are undocumented, internal attributes in
+<small>DBD::DBM.</small> Be very careful when modifying
+attributes you do not know; the consequence might a
+destroyed or corrupted table.</p>
+
+<p style="margin-left:11%; margin-top: 1em">dbm_tables</p>
+
+<p style="margin-left:11%; margin-top: 1em">This attribute
+provides restricted access to the table meta data. See
+f_meta and &quot;f_meta&quot; in DBD::File for attribute
+details.</p>
+
+<p style="margin-left:11%; margin-top: 1em">dbm_tables is a
+tied hash providing the internal table names as keys
+(accessing unknown tables might create an entry) and their
+meta data as another tied hash. The table meta storage is
+obtained via the <tt>&quot;get_table_meta&quot;</tt> method
+from the table implementation (see DBD::File::Developers).
+Attribute setting and getting within the table meta data is
+handled via the methods
+<tt>&quot;set_table_meta_attr&quot;</tt> and
+<tt>&quot;get_table_meta_attr&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Following
+attributes are no longer handled by
+<small>DBD::DBM:</small></i></p>
+
+<p style="margin-left:11%; margin-top: 1em">dbm_ext</p>
+
+<p style="margin-left:11%; margin-top: 1em">This attribute
+is silently mapped to DBD::File&rsquo;s attribute
+<i>f_ext</i>. Later versions of <small>DBI</small> might
+show a depreciated warning when this attribute is used and
+eventually it will be removed.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">dbm_lockfile</p>
+
+<p style="margin-left:11%; margin-top: 1em">This attribute
+is silently mapped to DBD::File&rsquo;s attribute
+<i>f_lockfile</i>. Later versions of <small>DBI</small>
+might show a depreciated warning when this attribute is used
+and eventually it will be removed.</p>
+
+<h2>DBI database handle methods
+<a name="DBI database handle methods"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>The
+$dbh&minus;&gt;</b><i>dbm_versions()</i> <b>method</b> <br>
+The private method <i>dbm_versions()</i> returns a summary
+of what other modules are being used at any given time.
+<small>DBD::DBM</small> can work with or without many other
+modules &minus; it can use either SQL::Statement or
+DBI::SQL::Nano as its <small>SQL</small> engine, it can be
+run with <small>DBI</small> or DBI::PurePerl, it can use
+many kinds of <small>DBM</small> modules, and many kinds of
+serializers when run with <small>MLDBM.</small> The
+<i>dbm_versions()</i> method reports all of that and
+more.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  print $dbh&minus;&gt;dbm_versions;               # displays global settings
+  print $dbh&minus;&gt;dbm_versions($table_name);  # displays per table settings</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">An important
+thing to note about this method is that when it called with
+no arguments, it displays the *global* settings. If you
+override these by setting per-table attributes, these will
+<i>not</i> be shown unless you specify a table name as an
+argument to the method call.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Storing
+Objects</b> <br>
+If you are using <small>MLDBM,</small> you can use
+<small>DBD::DBM</small> to take advantage of its serializing
+abilities to serialize any Perl object that
+<small>MLDBM</small> can handle. To store objects in
+columns, you should (but don&rsquo;t absolutely need to)
+declare it as a column of type <small>BLOB</small> (the type
+is *currently* ignored by the <small>SQL</small> engine, but
+it&rsquo;s good form).</p>
+
+<h2>EXTENSIBILITY
+<a name="EXTENSIBILITY"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">&quot;SQL::Statement&quot;</p>
+
+<p style="margin-left:23%;">Improved <small>SQL</small>
+engine compared to the built-in DBI::SQL::Nano &minus; see
+&quot;Supported <small>SQL</small> syntax&quot;.</p>
+
+<p style="margin-left:11%;">&quot;DB_File&quot;</p>
+
+<p style="margin-left:23%;">Berkeley <small>DB</small>
+version 1. This database library is available on many
+systems without additional installation and most systems are
+supported.</p>
+
+<p style="margin-left:11%;">&quot;GDBM_File&quot;</p>
+
+<p style="margin-left:23%;">Simple dbm type (comparable to
+<tt>&quot;DB_File&quot;</tt>) under the <small>GNU</small>
+license. Typically not available (or requires extra
+installation) on non-GNU operating systems.</p>
+
+<p style="margin-left:11%;">&quot;BerkeleyDB&quot;</p>
+
+<p style="margin-left:23%;">Berkeley <small>DB</small>
+version up to v4 (and maybe higher) &minus; requires
+additional installation but is easier than GDBM_File on
+non-GNU systems.</p>
+
+<p style="margin-left:23%; margin-top: 1em">db4 comes with
+a many tools which allow repairing and migrating databases.
+This is the <b>recommended</b> dbm type for production
+use.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>&quot;MLDBM&quot;</p></td>
+<td width="1%"></td>
+<td width="77%">
+
+
+<p>Serializer wrapper to support more than one column for
+the files. Comes with serializers using
+<tt>&quot;Data::Dumper&quot;</tt>,
+<tt>&quot;FreezeThaw&quot;</tt> and
+<tt>&quot;Storable&quot;</tt>.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%;">&quot;YAML::MLDBM&quot;</p>
+
+<p style="margin-left:23%;">Additional serializer for
+<small>MLDBM. YAML</small> is very portable between
+languages.</p>
+
+
+<p style="margin-left:11%;">&quot;MLDBM::Serializer::JSON&quot;</p>
+
+<p style="margin-left:23%;">Additional serializer for
+<small>MLDBM. JSON</small> is very portable between
+languages, probably more than <small>YAML.</small></p>
+
+<h2>GOTCHAS AND WARNINGS
+<a name="GOTCHAS AND WARNINGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Using the
+<small>SQL DROP</small> command will remove any file that
+has the name specified in the command with either
+&rsquo;.pag&rsquo; and &rsquo;.dir&rsquo;, &rsquo;.db&rsquo;
+or your {f_ext} appended to it. So this be dangerous if you
+aren&rsquo;t sure what file it refers to:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> $dbh&minus;&gt;do(qq{DROP TABLE &quot;/path/to/any/file&quot;});</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Each
+<small>DBM</small> type has limitations. SDBM_File, for
+example, can only store values of less than 1,000
+characters. *You* as the script author must ensure that you
+don&rsquo;t exceed those bounds. If you try to insert a
+value that is larger than <small>DBM</small> can store, the
+results will be unpredictable. See the documentation for
+whatever <small>DBM</small> you are using for details.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Different
+<small>DBM</small> implementations return records in
+different orders. That means that you <i>should not</i> rely
+on the order of records unless you use an <small>ORDER
+BY</small> statement.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>DBM</small>
+data files are platform-specific. To move them from one
+platform to another, you&rsquo;ll need to do something along
+the lines of dumping your data to <small>CSV</small> on
+platform #1 and then dumping from <small>CSV</small> to
+<small>DBM</small> on platform #2. DBD::AnyData and
+<small>DBD::CSV</small> can help with that. There may also
+be <small>DBM</small> conversion tools for your platforms
+which would probably be quicker.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When using
+<small>MLDBM,</small> there is a very powerful serializer
+&minus; it will allow you to store Perl code or objects in
+database columns. When these get de-serialized, they may be
+eval&rsquo;ed &minus; in other words <small>MLDBM</small>
+(or actually Data::Dumper when used by <small>MLDBM</small>
+) may take the values and try to execute them in Perl.
+Obviously, this can present dangers, so if you do not know
+what is in a file, be careful before you access it with
+<small>MLDBM</small> turned on!</p>
+
+<p style="margin-left:11%; margin-top: 1em">See the entire
+section on &quot;Table locking and <i>flock()</i>&quot; for
+gotchas and warnings about the use of <i>flock()</i>.</p>
+
+<h2>BUGS AND LIMITATIONS
+<a name="BUGS AND LIMITATIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This module
+uses hash interfaces of two column file databases. While
+none of supported <small>SQL</small> engines have support
+for indices, the following statements really do the same
+(even if they mean something completely different) for each
+dbm type which lacks <tt>&quot;EXISTS&quot;</tt>
+support:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $sth&minus;&gt;do( &quot;insert into foo values (1, 'hello')&quot; );
+  # this statement does ...
+  $sth&minus;&gt;do( &quot;update foo set v='world' where k=1&quot; );
+  # ... the same as this statement
+  $sth&minus;&gt;do( &quot;insert into foo values (1, 'world')&quot; );</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is
+considered to be a bug and might change in a future
+release.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Known affected
+dbm types are <tt>&quot;ODBM_File&quot;</tt> and
+<tt>&quot;NDBM_File&quot;</tt>. We highly recommended you
+use a more modern dbm type such as
+<tt>&quot;DB_File&quot;</tt>.</p>
+
+<h2>GETTING HELP, MAKING SUGGESTIONS, AND REPORTING BUGS
+<a name="GETTING HELP, MAKING SUGGESTIONS, AND REPORTING BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you need
+help installing or using <small>DBD::DBM,</small> please
+write to the <small>DBI</small> users mailing list at
+dbi&minus;users@perl.org or to the comp.lang.perl.modules
+newsgroup on usenet. I cannot always answer every question
+quickly but there are many on the mailing list or in the
+newsgroup who can.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>DBD</small>
+developers for <small>DBD</small> &rsquo;s which rely on
+DBD::File or <small>DBD::DBM</small> or use one of them as
+an example are suggested to join the <small>DBI</small>
+developers mailing list at dbi&minus;dev@perl.org and
+strongly encouraged to join our <small>IRC</small> channel
+at &lt;irc://irc.perl.org/dbi&gt;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you have
+suggestions, ideas for improvements, or bugs to report,
+please report a bug as described in <small>DBI.</small> Do
+not mail any of the authors directly, you might not get an
+answer.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When reporting
+bugs, please send the output of
+<tt>$dbh</tt>&minus;&gt;dbm_versions($table) for a table
+that exhibits the bug and as small a sample as you can make
+of the code that produces the bug. And of course, patches
+are welcome, too :&minus;).</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you need
+enhancements quickly, you can get commercial support as
+described at &lt;http://dbi.perl.org/support/&gt; or you can
+contact Jens Rehsack at rehsack@cpan.org for commercial
+support in Germany.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Please
+don&rsquo;t bother Jochen Wiedmann or Jeff Zucker for
+support &minus; they handed over further maintenance to
+H.Merijn Brand and Jens Rehsack.</p>
+
+<h2>ACKNOWLEDGEMENTS
+<a name="ACKNOWLEDGEMENTS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Many, many
+thanks to Tim Bunce for prodding me to write this, and for
+copious, wise, and patient suggestions all along the way.
+(Jeff Zucker)</p>
+
+<p style="margin-left:11%; margin-top: 1em">I send my
+thanks and acknowledgements to H.Merijn Brand for his
+initial refactoring of DBD::File and his strong and ongoing
+support of SQL::Statement. Without him, the current progress
+would never have been made. And I have to name Martin J.
+Evans for each laugh (and correction) of all those funny
+word creations I (as non-native speaker) made to the
+documentation. And &minus; of course &minus; I have to thank
+all those unnamed contributors and testers from the Perl
+community. (Jens Rehsack)</p>
+
+<h2>AUTHOR AND COPYRIGHT
+<a name="AUTHOR AND COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This module is
+written by Jeff Zucker &lt; jzucker <small>AT</small>
+cpan.org &gt;, who also maintained it till 2007. After that,
+in 2010, Jens Rehsack &amp; H.Merijn Brand took over
+maintenance.</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> Copyright (c) 2004 by Jeff Zucker, all rights reserved.
+ Copyright (c) 2010&minus;2013 by Jens Rehsack &amp; H.Merijn Brand, all rights reserved.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You may freely
+distribute and/or modify this module under the terms of
+either the <small>GNU</small> General Public License (
+<small>GPL</small> ) or the Artistic License, as specified
+in the Perl <small>README</small> file.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>DBI</small>
+, SQL::Statement, DBI::SQL::Nano, AnyDBM_File, DB_File,
+BerkeleyDB, <small>MLDBM</small> ,
+<small>YAML::MLDBM</small> , MLDBM::Serializer::JSON</p>
+<hr>
+</body>
+</html>

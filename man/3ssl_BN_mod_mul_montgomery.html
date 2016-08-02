@@ -1,0 +1,195 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:31:11 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>BN_mod_mul_montgomery</title>
+
+</head>
+<body>
+
+<h1 align="center">BN_mod_mul_montgomery</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUES">RETURN VALUES</a><br>
+<a href="#WARNING">WARNING</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#HISTORY">HISTORY</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">BN_mod_mul_montgomery,
+BN_MONT_CTX_new, BN_MONT_CTX_init, BN_MONT_CTX_free,
+BN_MONT_CTX_set, BN_MONT_CTX_copy, BN_from_montgomery,
+BN_to_montgomery &minus; Montgomery multiplication</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> #include &lt;openssl/bn.h&gt;
+ BN_MONT_CTX *BN_MONT_CTX_new(void);
+ void BN_MONT_CTX_init(BN_MONT_CTX *ctx);
+ void BN_MONT_CTX_free(BN_MONT_CTX *mont);
+ int BN_MONT_CTX_set(BN_MONT_CTX *mont, const BIGNUM *m, BN_CTX *ctx);
+ BN_MONT_CTX *BN_MONT_CTX_copy(BN_MONT_CTX *to, BN_MONT_CTX *from);
+ int BN_mod_mul_montgomery(BIGNUM *r, BIGNUM *a, BIGNUM *b,
+         BN_MONT_CTX *mont, BN_CTX *ctx);
+ int BN_from_montgomery(BIGNUM *r, BIGNUM *a, BN_MONT_CTX *mont,
+         BN_CTX *ctx);
+ int BN_to_montgomery(BIGNUM *r, BIGNUM *a, BN_MONT_CTX *mont,
+         BN_CTX *ctx);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These functions
+implement Montgomery multiplication. They are used
+automatically when <i>BN_mod_exp</i>(3) is called with
+suitable input, but they may be useful when several
+operations are to be performed using the same modulus.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_MONT_CTX_new()</i>
+allocates and initializes a
+<b><small>BN_MONT_CTX</small></b> structure.
+<i>BN_MONT_CTX_init()</i> initializes an existing
+uninitialized <b><small>BN_MONT_CTX</small></b> .</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_MONT_CTX_set()</i>
+sets up the <i>mont</i> structure from the modulus <i>m</i>
+by precomputing its inverse and a value R.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_MONT_CTX_copy()</i>
+copies the <b><small>BN_MONT_CTX</small></b> <i>from</i> to
+<i>to</i>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_MONT_CTX_free()</i>
+frees the components of the
+<b><small>BN_MONT_CTX</small></b> , and, if it was created
+by <i>BN_MONT_CTX_new()</i>, also the structure itself.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_mod_mul_montgomery()</i>
+computes
+Mont(<i>a</i>,<i>b</i>):=<i>a</i>*<i>b</i>*R^&minus;1 and
+places the result in <i>r</i>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_from_montgomery()</i>
+performs the Montgomery reduction <i>r</i> =
+<i>a</i>*R^&minus;1.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_to_montgomery()</i>
+computes Mont(<i>a</i>,R^2), i.e. <i>a</i>*R. Note that
+<i>a</i> must be non-negative and smaller than the
+modulus.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For all
+functions, <i>ctx</i> is a previously allocated
+<b><small>BN_CTX</small></b> used for temporary
+variables.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b><small>BN_MONT_CTX</small></b> structure is defined as
+follows:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> typedef struct bn_mont_ctx_st
+        {
+        int ri;         /* number of bits in R */
+        BIGNUM RR;      /* R^2 (used to convert to Montgomery form) */
+        BIGNUM N;       /* The modulus */
+        BIGNUM Ni;      /* R*(1/R mod N) &minus; N*Ni = 1
+                         * (Ni is only stored for bignum algorithm) */
+        BN_ULONG n0;    /* least significant word of Ni */
+        int flags;
+        } BN_MONT_CTX;</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_to_montgomery()</i>
+is a macro.</p>
+
+<h2>RETURN VALUES
+<a name="RETURN VALUES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_MONT_CTX_new()</i>
+returns the newly allocated
+<b><small>BN_MONT_CTX</small></b> , and <small>NULL</small>
+on error.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_MONT_CTX_init()</i>
+and <i>BN_MONT_CTX_free()</i> have no return values.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For the other
+functions, 1 is returned for success, 0 on error. The error
+codes can be obtained by <i>ERR_get_error</i>(3).</p>
+
+<h2>WARNING
+<a name="WARNING"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The inputs must
+be reduced modulo <b>m</b>, otherwise the result will be
+outside the expected range.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>bn</i>(3),
+<i>ERR_get_error</i>(3), <i>BN_add</i>(3),
+<i>BN_CTX_new</i>(3)</p>
+
+<h2>HISTORY
+<a name="HISTORY"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_MONT_CTX_new()</i>,
+<i>BN_MONT_CTX_free()</i>, <i>BN_MONT_CTX_set()</i>,
+<i>BN_mod_mul_montgomery()</i>, <i>BN_from_montgomery()</i>
+and <i>BN_to_montgomery()</i> are available in all versions
+of SSLeay and OpenSSL.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_MONT_CTX_init()</i>
+and <i>BN_MONT_CTX_copy()</i> were added in SSLeay
+0.9.1b.</p>
+<hr>
+</body>
+</html>

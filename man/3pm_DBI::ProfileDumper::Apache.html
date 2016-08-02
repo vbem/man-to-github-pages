@@ -1,0 +1,277 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:32:15 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>DBI::ProfileDumper::Apache</title>
+
+</head>
+<body>
+
+<h1 align="center">DBI::ProfileDumper::Apache</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#USAGE">USAGE</a><br>
+<a href="#OTHER ISSUES">OTHER ISSUES</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#COPYRIGHT AND LICENSE">COPYRIGHT AND LICENSE</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">DBI::ProfileDumper::Apache
+&minus; capture DBI profiling data from Apache/mod_perl</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Add this line
+to your <i>httpd.conf</i>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  PerlSetEnv DBI_PROFILE 2/DBI::ProfileDumper::Apache</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">(If
+you&rsquo;re using mod_perl2, see &quot;When using
+mod_perl2&quot; for some additional notes.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Then restart
+your server. Access the code you wish to test using a web
+browser, then shutdown your server. This will create a set
+of <i>dbi.prof.*</i> files in your Apache log directory.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Get a profiling
+report with dbiprof:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  dbiprof /path/to/your/apache/logs/dbi.prof.*</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">When
+you&rsquo;re ready to perform another profiling run, delete
+the old files and start again.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This module
+interfaces DBI::ProfileDumper to Apache/mod_perl. Using this
+module you can collect profiling data from mod_perl
+applications. It works by creating a DBI::ProfileDumper data
+file for each Apache process. These files are created in
+your Apache log directory. You can then use the dbiprof
+utility to analyze the profile files.</p>
+
+<h2>USAGE
+<a name="USAGE"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>LOADING
+THE MODULE</small></b> <br>
+The easiest way to use this module is just to set the
+<small>DBI_PROFILE</small> environment variable in your
+<i>httpd.conf</i>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  PerlSetEnv DBI_PROFILE 2/DBI::ProfileDumper::Apache</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<small>DBI</small> will look after loading and using the
+module when the first <small>DBI</small> handle is
+created.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It&rsquo;s also
+possible to use this module by setting the Profile attribute
+of any <small>DBI</small> handle:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $dbh&minus;&gt;{Profile} = &quot;2/DBI::ProfileDumper::Apache&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">See
+DBI::ProfileDumper for more possibilities, and DBI::Profile
+for full details of the <small>DBI</small> &rsquo;s
+profiling mechanism.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>WRITING
+PROFILE DATA</small></b> <br>
+The profile data files will be written to your Apache log
+directory by default.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The user that
+the httpd processes run as will need write access to the
+directory. So, for example, if you&rsquo;re running the
+child httpds as user &rsquo;nobody&rsquo; and using
+chronolog to write to the logs directory, then you&rsquo;ll
+need to change the default.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can change
+the destination directory either by specifying a
+<tt>&quot;Dir&quot;</tt> value when creating the profile
+(like <tt>&quot;File&quot;</tt> in the DBI::ProfileDumper
+docs), or you can use the
+<tt>&quot;DBI_PROFILE_APACHE_LOG_DIR&quot;</tt> env var to
+change that. For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  PerlSetEnv DBI_PROFILE_APACHE_LOG_DIR /server_root/logs</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>When using
+mod_perl2</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Under mod_perl2
+you&rsquo;ll need to either set the
+<tt>&quot;DBI_PROFILE_APACHE_LOG_DIR&quot;</tt> env var, or
+enable the mod_perl2 <tt>&quot;GlobalRequest&quot;</tt>
+option, like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  PerlOptions +GlobalRequest</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">to the global
+config section you&rsquo;re about test with
+DBI::ProfileDumper::Apache. If you don&rsquo;t do one of
+those then you&rsquo;ll see messages in your error_log
+similar to:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  DBI::ProfileDumper::Apache on_destroy failed: Global $r object is not available. Set:
+    PerlOptions +GlobalRequest in httpd.conf at ..../DBI/ProfileDumper/Apache.pm line 144</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>Naming the
+files</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">The default
+file name is inherited from DBI::ProfileDumper via the
+<i>filename()</i> method, but DBI::ProfileDumper::Apache
+appends the parent pid and the current pid, separated by
+dots, to that name.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Silencing
+the log</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">By default a
+message is written to <small>STDERR</small> (i.e., the
+apache error_log file) when <i>flush_to_disk()</i> is called
+(either explicitly, or implicitly via <small>DESTROY</small>
+).</p>
+
+<p style="margin-left:11%; margin-top: 1em">That&rsquo;s
+usually very useful. If you don&rsquo;t want the log message
+you can silence it by setting the <tt>&quot;Quiet&quot;</tt>
+attribute true.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  PerlSetEnv DBI_PROFILE 2/DBI::ProfileDumper::Apache/Quiet:1
+  $dbh&minus;&gt;{Profile} = &quot;!Statement/DBI::ProfileDumper/Quiet:1&quot;;
+  $dbh&minus;&gt;{Profile} = DBI::ProfileDumper&minus;&gt;new(
+      Path =&gt; [ '!Statement' ]
+      Quiet =&gt; 1
+  );</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>GATHERING
+PROFILE DATA</small></b> <br>
+Once you have the module loaded, use your application as you
+normally would. Stop the webserver when your tests are
+complete. Profile data files will be produced when Apache
+exits and you&rsquo;ll see something like this in your
+error_log:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  DBI::ProfileDumper::Apache writing to /usr/local/apache/logs/dbi.prof.2604.2619</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Now you can use
+dbiprof to examine the data:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  dbiprof /usr/local/apache/logs/dbi.prof.2604.*</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">By passing
+dbiprof a list of all generated files, dbiprof will
+automatically merge them into one result set. You can also
+pass dbiprof sorting and querying options, see dbiprof for
+details.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>CLEANING
+UP</small></b> <br>
+Once you&rsquo;ve made some code changes, you&rsquo;re ready
+to start again. First, delete the old profile data
+files:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  rm /usr/local/apache/logs/dbi.prof.*</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Then restart
+your server and get back to work.</p>
+
+<h2>OTHER ISSUES
+<a name="OTHER ISSUES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Memory
+usage</b> <br>
+DBI::Profile can use a lot of memory for very active
+applications because it collects profiling data in memory
+for each distinct query run. Calling
+<tt>&quot;flush_to_disk()&quot;</tt> will write the current
+data to disk and free the memory it&rsquo;s using. For
+example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $dbh&minus;&gt;{Profile}&minus;&gt;flush_to_disk() if $dbh&minus;&gt;{Profile};</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">or, rather than
+flush every time, you could flush less often:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $dbh&minus;&gt;{Profile}&minus;&gt;flush_to_disk()
+    if $dbh&minus;&gt;{Profile} and ++$i % 100;</pre>
+
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Sam Tregar
+&lt;sam@tregar.com&gt;</p>
+
+<h2>COPYRIGHT AND LICENSE
+<a name="COPYRIGHT AND LICENSE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (C)
+2002 Sam Tregar</p>
+
+<p style="margin-left:11%; margin-top: 1em">This program is
+free software; you can redistribute it and/or modify it
+under the same terms as Perl 5 itself.</p>
+<hr>
+</body>
+</html>

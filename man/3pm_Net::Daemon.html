@@ -1,0 +1,703 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:36:14 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Net::Daemon</title>
+
+</head>
+<body>
+
+<h1 align="center">Net::Daemon</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#MULTITHREADING CONSIDERATIONS">MULTITHREADING CONSIDERATIONS</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#KNOWN PROBLEMS">KNOWN PROBLEMS</a><br>
+<a href="#AUTHOR AND COPYRIGHT">AUTHOR AND COPYRIGHT</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Net::Daemon
+&minus; Perl extension for portable daemons</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  # Create a subclass of Net::Daemon
+  require Net::Daemon;
+  package MyDaemon;
+  @MyDaemon::ISA = qw(Net::Daemon);
+  sub Run ($) {
+    # This function does the real work; it is invoked whenever a
+    # new connection is made.
+  }</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Net::Daemon is
+an abstract base class for implementing portable server
+applications in a very simple way. The module is designed
+for Perl 5.005 and threads, but can work with <i>fork()</i>
+and Perl 5.004.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The Net::Daemon
+class offers methods for the most common tasks a daemon
+needs: Starting up, logging, accepting clients,
+authorization, restricting its own environment for security
+and doing the true work. You only have to override those
+methods that aren&rsquo;t appropriate for you, but typically
+inheriting will safe you a lot of work anyways.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Constructors</b></p>
+
+
+<pre style="margin-left:11%;">  $server = Net::Daemon&minus;&gt;new($attr, $options);
+  $connection = $server&minus;&gt;Clone($socket);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Two
+constructors are available: The <b>new</b> method is called
+upon startup and creates an object that will basically act
+as an anchor over the complete program. It supports command
+line parsing via Getopt::Long (3).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Arguments of
+<b>new</b> are <i>$attr</i>, an hash ref of attributes (see
+below) and <i>$options</i> an array ref of options,
+typically command line arguments (for example <b>\@ARGV</b>)
+that will be passed to <b>Getopt::Long::GetOptions</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The second
+constructor is <b>Clone</b>: It is called whenever a client
+connects. It receives the main server object as input and
+returns a new object. This new object will be passed to the
+methods that finally do the true work of communicating with
+the client. Communication occurs over the socket
+<b>$socket</b>, <b>Clone</b>&rsquo;s argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Possible object
+attributes and the corresponding command line arguments are:
+<i><br>
+catchint</i> (<b>&minus;&minus;nocatchint</b>)</p>
+
+<p style="margin-left:17%;">On some systems, in particular
+Solaris, the functions <i>accept()</i>, <i>read()</i> and so
+on are not safe against interrupts by signals. For example,
+if the user raises a <small>USR1</small> signal (as
+typically used to reread config files), then the function
+returns an error <small>EINTR.</small> If the
+<i>catchint</i> option is on (by default it is, use
+<b>&minus;&minus;nocatchint</b> to turn this off), then the
+package will ignore <small>EINTR</small> errors whereever
+possible.</p>
+
+<p style="margin-left:11%;"><i>chroot</i>
+(<b>&minus;&minus;chroot=dir</b>)</p>
+
+<p style="margin-left:17%;">( <small>UNIX</small> only)
+After doing a <i>bind()</i>, change root directory to the
+given directory by doing a <i>chroot()</i>. This is usefull
+for security operations, but it restricts programming a lot.
+For example, you typically have to load external Perl
+extensions before doing a <i>chroot()</i>, or you need to
+create hard links to Unix sockets. This is typically done in
+the config file, see the &minus;&minus;configfile option.
+See also the &minus;&minus;group and &minus;&minus;user
+options.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If you
+don&rsquo;t know <i>chroot()</i>, think of an
+<small>FTP</small> server where you can see a certain
+directory tree only after logging in.</p>
+
+<p style="margin-left:11%;"><i>clients</i></p>
+
+<p style="margin-left:17%;">An array ref with a list of
+clients. Clients are hash refs, the attributes <i>accept</i>
+(0 for denying access and 1 for permitting) and <i>mask</i>,
+a Perl regular expression for the clients <small>IP</small>
+number or its host name. See &quot;Access control&quot;
+below.</p>
+
+<p style="margin-left:11%;"><i>configfile</i>
+(<b>&minus;&minus;configfile=file</b>)</p>
+
+<p style="margin-left:17%;">Net::Daemon supports the use of
+config files. These files are assumed to contain a single
+hash ref that overrides the arguments of the new method.
+However, command line arguments in turn take precedence over
+the config file. See the &quot;Config File&quot; section
+below for details on the config file.</p>
+
+<p style="margin-left:11%;"><i>debug</i>
+(<b>&minus;&minus;debug</b>)</p>
+
+<p style="margin-left:17%;">Turn debugging mode on. Mainly
+this asserts that logging messages of level
+&quot;debug&quot; are created.</p>
+
+<p style="margin-left:11%;"><i>facility</i>
+(<b>&minus;&minus;facility=mode</b>)</p>
+
+<p style="margin-left:17%;">( <small>UNIX</small> only)
+Facility to use for Sys::Syslog (3). The default is
+<b>daemon</b>.</p>
+
+<p style="margin-left:11%;"><i>group</i>
+(<b>&minus;&minus;group=gid</b>)</p>
+
+<p style="margin-left:17%;">After doing a <i>bind()</i>,
+change the real and effective <small>GID</small> to the
+given. This is usefull, if you want your server to bind to a
+privileged port (&lt;1024), but don&rsquo;t want the server
+to execute as root. See also the &minus;&minus;user
+option.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><small>GID</small>
+&rsquo;s can be passed as group names or numeric values.</p>
+
+<p style="margin-left:11%;"><i>localaddr</i>
+(<b>&minus;&minus;localaddr=ip</b>)</p>
+
+<p style="margin-left:17%;">By default a daemon is
+listening to any <small>IP</small> number that a machine
+has. This attribute allows to restrict the server to the
+given <small>IP</small> number.</p>
+
+<p style="margin-left:11%;"><i>localpath</i>
+(<b>&minus;&minus;localpath=path</b>)</p>
+
+<p style="margin-left:17%;">If you want to restrict your
+server to local services only, you&rsquo;ll prefer using
+Unix sockets, if available. In that case you can use this
+option for setting the path of the Unix socket being
+created. This option implies
+<b>&minus;&minus;proto=unix</b>.</p>
+
+<p style="margin-left:11%;"><i>localport</i>
+(<b>&minus;&minus;localport=port</b>)</p>
+
+<p style="margin-left:17%;">This attribute sets the port on
+which the daemon is listening. It must be given somehow, as
+there&rsquo;s no default.</p>
+
+<p style="margin-left:11%;"><i>logfile</i>
+(<b>&minus;&minus;logfile=file</b>)</p>
+
+<p style="margin-left:17%;">By default logging messages
+will be written to the syslog (Unix) or to the event log
+(Windows <small>NT</small> ). On other operating systems you
+need to specify a log file. The special value &quot;
+<small>STDERR&quot;</small> forces logging to stderr.</p>
+
+<p style="margin-left:11%;"><i>loop-child</i>
+(<b>&minus;&minus;loop&minus;child</b>)</p>
+
+<p style="margin-left:17%;">This option forces creation of
+a new child for loops. (See the <i>loop-timeout</i> option.)
+By default the loops are serialized.</p>
+
+<p style="margin-left:11%;"><i>loop-timeout</i>
+(<b>&minus;&minus;loop&minus;timeout=secs</b>)</p>
+
+<p style="margin-left:17%;">Some servers need to take an
+action from time to time. For example the
+Net::Daemon::Spooler attempts to empty its spooling queue
+every 5 minutes. If this option is set to a positive value
+(zero being the default), then the server will call its Loop
+method every &quot;loop-timeout&quot; seconds.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Don&rsquo;t
+trust too much on the precision of the interval: It depends
+on a number of factors, in particular the execution time of
+the <i>Loop()</i> method. The loop is implemented by using
+the <i>select</i> function. If you need an exact interval,
+you should better try to use the <i>alarm()</i> function and
+a signal handler. (And don&rsquo;t forget to look at the
+<i>catchint</i> option!)</p>
+
+<p style="margin-left:17%; margin-top: 1em">It is
+recommended to use the <i>loop-child</i> option in
+conjunction with <i>loop-timeout</i>.</p>
+
+<p style="margin-left:11%;"><i>mode</i>
+(<b>&minus;&minus;mode=modename</b>)</p>
+
+<p style="margin-left:17%;">The Net::Daemon server can run
+in three different modes, depending on the environment.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If you are
+running Perl 5.005 and did compile it for threads, then the
+server will create a new thread for each connection. The
+thread will execute the server&rsquo;s <i>Run()</i> method
+and then terminate. This mode is the default, you can force
+it with &quot;&minus;&minus;mode=ithreads&quot; or
+&quot;&minus;&minus;mode=threads&quot;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If threads are
+not available, but you have a working <i>fork()</i>, then
+the server will behave similar by creating a new process for
+each connection. This mode will be used automatically in the
+absence of threads or if you use the
+&quot;&minus;&minus;mode=fork&quot; option.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Finally
+there&rsquo;s a single-connection mode: If the server has
+accepted a connection, he will enter the <i>Run()</i>
+method. No other connections are accepted until the
+<i>Run()</i> method returns. This operation mode is useful
+if you have neither threads nor <i>fork()</i>, for example
+on the Macintosh. For debugging purposes you can force this
+mode with &quot;&minus;&minus;mode=single&quot;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">When running in
+mode single, you can still handle multiple clients at a time
+by preforking multiple child processes. The number of childs
+is configured with the option
+&quot;&minus;&minus;childs&quot;.</p>
+
+<p style="margin-left:11%;"><i>childs</i></p>
+
+<p style="margin-left:17%;">Use this parameter to let
+Net::Daemon run in prefork mode, which means it forks the
+number of childs processes you give with this parameter, and
+all child handle connections concurrently. The difference to
+fork mode is, that the child processes continue to run after
+a connection has terminated and are able to accept a new
+connection. This is useful for caching inside the childs
+process (e.g. DBI::ProxyServer connect_cached attribute)</p>
+
+<p style="margin-left:11%;"><i>options</i></p>
+
+<p style="margin-left:17%;">Array ref of Command line
+options that have been passed to the server object via the
+<b>new</b> method.</p>
+
+<p style="margin-left:11%;"><i>parent</i></p>
+
+<p style="margin-left:17%;">When creating an object with
+<b>Clone</b> the original object becomes the parent of the
+new object. Objects created with <b>new</b> usually
+don&rsquo;t have a parent, thus this attribute is not
+set.</p>
+
+<p style="margin-left:11%;"><i>pidfile</i>
+(<b>&minus;&minus;pidfile=file</b>)</p>
+
+<p style="margin-left:17%;">( <small>UNIX</small> only) If
+this option is present, a <small>PID</small> file will be
+created at the given location.</p>
+
+<p style="margin-left:11%;"><i>proto</i>
+(<b>&minus;&minus;proto=proto</b>)</p>
+
+<p style="margin-left:17%;">The transport layer to use, by
+default <i>tcp</i> or <i>unix</i> for a Unix socket. It is
+not yet possible to combine both.</p>
+
+<p style="margin-left:11%;"><i>socket</i></p>
+
+<p style="margin-left:17%;">The socket that is connected to
+the client; passed as <b>$client</b> argument to the
+<b>Clone</b> method. If the server object was created with
+<b>new</b>, this attribute can be undef, as long as the
+<b>Bind</b> method isn&rsquo;t called. Sockets are assumed
+to be IO::Socket objects.</p>
+
+<p style="margin-left:11%;"><i>user</i>
+(<b>&minus;&minus;user=uid</b>)</p>
+
+<p style="margin-left:17%;">After doing a <i>bind()</i>,
+change the real and effective <small>UID</small> to the
+given. This is usefull, if you want your server to bind to a
+privileged port (&lt;1024), but don&rsquo;t want the server
+to execute as root. See also the &minus;&minus;group and the
+&minus;&minus;chroot options.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><small>UID</small>
+&rsquo;s can be passed as group names or numeric values.</p>
+
+<p style="margin-left:11%;"><i>version</i>
+(<b>&minus;&minus;version</b>)</p>
+
+<p style="margin-left:17%;">Supresses startup of the
+server; instead the version string will be printed and the
+program exits immediately.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that most
+of these attributes (facility, mode, localaddr, localport,
+pidfile, version) are meaningfull only at startup. If you
+set them later, they will be simply ignored. As almost all
+attributes have appropriate defaults, you will typically use
+the <b>localport</b> attribute only.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Command Line
+Parsing</b></p>
+
+<pre style="margin-left:11%;">  my $optionsAvailable = Net::Daemon&minus;&gt;Options();
+  print Net::Daemon&minus;&gt;Version(), &quot;\n&quot;;
+  Net::Daemon&minus;&gt;Usage();</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>Options</b> method returns a hash ref of possible command
+line options. The keys are option names, the values are
+again hash refs with the following keys: <br>
+template</p>
+
+<p style="margin-left:17%;">An option template that can be
+passed to <b>Getopt::Long::GetOptions</b>.</p>
+
+<p style="margin-left:11%;">description</p>
+
+<p style="margin-left:17%;">A description of this option,
+as used in <b>Usage</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>Usage</b> method prints a list of all possible options
+and returns. It uses the <b>Version</b> method for printing
+program name and version.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Config
+File</b> <br>
+If the config file option is set in the command line options
+or in the in the &quot;new&quot; args, then the method</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $server&minus;&gt;ReadConfigFile($file, $options, $args)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">is invoked. By
+default the config file is expected to contain Perl source
+that returns a hash ref of options. These options override
+the &quot;new&quot; args and will in turn be overwritten by
+the command line options, as present in the
+<tt>$options</tt> hash ref.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A typical
+config file might look as follows, we use the
+DBI::ProxyServer as an example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    # Load external modules; this is not required unless you use
+    # the chroot() option.
+    #require DBD::mysql;
+    #require DBD::CSV;
+    {
+        # 'chroot' =&gt; '/var/dbiproxy',
+        'facility' =&gt; 'daemon',
+        'pidfile' =&gt; '/var/dbiproxy/dbiproxy.pid',
+        'user' =&gt; 'nobody',
+        'group' =&gt; 'nobody',
+        'localport' =&gt; '1003',
+        'mode' =&gt; 'fork'
+        # Access control
+        'clients' =&gt; [
+            # Accept the local
+            {
+                'mask' =&gt; '^192\.168\.1\.\d+$',
+                'accept' =&gt; 1
+            },
+            # Accept myhost.company.com
+            {
+                'mask' =&gt; '^myhost\.company\.com$',
+                'accept' =&gt; 1
+            }
+            # Deny everything else
+            {
+                'mask' =&gt; '.*',
+                'accept' =&gt; 0
+            }
+        ]
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Access
+control</b> <br>
+The Net::Daemon package supports a host based access control
+scheme. By default access is open for anyone. However, if
+you create an attribute
+<tt>$self</tt>&minus;&gt;{&rsquo;clients&rsquo;}, typically
+in the config file, then access control is disabled by
+default. For any connection the client list is processed:
+The clients attribute is an array ref to a list of hash
+refs. Any of the hash refs may contain arbitrary attributes,
+including the following:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>mask</p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>A Perl regular expression that has to match the clients
+<small>IP</small> number or its host name. The list is
+processed from the left to the right, whenever a
+&rsquo;mask&rsquo; attribute matches, then the related hash
+ref is choosen as client and processing the client list
+stops.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>accept</p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>This may be set to true or false (default when omitting
+the attribute), the former means accepting the client.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Event
+logging</b></p>
+
+<pre style="margin-left:11%;">  $server&minus;&gt;Log($level, $format, @args);
+  $server&minus;&gt;Debug($format, @args);
+  $server&minus;&gt;Error($format, @args);
+  $server&minus;&gt;Fatal($format, @args);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The <b>Log</b>
+method is an interface to Sys::Syslog (3) or Win32::EventLog
+(3). It&rsquo;s arguments are <i>$level</i>, a syslog level
+like <b>debug</b>, <b>notice</b> or <b>err</b>, a format
+string in the style of printf and the format strings
+arguments.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>Debug</b> and <b>Error</b> methods are shorthands for
+calling <b>Log</b> with a level of debug and err,
+respectively. The <b>Fatal</b> method is like <b>Error</b>,
+except it additionally throws the given message as
+exception.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See
+<i>Net::Daemon::Log</i>(3) for details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Flow of
+control</b></p>
+
+<pre style="margin-left:11%;">  $server&minus;&gt;Bind();
+  # The following inside Bind():
+  if ($connection&minus;&gt;Accept()) {
+      $connection&minus;&gt;Run();
+  } else {
+      $connection&minus;&gt;Log('err', 'Connection refused');
+  }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The <b>Bind</b>
+method is called by the application when the server should
+start. Typically this can be done right after creating the
+server object <b>$server</b>. <b>Bind</b> usually never
+returns, except in case of errors.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When a client
+connects, the server uses <b>Clone</b> to derive a
+connection object <b>$connection</b> from the server object.
+A new thread or process is created that uses the connection
+object to call your classes <b>Accept</b> method. This
+method is intended for host authorization and should return
+either <small>FALSE</small> (refuse the client) or
+<small>TRUE</small> (accept the client).</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the client
+is accepted, the <b>Run</b> method is called which does the
+true work. The connection is closed when <b>Run</b> returns
+and the corresponding thread or process exits.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Error
+Handling</b> <br>
+All methods are supposed to throw Perl exceptions in case of
+errors.</p>
+
+<h2>MULTITHREADING CONSIDERATIONS
+<a name="MULTITHREADING CONSIDERATIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">All methods are
+working with lexically scoped data and handle data only, the
+exception being the OpenLog method which is invoked before
+threading starts. Thus you are safe as long as you
+don&rsquo;t share handles between threads. I strongly
+recommend that your application behaves similar. (This
+doesn&rsquo;t apply to mode &rsquo;ithreads&rsquo;.)</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">As an example
+we&rsquo;ll write a simple calculator server. After
+connecting to this server you may type expressions, one per
+line. The server evaluates the expressions and prints the
+result. (Note this is an example, in real life we&rsquo;d
+never implement such a security hole. :&minus;)</p>
+
+<p style="margin-left:11%; margin-top: 1em">For the purpose
+of example we add a command line option
+<i>&minus;&minus;base</i> that takes &rsquo;hex&rsquo;,
+&rsquo;oct&rsquo; or &rsquo;dec&rsquo; as values: The
+servers output will use the given base.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  # &minus;*&minus; perl &minus;*&minus;
+  #
+  # Calculator server
+  #
+  require 5.004;
+  use strict;
+  require Net::Daemon;
+  package Calculator;
+  use vars qw($VERSION @ISA);
+  $VERSION = '0.01';
+  @ISA = qw(Net::Daemon); # to inherit from Net::Daemon
+  sub Version ($) { 'Calculator Example Server, 0.01'; }
+  # Add a command line option &quot;&minus;&minus;base&quot;
+  sub Options ($) {
+      my($self) = @_;
+      my($options) = $self&minus;&gt;SUPER::Options();
+      $options&minus;&gt;{'base'} = { 'template' =&gt; 'base=s',
+                             'description' =&gt; '&minus;&minus;base                  '
+                                    . 'dec (default), hex or oct'
+                              };
+      $options;
+  }
+  # Treat command line option in the constructor
+  sub new ($$;$) {
+      my($class, $attr, $args) = @_;
+      my($self) = $class&minus;&gt;SUPER::new($attr, $args);
+      if ($self&minus;&gt;{'parent'}) {
+          # Called via Clone()
+          $self&minus;&gt;{'base'} = $self&minus;&gt;{'parent'}&minus;&gt;{'base'};
+      } else {
+          # Initial call
+          if ($self&minus;&gt;{'options'}  &amp;&amp;  $self&minus;&gt;{'options'}&minus;&gt;{'base'}) {
+              $self&minus;&gt;{'base'} = $self&minus;&gt;{'options'}&minus;&gt;{'base'}
+          }
+      }
+      if (!$self&minus;&gt;{'base'}) {
+          $self&minus;&gt;{'base'} = 'dec';
+      }
+      $self;
+  }
+  sub Run ($) {
+      my($self) = @_;
+      my($line, $sock);
+      $sock = $self&minus;&gt;{'socket'};
+      while (1) {
+          if (!defined($line = $sock&minus;&gt;getline())) {
+              if ($sock&minus;&gt;error()) {
+                  $self&minus;&gt;Error(&quot;Client connection error %s&quot;,
+                               $sock&minus;&gt;error());
+              }
+              $sock&minus;&gt;close();
+              return;
+          }
+          $line =~ s/\s+$//; # Remove CRLF
+          my($result) = eval $line;
+          my($rc);
+          if ($self&minus;&gt;{'base'} eq 'hex') {
+              $rc = printf $sock (&quot;%x\n&quot;, $result);
+          } elsif ($self&minus;&gt;{'base'} eq 'oct') {
+              $rc = printf $sock (&quot;%o\n&quot;, $result);
+          } else {
+              $rc = printf $sock (&quot;%d\n&quot;, $result);
+          }
+          if (!$rc) {
+              $self&minus;&gt;Error(&quot;Client connection error %s&quot;,
+                           $sock&minus;&gt;error());
+              $sock&minus;&gt;close();
+              return;
+          }
+      }
+  }
+  package main;
+  my $server = Calculator&minus;&gt;new({'pidfile' =&gt; 'none',
+                                'localport' =&gt; 2000}, \@ARGV);
+  $server&minus;&gt;Bind();</pre>
+
+
+<h2>KNOWN PROBLEMS
+<a name="KNOWN PROBLEMS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Most, or even
+any, known problems are related to the Sys::Syslog module
+which is by default used for logging events under Unix.
+I&rsquo;ll quote some examples: <br>
+Usage: Sys::Syslog::_PATH_LOG at ...</p>
+
+<p style="margin-left:17%;">This problem is treated in perl
+bug 20000712.003. A workaround is changing line 277 of
+Syslog.pm to</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  my $syslog = &amp;_PATH_LOG() || croak &quot;_PATH_LOG not found in syslog.ph&quot;;</pre>
+
+
+<h2>AUTHOR AND COPYRIGHT
+<a name="AUTHOR AND COPYRIGHT"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  Net::Daemon is Copyright (C) 1998, Jochen Wiedmann
+                                     Am Eisteich 9
+                                     72555 Metzingen
+                                     Germany
+                                     Phone: +49 7123 14887
+                                     Email: joe@ispsoft.de
+  All rights reserved.
+  You may distribute this package under the terms of either the GNU
+  General Public License or the Artistic License, as specified in the
+  Perl README file.</pre>
+
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>RPC::pServer</i>(3),
+<i>Netserver::Generic</i>(3), <i>Net::Daemon::Log</i>(3),
+<i>Net::Daemon::Test</i>(3)</p>
+<hr>
+</body>
+</html>

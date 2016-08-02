@@ -1,0 +1,842 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:40:23 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SYSTEMD&minus;NSPAWN</title>
+
+</head>
+<body>
+
+<h1 align="center">SYSTEMD&minus;NSPAWN</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
+<a href="#EXIT STATUS">EXIT STATUS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#NOTES">NOTES</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">systemd-nspawn
+&minus; Spawn a namespace container for debugging, testing
+and building</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="72%">
+
+
+<p style="margin-top: 1em"><b>systemd&minus;nspawn</b>
+[OPTIONS...] [<i>COMMAND&nbsp;</i>[ARGS...]]</p></td>
+<td width="17%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="72%">
+
+
+<p style="margin-top: 1em"><b>systemd&minus;nspawn</b>
+&minus;b [OPTIONS...] [ARGS...]</p></td>
+<td width="17%">
+</td></tr>
+</table>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>systemd&minus;nspawn</b>
+may be used to run a command or OS in a light&minus;weight
+namespace container. In many ways it is similar to
+<b>chroot</b>(1), but more powerful since it fully
+virtualizes the file system hierarchy, as well as the
+process tree, the various IPC subsystems and the host and
+domain name.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>systemd&minus;nspawn</b>
+limits access to various kernel interfaces in the container
+to read&minus;only, such as /sys, /proc/sys or
+/sys/fs/selinux. Network interfaces and the system clock may
+not be changed from within the container. Device nodes may
+not be created. The host system cannot be rebooted and
+kernel modules may not be loaded from within the
+container.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that even
+though these security precautions are taken
+<b>systemd&minus;nspawn</b> is not suitable for secure
+container setups. Many of the security features may be
+circumvented and are hence primarily useful to avoid
+accidental changes to the host system from the container.
+The intended use of this program is debugging and testing as
+well as building of packages, distributions and software
+involved with boot and systems management.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In contrast to
+<b>chroot</b>(1)&nbsp;<b>systemd&minus;nspawn</b> may be
+used to boot full Linux&minus;based operating systems in a
+container.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Use a tool like
+<b>yum</b>(8), <b>debootstrap</b>(8), or <b>pacman</b>(8) to
+set up an OS directory tree suitable as file system
+hierarchy for <b>systemd&minus;nspawn</b> containers.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+<b>systemd&minus;nspawn</b> will mount file systems private
+to the container to /dev, /run and similar. These will not
+be visible outside of the container, and their contents will
+be lost when the container exits.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+running two <b>systemd&minus;nspawn</b> containers from the
+same directory tree will not make processes in them see each
+other. The PID namespace separation of the two containers is
+complete and the containers will share very few runtime
+objects except for the underlying file system. Use
+<b>machinectl</b>(1)'s <b>login</b> command to request an
+additional login prompt in a running container.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>systemd&minus;nspawn</b>
+implements the <b><font color="#0000FF">Container
+Interface</font></b>
+<small><font color="#000000">[1]</font></small>
+<font color="#000000">specification.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">As
+a safety check <b>systemd&minus;nspawn</b> will verify the
+existence of /usr/lib/os&minus;release or
+/etc/os&minus;release in the container tree before starting
+the container (see <b>os-release</b>(5)). It might be
+necessary to add this file to the container tree manually if
+the OS of the container is too old to contain this file
+out&minus;of&minus;the&minus;box.</font></p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">If
+option <b>&minus;b</b> is specified, the arguments are used
+as arguments for the init binary. Otherwise, <i>COMMAND</i>
+specifies the program to launch in the container, and the
+remaining arguments are used as arguments for this program.
+If <b>&minus;b</b> is not used and no arguments are
+specifed, a shell is launched in the container.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+following options are understood:</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;D</b>,
+<b>&minus;&minus;directory=</b></font></p>
+
+
+<p style="margin-left:17%;"><font color="#000000">Directory
+to use as file system root for the container.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">If
+neither <b>&minus;&minus;directory=</b>, nor
+<b>&minus;&minus;image=</b> is specified the directory is
+determined as /var/lib/machines/ suffixed by the machine
+name as specified with <b>&minus;&minus;machine=</b>. If
+neither <b>&minus;&minus;directory=</b>,
+<b>&minus;&minus;image=</b>, nor
+<b>&minus;&minus;machine=</b> are specified, the current
+directory will be used. May not be specified together with
+<b>&minus;&minus;image=</b>.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;template=</b></font></p>
+
+
+<p style="margin-left:17%;"><font color="#000000">Directory
+or &quot;btrfs&quot; subvolume to use as template for the
+container's root directory. If this is specified and the
+container's root directory (as configured by
+<b>&minus;&minus;directory=</b>) does not yet exist it is
+created as &quot;btrfs&quot; subvolume and populated from
+this template tree. Ideally, the specified template path
+refers to the root of a &quot;btrfs&quot; subvolume, in
+which case a simple copy&minus;on&minus;write snapshot is
+taken, and populating the root directory is instant. If the
+specified template path does not refer to the root of a
+&quot;btrfs&quot; subvolume (or not even to a
+&quot;btrfs&quot; file system at all), the tree is copied,
+which can be substantially more time&minus;consuming. Note
+that if this option is used the container's root directory
+(in contrast to the template directory!) must be located on
+a &quot;btrfs&quot; file system, so that the
+&quot;btrfs&quot; subvolume may be created. May not be
+specified together with <b>&minus;&minus;image=</b> or
+<b>&minus;&minus;ephemeral</b>.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;x</b>,
+<b>&minus;&minus;ephemeral</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">If
+specified, the container is run with a temporary
+&quot;btrfs&quot; snapshot of its root directory (as
+configured with <b>&minus;&minus;directory=</b>), that is
+removed immediately when the container terminates. This
+option is only supported if the root file system is
+&quot;btrfs&quot;. May not be specified together with
+<b>&minus;&minus;image=</b> or
+<b>&minus;&minus;template=</b>.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;i</b>,
+<b>&minus;&minus;image=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Disk
+image to mount the root directory for the container from.
+Takes a path to a regular file or to a block device node.
+The file or block device must contain either:</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">&bull;
+An MBR partition table with a single partition of type 0x83
+that is marked bootable.</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">&bull;
+A GUID partition table (GPT) with a single partition of type
+0fc63daf&minus;8483&minus;4772&minus;8e79&minus;3d69d8477de4.</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">&bull;
+A GUID partition table (GPT) with a marked root partition
+which is mounted as the root directory of the container.
+Optionally, GPT images may contain a home and/or a server
+data partition which are mounted to the appropriate places
+in the container. All these partitions must be identified by
+the partition types defined by the</font>
+<b><font color="#0000FF">Discoverable Partitions
+Specification</font></b>
+<small><font color="#000000">[2]</font></small>
+<font color="#000000">.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Any
+other partitions, such as foreign partitions, swap
+partitions or EFI system partitions are not mounted. May not
+be specified together with <b>&minus;&minus;directory=</b>,
+<b>&minus;&minus;template=</b> or
+<b>&minus;&minus;ephemeral</b>.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;b</b>,
+<b>&minus;&minus;boot</b></font></p>
+
+
+<p style="margin-left:17%;"><font color="#000000">Automatically
+search for an init binary and invoke it instead of a shell
+or a user supplied program. If this option is used,
+arguments specified on the command line are used as
+arguments for the init binary. This option may not be
+combined with
+<b>&minus;&minus;share&minus;system</b>.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;u</b>,
+<b>&minus;&minus;user=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">After
+transitioning into the container, change to the specified
+user&minus;defined in the container's user database. Like
+all other systemd&minus;nspawn features, this is not a
+security feature and provides protection against accidental
+destructive operations only.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;M</b>,
+<b>&minus;&minus;machine=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Sets the
+machine name for this container. This name may be used to
+identify this container during its runtime (for example in
+tools like <b>machinectl</b>(1) and similar), and is used to
+initialize the container's hostname (which the container can
+choose to override, however). If not specified, the last
+component of the root directory path of the container is
+used, possibly suffixed with a random identifier in case
+<b>&minus;&minus;ephemeral</b> mode is selected. If the root
+directory selected is the host's root directory the host's
+hostname is used as default instead.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;uuid=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Set the
+specified UUID for the container. The init system will
+initialize /etc/machine&minus;id from this if this file is
+not set yet.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;slice=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Make the
+container part of the specified slice, instead of the
+default machine.slice.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;private&minus;network</b></font></p>
+
+
+<p style="margin-left:17%;"><font color="#000000">Disconnect
+networking of the container from the host. This makes all
+network interfaces unavailable in the container, with the
+exception of the loopback device and those specified with
+<b>&minus;&minus;network&minus;interface=</b> and configured
+with <b>&minus;&minus;network&minus;veth</b>. If this option
+is specified, the CAP_NET_ADMIN capability will be added to
+the set of capabilities the container retains. The latter
+may be disabled by using
+<b>&minus;&minus;drop&minus;capability=</b>.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;network&minus;interface=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Assign
+the specified network interface to the container. This will
+remove the specified interface from the calling namespace
+and place it in the container. When the container
+terminates, it is moved back to the host namespace. Note
+that <b>&minus;&minus;network&minus;interface=</b> implies
+<b>&minus;&minus;private&minus;network</b>. This option may
+be used more than once to add multiple network interfaces to
+the container.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;network&minus;macvlan=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Create a
+&quot;macvlan&quot; interface of the specified Ethernet
+network interface and add it to the container. A
+&quot;macvlan&quot; interface is a virtual interface that
+adds a second MAC address to an existing physical Ethernet
+link. The interface in the container will be named after the
+interface on the host, prefixed with &quot;mv&minus;&quot;.
+Note that <b>&minus;&minus;network&minus;macvlan=</b>
+implies <b>&minus;&minus;private&minus;network</b>. This
+option may be used more than once to add multiple network
+interfaces to the container.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;network&minus;ipvlan=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Create an
+&quot;ipvlan&quot; interface of the specified Ethernet
+network interface and add it to the container. An
+&quot;ipvlan&quot; interface is a virtual interface, similar
+to a &quot;macvlan&quot; interface, which uses the same MAC
+address as the underlying interface. The interface in the
+container will be named after the interface on the host,
+prefixed with &quot;iv&minus;&quot;. Note that
+<b>&minus;&minus;network&minus;ipvlan=</b> implies
+<b>&minus;&minus;private&minus;network</b>. This option may
+be used more than once to add multiple network interfaces to
+the container.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;n</b>,
+<b>&minus;&minus;network&minus;veth</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Create a
+virtual Ethernet link (&quot;veth&quot;) between host and
+container. The host side of the Ethernet link will be
+available as a network interface named after the container's
+name (as specified with <b>&minus;&minus;machine=</b>),
+prefixed with &quot;ve&minus;&quot;. The container side of
+the Ethernet link will be named &quot;host0&quot;. Note that
+<b>&minus;&minus;network&minus;veth</b> implies
+<b>&minus;&minus;private&minus;network</b>.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;network&minus;bridge=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Adds the
+host side of the Ethernet link created with
+<b>&minus;&minus;network&minus;veth</b> to the specified
+bridge. Note that <b>&minus;&minus;network&minus;bridge=</b>
+implies <b>&minus;&minus;network&minus;veth</b>. If this
+option is used, the host side of the Ethernet link will use
+the &quot;vb&minus;&quot; prefix instead of
+&quot;ve&minus;&quot;.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;p</b>,
+<b>&minus;&minus;port=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">If
+private networking is enabled, maps an IP port on the host
+onto an IP port on the container. Takes a protocol specifier
+(either &quot;tcp&quot; or &quot;udp&quot;), separated by a
+colon from a host port number in the range 1 to 65535,
+separated by a colon from a container port number in the
+range from 1 to 65535. The protocol specifier and its
+separating colon may be omitted, in which case
+&quot;tcp&quot; is assumed. The container port number and
+its colon may be ommitted, in which case the same port as
+the host port is implied. This option is only supported if
+private networking is used, such as
+<b>&minus;&minus;network&minus;veth</b> or
+<b>&minus;&minus;network&minus;bridge=</b>.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;Z</b>,
+<b>&minus;&minus;selinux&minus;context=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Sets the
+SELinux security context to be used to label processes in
+the container.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;L</b>,
+<b>&minus;&minus;selinux&minus;apifs&minus;context=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Sets the
+SELinux security context to be used to label files in the
+virtual API file systems in the container.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;capability=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">List one
+or more additional capabilities to grant the container.
+Takes a comma&minus;separated list of capability names, see
+<b>capabilities</b>(7) for more information. Note that the
+following capabilities will be granted in any way:
+CAP_CHOWN, CAP_DAC_OVERRIDE, CAP_DAC_READ_SEARCH,
+CAP_FOWNER, CAP_FSETID, CAP_IPC_OWNER, CAP_KILL, CAP_LEASE,
+CAP_LINUX_IMMUTABLE, CAP_NET_BIND_SERVICE,
+CAP_NET_BROADCAST, CAP_NET_RAW, CAP_SETGID, CAP_SETFCAP,
+CAP_SETPCAP, CAP_SETUID, CAP_SYS_ADMIN, CAP_SYS_CHROOT,
+CAP_SYS_NICE, CAP_SYS_PTRACE, CAP_SYS_TTY_CONFIG,
+CAP_SYS_RESOURCE, CAP_SYS_BOOT, CAP_AUDIT_WRITE,
+CAP_AUDIT_CONTROL. Also CAP_NET_ADMIN is retained if
+<b>&minus;&minus;private&minus;network</b> is specified. If
+the special value &quot;all&quot; is passed, all
+capabilities are retained.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;drop&minus;capability=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Specify
+one or more additional capabilities to drop for the
+container. This allows running the container with fewer
+capabilities than the default (see above).</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;link&minus;journal=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Control
+whether the container's journal shall be made visible to the
+host system. If enabled, allows viewing the container's
+journal files from the host (but not vice versa). Takes one
+of &quot;no&quot;, &quot;host&quot;,
+&quot;try&minus;host&quot;, &quot;guest&quot;,
+&quot;try&minus;guest&quot;, &quot;auto&quot;. If
+&quot;no&quot;, the journal is not linked. If
+&quot;host&quot;, the journal files are stored on the host
+file system (beneath
+/var/log/journal/<i>machine&minus;id</i>) and the
+subdirectory is bind&minus;mounted into the container at the
+same location. If &quot;guest&quot;, the journal files are
+stored on the guest file system (beneath
+/var/log/journal/<i>machine&minus;id</i>) and the
+subdirectory is symlinked into the host at the same
+location. &quot;try&minus;host&quot; and
+&quot;try&minus;guest&quot; do the same but do not fail if
+the host does not have persistent journalling enabled. If
+&quot;auto&quot; (the default), and the right subdirectory
+of /var/log/journal exists, it will be bind mounted into the
+container. If the subdirectory does not exist, no linking is
+performed. Effectively, booting a container once with
+&quot;guest&quot; or &quot;host&quot; will link the journal
+persistently if further on the default of &quot;auto&quot;
+is used.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;j</b></font></p>
+
+
+<p style="margin-left:17%;"><font color="#000000">Equivalent
+to
+<b>&minus;&minus;link&minus;journal=try&minus;guest</b>.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;read&minus;only</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Mount the
+root file system read&minus;only for the
+container.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;bind=</b>,
+<b>&minus;&minus;bind&minus;ro=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Bind
+mount a file or directory from the host into the container.
+Either takes a path argument &minus;&minus; in which case
+the specified path will be mounted from the host to the same
+path in the container &minus;&minus;, or a
+colon&minus;separated pair of paths &minus;&minus; in which
+case the first specified path is the source in the host, and
+the second path is the destination in the container. The
+<b>&minus;&minus;bind&minus;ro=</b> option creates
+read&minus;only bind mounts.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;tmpfs=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Mount a
+tmpfs file system into the container. Takes a single
+absolute path argument that specifies where to mount the
+tmpfs instance to (in which case the directory access mode
+will be chosen as 0755, owned by root/root), or optionally a
+colon&minus;separated pair of path and mount option string,
+that is used for mounting (in which case the kernel default
+for access mode and owner will be chosen, unless otherwise
+specified). This option is particularly useful for mounting
+directories such as /var as tmpfs, to allow state&minus;less
+systems, in particular when combined with
+<b>&minus;&minus;read&minus;only</b>.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;setenv=</b></font></p>
+
+
+<p style="margin-left:17%;"><font color="#000000">Specifies
+an environment variable assignment to pass to the init
+process in the container, in the format
+&quot;NAME=VALUE&quot;. This may be used to override the
+default variables or to set additional variables. This
+parameter may be used more than once.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;share&minus;system</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Allows
+the container to share certain system facilities with the
+host. More specifically, this turns off PID namespacing, UTS
+namespacing and IPC namespacing, and thus allows the guest
+to see and interact more easily with processes outside of
+the container. Note that using this option makes it
+impossible to start up a full Operating System in the
+container, as an init system cannot operate in this mode. It
+is only useful to run specific programs or applications this
+way, without involving an init system in the container. This
+option implies <b>&minus;&minus;register=no</b>. This option
+may not be combined with
+<b>&minus;&minus;boot</b>.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;register=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Controls
+whether the container is registered with
+<b>systemd-machined</b>(8). Takes a boolean argument,
+defaults to &quot;yes&quot;. This option should be enabled
+when the container runs a full Operating System (more
+specifically: an init system), and is useful to ensure that
+the container is accessible via <b>machinectl</b>(1) and
+shown by tools such as <b>ps</b>(1). If the container does
+not run an init system, it is recommended to set this option
+to &quot;no&quot;. Note that
+<b>&minus;&minus;share&minus;system</b> implies
+<b>&minus;&minus;register=no</b>.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;keep&minus;unit</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Instead
+of creating a transient scope unit to run the container in,
+simply register the service or scope unit
+<b>systemd&minus;nspawn</b> has been invoked in with
+<b>systemd-machined</b>(8). This has no effect if
+<b>&minus;&minus;register=no</b> is used. This switch should
+be used if <b>systemd&minus;nspawn</b> is invoked from
+within a service unit, and the service unit's sole purpose
+is to run a single <b>systemd&minus;nspawn</b> container.
+This option is not available if run from a user
+session.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;personality=</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Control
+the architecture (&quot;personality&quot;) reported by
+<b>uname</b>(2) in the container. Currently, only
+&quot;x86&quot; and &quot;x86&minus;64&quot; are supported.
+This is useful when running a 32&minus;bit container on a
+64&minus;bit host. If this setting is not used, the
+personality reported in the container is the same as the one
+reported on the host.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;q</b>,
+<b>&minus;&minus;quiet</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Turns off
+any status output by the tool itself. When this switch is
+used, the only output from nspawn will be the console output
+of the container OS itself.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;volatile</b><i>=MODE</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Boots the
+container in volatile mode. When no mode parameter is passed
+or when mode is specified as &quot;yes&quot; full volatile
+mode is enabled. This means the root directory is mounted as
+mostly unpopulated &quot;tmpfs&quot; instance, and /usr from
+the OS tree is mounted into it, read&minus;only (the system
+thus starts up with read&minus;only OS resources, but
+pristine state and configuration, any changes to the either
+are lost on shutdown). When the mode parameter is specified
+as &quot;state&quot; the OS tree is mounted read&minus;only,
+but /var is mounted as &quot;tmpfs&quot; instance into it
+(the system thus starts up with read&minus;only OS resources
+and configuration, but pristine state, any changes to the
+latter are lost on shutdown). When the mode parameter is
+specified as &quot;no&quot; (the default) the whole OS tree
+is made available writable.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Note
+that setting this to &quot;yes&quot; or &quot;state&quot;
+will only work correctly with operating systems in the
+container that can boot up with only /usr mounted, and are
+able to populate /var automatically, as needed.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;h</b>,
+<b>&minus;&minus;help</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Print a
+short help text and exit.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>&minus;&minus;version</b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Print a
+short version string and exit.</font></p>
+
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>Example&nbsp;1.&nbsp;Download
+a Fedora image and start a shell in it</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">#
+machinectl pull&minus;raw &minus;&minus;verify=no
+http://ftp.halifax.rwth&minus;aachen.de/fedora/linux/releases/21/Cloud/Images/x86_64/Fedora&minus;Cloud&minus;Base&minus;20141203&minus;21.x86_64.raw.xz
+<br>
+# systemd&minus;nspawn &minus;M
+Fedora&minus;Cloud&minus;Base&minus;20141203&minus;21</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">This
+downloads an image using <b>machinectl</b>(1) and opens a
+shell in it.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>Example&nbsp;2.&nbsp;Build
+and boot a minimal Fedora distribution in a
+container</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">#
+yum &minus;y &minus;&minus;releasever=21 &minus;&minus;nogpg
+&minus;&minus;installroot=/srv/mycontainer
+&minus;&minus;disablerepo='*'
+&minus;&minus;enablerepo=fedora install systemd passwd yum
+fedora&minus;release vim&minus;minimal <br>
+# systemd&minus;nspawn &minus;bD /srv/mycontainer</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">This
+installs a minimal Fedora distribution into the directory
+/srv/mycontainer/ and then boots an OS in a namespace
+container in it.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>Example&nbsp;3.&nbsp;Spawn
+a shell in a container of a minimal Debian unstable
+distribution</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">#
+debootstrap &minus;&minus;arch=amd64 unstable
+~/debian&minus;tree/ <br>
+# systemd&minus;nspawn &minus;D
+~/debian&minus;tree/</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">This
+installs a minimal Debian unstable distribution into the
+directory ~/debian&minus;tree/ and then spawns a shell in a
+namespace container in it.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>Example&nbsp;4.&nbsp;Boot
+a minimal Arch Linux distribution in a
+container</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">#
+pacstrap &minus;c &minus;d ~/arch&minus;tree/ base <br>
+# systemd&minus;nspawn &minus;bD
+~/arch&minus;tree/</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">This
+installs a mimimal Arch Linux distribution into the
+directory ~/arch&minus;tree/ and then boots an OS in a
+namespace container in it.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>Example&nbsp;5.&nbsp;Boot
+into an ephemeral &quot;btrfs&quot; snapshot of the host
+system</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">#
+systemd&minus;nspawn &minus;D / &minus;xb</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">This
+runs a copy of the host system in a &quot;btrfs&quot;
+snapshot which is removed immediately when the container
+exits. All file system changes made during runtime will be
+lost on shutdown, hence.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>Example&nbsp;6.&nbsp;Run
+a container with SELinux sandbox security
+contexts</b></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">#
+chcon system_u:object_r:svirt_sandbox_file_t:s0:c0,c1
+&minus;R /srv/container <br>
+# systemd&minus;nspawn &minus;L
+system_u:object_r:svirt_sandbox_file_t:s0:c0,c1 &minus;Z
+system_u:system_r:svirt_lxc_net_t:s0:c0,c1 &minus;D
+/srv/container /bin/sh</font></p>
+
+<h2>EXIT STATUS
+<a name="EXIT STATUS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+exit code of the program executed in the container is
+returned.</font></p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>systemd</b>(1),
+<b>chroot</b>(1), <b>yum</b>(8), <b>debootstrap</b>(8),
+<b>pacman</b>(8), <b>systemd.slice</b>(5),
+<b>machinectl</b>(1), <b>btrfs</b>(8)</font></p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">1.</font></p> </td>
+<td width="2%"></td>
+<td width="29%">
+
+
+<p style="margin-top: 1em"><font color="#000000">Container
+Interface</font></p> </td>
+<td width="54%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">http://www.freedesktop.org/wiki/Software/systemd/ContainerInterface</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">2.</font></p> </td>
+<td width="2%"></td>
+<td width="57%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">Discoverable
+Partitions Specification</font></p></td>
+<td width="26%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">http://www.freedesktop.org/wiki/Specifications/DiscoverablePartitionsSpec/</font></p>
+<hr>
+</body>
+</html>

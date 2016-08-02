@@ -1,0 +1,4069 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:40:10 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title></title>
+</head>
+<body>
+
+<hr>
+
+
+<p>SUDOERS(5) BSD File Formats Manual SUDOERS(5)</p>
+
+<p style="margin-top: 1em"><b>NAME</b></p>
+
+<p style="margin-left:6%;"><b>sudoers</b> &mdash; default
+sudo security policy module</p>
+
+<p style="margin-top: 1em"><b>DESCRIPTION</b></p>
+
+<p style="margin-left:6%;">The <i>sudoers</i> policy module
+determines a user&rsquo;s <b>sudo</b> privileges. It is the
+default <b>sudo</b> policy plugin. The policy is driven by
+the <i>/etc/sudoers</i> file or, optionally in LDAP. The
+policy format is described in detail in the <i>SUDOERS FILE
+FORMAT</i> section. For information on storing
+<i>sudoers</i> policy information in LDAP, please see
+sudoers.ldap(5).</p>
+
+
+<p style="margin-left:6%; margin-top: 1em"><b>Authentication
+and logging</b> <br>
+The <i>sudoers</i> security policy requires that most users
+authenticate themselves before they can use <b>sudo</b>. A
+password is not required if the invoking user is root, if
+the target user is the same as the invoking user, or if the
+policy has disabled authentication for the user or command.
+Unlike su(1), when <i>sudoers</i> requires authentication,
+it validates the invoking user&rsquo;s credentials, not the
+target user&rsquo;s (or root&rsquo;s) credentials. This can
+be changed via the <i>rootpw</i>, <i>targetpw</i> and
+<i>runaspw</i> flags, described later.</p>
+
+<p style="margin-left:6%; margin-top: 1em">If a user who is
+not listed in the policy tries to run a command via
+<b>sudo</b>, mail is sent to the proper authorities. The
+address used for such mail is configurable via the
+<i>mailto</i> Defaults entry (described later) and defaults
+to root.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Note that mail
+will not be sent if an unauthorized user tries to run
+<b>sudo</b> with the <b>&minus;l</b> or <b>&minus;v</b>
+option. This allows users to determine for themselves
+whether or not they are allowed to use <b>sudo</b>.</p>
+
+<p style="margin-left:6%; margin-top: 1em">If <b>sudo</b>
+is run by root and the SUDO_USER environment variable is
+set, the <i>sudoers</i> policy will use this value to
+determine who the actual user is. This can be used by a user
+to log commands through sudo even when a root shell has been
+invoked. It also allows the <b>&minus;e</b> option to remain
+useful even when invoked via a sudo-run script or program.
+Note, however, that the <i>sudoers</i> lookup is still done
+for root, not the user specified by SUDO_USER.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><i>sudoers</i>
+uses time stamp files for credential caching. Once a user
+has been authenticated, the time stamp is updated and the
+user may then use sudo without a password for a short period
+of time (</p>
+
+<p>5 minutes unless overridden by the <i>timeout</i> option
+). By default, <i>sudoers</i> uses a tty-based time stamp
+which means that there is a separate time stamp for each of
+a user&rsquo;s login sessions. The <i>tty_tickets</i> option
+can be disabled to force the use of a single time stamp for
+all of a user&rsquo;s sessions.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><i>sudoers</i>
+can log both successful and unsuccessful attempts (as well
+as errors) to syslog(3), a log file, or both. By default,
+<i>sudoers</i> will log via syslog(3) but this is changeable
+via the <i>syslog</i> and <i>logfile</i> Defaults
+settings.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><i>sudoers</i>
+also supports logging a command&rsquo;s input and output
+streams. I/O logging is not on by default but can be enabled
+using the <i>log_input</i> and <i>log_output</i> Defaults
+flags as well as the LOG_INPUT and LOG_OUTPUT command
+tags.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Command
+environment</b> <br>
+Since environment variables can influence program behavior,
+<i>sudoers</i> provides a means to restrict which variables
+from the user&rsquo;s environment are inherited by the
+command to be run. There are two distinct ways
+<i>sudoers</i> can deal with environment variables.</p>
+
+<p style="margin-left:6%; margin-top: 1em">By default, the
+<i>env_reset</i> option is enabled. This causes commands to
+be executed with a new, minimal environment. On AIX (and
+Linux systems without PAM), the environment is initialized
+with the contents of the <i>/etc/environment</i> file. The
+new environment contains the TERM, PATH, HOME, MAIL, SHELL,
+LOGNAME, USER, USERNAME and SUDO_* variables in addition to
+variables from the invoking process permitted by the
+<i>env_check</i> and <i>env_keep</i> options. This is
+effectively a whitelist for environment variables.</p>
+
+<p style="margin-left:6%; margin-top: 1em">If, however, the
+<i>env_reset</i> option is disabled, any variables not
+explicitly denied by the <i>env_check</i> and
+<i>env_delete</i> options are inherited from the invoking
+process. In this case, <i>env_check</i> and
+<i>env_delete</i> behave like a blacklist. Since it is not
+possible to blacklist all potentially dangerous environment
+variables, use of the default <i>env_reset</i> behavior is
+encouraged.</p>
+
+<p style="margin-left:6%; margin-top: 1em">In all cases,
+environment variables with a value beginning with () are
+removed as they could be interpreted as <b>bash</b>
+functions. The list of environment variables that
+<b>sudo</b> allows or denies is contained in the output of
+&lsquo;&lsquo;sudo -V&rsquo;&rsquo; when run as root.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Note that the
+dynamic linker on most operating systems will remove
+variables that can control dynamic linking from the
+environment of setuid executables, including <b>sudo</b>.
+Depending on the operating system this may include _RLD*,
+DYLD_*, LD_*, LDR_*, LIBPATH, SHLIB_PATH, and others. These
+type of variables are removed from the environment before
+<b>sudo</b> even begins execution and, as such, it is not
+possible for <b>sudo</b> to preserve them.</p>
+
+<p style="margin-left:6%; margin-top: 1em">As a special
+case, if <b>sudo</b>&rsquo;s <b>&minus;i</b> option (initial
+login) is specified, <i>sudoers</i> will initialize the
+environment regardless of the value of <i>env_reset</i>. The
+DISPLAY, PATH and TERM variables remain unchanged; HOME,
+MAIL, SHELL, USER, and LOGNAME are set based on the target
+user. On AIX (and Linux systems without PAM), the contents
+of <i>/etc/environment</i> are also included. All other
+environment variables are removed.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Finally, if the
+<i>env_file</i> option is defined, any variables present in
+that file will be set to their specified values as long as
+they would not conflict with an existing environment
+variable.</p>
+
+<p style="margin-top: 1em"><b>SUDOERS FILE FORMAT</b></p>
+
+<p style="margin-left:6%;">The <i>sudoers</i> file is
+composed of two types of entries: aliases (basically
+variables) and user specifications (which specify who may
+run what).</p>
+
+<p style="margin-left:6%; margin-top: 1em">When multiple
+entries match for a user, they are applied in order. Where
+there are multiple matches, the last match is used (which is
+not necessarily the most specific match).</p>
+
+<p style="margin-left:6%; margin-top: 1em">The
+<i>sudoers</i> grammar will be described below in Extended
+Backus-Naur Form (EBNF). Don&rsquo;t despair if you are
+unfamiliar with EBNF; it is fairly simple, and the
+definitions below are annotated.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Quick guide
+to EBNF</b> <br>
+EBNF is a concise and exact way of describing the grammar of
+a language. Each EBNF definition is made up of <i>production
+rules</i>. E.g.,</p>
+
+<p style="margin-left:6%; margin-top: 1em">symbol ::=
+definition | alternate1 | alternate2 ...</p>
+
+<p style="margin-left:6%; margin-top: 1em">Each
+<i>production rule</i> references others and thus makes up a
+grammar for the language. EBNF also contains the following
+operators, which many readers will recognize from regular
+expressions. Do not, however, confuse them with
+&lsquo;&lsquo;wildcard&rsquo;&rsquo; characters, which have
+different meanings.</p>
+
+<p style="margin-top: 1em">?</p>
+
+<p style="margin-left:14%; margin-top: 1em">Means that the
+preceding symbol (or group of symbols) is optional. That is,
+it may appear once or not at all.</p>
+
+<p style="margin-top: 1em">*</p>
+
+<p style="margin-left:14%; margin-top: 1em">Means that the
+preceding symbol (or group of symbols) may appear zero or
+more times.</p>
+
+<p style="margin-top: 1em">+</p>
+
+<p style="margin-left:14%; margin-top: 1em">Means that the
+preceding symbol (or group of symbols) may appear one or
+more times.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Parentheses may
+be used to group symbols together. For clarity, we will use
+single quotes (&rsquo;&rsquo;) to designate what is a
+verbatim character string (as opposed to a symbol name).</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Aliases</b>
+<br>
+There are four kinds of aliases: User_Alias, Runas_Alias,
+Host_Alias and Cmnd_Alias.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Alias ::=
+&rsquo;User_Alias&rsquo; User_Alias (&rsquo;:&rsquo;
+User_Alias)* | <br>
+&rsquo;Runas_Alias&rsquo; Runas_Alias (&rsquo;:&rsquo;
+Runas_Alias)* | <br>
+&rsquo;Host_Alias&rsquo; Host_Alias (&rsquo;:&rsquo;
+Host_Alias)* | <br>
+&rsquo;Cmnd_Alias&rsquo; Cmnd_Alias (&rsquo;:&rsquo;
+Cmnd_Alias)*</p>
+
+<p style="margin-left:6%; margin-top: 1em">User_Alias ::=
+NAME &rsquo;=&rsquo; User_List</p>
+
+<p style="margin-left:6%; margin-top: 1em">Runas_Alias ::=
+NAME &rsquo;=&rsquo; Runas_List</p>
+
+<p style="margin-left:6%; margin-top: 1em">Host_Alias ::=
+NAME &rsquo;=&rsquo; Host_List</p>
+
+<p style="margin-left:6%; margin-top: 1em">Cmnd_Alias ::=
+NAME &rsquo;=&rsquo; Cmnd_List</p>
+
+<p style="margin-left:6%; margin-top: 1em">NAME ::=
+[A-Z]([A-Z][0-9]_)*</p>
+
+<p style="margin-left:6%; margin-top: 1em">Each
+<i>alias</i> definition is of the form</p>
+
+<p style="margin-left:6%; margin-top: 1em">Alias_Type NAME
+= item1, item2, ...</p>
+
+<p style="margin-left:6%; margin-top: 1em">where
+<i>Alias_Type</i> is one of User_Alias, Runas_Alias,
+Host_Alias, or Cmnd_Alias. A NAME is a string of uppercase
+letters, numbers, and underscore characters
+(&lsquo;_&rsquo;). A NAME <b>must</b> start with an
+uppercase letter. It is possible to put several alias
+definitions of the same type on a single line, joined by a
+colon (&lsquo;:&rsquo;). E.g.,</p>
+
+<p style="margin-left:6%; margin-top: 1em">Alias_Type NAME
+= item1, item2, item3 : NAME = item4, item5</p>
+
+<p style="margin-left:6%; margin-top: 1em">The definitions
+of what constitutes a valid <i>alias</i> member follow.</p>
+
+<p style="margin-left:6%; margin-top: 1em">User_List ::=
+User | <br>
+User &rsquo;,&rsquo; User_List</p>
+
+<p style="margin-left:6%; margin-top: 1em">User ::=
+&rsquo;!&rsquo;* user name | <br>
+&rsquo;!&rsquo;* #uid | <br>
+&rsquo;!&rsquo;* %group | <br>
+&rsquo;!&rsquo;* %#gid | <br>
+&rsquo;!&rsquo;* +netgroup | <br>
+&rsquo;!&rsquo;* %:nonunix_group | <br>
+&rsquo;!&rsquo;* %:#nonunix_gid | <br>
+&rsquo;!&rsquo;* User_Alias</p>
+
+<p style="margin-left:6%; margin-top: 1em">A User_List is
+made up of one or more user names, user ids (prefixed with
+&lsquo;#&rsquo;), system group names and ids (prefixed with
+&lsquo;%&rsquo; and &lsquo;%#&rsquo; respectively),
+netgroups (prefixed with &lsquo;+&rsquo;), non-Unix group
+names and IDs (prefixed with &lsquo;%:&rsquo; and
+&lsquo;%:#&rsquo; respectively) and User_Aliases. Each list
+item may be prefixed with zero or more &lsquo;!&rsquo;
+operators. An odd number of &lsquo;!&rsquo; operators negate
+the value of the item; an even number just cancel each other
+out.</p>
+
+<p style="margin-left:6%; margin-top: 1em">A user name,
+uid, group, gid, netgroup, nonunix_group or nonunix_gid may
+be enclosed in double quotes to avoid the need for escaping
+special characters. Alternately, special characters may be
+specified in escaped hex mode, e.g. \x20 for space. When
+using double quotes, any prefix characters must be included
+inside the quotes.</p>
+
+<p style="margin-left:6%; margin-top: 1em">The actual
+nonunix_group and nonunix_gid syntax depends on the
+underlying group provider plugin (see the
+<i>group_plugin</i> description below). For instance, the
+QAS AD plugin supports the following formats:</p>
+
+<p style="margin-top: 1em"><b>&bull;</b></p>
+
+<p style="margin-left:14%;">Group in the same domain:
+&quot;%:Group Name&quot;</p>
+
+<p style="margin-top: 1em"><b>&bull;</b></p>
+
+<p style="margin-left:14%;">Group in any domain:
+&quot;%:Group Name@FULLY.QUALIFIED.DOMAIN&quot;</p>
+
+<p style="margin-top: 1em"><b>&bull;</b></p>
+
+<p style="margin-left:14%;">Group SID:
+&quot;%:S-1-2-34-5678901234-5678901234-5678901234-567&quot;</p>
+
+<p style="margin-left:6%; margin-top: 1em">Note that quotes
+around group names are optional. Unquoted strings must use a
+backslash (&lsquo;\&rsquo;) to escape spaces and special
+characters. See <i>Other special characters and reserved
+words</i> for a list of characters that need to be
+escaped.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Runas_List ::=
+Runas_Member | <br>
+Runas_Member &rsquo;,&rsquo; Runas_List</p>
+
+<p style="margin-left:6%; margin-top: 1em">Runas_Member ::=
+&rsquo;!&rsquo;* user name | <br>
+&rsquo;!&rsquo;* #uid | <br>
+&rsquo;!&rsquo;* %group | <br>
+&rsquo;!&rsquo;* %#gid | <br>
+&rsquo;!&rsquo;* %:nonunix_group | <br>
+&rsquo;!&rsquo;* %:#nonunix_gid | <br>
+&rsquo;!&rsquo;* +netgroup | <br>
+&rsquo;!&rsquo;* Runas_Alias</p>
+
+<p style="margin-left:6%; margin-top: 1em">A Runas_List is
+similar to a User_List except that instead of User_Aliases
+it can contain Runas_Aliases. Note that user names and
+groups are matched as strings. In other words, two users
+(groups) with the same uid (gid) are considered to be
+distinct. If you wish to match all user names with the same
+uid (e.g. root and toor), you can use a uid instead (#0 in
+the example given).</p>
+
+<p style="margin-left:6%; margin-top: 1em">Host_List ::=
+Host | <br>
+Host &rsquo;,&rsquo; Host_List</p>
+
+<p style="margin-left:6%; margin-top: 1em">Host ::=
+&rsquo;!&rsquo;* host name | <br>
+&rsquo;!&rsquo;* ip_addr | <br>
+&rsquo;!&rsquo;* network(/netmask)? | <br>
+&rsquo;!&rsquo;* +netgroup | <br>
+&rsquo;!&rsquo;* Host_Alias</p>
+
+<p style="margin-left:6%; margin-top: 1em">A Host_List is
+made up of one or more host names, IP addresses, network
+numbers, netgroups (prefixed with &lsquo;+&rsquo;) and other
+aliases. Again, the value of an item may be negated with the
+&lsquo;!&rsquo; operator. If you do not specify a netmask
+along with the network number, <b>sudo</b> will query each
+of the local host&rsquo;s network interfaces and, if the
+network number corresponds to one of the hosts&rsquo;s
+network interfaces, the corresponding netmask will be used.
+The netmask may be specified either in standard IP address
+notation (e.g. 255.255.255.0 or ffff:ffff:ffff:ffff::), or
+CIDR notation (number of bits, e.g. 24 or 64). A host name
+may include shell-style wildcards (see the <i>Wildcards</i>
+section below), but unless the host name command on your
+machine returns the fully qualified host name, you&rsquo;ll
+need to use the <i>fqdn</i> option for wildcards to be
+useful. Note that <b>sudo</b> only inspects actual network
+interfaces; this means that IP address 127.0.0.1 (localhost)
+will never match. Also, the host name
+&lsquo;&lsquo;localhost&rsquo;&rsquo; will only match if
+that is the actual host name, which is usually only the case
+for non-networked systems.</p>
+
+<p style="margin-left:6%; margin-top: 1em">digest ::=
+[A-Fa-f0-9]+ |</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="10%">
+
+
+<p>[[A-Za-z0-9+/=]+</p></td>
+<td width="73%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">Digest_Spec ::=
+&quot;sha224&quot; &rsquo;:&rsquo; digest |</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>&quot;sha256&quot; &rsquo;:&rsquo; digest |</p></td>
+<td width="63%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>&quot;sha384&quot; &rsquo;:&rsquo; digest |</p></td>
+<td width="63%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>&quot;sha512&quot; &rsquo;:&rsquo; digest</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">Cmnd_List ::=
+Cmnd | <br>
+Cmnd &rsquo;,&rsquo; Cmnd_List</p>
+
+<p style="margin-left:6%; margin-top: 1em">command name ::=
+file name | <br>
+file name args | <br>
+file name &rsquo;&quot;&quot;&rsquo;</p>
+
+<p style="margin-left:6%; margin-top: 1em">Cmnd ::=
+Digest_Spec? &rsquo;!&rsquo;* command name | <br>
+&rsquo;!&rsquo;* directory | <br>
+&rsquo;!&rsquo;* &quot;sudoedit&quot; | <br>
+&rsquo;!&rsquo;* Cmnd_Alias</p>
+
+<p style="margin-left:6%; margin-top: 1em">A Cmnd_List is a
+list of one or more command names, directories, and other
+aliases. A command name is a fully qualified file name which
+may include shell-style wildcards (see the <i>Wildcards</i>
+section below). A simple file name allows the user to run
+the command with any arguments he/she wishes. However, you
+may also specify command line arguments (including
+wildcards). Alternately, you can specify &quot;&quot; to
+indicate that the command may only be run <b>without</b>
+command line arguments. A directory is a fully qualified
+path name ending in a &lsquo;/&rsquo;. When you specify a
+directory in a Cmnd_List, the user will be able to run any
+file within that directory (but not in any sub-directories
+therein).</p>
+
+<p style="margin-left:6%; margin-top: 1em">If a Cmnd has
+associated command line arguments, then the arguments in the
+Cmnd must match exactly those given by the user on the
+command line (or match the wildcards if there are any). Note
+that the following characters must be escaped with a
+&lsquo;\&rsquo; if they are used in command arguments:
+&lsquo;,&rsquo;, &lsquo;:&rsquo;, &lsquo;=&rsquo;,
+&lsquo;\&rsquo;. The special command
+&lsquo;&lsquo;sudoedit&rsquo;&rsquo; is used to permit a
+user to run <b>sudo</b> with the <b>&minus;e</b> option (or
+as <b>sudoedit</b>). It may take command line arguments just
+as a normal command does.</p>
+
+<p style="margin-left:6%; margin-top: 1em">If a command
+name is prefixed with a Digest_Spec, the command will only
+match successfully if it can be verified using the specified
+SHA-2 digest. This may be useful in situations where the
+user invoking <b>sudo</b> has write access to the command or
+its parent directory. The following digest formats are
+supported: sha224, sha256, sha384 and sha512. The string may
+be specified in either hex or base64 format (base64 is more
+compact). There are several utilities capable of generating
+SHA-2 digests in hex format such as openssl, shasum,
+sha224sum, sha256sum, sha384sum, sha512sum.</p>
+
+<p style="margin-left:6%; margin-top: 1em">For example,
+using openssl:</p>
+
+<p style="margin-left:6%; margin-top: 1em">$ openssl dgst
+-sha224 /bin/ls <br>
+SHA224(/bin/ls)=
+118187da8364d490b4a7debbf483004e8f3e053ec954309de2c41a25</p>
+
+<p style="margin-left:6%; margin-top: 1em">It is also
+possible to use openssl to generate base64 output:</p>
+
+<p style="margin-left:6%; margin-top: 1em">$ openssl dgst
+-binary -sha224 /bin/ls | openssl base64 <br>
+EYGH2oNk1JC0p9679IMATo8+BT7JVDCd4sQaJQ==</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Defaults</b>
+<br>
+Certain configuration options may be changed from their
+default values at run-time via one or more Default_Entry
+lines. These may affect all users on any host, all users on
+a specific host, a specific user, a specific command, or
+commands being run as a specific user. Note that per-command
+entries may not include command line arguments. If you need
+to specify arguments, define a Cmnd_Alias and reference that
+instead.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Default_Type ::=
+&rsquo;Defaults&rsquo; | <br>
+&rsquo;Defaults&rsquo; &rsquo;@&rsquo; Host_List | <br>
+&rsquo;Defaults&rsquo; &rsquo;:&rsquo; User_List | <br>
+&rsquo;Defaults&rsquo; &rsquo;!&rsquo; Cmnd_List | <br>
+&rsquo;Defaults&rsquo; &rsquo;&gt;&rsquo; Runas_List</p>
+
+<p style="margin-left:6%; margin-top: 1em">Default_Entry
+::= Default_Type Parameter_List</p>
+
+<p style="margin-left:6%; margin-top: 1em">Parameter_List
+::= Parameter | <br>
+Parameter &rsquo;,&rsquo; Parameter_List</p>
+
+<p style="margin-left:6%; margin-top: 1em">Parameter ::=
+Parameter &rsquo;=&rsquo; Value | <br>
+Parameter &rsquo;+=&rsquo; Value | <br>
+Parameter &rsquo;-=&rsquo; Value | <br>
+&rsquo;!&rsquo;* Parameter</p>
+
+<p style="margin-left:6%; margin-top: 1em">Parameters may
+be <b>flags</b>, <b>integer</b> values, <b>strings</b>, or
+<b>lists</b>. Flags are implicitly boolean and can be turned
+off via the &lsquo;!&rsquo; operator. Some integer, string
+and list parameters may also be used in a boolean context to
+disable them. Values may be enclosed in double quotes
+(&quot;&quot;) when they contain multiple words. Special
+characters may be escaped with a backslash
+(&lsquo;\&rsquo;).</p>
+
+<p style="margin-left:6%; margin-top: 1em">Lists have two
+additional assignment operators, += and -=. These operators
+are used to add to and delete from a list respectively. It
+is not an error to use the -= operator to remove an element
+that does not exist in a list.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Defaults entries
+are parsed in the following order: generic, host and user
+Defaults first, then runas Defaults and finally command
+defaults.</p>
+
+<p style="margin-left:6%; margin-top: 1em">See <i>SUDOERS
+OPTIONS</i> for a list of supported Defaults parameters.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>User
+specification</b> <br>
+User_Spec ::= User_List Host_List &rsquo;=&rsquo;
+Cmnd_Spec_List \ <br>
+(&rsquo;:&rsquo; Host_List &rsquo;=&rsquo;
+Cmnd_Spec_List)*</p>
+
+<p style="margin-left:6%; margin-top: 1em">Cmnd_Spec_List
+::= Cmnd_Spec | <br>
+Cmnd_Spec &rsquo;,&rsquo; Cmnd_Spec_List</p>
+
+<p style="margin-left:6%; margin-top: 1em">Cmnd_Spec ::=
+Runas_Spec? SELinux_Spec? Tag_Spec* Cmnd</p>
+
+<p style="margin-left:6%; margin-top: 1em">Runas_Spec ::=
+&rsquo;(&rsquo; Runas_List? (&rsquo;:&rsquo; Runas_List)?
+&rsquo;)&rsquo;</p>
+
+<p style="margin-left:6%; margin-top: 1em">SELinux_Spec ::=
+(&rsquo;ROLE=role&rsquo; | &rsquo;TYPE=type&rsquo;)</p>
+
+<p style="margin-left:6%; margin-top: 1em">Tag_Spec ::=
+(&rsquo;NOPASSWD:&rsquo; | &rsquo;PASSWD:&rsquo; |
+&rsquo;NOEXEC:&rsquo; | &rsquo;EXEC:&rsquo; | <br>
+&rsquo;SETENV:&rsquo; | &rsquo;NOSETENV:&rsquo; |
+&rsquo;LOG_INPUT:&rsquo; | &rsquo;NOLOG_INPUT:&rsquo; | <br>
+&rsquo;LOG_OUTPUT:&rsquo; | &rsquo;NOLOG_OUTPUT:&rsquo;)</p>
+
+<p style="margin-left:6%; margin-top: 1em">A <b>user
+specification</b> determines which commands a user may run
+(and as what user) on specified hosts. By default, commands
+are run as <b>root</b>, but this can be changed on a
+per-command basis.</p>
+
+<p style="margin-left:6%; margin-top: 1em">The basic
+structure of a user specification is &lsquo;&lsquo;who where
+= (as_whom) what&rsquo;&rsquo;. Let&rsquo;s break that down
+into its constituent parts:</p>
+
+
+<p style="margin-left:6%; margin-top: 1em"><b>Runas_Spec</b>
+<br>
+A Runas_Spec determines the user and/or the group that a
+command may be run as. A fully-specified Runas_Spec consists
+of two Runas_Lists (as defined above) separated by a colon
+(&lsquo;:&rsquo;) and enclosed in a set of parentheses. The
+first Runas_List indicates which users the command may be
+run as via <b>sudo</b>&rsquo;s <b>&minus;u</b> option. The
+second defines a list of groups that can be specified via
+<b>sudo</b>&rsquo;s <b>&minus;g</b> option. If both
+Runas_Lists are specified, the command may be run with any
+combination of users and groups listed in their respective
+Runas_Lists. If only the first is specified, the command may
+be run as any user in the list but no <b>&minus;g</b> option
+may be specified. If the first Runas_List is empty but the
+second is specified, the command may be run as the invoking
+user with the group set to any listed in the Runas_List. If
+both Runas_Lists are empty, the command may only be run as
+the invoking user. If no Runas_Spec is specified the command
+may be run as <b>root</b> and no group may be specified.</p>
+
+<p style="margin-left:6%; margin-top: 1em">A Runas_Spec
+sets the default for the commands that follow it. What this
+means is that for the entry:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>dgb</p></td>
+<td width="10%">
+
+
+<p>boulder = (operator) /bin/ls, /bin/kill,
+/usr/bin/lprm</p> </td>
+<td width="73%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">The user
+<b>dgb</b> may run <i>/bin/ls</i>, <i>/bin/kill</i>, and
+<i>/usr/bin/lprm</i>&mdash;but only as <b>operator</b>.
+E.g.,</p>
+
+<p style="margin-left:6%; margin-top: 1em">$ sudo -u
+operator /bin/ls</p>
+
+<p style="margin-left:6%; margin-top: 1em">It is also
+possible to override a Runas_Spec later on in an entry. If
+we modify the entry like so:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>dgb</p></td>
+<td width="10%">
+
+
+<p>boulder = (operator) /bin/ls, (root) /bin/kill,
+/usr/bin/lprm</p> </td>
+<td width="73%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">Then user
+<b>dgb</b> is now allowed to run <i>/bin/ls</i> as
+<b>operator</b>, but <i>/bin/kill</i> and
+<i>/usr/bin/lprm</i> as <b>root</b>.</p>
+
+<p style="margin-left:6%; margin-top: 1em">We can extend
+this to allow <b>dgb</b> to run /bin/ls with either the user
+or group set to <b>operator</b>:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>dgb</p></td>
+<td width="10%">
+
+
+<p>boulder = (operator : operator) /bin/ls, (root)
+/bin/kill,\</p> </td>
+<td width="73%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%"></td>
+<td width="10%">
+
+
+<p>/usr/bin/lprm</p></td>
+<td width="73%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">Note that while
+the group portion of the Runas_Spec permits the user to run
+as command with that group, it does not force the user to do
+so. If no group is specified on the command line, the
+command will run with the group listed in the target
+user&rsquo;s password database entry. The following would
+all be permitted by the sudoers entry above:</p>
+
+<p style="margin-left:6%; margin-top: 1em">$ sudo -u
+operator /bin/ls <br>
+$ sudo -u operator -g operator /bin/ls <br>
+$ sudo -g operator /bin/ls</p>
+
+<p style="margin-left:6%; margin-top: 1em">In the following
+example, user <b>tcm</b> may run commands that access a
+modem device file with the dialer group.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>tcm</p></td>
+<td width="10%">
+
+
+<p>boulder = (:dialer) /usr/bin/tip, /usr/bin/cu,\</p></td>
+<td width="73%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%"></td>
+<td width="10%">
+
+
+<p>/usr/local/bin/minicom</p></td>
+<td width="73%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">Note that in
+this example only the group will be set, the command still
+runs as user <b>tcm</b>. E.g.</p>
+
+<p style="margin-left:6%; margin-top: 1em">$ sudo -g dialer
+/usr/bin/cu</p>
+
+<p style="margin-left:6%; margin-top: 1em">Multiple users
+and groups may be present in a Runas_Spec, in which case the
+user may select any combination of users and groups via the
+<b>&minus;u</b> and <b>&minus;g</b> options. In this
+example:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>alan</p></td>
+<td width="10%">
+
+
+<p>ALL = (root, bin : operator, system) ALL</p></td>
+<td width="73%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">user <b>alan</b>
+may run any command as either user root or bin, optionally
+setting the group to operator or system.</p>
+
+
+<p style="margin-left:6%; margin-top: 1em"><b>SELinux_Spec</b>
+<br>
+On systems with SELinux support, <i>sudoers</i> entries may
+optionally have an SELinux role and/or type associated with
+a command. If a role or type is specified with the command
+it will override any default values specified in
+<i>sudoers</i>. A role or type specified on the command
+line, however, will supersede the values in
+<i>sudoers</i>.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Tag_Spec</b>
+<br>
+A command may have zero or more tags associated with it.
+There are ten possible tag values: NOPASSWD, PASSWD, NOEXEC,
+EXEC, SETENV, NOSETENV, LOG_INPUT, NOLOG_INPUT, LOG_OUTPUT
+and NOLOG_OUTPUT. Once a tag is set on a Cmnd, subsequent
+Cmnds in the Cmnd_Spec_List, inherit the tag unless it is
+overridden by the opposite tag (in other words, PASSWD
+overrides NOPASSWD and NOEXEC overrides EXEC).</p>
+
+<p style="margin-left:6%; margin-top: 1em"><i>NOPASSWD and
+PASSWD</i></p>
+
+<p style="margin-left:6%; margin-top: 1em">By default,
+<b>sudo</b> requires that a user authenticate him or herself
+before running a command. This behavior can be modified via
+the NOPASSWD tag. Like a Runas_Spec, the NOPASSWD tag sets a
+default for the commands that follow it in the
+Cmnd_Spec_List. Conversely, the PASSWD tag can be used to
+reverse things. For example:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>ray</p></td>
+<td width="10%">
+
+
+<p>rushmore = NOPASSWD: /bin/kill, /bin/ls,
+/usr/bin/lprm</p> </td>
+<td width="73%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">would allow the
+user <b>ray</b> to run <i>/bin/kill</i>, <i>/bin/ls</i>, and
+<i>/usr/bin/lprm</i> as <b>root</b> on the machine rushmore
+without authenticating himself. If we only want <b>ray</b>
+to be able to run <i>/bin/kill</i> without a password the
+entry would be:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>ray</p></td>
+<td width="10%">
+
+
+<p>rushmore = NOPASSWD: /bin/kill, PASSWD: /bin/ls,
+/usr/bin/lprm</p> </td>
+<td width="73%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">Note, however,
+that the PASSWD tag has no effect on users who are in the
+group specified by the <i>exempt_group</i> option.</p>
+
+<p style="margin-left:6%; margin-top: 1em">By default, if
+the NOPASSWD tag is applied to any of the entries for a user
+on the current host, he or she will be able to run
+&lsquo;&lsquo;sudo -l&rsquo;&rsquo; without a password.
+Additionally, a user may only run &lsquo;&lsquo;sudo
+-v&rsquo;&rsquo; without a password if the NOPASSWD tag is
+present for all a user&rsquo;s entries that pertain to the
+current host. This behavior may be overridden via the
+<i>verifypw</i> and <i>listpw</i> options.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><i>NOEXEC and
+EXEC</i></p>
+
+<p style="margin-left:6%; margin-top: 1em">If <b>sudo</b>
+has been compiled with <i>noexec</i> support and the
+underlying operating system supports it, the NOEXEC tag can
+be used to prevent a dynamically-linked executable from
+running further commands itself.</p>
+
+<p style="margin-left:6%; margin-top: 1em">In the following
+example, user <b>aaron</b> may run <i>/usr/bin/more</i> and
+<i>/usr/bin/vi</i> but shell escapes will be disabled.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>aaron</p></td>
+<td width="10%">
+
+
+<p>shanty = NOEXEC: /usr/bin/more, /usr/bin/vi</p></td>
+<td width="73%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">See the
+<i>Preventing shell escapes</i> section below for more
+details on how NOEXEC works and whether or not it will work
+on your system.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><i>SETENV and
+NOSETENV</i></p>
+
+<p style="margin-left:6%; margin-top: 1em">These tags
+override the value of the <i>setenv</i> option on a
+per-command basis. Note that if SETENV has been set for a
+command, the user may disable the <i>env_reset</i> option
+from the command line via the <b>&minus;E</b> option.
+Additionally, environment variables set on the command line
+are not subject to the restrictions imposed by
+<i>env_check</i>, <i>env_delete</i>, or <i>env_keep</i>. As
+such, only trusted users should be allowed to set variables
+in this manner. If the command matched is <b>ALL</b>, the
+SETENV tag is implied for that command; this default may be
+overridden by use of the NOSETENV tag.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><i>LOG_INPUT and
+NOLOG_INPUT</i></p>
+
+<p style="margin-left:6%; margin-top: 1em">These tags
+override the value of the <i>log_input</i> option on a
+per-command basis. For more information, see the description
+of <i>log_input</i> in the <i>SUDOERS OPTIONS</i> section
+below.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><i>LOG_OUTPUT
+and NOLOG_OUTPUT</i></p>
+
+<p style="margin-left:6%; margin-top: 1em">These tags
+override the value of the <i>log_output</i> option on a
+per-command basis. For more information, see the description
+of <i>log_output</i> in the <i>SUDOERS OPTIONS</i> section
+below.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Wildcards
+<br>
+sudo</b> allows shell-style <i>wildcards</i> (aka meta or
+glob characters) to be used in host names, path names and
+command line arguments in the <i>sudoers</i> file. Wildcard
+matching is done via the <b>POSIX</b> glob(3) and fnmatch(3)
+routines. Note that these are <i>not</i> regular
+expressions.</p>
+
+<p style="margin-top: 1em">*</p>
+
+<p style="margin-left:19%; margin-top: 1em">Matches any set
+of zero or more characters.</p>
+
+<p style="margin-top: 1em">?</p>
+
+<p style="margin-left:19%; margin-top: 1em">Matches any
+single character.</p>
+
+<p style="margin-top: 1em">[...]</p>
+
+<p style="margin-left:19%; margin-top: 1em">Matches any
+character in the specified range.</p>
+
+<p style="margin-top: 1em">[!...]</p>
+
+<p style="margin-left:19%; margin-top: 1em">Matches any
+character <b>not</b> in the specified range.</p>
+
+<p style="margin-top: 1em">\x</p>
+
+<p style="margin-left:19%; margin-top: 1em">For any
+character &lsquo;x&rsquo;, evaluates to &lsquo;x&rsquo;.
+This is used to escape special characters such as:
+&lsquo;*&rsquo;, &lsquo;?&rsquo;, &lsquo;[&rsquo;, and
+&lsquo;]&rsquo;.</p>
+
+<p style="margin-left:6%; margin-top: 1em">POSIX character
+classes may also be used if your system&rsquo;s glob(3) and
+fnmatch(3) functions support them. However, because the
+&lsquo;:&rsquo; character has special meaning in
+<i>sudoers</i>, it must be escaped. For example:</p>
+
+<p style="margin-left:12%; margin-top: 1em">/bin/ls
+[[alpha]]*</p>
+
+<p style="margin-left:6%; margin-top: 1em">Would match any
+file name beginning with a letter.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Note that a
+forward slash (&lsquo;/&rsquo;) will <b>not</b> be matched
+by wildcards used in the path name. This is to make a path
+like:</p>
+
+<p style="margin-left:12%; margin-top: 1em">/usr/bin/*</p>
+
+<p style="margin-left:6%; margin-top: 1em">match
+<i>/usr/bin/who</i> but not <i>/usr/bin/X11/xterm</i>.</p>
+
+<p style="margin-left:6%; margin-top: 1em">When matching
+the command line arguments, however, a slash <b>does</b> get
+matched by wildcards since command line arguments may
+contain arbitrary strings and not just path names.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Wildcards in
+command line arguments should be used with care. Because
+command line arguments are matched as a single, concatenated
+string, a wildcard such as &lsquo;?&rsquo; or
+&lsquo;*&rsquo; can match multiple words. For example, while
+a sudoers entry like:</p>
+
+<p style="margin-left:12%; margin-top: 1em">%operator ALL =
+/bin/cat /var/log/messages*</p>
+
+<p style="margin-left:6%; margin-top: 1em">will allow
+command like:</p>
+
+<p style="margin-left:12%; margin-top: 1em">$ sudo cat
+/var/log/messages.1</p>
+
+<p style="margin-left:6%; margin-top: 1em">It will also
+allow:</p>
+
+<p style="margin-left:12%; margin-top: 1em">$ sudo cat
+/var/log/messages /etc/shadow</p>
+
+<p style="margin-left:6%; margin-top: 1em">which is
+probably not what was intended.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Exceptions to
+wildcard rules</b> <br>
+The following exceptions apply to the above rules:</p>
+
+<p style="margin-top: 1em">&quot;&quot;</p>
+
+<p style="margin-left:19%; margin-top: 1em">If the empty
+string &quot;&quot; is the only command line argument in the
+<i>sudoers</i> entry it means that command is not allowed to
+be run with <b>any</b> arguments.</p>
+
+<p style="margin-top: 1em">sudoedit</p>
+
+<p style="margin-left:19%; margin-top: 1em">Command line
+arguments to the <i>sudoedit</i> built-in command should
+always be path names, so a forward slash (&lsquo;/&rsquo;)
+will not be matched by a wildcard.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Including
+other files from within sudoers</b> <br>
+It is possible to include other <i>sudoers</i> files from
+within the <i>sudoers</i> file currently being parsed using
+the #include and #includedir directives.</p>
+
+<p style="margin-left:6%; margin-top: 1em">This can be
+used, for example, to keep a site-wide <i>sudoers</i> file
+in addition to a local, per-machine file. For the sake of
+this example the site-wide <i>sudoers</i> will be
+<i>/etc/sudoers</i> and the per-machine one will be
+<i>/etc/sudoers.local</i>. To include
+<i>/etc/sudoers.local</i> from within <i>/etc/sudoers</i> we
+would use the following line in <i>/etc/sudoers</i>:</p>
+
+<p style="margin-left:12%; margin-top: 1em">#include
+/etc/sudoers.local</p>
+
+<p style="margin-left:6%; margin-top: 1em">When <b>sudo</b>
+reaches this line it will suspend processing of the current
+file (<i>/etc/sudoers</i>) and switch to
+<i>/etc/sudoers.local</i>. Upon reaching the end of
+<i>/etc/sudoers.local</i>, the rest of <i>/etc/sudoers</i>
+will be processed. Files that are included may themselves
+include other files. A hard limit of 128 nested include
+files is enforced to prevent include file loops.</p>
+
+<p style="margin-left:6%; margin-top: 1em">If the path to
+the include file is not fully-qualified (does not begin with
+a &lsquo;/&rsquo;, it must be located in the same directory
+as the sudoers file it was included from. For example, if
+<i>/etc/sudoers</i> contains the line:</p>
+
+<p style="margin-left:12%; margin-top: 1em">#include
+sudoers.local</p>
+
+<p style="margin-left:6%; margin-top: 1em">the file that
+will be included is <i>/etc/sudoers.local</i>.</p>
+
+<p style="margin-left:6%; margin-top: 1em">The file name
+may also include the %h escape, signifying the short form of
+the host name. In other words, if the machine&rsquo;s host
+name is &lsquo;&lsquo;xerxes&rsquo;&rsquo;, then</p>
+
+<p style="margin-left:12%; margin-top: 1em">#include
+/etc/sudoers.%h</p>
+
+<p style="margin-left:6%; margin-top: 1em">will cause
+<b>sudo</b> to include the file
+<i>/etc/sudoers.xerxes</i>.</p>
+
+<p style="margin-left:6%; margin-top: 1em">The #includedir
+directive can be used to create a <i>sudo.d</i> directory
+that the system package manager can drop <i>sudoers</i>
+rules into as part of package installation. For example,
+given:</p>
+
+<p style="margin-left:12%; margin-top: 1em">#includedir
+/etc/sudoers.d</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>sudo</b> will
+read each file in <i>/etc/sudoers.d</i>, skipping file names
+that end in &lsquo;~&rsquo; or contain a &lsquo;.&rsquo;
+character to avoid causing problems with package manager or
+editor temporary/backup files. Files are parsed in sorted
+lexical order. That is, <i>/etc/sudoers.d/01_first</i> will
+be parsed before <i>/etc/sudoers.d/10_second</i>. Be aware
+that because the sorting is lexical, not numeric,
+<i>/etc/sudoers.d/1_whoops</i> would be loaded <b>after</b>
+<i>/etc/sudoers.d/10_second</i>. Using a consistent number
+of leading zeroes in the file names can be used to avoid
+such problems.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Note that unlike
+files included via #include, <b>visudo</b> will not edit the
+files in a #includedir directory unless one of them contains
+a syntax error. It is still possible to run <b>visudo</b>
+with the <b>&minus;f</b> flag to edit the files
+directly.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Other special
+characters and reserved words</b> <br>
+The pound sign (&lsquo;#&rsquo;) is used to indicate a
+comment (unless it is part of a #include directive or unless
+it occurs in the context of a user name and is followed by
+one or more digits, in which case it is treated as a uid).
+Both the comment character and any text after it, up to the
+end of the line, are ignored.</p>
+
+<p style="margin-left:6%; margin-top: 1em">The reserved
+word <b>ALL</b> is a built-in <i>alias</i> that always
+causes a match to succeed. It can be used wherever one might
+otherwise use a Cmnd_Alias, User_Alias, Runas_Alias, or
+Host_Alias. You should not try to define your own
+<i>alias</i> called <b>ALL</b> as the built-in alias will be
+used in preference to your own. Please note that using
+<b>ALL</b> can be dangerous since in a command context, it
+allows the user to run <b>any</b> command on the system.</p>
+
+<p style="margin-left:6%; margin-top: 1em">An exclamation
+point (&lsquo;!&rsquo;) can be used as a logical <i>not</i>
+operator in a list or <i>alias</i> as well as in front of a
+Cmnd. This allows one to exclude certain values. For the
+&lsquo;!&rsquo; operator to be effective, there must be
+something for it to exclude. For example, to match all users
+except for root one would use:</p>
+
+<p style="margin-left:12%; margin-top: 1em">ALL,!root</p>
+
+<p style="margin-left:6%; margin-top: 1em">If the
+<b>ALL</b>, is omitted, as in:</p>
+
+<p style="margin-left:12%; margin-top: 1em">!root</p>
+
+<p style="margin-left:6%; margin-top: 1em">it would
+explicitly deny root but not match any other users. This is
+different from a true &lsquo;&lsquo;negation&rsquo;&rsquo;
+operator.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Note, however,
+that using a &lsquo;!&rsquo; in conjunction with the
+built-in <b>ALL</b> alias to allow a user to run
+&lsquo;&lsquo;all but a few&rsquo;&rsquo; commands rarely
+works as intended (see <i>SECURITY NOTES</i> below).</p>
+
+<p style="margin-left:6%; margin-top: 1em">Long lines can
+be continued with a backslash (&lsquo;\&rsquo;) as the last
+character on the line.</p>
+
+<p style="margin-left:6%; margin-top: 1em">White space
+between elements in a list as well as special syntactic
+characters in a <i>User Specification</i> (</p>
+
+<p>&lsquo;=&rsquo;, &lsquo;:&rsquo;, &lsquo;(&rsquo;,
+&lsquo;)&rsquo; ) is optional.</p>
+
+<p style="margin-left:6%; margin-top: 1em">The following
+characters must be escaped with a backslash
+(&lsquo;\&rsquo;) when used as part of a word (e.g. a user
+name or host name): &lsquo;!&rsquo;, &lsquo;=&rsquo;,
+&lsquo;:&rsquo;, &lsquo;,&rsquo;, &lsquo;(&rsquo;,
+&lsquo;)&rsquo;, &lsquo;\&rsquo;.</p>
+
+<p style="margin-top: 1em"><b>SUDOERS OPTIONS</b></p>
+
+<p style="margin-left:6%;"><b>sudo</b>&rsquo;s behavior can
+be modified by Default_Entry lines, as explained earlier. A
+list of all supported Defaults parameters, grouped by type,
+are listed below.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Boolean
+Flags</b>:</p>
+
+<p style="margin-top: 1em">always_set_home</p>
+
+<p style="margin-left:29%; margin-top: 1em">If enabled,
+<b>sudo</b> will set the HOME environment variable to the
+home directory of the target user (which is root unless the
+<b>&minus;u</b> option is used). This effectively means that
+the <b>&minus;H</b> option is always implied. Note that HOME
+is already set when the the <i>env_reset</i> option is
+enabled, so <i>always_set_home</i> is only effective for
+configurations where either <i>env_reset</i> is disabled or
+HOME is present in the <i>env_keep</i> list. This flag is
+<i>off</i> by default.</p>
+
+<p style="margin-top: 1em">authenticate</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set, users
+must authenticate themselves via a password (or other means
+of authentication) before they may run commands. This
+default may be overridden via the PASSWD and NOPASSWD tags.
+This flag is <i>on</i> by default.</p>
+
+<p style="margin-top: 1em">closefrom_override</p>
+
+<p style="margin-left:29%;">If set, the user may use
+<b>sudo</b>&rsquo;s <b>&minus;C</b> option which overrides
+the default starting point at which <b>sudo</b> begins
+closing open file descriptors. This flag is <i>off</i> by
+default.</p>
+
+<p style="margin-top: 1em">compress_io</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set, and
+<b>sudo</b> is configured to log a command&rsquo;s input or
+output, the I/O logs will be compressed using <b>zlib</b>.
+This flag is <i>on</i> by default when <b>sudo</b> is
+compiled with <b>zlib</b> support.</p>
+
+<p style="margin-top: 1em">env_editor</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set,
+<b>visudo</b> will use the value of the EDITOR or VISUAL
+environment variables before falling back on the default
+editor list. Note that this may create a security hole as it
+allows the user to run any arbitrary command as root without
+logging. A safer alternative is to place a colon-separated
+list of editors in the editor variable. <b>visudo</b> will
+then only use the EDITOR or VISUAL if they match a value
+specified in editor. This flag is <i>on</i> by default.</p>
+
+<p style="margin-top: 1em">env_reset</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set,
+<b>sudo</b> will run the command in a minimal environment
+containing the TERM, PATH, HOME, MAIL, SHELL, LOGNAME, USER,
+USERNAME and SUDO_* variables. Any variables in the
+caller&rsquo;s environment that match the env_keep and
+env_check lists are then added, followed by any variables
+present in the file specified by the <i>env_file</i> option
+(if any). The default contents of the env_keep and env_check
+lists are displayed when <b>sudo</b> is run by root with the
+<b>&minus;V</b> option. If the <i>secure_path</i> option is
+set, its value will be used for the PATH environment
+variable. This flag is <i>on</i> by default.</p>
+
+<p style="margin-top: 1em">fast_glob</p>
+
+<p style="margin-left:29%; margin-top: 1em">Normally,
+<b>sudo</b> uses the glob(3) function to do shell-style
+globbing when matching path names. However, since it
+accesses the file system, glob(3) can take a long time to
+complete for some patterns, especially when the pattern
+references a network file system that is mounted on demand
+(auto mounted). The <i>fast_glob</i> option causes
+<b>sudo</b> to use the fnmatch(3) function, which does not
+access the file system to do its matching. The disadvantage
+of <i>fast_glob</i> is that it is unable to match relative
+path names such as <i>./ls</i> or <i>../bin/ls</i>. This has
+security implications when path names that include globbing
+characters are used with the negation operator,
+&lsquo;!&rsquo;, as such rules can be trivially bypassed. As
+such, this option should not be used when <i>sudoers</i>
+contains rules that contain negated path names which include
+globbing characters. This flag is <i>off</i> by default.</p>
+
+<p style="margin-top: 1em">fqdn</p>
+
+<p style="margin-left:29%; margin-top: 1em">Set this flag
+if you want to put fully qualified host names in the
+<i>sudoers</i> file when the local host name (as returned by
+the hostname command) does not contain the domain name. In
+other words, instead of myhost you would use
+myhost.mydomain.edu. You may still use the short form if you
+wish (and even mix the two). This option is only effective
+when the &lsquo;&lsquo;canonical&rsquo;&rsquo; host name, as
+returned by the <b>getaddrinfo</b>() or
+<b>gethostbyname</b>() function, is a fully-qualified domain
+name. This is usually the case when the system is configured
+to use DNS for host name resolution.</p>
+
+<p style="margin-left:29%; margin-top: 1em">If the system
+is configured to use the <i>/etc/hosts</i> file in
+preference to DNS, the &lsquo;&lsquo;canonical&rsquo;&rsquo;
+host name may not be fully-qualified. The order that sources
+are queried for hosts name resolution is usually specified
+in the <i>/etc/nsswitch.conf</i>, <i>/etc/netsvc.conf</i>,
+<i>/etc/host.conf</i>, or, in some cases,
+<i>/etc/resolv.conf</i> file. In the <i>/etc/hosts</i> file,
+the first host name of the entry is considered to be the
+&lsquo;&lsquo;canonical&rsquo;&rsquo; name; subsequent names
+are aliases that are not used by <b>sudoers</b>. For
+example, the following hosts file line for the machine
+&lsquo;&lsquo;xyzzy&rsquo;&rsquo; has the fully-qualified
+domain name as the &lsquo;&lsquo;canonical&rsquo;&rsquo;
+host name, and the short version as an alias.</p>
+
+<p style="margin-left:37%; margin-top: 1em">192.168.1.1
+xyzzy.sudo.ws xyzzy</p>
+
+<p style="margin-left:29%; margin-top: 1em">If the
+machine&rsquo;s hosts file entry is not formatted properly,
+the <i>fqdn</i> option will not be effective if it is
+queried before DNS.</p>
+
+<p style="margin-left:29%; margin-top: 1em">Beware that
+when using DNS for host name resolution, turning on
+<i>fqdn</i> requires <b>sudoers</b> to make DNS lookups
+which renders <b>sudo</b> unusable if DNS stops working (for
+example if the machine is disconnected from the network).
+Also note that just like with the hosts file, you must use
+the &lsquo;&lsquo;canonical&rsquo;&rsquo; name as DNS knows
+it. That is, you may not use a host alias (</p>
+
+<p>CNAME entry ) due to performance issues and the fact
+that there is no way to get all aliases from DNS.</p>
+
+<p style="margin-left:29%; margin-top: 1em">This flag is
+<i>off</i> by default.</p>
+
+<p style="margin-top: 1em">ignore_dot</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set,
+<b>sudo</b> will ignore &quot;.&quot; or &quot;&quot; (both
+denoting current directory) in the PATH environment
+variable; the PATH itself is not modified. This flag is
+<i>on</i> by default.</p>
+
+<p style="margin-top: 1em">ignore_local_sudoers</p>
+
+<p style="margin-left:29%;">If set via LDAP, parsing of
+<i>/etc/sudoers</i> will be skipped. This is intended for
+Enterprises that wish to prevent the usage of local sudoers
+files so that only LDAP is used. This thwarts the efforts of
+rogue operators who would attempt to add roles to
+<i>/etc/sudoers</i>. When this option is present,
+<i>/etc/sudoers</i> does not even need to exist. Since this
+option tells <b>sudo</b> how to behave when no specific LDAP
+entries have been matched, this sudoOption is only
+meaningful for the cn=defaults section. This flag is
+<i>off</i> by default.</p>
+
+<p style="margin-top: 1em">insults</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set,
+<b>sudo</b> will insult users when they enter an incorrect
+password. This flag is <i>off</i> by default.</p>
+
+<p style="margin-top: 1em">log_host</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set, the
+host name will be logged in the (non-syslog) <b>sudo</b> log
+file. This flag is <i>off</i> by default.</p>
+
+<p style="margin-top: 1em">log_input</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set,
+<b>sudo</b> will run the command in a <i>pseudo tty</i> and
+log all user input. If the standard input is not connected
+to the user&rsquo;s tty, due to I/O redirection or because
+the command is part of a pipeline, that input is also
+captured and stored in a separate log file.</p>
+
+<p style="margin-left:29%; margin-top: 1em">Input is logged
+to the directory specified by the <i>iolog_dir</i> option
+(</p>
+
+<p><i>/var/log/sudo-io</i> by default ) using a unique
+session ID that is included in the normal <b>sudo</b> log
+line, prefixed with &lsquo;&lsquo;TSID=&rsquo;&rsquo;. The
+<i>iolog_file</i> option may be used to control the format
+of the session ID.</p>
+
+<p style="margin-left:29%; margin-top: 1em">Note that user
+input may contain sensitive information such as passwords
+(even if they are not echoed to the screen), which will be
+stored in the log file unencrypted. In most cases, logging
+the command output via <i>log_output</i> is all that is
+required.</p>
+
+<p style="margin-top: 1em">log_output</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set,
+<b>sudo</b> will run the command in a <i>pseudo tty</i> and
+log all output that is sent to the screen, similar to the
+script(1) command. If the standard output or standard error
+is not connected to the user&rsquo;s tty, due to I/O
+redirection or because the command is part of a pipeline,
+that output is also captured and stored in separate log
+files.</p>
+
+<p style="margin-left:29%; margin-top: 1em">Output is
+logged to the directory specified by the <i>iolog_dir</i>
+option (</p>
+
+<p><i>/var/log/sudo-io</i> by default ) using a unique
+session ID that is included in the normal <b>sudo</b> log
+line, prefixed with &lsquo;&lsquo;TSID=&rsquo;&rsquo;. The
+<i>iolog_file</i> option may be used to control the format
+of the session ID.</p>
+
+<p style="margin-left:29%; margin-top: 1em">Output logs may
+be viewed with the sudoreplay(8) utility, which can also be
+used to list or search the available logs.</p>
+
+<p style="margin-top: 1em">log_year</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set, the
+four-digit year will be logged in the (non-syslog)
+<b>sudo</b> log file. This flag is <i>off</i> by
+default.</p>
+
+<p style="margin-top: 1em">long_otp_prompt</p>
+
+<p style="margin-left:29%; margin-top: 1em">When validating
+with a One Time Password (OTP) scheme such as <b>S/Key</b>
+or <b>OPIE</b>, a two-line prompt is used to make it easier
+to cut and paste the challenge to a local window. It&rsquo;s
+not as pretty as the default but some people find it more
+convenient. This flag is <i>off</i> by default.</p>
+
+<p style="margin-top: 1em">mail_always</p>
+
+<p style="margin-left:29%; margin-top: 1em">Send mail to
+the <i>mailto</i> user every time a users runs <b>sudo</b>.
+This flag is <i>off</i> by default.</p>
+
+<p style="margin-top: 1em">mail_badpass</p>
+
+<p style="margin-left:29%; margin-top: 1em">Send mail to
+the <i>mailto</i> user if the user running <b>sudo</b> does
+not enter the correct password. If the command the user is
+attempting to run is not permitted by <i>sudoers</i> and one
+of the <i>mail_always</i>, <i>mail_no_host</i>,
+<i>mail_no_perms</i> or <i>mail_no_user</i> flags are set,
+this flag will have no effect. This flag is <i>off</i> by
+default.</p>
+
+<p style="margin-top: 1em">mail_no_host</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set, mail
+will be sent to the <i>mailto</i> user if the invoking user
+exists in the <i>sudoers</i> file, but is not allowed to run
+commands on the current host. This flag is <i>off</i> by
+default.</p>
+
+<p style="margin-top: 1em">mail_no_perms</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set, mail
+will be sent to the <i>mailto</i> user if the invoking user
+is allowed to use <b>sudo</b> but the command they are
+trying is not listed in their <i>sudoers</i> file entry or
+is explicitly denied. This flag is <i>off</i> by
+default.</p>
+
+<p style="margin-top: 1em">mail_no_user</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set, mail
+will be sent to the <i>mailto</i> user if the invoking user
+is not in the <i>sudoers</i> file. This flag is <i>on</i> by
+default.</p>
+
+<p style="margin-top: 1em">noexec</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set, all
+commands run via <b>sudo</b> will behave as if the NOEXEC
+tag has been set, unless overridden by a EXEC tag. See the
+description of <i>NOEXEC and EXEC</i> below as well as the
+<i>Preventing shell escapes</i> section at the end of this
+manual. This flag is <i>off</i> by default.</p>
+
+<p style="margin-top: 1em">path_info</p>
+
+<p style="margin-left:29%; margin-top: 1em">Normally,
+<b>sudo</b> will tell the user when a command could not be
+found in their PATH environment variable. Some sites may
+wish to disable this as it could be used to gather
+information on the location of executables that the normal
+user does not have access to. The disadvantage is that if
+the executable is simply not in the user&rsquo;s PATH,
+<b>sudo</b> will tell the user that they are not allowed to
+run it, which can be confusing. This flag is <i>on</i> by
+default.</p>
+
+<p style="margin-top: 1em">passprompt_override</p>
+
+<p style="margin-left:29%;">The password prompt specified
+by <i>passprompt</i> will normally only be used if the
+password prompt provided by systems such as PAM matches the
+string &lsquo;&lsquo;Password:&rsquo;&rsquo;. If
+<i>passprompt_override</i> is set, <i>passprompt</i> will
+always be used. This flag is <i>off</i> by default.</p>
+
+<p style="margin-top: 1em">preserve_groups</p>
+
+<p style="margin-left:29%; margin-top: 1em">By default,
+<b>sudo</b> will initialize the group vector to the list of
+groups the target user is in. When <i>preserve_groups</i> is
+set, the user&rsquo;s existing group vector is left
+unaltered. The real and effective group IDs, however, are
+still set to match the target user. This flag is <i>off</i>
+by default.</p>
+
+<p style="margin-top: 1em">pwfeedback</p>
+
+<p style="margin-left:29%; margin-top: 1em">By default,
+<b>sudo</b> reads the password like most other Unix
+programs, by turning off echo until the user hits the return
+(or enter) key. Some users become confused by this as it
+appears to them that <b>sudo</b> has hung at this point.
+When <i>pwfeedback</i> is set, <b>sudo</b> will provide
+visual feedback when the user presses a key. Note that this
+does have a security impact as an onlooker may be able to
+determine the length of the password being entered. This
+flag is <i>off</i> by default.</p>
+
+<p style="margin-top: 1em">requiretty</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set,
+<b>sudo</b> will only run when the user is logged in to a
+real tty. When this flag is set, <b>sudo</b> can only be run
+from a login session and not via other means such as cron(8)
+or cgi-bin scripts. This flag is <i>off</i> by default.</p>
+
+<p style="margin-top: 1em">root_sudo</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set, root is
+allowed to run <b>sudo</b> too. Disabling this prevents
+users from &lsquo;&lsquo;chaining&rsquo;&rsquo; <b>sudo</b>
+commands to get a root shell by doing something like
+&lsquo;&lsquo;sudo sudo /bin/sh&rsquo;&rsquo;. Note,
+however, that turning off <i>root_sudo</i> will also prevent
+root from running <b>sudoedit</b>. Disabling
+<i>root_sudo</i> provides no real additional security; it
+exists purely for historical reasons. This flag is <i>on</i>
+by default.</p>
+
+<p style="margin-top: 1em">rootpw</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set,
+<b>sudo</b> will prompt for the root password instead of the
+password of the invoking user. This flag is <i>off</i> by
+default.</p>
+
+<p style="margin-top: 1em">runaspw</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set,
+<b>sudo</b> will prompt for the password of the user defined
+by the <i>runas_default</i> option (defaults to root)
+instead of the password of the invoking user. This flag is
+<i>off</i> by default.</p>
+
+<p style="margin-top: 1em">set_home</p>
+
+<p style="margin-left:29%; margin-top: 1em">If enabled and
+<b>sudo</b> is invoked with the <b>&minus;s</b> option the
+HOME environment variable will be set to the home directory
+of the target user (which is root unless the <b>&minus;u</b>
+option is used). This effectively makes the <b>&minus;s</b>
+option imply <b>&minus;H</b>. Note that HOME is already set
+when the the <i>env_reset</i> option is enabled, so
+<i>set_home</i> is only effective for configurations where
+either <i>env_reset</i> is disabled or HOME is present in
+the <i>env_keep</i> list. This flag is <i>off</i> by
+default.</p>
+
+<p style="margin-top: 1em">set_logname</p>
+
+<p style="margin-left:29%; margin-top: 1em">Normally,
+<b>sudo</b> will set the LOGNAME, USER and USERNAME
+environment variables to the name of the target user
+(usually root unless the <b>&minus;u</b> option is given).
+However, since some programs (including the RCS revision
+control system) use LOGNAME to determine the real identity
+of the user, it may be desirable to change this behavior.
+This can be done by negating the set_logname option. Note
+that if the <i>env_reset</i> option has not been disabled,
+entries in the <i>env_keep</i> list will override the value
+of <i>set_logname</i>. This flag is <i>on</i> by
+default.</p>
+
+<p style="margin-top: 1em">set_utmp</p>
+
+<p style="margin-left:29%; margin-top: 1em">When enabled,
+<b>sudo</b> will create an entry in the utmp (or utmpx) file
+when a pseudo-tty is allocated. A pseudo-tty is allocated by
+<b>sudo</b> when the <i>log_input</i>, <i>log_output</i> or
+<i>use_pty</i> flags are enabled. By default, the new entry
+will be a copy of the user&rsquo;s existing utmp entry (if
+any), with the tty, time, type and pid fields updated. This
+flag is <i>on</i> by default.</p>
+
+<p style="margin-top: 1em">setenv</p>
+
+<p style="margin-left:29%; margin-top: 1em">Allow the user
+to disable the <i>env_reset</i> option from the command line
+via the <b>&minus;E</b> option. Additionally, environment
+variables set via the command line are not subject to the
+restrictions imposed by <i>env_check</i>, <i>env_delete</i>,
+or <i>env_keep</i>. As such, only trusted users should be
+allowed to set variables in this manner. This flag is
+<i>off</i> by default.</p>
+
+<p style="margin-top: 1em">shell_noargs</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set and
+<b>sudo</b> is invoked with no arguments it acts as if the
+<b>&minus;s</b> option had been given. That is, it runs a
+shell as root (the shell is determined by the SHELL
+environment variable if it is set, falling back on the shell
+listed in the invoking user&rsquo;s /etc/passwd entry if
+not). This flag is <i>off</i> by default.</p>
+
+<p style="margin-top: 1em">stay_setuid</p>
+
+<p style="margin-left:29%; margin-top: 1em">Normally, when
+<b>sudo</b> executes a command the real and effective UIDs
+are set to the target user (root by default). This option
+changes that behavior such that the real UID is left as the
+invoking user&rsquo;s UID. In other words, this makes
+<b>sudo</b> act as a setuid wrapper. This can be useful on
+systems that disable some potentially dangerous
+functionality when a program is run setuid. This option is
+only effective on systems that support either the
+setreuid(2) or setresuid(2) system call. This flag is
+<i>off</i> by default.</p>
+
+<p style="margin-top: 1em">targetpw</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set,
+<b>sudo</b> will prompt for the password of the user
+specified by the <b>&minus;u</b> option (defaults to root)
+instead of the password of the invoking user. In addition,
+the time stamp file name will include the target
+user&rsquo;s name. Note that this flag precludes the use of
+a uid not listed in the passwd database as an argument to
+the <b>&minus;u</b> option. This flag is <i>off</i> by
+default.</p>
+
+<p style="margin-top: 1em">tty_tickets</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set, users
+must authenticate on a per-tty basis. With this flag
+enabled, <b>sudo</b> will use a file named for the tty the
+user is logged in on in the user&rsquo;s time stamp
+directory. If disabled, the time stamp of the directory is
+used instead. This flag is <i>on</i> by default.</p>
+
+<p style="margin-top: 1em">umask_override</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set,
+<b>sudo</b> will set the umask as specified by
+<i>sudoers</i> without modification. This makes it possible
+to specify a more permissive umask in <i>sudoers</i> than
+the user&rsquo;s own umask and matches historical behavior.
+If <i>umask_override</i> is not set, <b>sudo</b> will set
+the umask to be the union of the user&rsquo;s umask and what
+is specified in <i>sudoers</i>. This flag is <i>off</i> by
+default.</p>
+
+<p style="margin-top: 1em">use_pty</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set,
+<b>sudo</b> will run the command in a pseudo-pty even if no
+I/O logging is being gone. A malicious program run under
+<b>sudo</b> could conceivably fork a background process that
+retains to the user&rsquo;s terminal device after the main
+program has finished executing. Use of this option will make
+that impossible. This flag is <i>off</i> by default.</p>
+
+<p style="margin-top: 1em">utmp_runas</p>
+
+<p style="margin-left:29%; margin-top: 1em">If set,
+<b>sudo</b> will store the name of the runas user when
+updating the utmp (or utmpx) file. By default, <b>sudo</b>
+stores the name of the invoking user. This flag is
+<i>off</i> by default.</p>
+
+<p style="margin-top: 1em">visiblepw</p>
+
+<p style="margin-left:29%; margin-top: 1em">By default,
+<b>sudo</b> will refuse to run if the user must enter a
+password but it is not possible to disable echo on the
+terminal. If the <i>visiblepw</i> flag is set, <b>sudo</b>
+will prompt for a password even when it would be visible on
+the screen. This makes it possible to run things like
+&lsquo;&lsquo;ssh somehost sudo ls&rsquo;&rsquo; since by
+default, ssh(1) does not allocate a tty when running a
+command. This flag is <i>off</i> by default.</p>
+
+
+<p style="margin-left:6%; margin-top: 1em"><b>Integers</b>:</p>
+
+<p style="margin-top: 1em">closefrom</p>
+
+<p style="margin-left:29%; margin-top: 1em">Before it
+executes a command, <b>sudo</b> will close all open file
+descriptors other than standard input, standard output and
+standard error (ie: file descriptors 0-2). The
+<i>closefrom</i> option can be used to specify a different
+file descriptor at which to start closing. The default is
+3.</p>
+
+<p style="margin-top: 1em">passwd_tries</p>
+
+<p style="margin-left:29%; margin-top: 1em">The number of
+tries a user gets to enter his/her password before
+<b>sudo</b> logs the failure and exits. The default is
+3.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Integers that
+can be used in a boolean context</b>:</p>
+
+<p style="margin-top: 1em">loglinelen</p>
+
+<p style="margin-left:29%; margin-top: 1em">Number of
+characters per line for the file log. This value is used to
+decide when to wrap lines for nicer log files. This has no
+effect on the syslog log file, only the file log. The
+default is 80 (use 0 or negate the option to disable word
+wrap).</p>
+
+<p style="margin-top: 1em">passwd_timeout</p>
+
+<p style="margin-left:29%; margin-top: 1em">Number of
+minutes before the <b>sudo</b> password prompt times out, or
+0 for no timeout. The timeout may include a fractional
+component if minute granularity is insufficient, for example
+2.5. The default is 5.</p>
+
+<p style="margin-top: 1em">timestamp_timeout</p>
+
+<p style="margin-left:29%;">Number of minutes that can
+elapse before <b>sudo</b> will ask for a passwd again. The
+timeout may include a fractional component if minute
+granularity is insufficient, for example 2.5. The default is
+5. Set this to 0 to always prompt for a password. If set to
+a value less than 0 the user&rsquo;s time stamp will never
+expire. This can be used to allow users to create or delete
+their own time stamps via &lsquo;&lsquo;sudo
+-v&rsquo;&rsquo; and &lsquo;&lsquo;sudo -k&rsquo;&rsquo;
+respectively.</p>
+
+<p style="margin-top: 1em">umask</p>
+
+<p style="margin-left:29%; margin-top: 1em">Umask to use
+when running the command. Negate this option or set it to
+0777 to preserve the user&rsquo;s umask. The actual umask
+that is used will be the union of the user&rsquo;s umask and
+the value of the <i>umask</i> option, which defaults to
+0022. This guarantees that <b>sudo</b> never lowers the
+umask when running a command. Note: on systems that use PAM,
+the default PAM configuration may specify its own umask
+which will override the value set in <i>sudoers</i>.</p>
+
+
+<p style="margin-left:6%; margin-top: 1em"><b>Strings</b>:</p>
+
+<p style="margin-top: 1em">badpass_message</p>
+
+<p style="margin-left:29%; margin-top: 1em">Message that is
+displayed if a user enters an incorrect password. The
+default is Sorry, try again. unless insults are enabled.</p>
+
+<p style="margin-top: 1em">editor</p>
+
+<p style="margin-left:29%; margin-top: 1em">A colon
+(&lsquo;:&rsquo;) separated list of editors allowed to be
+used with <b>visudo</b>. <b>visudo</b> will choose the
+editor that matches the user&rsquo;s EDITOR environment
+variable if possible, or the first editor in the list that
+exists and is executable. The default is
+<i>/usr/local/bin/vi</i>.</p>
+
+<p style="margin-top: 1em">iolog_dir</p>
+
+<p style="margin-left:29%; margin-top: 1em">The top-level
+directory to use when constructing the path name for the
+input/output log directory. Only used if the
+<i>log_input</i> or <i>log_output</i> options are enabled or
+when the LOG_INPUT or LOG_OUTPUT tags are present for a
+command. The session sequence number, if any, is stored in
+the directory. The default is <i>/var/log/sudo-io</i>.</p>
+
+<p style="margin-left:29%; margin-top: 1em">The following
+percent (&lsquo;%&rsquo;) escape sequences are
+supported:</p>
+
+<p style="margin-top: 1em">%{seq}</p>
+
+<p style="margin-left:37%;">expanded to a monotonically
+increasing base-36 sequence number, such as 0100A5, where
+every two digits are used to form a new directory, e.g.
+<i>01/00/A5</i></p>
+
+<p style="margin-top: 1em">%{user}</p>
+
+<p style="margin-left:37%;">expanded to the invoking
+user&rsquo;s login name</p>
+
+<p style="margin-top: 1em">%{group}</p>
+
+<p style="margin-left:37%;">expanded to the name of the
+invoking user&rsquo;s real group ID</p>
+
+<p style="margin-top: 1em">%{runas_user}</p>
+
+<p style="margin-left:37%;">expanded to the login name of
+the user the command will be run as (e.g. root)</p>
+
+<p style="margin-top: 1em">%{runas_group}</p>
+
+<p style="margin-left:37%;">expanded to the group name of
+the user the command will be run as (e.g. wheel)</p>
+
+<p style="margin-top: 1em">%{hostname}</p>
+
+<p style="margin-left:37%;">expanded to the local host name
+without the domain name</p>
+
+<p style="margin-top: 1em">%{command}</p>
+
+<p style="margin-left:37%;">expanded to the base name of
+the command being run</p>
+
+<p style="margin-left:29%; margin-top: 1em">In addition,
+any escape sequences supported by the system&rsquo;s
+strftime(3) function will be expanded.</p>
+
+<p style="margin-left:29%; margin-top: 1em">To include a
+literal &lsquo;%&rsquo; character, the string
+&lsquo;%%&rsquo; should be used.</p>
+
+<p style="margin-top: 1em">iolog_file</p>
+
+<p style="margin-left:29%; margin-top: 1em">The path name,
+relative to <i>iolog_dir</i>, in which to store input/output
+logs when the <i>log_input</i> or <i>log_output</i> options
+are enabled or when the LOG_INPUT or LOG_OUTPUT tags are
+present for a command. Note that <i>iolog_file</i> may
+contain directory components. The default is
+&lsquo;&lsquo;%{seq}&rsquo;&rsquo;.</p>
+
+<p style="margin-left:29%; margin-top: 1em">See the
+<i>iolog_dir</i> option above for a list of supported
+percent (&lsquo;%&rsquo;) escape sequences.</p>
+
+<p style="margin-left:29%; margin-top: 1em">In addition to
+the escape sequences, path names that end in six or more Xs
+will have the Xs replaced with a unique combination of
+digits and letters, similar to the mktemp(3) function.</p>
+
+<p style="margin-top: 1em">mailsub</p>
+
+<p style="margin-left:29%; margin-top: 1em">Subject of the
+mail sent to the <i>mailto</i> user. The escape %h will
+expand to the host name of the machine. Default is
+&lsquo;&lsquo;*** SECURITY information for %h
+***&rsquo;&rsquo;.</p>
+
+<p style="margin-top: 1em">noexec_file</p>
+
+<p style="margin-left:29%; margin-top: 1em">This option is
+no longer supported. The path to the noexec file should now
+be set in the <i>/etc/sudo.conf</i> file.</p>
+
+<p style="margin-top: 1em">passprompt</p>
+
+<p style="margin-left:29%; margin-top: 1em">The default
+prompt to use when asking for a password; can be overridden
+via the <b>&minus;p</b> option or the SUDO_PROMPT
+environment variable. The following percent
+(&lsquo;%&rsquo;) escape sequences are supported:</p>
+
+<p style="margin-top: 1em">%H</p>
+
+<p style="margin-left:37%; margin-top: 1em">expanded to the
+local host name including the domain name (only if the
+machine&rsquo;s host name is fully qualified or the
+<i>fqdn</i> option is set)</p>
+
+<p style="margin-top: 1em">%h</p>
+
+<p style="margin-left:37%; margin-top: 1em">expanded to the
+local host name without the domain name</p>
+
+<p style="margin-top: 1em">%p</p>
+
+<p style="margin-left:37%; margin-top: 1em">expanded to the
+user whose password is being asked for (respects the
+<i>rootpw</i>, <i>targetpw</i> and <i>runaspw</i> flags in
+<i>sudoers</i>)</p>
+
+<p style="margin-top: 1em">%U</p>
+
+<p style="margin-left:37%; margin-top: 1em">expanded to the
+login name of the user the command will be run as (defaults
+to root)</p>
+
+<p style="margin-top: 1em">%u</p>
+
+<p style="margin-left:37%; margin-top: 1em">expanded to the
+invoking user&rsquo;s login name</p>
+
+<p style="margin-top: 1em">%%</p>
+
+<p style="margin-left:37%; margin-top: 1em">two consecutive
+% characters are collapsed into a single % character</p>
+
+<p style="margin-left:29%; margin-top: 1em">The default
+value is &lsquo;&lsquo;[sudo] password for
+%p:&rsquo;&rsquo;.</p>
+
+<p style="margin-top: 1em">role</p>
+
+<p style="margin-left:29%; margin-top: 1em">The default
+SELinux role to use when constructing a new security context
+to run the command. The default role may be overridden on a
+per-command basis in <i>sudoers</i> or via command line
+options. This option is only available when <b>sudo</b> is
+built with SELinux support.</p>
+
+<p style="margin-top: 1em">runas_default</p>
+
+<p style="margin-left:29%; margin-top: 1em">The default
+user to run commands as if the <b>&minus;u</b> option is not
+specified on the command line. This defaults to root.</p>
+
+<p style="margin-top: 1em">syslog_badpri</p>
+
+<p style="margin-left:29%; margin-top: 1em">Syslog priority
+to use when user authenticates unsuccessfully. Defaults to
+alert.</p>
+
+<p style="margin-left:29%; margin-top: 1em">The following
+syslog priorities are supported: <b>alert</b>, <b>crit</b>,
+<b>debug</b>, <b>emerg</b>, <b>err</b>, <b>info</b>,
+<b>notice</b>, and <b>warning</b>.</p>
+
+<p style="margin-top: 1em">syslog_goodpri</p>
+
+<p style="margin-left:29%; margin-top: 1em">Syslog priority
+to use when user authenticates successfully. Defaults to
+notice.</p>
+
+<p style="margin-left:29%; margin-top: 1em">See
+<i>syslog_badpri</i> for the list of supported syslog
+priorities.</p>
+
+<p style="margin-top: 1em">sudoers_locale</p>
+
+<p style="margin-left:29%; margin-top: 1em">Locale to use
+when parsing the sudoers file, logging commands, and sending
+email. Note that changing the locale may affect how sudoers
+is interpreted. Defaults to
+&lsquo;&lsquo;C&rsquo;&rsquo;.</p>
+
+<p style="margin-top: 1em">timestampdir</p>
+
+<p style="margin-left:29%; margin-top: 1em">The directory
+in which <b>sudo</b> stores its time stamp files. The
+default is <i>/var/db/sudo</i>.</p>
+
+<p style="margin-top: 1em">timestampowner</p>
+
+<p style="margin-left:29%; margin-top: 1em">The owner of
+the time stamp directory and the time stamps stored therein.
+The default is root.</p>
+
+<p style="margin-top: 1em">type</p>
+
+<p style="margin-left:29%; margin-top: 1em">The default
+SELinux type to use when constructing a new security context
+to run the command. The default type may be overridden on a
+per-command basis in <i>sudoers</i> or via command line
+options. This option is only available when <b>sudo</b> is
+built with SELinux support.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Strings that
+can be used in a boolean context</b>:</p>
+
+<p style="margin-top: 1em">env_file</p>
+
+<p style="margin-left:24%; margin-top: 1em">The
+<i>env_file</i> option specifies the fully qualified path to
+a file containing variables to be set in the environment of
+the program being run. Entries in this file should either be
+of the form &lsquo;&lsquo;VARIABLE=value&rsquo;&rsquo; or
+&lsquo;&lsquo;export VARIABLE=value&rsquo;&rsquo;. The value
+may optionally be surrounded by single or double quotes.
+Variables in this file are subject to other <b>sudo</b>
+environment settings such as <i>env_keep</i> and
+<i>env_check</i>.</p>
+
+<p style="margin-top: 1em">exempt_group</p>
+
+<p style="margin-left:24%; margin-top: 1em">Users in this
+group are exempt from password and PATH requirements. The
+group name specified should not include a % prefix. This is
+not set by default.</p>
+
+<p style="margin-top: 1em">group_plugin</p>
+
+<p style="margin-left:24%; margin-top: 1em">A string
+containing a <i>sudoers</i> group plugin with optional
+arguments. This can be used to implement support for the
+nonunix_group syntax described earlier. The string should
+consist of the plugin path, either fully-qualified or
+relative to the <i>/usr/libexec</i> directory, followed by
+any configuration arguments the plugin requires. These
+arguments (if any) will be passed to the plugin&rsquo;s
+initialization function. If arguments are present, the
+string must be enclosed in double quotes (&quot;&quot;).</p>
+
+<p style="margin-left:24%; margin-top: 1em">For example,
+given <i>/etc/sudo-group</i>, a group file in Unix group
+format, the sample group plugin can be used:</p>
+
+<p style="margin-left:24%; margin-top: 1em">Defaults
+group_plugin=&quot;sample_group.so /etc/sudo-group&quot;</p>
+
+<p style="margin-left:24%; margin-top: 1em">For more
+information see sudo_plugin(5).</p>
+
+<p style="margin-top: 1em">lecture</p>
+
+<p style="margin-left:24%; margin-top: 1em">This option
+controls when a short lecture will be printed along with the
+password prompt. It has the following possible values:</p>
+
+<p style="margin-top: 1em">always</p>
+
+<p style="margin-left:35%; margin-top: 1em">Always lecture
+the user.</p>
+
+<p style="margin-top: 1em">never</p>
+
+<p style="margin-left:35%; margin-top: 1em">Never lecture
+the user.</p>
+
+<p style="margin-top: 1em">once</p>
+
+<p style="margin-left:35%; margin-top: 1em">Only lecture
+the user the first time they run <b>sudo</b>.</p>
+
+<p style="margin-left:24%; margin-top: 1em">If no value is
+specified, a value of <i>once</i> is implied. Negating the
+option results in a value of <i>never</i> being used. The
+default value is <i>once</i>.</p>
+
+<p style="margin-top: 1em">lecture_file</p>
+
+<p style="margin-left:24%; margin-top: 1em">Path to a file
+containing an alternate <b>sudo</b> lecture that will be
+used in place of the standard lecture if the named file
+exists. By default, <b>sudo</b> uses a built-in lecture.</p>
+
+<p style="margin-top: 1em">listpw</p>
+
+<p style="margin-left:24%; margin-top: 1em">This option
+controls when a password will be required when a user runs
+<b>sudo</b> with the <b>&minus;l</b> option. It has the
+following possible values:</p>
+
+<p style="margin-top: 1em">all</p>
+
+<p style="margin-left:37%; margin-top: 1em">All the
+user&rsquo;s <i>sudoers</i> entries for the current host
+must have the NOPASSWD flag set to avoid entering a
+password.</p>
+
+<p style="margin-top: 1em">always</p>
+
+<p style="margin-left:37%; margin-top: 1em">The user must
+always enter a password to use the <b>&minus;l</b>
+option.</p>
+
+<p style="margin-top: 1em">any</p>
+
+<p style="margin-left:37%; margin-top: 1em">At least one of
+the user&rsquo;s <i>sudoers</i> entries for the current host
+must have the NOPASSWD flag set to avoid entering a
+password.</p>
+
+<p style="margin-top: 1em">never</p>
+
+<p style="margin-left:37%; margin-top: 1em">The user need
+never enter a password to use the <b>&minus;l</b>
+option.</p>
+
+<p style="margin-left:24%; margin-top: 1em">If no value is
+specified, a value of <i>any</i> is implied. Negating the
+option results in a value of <i>never</i> being used. The
+default value is <i>any</i>.</p>
+
+<p style="margin-top: 1em">logfile</p>
+
+<p style="margin-left:24%; margin-top: 1em">Path to the
+<b>sudo</b> log file (not the syslog log file). Setting a
+path turns on logging to a file; negating this option turns
+it off. By default, <b>sudo</b> logs via syslog.</p>
+
+<p style="margin-top: 1em">mailerflags</p>
+
+<p style="margin-left:24%; margin-top: 1em">Flags to use
+when invoking mailer. Defaults to <b>&minus;t</b>.</p>
+
+<p style="margin-top: 1em">mailerpath</p>
+
+<p style="margin-left:24%; margin-top: 1em">Path to mail
+program used to send warning mail. Defaults to the path to
+sendmail found at configure time.</p>
+
+<p style="margin-top: 1em">mailfrom</p>
+
+<p style="margin-left:24%; margin-top: 1em">Address to use
+for the &lsquo;&lsquo;from&rsquo;&rsquo; address when
+sending warning and error mail. The address should be
+enclosed in double quotes (&quot;&quot;) to protect against
+<b>sudo</b> interpreting the @ sign. Defaults to the name of
+the user running <b>sudo</b>.</p>
+
+<p style="margin-top: 1em">mailto</p>
+
+<p style="margin-left:24%; margin-top: 1em">Address to send
+warning and error mail to. The address should be enclosed in
+double quotes (&quot;&quot;) to protect against <b>sudo</b>
+interpreting the @ sign. Defaults to root.</p>
+
+<p style="margin-top: 1em">secure_path</p>
+
+<p style="margin-left:24%; margin-top: 1em">Path used for
+every command run from <b>sudo</b>. If you don&rsquo;t trust
+the people running <b>sudo</b> to have a sane PATH
+environment variable you may want to use this. Another use
+is if you want to have the &lsquo;&lsquo;root
+path&rsquo;&rsquo; be separate from the &lsquo;&lsquo;user
+path&rsquo;&rsquo;. Users in the group specified by the
+<i>exempt_group</i> option are not affected by
+<i>secure_path</i>. This option is not set by default.</p>
+
+<p style="margin-top: 1em">syslog</p>
+
+<p style="margin-left:24%; margin-top: 1em">Syslog facility
+if syslog is being used for logging (negate to disable
+syslog logging). Defaults to authpriv.</p>
+
+<p style="margin-left:24%; margin-top: 1em">The following
+syslog facilities are supported: <b>authpriv</b> (if your OS
+supports it), <b>auth</b>, <b>daemon</b>, <b>user</b>,
+<b>local0</b>, <b>local1</b>, <b>local2</b>, <b>local3</b>,
+<b>local4</b>, <b>local5</b>, <b>local6</b>, and
+<b>local7</b>.</p>
+
+<p style="margin-top: 1em">verifypw</p>
+
+<p style="margin-left:24%; margin-top: 1em">This option
+controls when a password will be required when a user runs
+<b>sudo</b> with the <b>&minus;v</b> option. It has the
+following possible values:</p>
+
+<p style="margin-top: 1em">all</p>
+
+<p style="margin-left:35%; margin-top: 1em">All the
+user&rsquo;s <i>sudoers</i> entries for the current host
+must have the NOPASSWD flag set to avoid entering a
+password.</p>
+
+<p style="margin-top: 1em">always</p>
+
+<p style="margin-left:35%; margin-top: 1em">The user must
+always enter a password to use the <b>&minus;v</b>
+option.</p>
+
+<p style="margin-top: 1em">any</p>
+
+<p style="margin-left:35%; margin-top: 1em">At least one of
+the user&rsquo;s <i>sudoers</i> entries for the current host
+must have the NOPASSWD flag set to avoid entering a
+password.</p>
+
+<p style="margin-top: 1em">never</p>
+
+<p style="margin-left:35%; margin-top: 1em">The user need
+never enter a password to use the <b>&minus;v</b>
+option.</p>
+
+<p style="margin-left:24%; margin-top: 1em">If no value is
+specified, a value of <i>all</i> is implied. Negating the
+option results in a value of <i>never</i> being used. The
+default value is <i>all</i>.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Lists that
+can be used in a boolean context</b>:</p>
+
+<p style="margin-top: 1em">env_check</p>
+
+<p style="margin-left:29%; margin-top: 1em">Environment
+variables to be removed from the user&rsquo;s environment if
+unless they are considered &lsquo;&lsquo;safe&rsquo;&rsquo;.
+For all variables except TZ,
+&lsquo;&lsquo;safe&rsquo;&rsquo; means that the
+variable&rsquo;s value does not contain any &lsquo;%&rsquo;
+or &lsquo;/&rsquo; characters. This can be used to guard
+against printf-style format vulnerabilities in
+poorly-written programs. The TZ variable is considerd unsafe
+if any of the following are true:</p>
+
+<p style="margin-top: 1em"><b>&bull;</b></p>
+
+<p style="margin-left:35%;">It consists of a
+fully-qualified path name, optionally prefixed with a colon
+(&lsquo;:&rsquo;), that does not match the location of the
+<i>zoneinfo</i> directory.</p>
+
+<p style="margin-top: 1em"><b>&bull;</b></p>
+
+<p style="margin-left:35%;">It contains a <i>..</i> path
+element.</p>
+
+<p style="margin-top: 1em"><b>&bull;</b></p>
+
+<p style="margin-left:35%;">It contains white space or
+non-printable characters.</p>
+
+<p style="margin-top: 1em"><b>&bull;</b></p>
+
+<p style="margin-left:35%;">It is longer than the value of
+PATH_MAX.</p>
+
+<p style="margin-left:29%; margin-top: 1em">The argument
+may be a double-quoted, space-separated list or a single
+value without double-quotes. The list can be replaced, added
+to, deleted from, or disabled by using the =, +=, -=, and !
+operators respectively. Regardless of whether the env_reset
+option is enabled or disabled, variables specified by
+env_check will be preserved in the environment if they pass
+the aforementioned check. The default list of environment
+variables to check is displayed when <b>sudo</b> is run by
+root with the <b>&minus;V</b> option.</p>
+
+<p style="margin-top: 1em">env_delete</p>
+
+<p style="margin-left:29%; margin-top: 1em">Environment
+variables to be removed from the user&rsquo;s environment
+when the <i>env_reset</i> option is not in effect. The
+argument may be a double-quoted, space-separated list or a
+single value without double-quotes. The list can be
+replaced, added to, deleted from, or disabled by using the
+=, +=, -=, and ! operators respectively. The default list of
+environment variables to remove is displayed when
+<b>sudo</b> is run by root with the <b>&minus;V</b> option.
+Note that many operating systems will remove potentially
+dangerous variables from the environment of any setuid
+process (such as <b>sudo</b>).</p>
+
+<p style="margin-top: 1em">env_keep</p>
+
+<p style="margin-left:29%; margin-top: 1em">Environment
+variables to be preserved in the user&rsquo;s environment
+when the <i>env_reset</i> option is in effect. This allows
+fine-grained control over the environment
+<b>sudo</b>-spawned processes will receive. The argument may
+be a double-quoted, space-separated list or a single value
+without double-quotes. The list can be replaced, added to,
+deleted from, or disabled by using the =, +=, -=, and !
+operators respectively. The default list of variables to
+keep is displayed when <b>sudo</b> is run by root with the
+<b>&minus;V</b> option.</p>
+
+<p style="margin-top: 1em"><b>LOG FORMAT</b></p>
+
+<p style="margin-left:6%;"><b>sudoers</b> can log events
+using either syslog(3) or a simple log file. In each case
+the log format is almost identical.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Accepted
+command log entries</b> <br>
+Commands that sudo runs are logged using the following
+format (split into multiple lines for readability):</p>
+
+<p style="margin-left:12%; margin-top: 1em">date hostname
+progname: username : TTY=ttyname ; PWD=cwd ; \ <br>
+USER=runasuser ; GROUP=runasgroup ; TSID=logid ; \ <br>
+ENV=env_vars COMMAND=command</p>
+
+<p style="margin-left:6%; margin-top: 1em">Where the fields
+are as follows:</p>
+
+<p style="margin-top: 1em">date</p>
+
+<p style="margin-left:24%; margin-top: 1em">The date the
+command was run. Typically, this is in the format
+&lsquo;&lsquo;MMM, DD, HH:MM:SS&rsquo;&rsquo;. If logging
+via syslog(3), the actual date format is controlled by the
+syslog daemon. If logging to a file and the <i>log_year</i>
+option is enabled, the date will also include the year.</p>
+
+<p style="margin-top: 1em">hostname</p>
+
+<p style="margin-left:24%; margin-top: 1em">The name of the
+host <b>sudo</b> was run on. This field is only present when
+logging via syslog(3).</p>
+
+<p style="margin-top: 1em">progname</p>
+
+<p style="margin-left:24%; margin-top: 1em">The name of the
+program, usually <i>sudo</i> or <i>sudoedit</i>. This field
+is only present when logging via syslog(3).</p>
+
+<p style="margin-top: 1em">username</p>
+
+<p style="margin-left:24%; margin-top: 1em">The login name
+of the user who ran <b>sudo</b>.</p>
+
+<p style="margin-top: 1em">ttyname</p>
+
+<p style="margin-left:24%; margin-top: 1em">The short name
+of the terminal (e.g. &lsquo;&lsquo;console&rsquo;&rsquo;,
+&lsquo;&lsquo;tty01&rsquo;&rsquo;, or
+&lsquo;&lsquo;pts/0&rsquo;&rsquo;) <b>sudo</b> was run on,
+or &lsquo;&lsquo;unknown&rsquo;&rsquo; if there was no
+terminal present.</p>
+
+<p style="margin-top: 1em">cwd</p>
+
+<p style="margin-left:24%; margin-top: 1em">The current
+working directory that <b>sudo</b> was run in.</p>
+
+<p style="margin-top: 1em">runasuser</p>
+
+<p style="margin-left:24%; margin-top: 1em">The user the
+command was run as.</p>
+
+<p style="margin-top: 1em">runasgroup</p>
+
+<p style="margin-left:24%; margin-top: 1em">The group the
+command was run as if one was specified on the command
+line.</p>
+
+<p style="margin-top: 1em">logid</p>
+
+<p style="margin-left:24%; margin-top: 1em">An I/O log
+identifier that can be used to replay the command&rsquo;s
+output. This is only present when the <i>log_input</i> or
+<i>log_output</i> option is enabled.</p>
+
+<p style="margin-top: 1em">env_vars</p>
+
+<p style="margin-left:24%; margin-top: 1em">A list of
+environment variables specified on the command line, if
+specified.</p>
+
+<p style="margin-top: 1em">command</p>
+
+<p style="margin-left:24%; margin-top: 1em">The actual
+command that was executed.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Messages are
+logged using the locale specified by <i>sudoers_locale</i>,
+which defaults to the &lsquo;&lsquo;C&rsquo;&rsquo;
+locale.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Denied
+command log entries</b> <br>
+If the user is not allowed to run the command, the reason
+for the denial will follow the user name. Possible reasons
+include:</p>
+
+<p style="margin-top: 1em">user NOT in sudoers</p>
+
+<p style="margin-left:9%;">The user is not listed in the
+<i>sudoers</i> file.</p>
+
+<p style="margin-top: 1em">user NOT authorized on host</p>
+
+<p style="margin-left:9%;">The user is listed in the
+<i>sudoers</i> file but is not allowed to run commands on
+the host.</p>
+
+<p style="margin-top: 1em">command not allowed</p>
+
+<p style="margin-left:9%;">The user is listed in the
+<i>sudoers</i> file for the host but they are not allowed to
+run the specified command.</p>
+
+<p style="margin-top: 1em">3 incorrect password
+attempts</p>
+
+<p style="margin-left:9%;">The user failed to enter their
+password after 3 tries. The actual number of tries will vary
+based on the number of failed attempts and the value of the
+<i>passwd_tries</i> option.</p>
+
+<p style="margin-top: 1em">a password is required</p>
+
+<p style="margin-left:9%;"><b>sudo</b>&rsquo;s
+<b>&minus;n</b> option was specified but a password was
+required.</p>
+
+<p style="margin-top: 1em">sorry, you are not allowed to
+set the following environment variables</p>
+
+<p style="margin-left:9%;">The user specified environment
+variables on the command line that were not allowed by
+<i>sudoers</i>.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Error log
+entries</b> <br>
+If an error occurs, <b>sudoers</b> will log a message and,
+in most cases, send a message to the administrator via
+email. Possible errors include:</p>
+
+<p style="margin-top: 1em">parse error in /etc/sudoers near
+line N</p>
+
+<p style="margin-left:9%;"><b>sudoers</b> encountered an
+error when parsing the specified file. In some cases, the
+actual error may be one line above or below the line number
+listed, depending on the type of error.</p>
+
+<p style="margin-top: 1em">problem with defaults
+entries</p>
+
+<p style="margin-left:9%;">The <i>sudoers</i> file contains
+one or more unknown Defaults settings. This does not prevent
+<b>sudo</b> from running, but the <i>sudoers</i> file should
+be checked using <b>visudo</b>.</p>
+
+<p style="margin-top: 1em">timestamp owner (username): No
+such user</p>
+
+<p style="margin-left:9%;">The time stamp directory owner,
+as specified by the <i>timestampowner</i> setting, could not
+be found in the password database.</p>
+
+<p style="margin-top: 1em">unable to open/read
+/etc/sudoers</p>
+
+<p style="margin-left:9%;">The <i>sudoers</i> file could
+not be opened for reading. This can happen when the
+<i>sudoers</i> file is located on a remote file system that
+maps user ID 0 to a different value. Normally,
+<b>sudoers</b> tries to open <i>sudoers</i> using group
+permissions to avoid this problem. Consider changing the
+ownership of <i>/etc/sudoers</i> by adding an option like
+&lsquo;&lsquo;sudoers_uid=N&rsquo;&rsquo; (where
+&lsquo;N&rsquo; is the user ID that owns the <i>sudoers</i>
+file) to the <b>sudoers</b> plugin line in the
+<i>/etc/sudo.conf</i> file.</p>
+
+<p style="margin-top: 1em">unable to stat /etc/sudoers</p>
+
+<p style="margin-left:9%;">The <i>/etc/sudoers</i> file is
+missing.</p>
+
+<p style="margin-top: 1em">/etc/sudoers is not a regular
+file</p>
+
+<p style="margin-left:9%;">The <i>/etc/sudoers</i> file
+exists but is not a regular file or symbolic link.</p>
+
+<p style="margin-top: 1em">/etc/sudoers is owned by uid N,
+should be 0</p>
+
+<p style="margin-left:9%;">The <i>sudoers</i> file has the
+wrong owner. If you wish to change the <i>sudoers</i> file
+owner, please add &lsquo;&lsquo;sudoers_uid=N&rsquo;&rsquo;
+(where &lsquo;N&rsquo; is the user ID that owns the
+<i>sudoers</i> file) to the <b>sudoers</b> plugin line in
+the <i>/etc/sudo.conf</i> file.</p>
+
+<p style="margin-top: 1em">/etc/sudoers is world
+writable</p>
+
+<p style="margin-left:9%;">The permissions on the
+<i>sudoers</i> file allow all users to write to it. The
+<i>sudoers</i> file must not be world-writable, the default
+file mode is 0440 (readable by owner and group, writable by
+none). The default mode may be changed via the
+&lsquo;&lsquo;sudoers_mode&rsquo;&rsquo; option to the
+<b>sudoers</b> plugin line in the <i>/etc/sudo.conf</i>
+file.</p>
+
+<p style="margin-top: 1em">/etc/sudoers is owned by gid N,
+should be 1</p>
+
+<p style="margin-left:9%;">The <i>sudoers</i> file has the
+wrong group ownership. If you wish to change the
+<i>sudoers</i> file group ownership, please add
+&lsquo;&lsquo;sudoers_gid=N&rsquo;&rsquo; (where
+&lsquo;N&rsquo; is the group ID that owns the <i>sudoers</i>
+file) to the <b>sudoers</b> plugin line in the
+<i>/etc/sudo.conf</i> file.</p>
+
+<p style="margin-top: 1em">unable to open
+/var/db/sudo/username/ttyname</p>
+
+<p style="margin-left:9%;"><i>sudoers</i> was unable to
+read or create the user&rsquo;s time stamp file.</p>
+
+<p style="margin-top: 1em">unable to write to
+/var/db/sudo/username/ttyname</p>
+
+<p style="margin-left:9%;"><i>sudoers</i> was unable to
+write to the user&rsquo;s time stamp file.</p>
+
+<p style="margin-top: 1em">unable to mkdir to
+/var/db/sudo/username</p>
+
+<p style="margin-left:9%;"><i>sudoers</i> was unable to
+create the user&rsquo;s time stamp directory.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Notes on
+logging via syslog</b> <br>
+By default, <i>sudoers</i> logs messages via syslog(3). The
+<i>date</i>, <i>hostname</i>, and <i>progname</i> fields are
+added by the syslog daemon, not <i>sudoers</i> itself. As
+such, they may vary in format on different systems.</p>
+
+<p style="margin-left:6%; margin-top: 1em">On most systems,
+syslog(3) has a relatively small log buffer. To prevent the
+command line arguments from being truncated, <b>sudoers</b>
+will split up log messages that are larger than 960
+characters (not including the date, hostname, and the string
+&lsquo;&lsquo;sudo&rsquo;&rsquo;). When a message is split,
+additional parts will include the string
+&lsquo;&lsquo;(command continued)&rsquo;&rsquo; after the
+user name and before the continued command line
+arguments.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Notes on
+logging to a file</b> <br>
+If the <i>logfile</i> option is set, <i>sudoers</i> will log
+to a local file, such as <i>/var/log/sudo</i>. When logging
+to a file, <i>sudoers</i> uses a format similar to
+syslog(3), with a few important differences:</p>
+
+<p style="margin-top: 1em">1.</p>
+
+<p style="margin-left:13%;">The <i>progname</i> and
+<i>hostname</i> fields are not present.</p>
+
+<p style="margin-top: 1em">2.</p>
+
+<p style="margin-left:13%;">If the <i>log_year</i> option
+is enabled, the date will also include the year.</p>
+
+<p style="margin-top: 1em">3.</p>
+
+<p style="margin-left:13%;">Lines that are longer than
+<i>loglinelen</i> characters (80 by default) are
+word-wrapped and continued on the next line with a four
+character indent. This makes entries easier to read for a
+human being, but makes it more difficult to use grep(1) on
+the log files. If the <i>loglinelen</i> option is set to 0
+(or negated with a &lsquo;!&rsquo;), word wrap will be
+disabled.</p>
+
+<p style="margin-top: 1em"><b>SUDO.CONF</b></p>
+
+<p style="margin-left:6%;">The <i>/etc/sudo.conf</i> file
+determines which plugins the <b>sudo</b> front end will
+load. If no <i>/etc/sudo.conf</i> file is present, or it
+contains no Plugin lines, <b>sudo</b> will use the
+<i>sudoers</i> security policy and I/O logging, which
+corresponds to the following <i>/etc/sudo.conf</i> file.</p>
+
+<p style="margin-left:6%; margin-top: 1em"># <br>
+# Default /etc/sudo.conf file <br>
+# <br>
+# Format: <br>
+# Plugin plugin_name plugin_path plugin_options ... <br>
+# Path askpass /path/to/askpass <br>
+# Path noexec /path/to/sudo_noexec.so <br>
+# Debug sudo /var/log/sudo_debug all@warn <br>
+# Set disable_coredump true <br>
+# <br>
+# The plugin_path is relative to /usr/libexec unless <br>
+# fully qualified. <br>
+# The plugin_name corresponds to a global symbol in the
+plugin <br>
+# that contains the plugin interface structure. <br>
+# The plugin_options are optional. <br>
+# <br>
+Plugin policy_plugin sudoers.so <br>
+Plugin io_plugin sudoers.so</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Plugin
+options</b> <br>
+Starting with <b>sudo</b> 1.8.5, it is possible to pass
+options to the <i>sudoers</i> plugin. Options may be listed
+after the path to the plugin (i.e. after <i>sudoers.so</i>);
+multiple options should be space-separated. For example:</p>
+
+<p style="margin-left:6%; margin-top: 1em">Plugin
+sudoers_policy sudoers.so sudoers_file=/etc/sudoers
+sudoers_uid=0 sudoers_gid=0 sudoers_mode=0440</p>
+
+<p style="margin-left:6%; margin-top: 1em">The following
+plugin options are supported:</p>
+
+<p style="margin-top: 1em">sudoers_file=pathname</p>
+
+<p style="margin-left:19%;">The <i>sudoers_file</i> option
+can be used to override the default path to the
+<i>sudoers</i> file.</p>
+
+<p style="margin-top: 1em">sudoers_uid=uid</p>
+
+<p style="margin-left:19%;">The <i>sudoers_uid</i> option
+can be used to override the default owner of the sudoers
+file. It should be specified as a numeric user ID.</p>
+
+<p style="margin-top: 1em">sudoers_gid=gid</p>
+
+<p style="margin-left:19%;">The <i>sudoers_gid</i> option
+can be used to override the default group of the sudoers
+file. It should be specified as a numeric group ID.</p>
+
+<p style="margin-top: 1em">sudoers_mode=mode</p>
+
+<p style="margin-left:19%;">The <i>sudoers_mode</i> option
+can be used to override the default file mode for the
+sudoers file. It should be specified as an octal value.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Debug
+flags</b> <br>
+Versions 1.8.4 and higher of the <i>sudoers</i> plugin
+supports a debugging framework that can help track down what
+the plugin is doing internally if there is a problem. This
+can be configured in the <i>/etc/sudo.conf</i> file as
+described in sudo(8).</p>
+
+<p style="margin-left:6%; margin-top: 1em">The
+<i>sudoers</i> plugin uses the same debug flag format as the
+<b>sudo</b> front-end: <i>subsystem</i>@<i>priority</i>.</p>
+
+<p style="margin-left:6%; margin-top: 1em">The priorities
+used by <i>sudoers</i>, in order of decreasing severity,
+are: <i>crit</i>, <i>err</i>, <i>warn</i>, <i>notice</i>,
+<i>diag</i>, <i>info</i>, <i>trace</i> and <i>debug</i>.
+Each priority, when specified, also includes all priorities
+higher than it. For example, a priority of <i>notice</i>
+would include debug messages logged at <i>notice</i> and
+higher.</p>
+
+<p style="margin-left:6%; margin-top: 1em">The following
+subsystems are used by <i>sudoers</i>:</p>
+
+<p style="margin-top: 1em"><i>alias</i></p>
+
+<p style="margin-left:19%; margin-top: 1em">User_Alias,
+Runas_Alias, Host_Alias and Cmnd_Alias processing</p>
+
+<p style="margin-top: 1em"><i>all</i></p>
+
+<p style="margin-left:19%; margin-top: 1em">matches every
+subsystem</p>
+
+<p style="margin-top: 1em"><i>audit</i></p>
+
+<p style="margin-left:19%; margin-top: 1em">BSM and Linux
+audit code</p>
+
+<p style="margin-top: 1em"><i>auth</i></p>
+
+<p style="margin-left:19%; margin-top: 1em">user
+authentication</p>
+
+<p style="margin-top: 1em"><i>defaults</i></p>
+
+<p style="margin-left:19%; margin-top: 1em"><i>sudoers
+Defaults</i> settings</p>
+
+<p style="margin-top: 1em"><i>env</i></p>
+
+<p style="margin-left:19%; margin-top: 1em">environment
+handling</p>
+
+<p style="margin-top: 1em"><i>ldap</i></p>
+
+<p style="margin-left:19%; margin-top: 1em">LDAP-based
+sudoers</p>
+
+<p style="margin-top: 1em"><i>logging</i></p>
+
+<p style="margin-left:19%; margin-top: 1em">logging
+support</p>
+
+<p style="margin-top: 1em"><i>match</i></p>
+
+<p style="margin-left:19%; margin-top: 1em">matching of
+users, groups, hosts and netgroups in <i>sudoers</i></p>
+
+<p style="margin-top: 1em"><i>netif</i></p>
+
+<p style="margin-left:19%; margin-top: 1em">network
+interface handling</p>
+
+<p style="margin-top: 1em"><i>nss</i></p>
+
+<p style="margin-left:19%; margin-top: 1em">network service
+switch handling in <i>sudoers</i></p>
+
+<p style="margin-top: 1em"><i>parser</i></p>
+
+<p style="margin-left:19%; margin-top: 1em"><i>sudoers</i>
+file parsing</p>
+
+<p style="margin-top: 1em"><i>perms</i></p>
+
+<p style="margin-left:19%; margin-top: 1em">permission
+setting</p>
+
+<p style="margin-top: 1em"><i>plugin</i></p>
+
+<p style="margin-left:19%; margin-top: 1em">The equivalent
+of <i>main</i> for the plugin.</p>
+
+<p style="margin-top: 1em"><i>pty</i></p>
+
+<p style="margin-left:19%; margin-top: 1em">pseudo-tty
+related code</p>
+
+<p style="margin-top: 1em"><i>rbtree</i></p>
+
+<p style="margin-left:19%; margin-top: 1em">redblack tree
+internals</p>
+
+<p style="margin-top: 1em"><i>util</i></p>
+
+<p style="margin-left:19%; margin-top: 1em">utility
+functions</p>
+
+<p style="margin-top: 1em"><b>FILES</b> <br>
+/etc/sudo.conf</p>
+
+<p style="margin-left:40%; margin-top: 1em">Sudo front end
+configuration</p>
+
+<p style="margin-top: 1em">/etc/sudoers</p>
+
+<p style="margin-left:40%; margin-top: 1em">List of who can
+run what</p>
+
+<p style="margin-top: 1em">/etc/group</p>
+
+<p style="margin-left:40%; margin-top: 1em">Local groups
+file</p>
+
+<p style="margin-top: 1em">/etc/netgroup</p>
+
+<p style="margin-left:40%; margin-top: 1em">List of network
+groups</p>
+
+<p style="margin-top: 1em">/var/log/sudo-io</p>
+
+<p style="margin-left:40%; margin-top: 1em">I/O log
+files</p>
+
+<p style="margin-top: 1em">/var/db/sudo</p>
+
+<p style="margin-left:40%; margin-top: 1em">Directory
+containing time stamps for the <i>sudoers</i> security
+policy</p>
+
+<p style="margin-top: 1em">/etc/environment</p>
+
+<p style="margin-left:40%; margin-top: 1em">Initial
+environment for <b>&minus;i</b> mode on AIX and Linux
+systems</p>
+
+<p style="margin-top: 1em"><b>EXAMPLES</b></p>
+
+<p style="margin-left:6%;">Below are example <i>sudoers</i>
+entries. Admittedly, some of these are a bit contrived.
+First, we allow a few environment variables to pass and then
+define our <i>aliases</i>:</p>
+
+<p style="margin-left:6%; margin-top: 1em"># Run X
+applications through sudo; HOME is used to find the <br>
+# .Xauthority file. Note that other programs use HOME to
+find <br>
+# configuration files and this may lead to privilege
+escalation! <br>
+Defaults env_keep += &quot;DISPLAY HOME&quot;</p>
+
+<p style="margin-left:6%; margin-top: 1em"># User alias
+specification</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>User_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>FULLTIMERS = millert, mikef, dowdy</p></td>
+<td width="63%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>User_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>PARTTIMERS = bostley, jwfox, crawl</p></td>
+<td width="63%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>User_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>WEBMASTERS = will, wendy, wim</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em"># Runas alias
+specification</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Runas_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>OP = root, operator</p></td>
+<td width="63%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Runas_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>DB = oracle, sybase</p></td>
+<td width="63%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Runas_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>ADMINGRP = adm, oper</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em"># Host alias
+specification</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Host_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>SPARC = bigtime, eclipse, moet, anchor :\</p></td>
+<td width="63%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+</td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>SGI = grolsch, dandelion, black :\</p></td>
+<td width="63%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+</td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>ALPHA = widget, thalamus, foobar :\</p></td>
+<td width="63%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+</td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>HPPA = boa, nag, python</p></td>
+<td width="63%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Host_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>CUNETS = 128.138.0.0/255.255.0.0</p></td>
+<td width="63%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Host_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>CSNETS = 128.138.243.0, 128.138.204.0/24,
+128.138.242.0</p> </td>
+<td width="63%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Host_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>SERVERS = master, mail, www, ns</p></td>
+<td width="63%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Host_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>CDROM = orion, perseus, hercules</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em"># Cmnd alias
+specification</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Cmnd_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>DUMPS = /usr/bin/mt, /usr/sbin/dump,
+/usr/sbin/rdump,\</p> </td>
+<td width="10%"></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+</td>
+<td width="10%">
+</td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>/usr/sbin/restore, /usr/sbin/rrestore\</p></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+</td>
+<td width="10%">
+</td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>sha224:0GomF8mNN3wlDt1HD9XldjJ3SNgpFdbjO1+NsQ== \</p></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+</td>
+<td width="10%">
+</td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>/home/operator/bin/start_backups</p></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Cmnd_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>KILL = /usr/bin/kill</p></td>
+<td width="10%"></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Cmnd_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>PRINTING = /usr/sbin/lpc, /usr/bin/lprm</p></td>
+<td width="10%"></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Cmnd_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>SHUTDOWN = /usr/sbin/shutdown</p></td>
+<td width="10%"></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Cmnd_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>HALT = /usr/sbin/halt</p></td>
+<td width="10%"></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Cmnd_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>REBOOT = /usr/sbin/reboot</p></td>
+<td width="10%"></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Cmnd_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>SHELLS = /usr/bin/sh, /usr/bin/csh, /usr/bin/ksh,\</p></td>
+<td width="10%"></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+</td>
+<td width="10%">
+</td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>/usr/local/bin/tcsh, /usr/bin/rsh,\</p></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+</td>
+<td width="10%">
+</td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>/usr/local/bin/zsh</p></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Cmnd_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>SU = /usr/bin/su</p></td>
+<td width="10%"></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Cmnd_Alias</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>PAGERS = /usr/bin/more, /usr/bin/pg, /usr/bin/less</p></td>
+<td width="10%"></td>
+<td width="53%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">Here we override
+some of the compiled in default values. We want <b>sudo</b>
+to log via syslog(3) using the <i>auth</i> facility in all
+cases. We don&rsquo;t want to subject the full time staff to
+the <b>sudo</b> lecture, user <b>millert</b> need not give a
+password, and we don&rsquo;t want to reset the LOGNAME, USER
+or USERNAME environment variables when running commands as
+root. Additionally, on the machines in the <i>SERVERS</i>
+Host_Alias, we keep an additional local log file and make
+sure we log the year in each log line since the log entries
+will be kept around for several years. Lastly, we disable
+shell escapes for the commands in the PAGERS Cmnd_Alias
+(</p>
+
+<p><i>/usr/bin/more</i>, <i>/usr/bin/pg</i> and
+<i>/usr/bin/less</i> ).</p>
+
+<p style="margin-left:6%; margin-top: 1em"># Override
+built-in defaults</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Defaults</p></td>
+<td width="10%"></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>syslog=auth</p></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Defaults&gt;root</p></td>
+<td width="10%"></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>!set_logname</p></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Defaults:FULLTIMERS</p></td>
+<td width="10%"></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>!lecture</p></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Defaults:millert</p></td>
+<td width="10%"></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>!authenticate</p></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Defaults@SERVERS</p></td>
+<td width="10%"></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>log_year, logfile=/var/log/sudo.log</p></td>
+<td width="53%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>Defaults!PAGERS</p></td>
+<td width="10%"></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>noexec</p></td>
+<td width="53%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">The <i>User
+specification</i> is the part that actually determines who
+may run what.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>root</p></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>ALL = (ALL) ALL</p></td>
+<td width="63%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>%wheel</p></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>ALL = (ALL) ALL</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">We let
+<b>root</b> and any user in group <b>wheel</b> run any
+command on any host as any user.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>FULLTIMERS</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>ALL = NOPASSWD: ALL</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">Full time
+sysadmins (</p>
+
+<p><b>millert</b>, <b>mikef</b>, and <b>dowdy</b> ) may run
+any command on any host without authenticating
+themselves.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>PARTTIMERS</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>ALL = ALL</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">Part time
+sysadmins <b>bostley</b>, <b>jwfox</b>, and <b>crawl</b>)
+may run any command on any host but they must authenticate
+themselves first (since the entry lacks the NOPASSWD
+tag).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>jack</p></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>CSNETS = ALL</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">The user
+<b>jack</b> may run any command on the machines in the
+<i>CSNETS</i> alias (the networks 128.138.243.0,
+128.138.204.0, and 128.138.242.0). Of those networks, only
+128.138.204.0 has an explicit netmask (in CIDR notation)
+indicating it is a class C network. For the other networks
+in <i>CSNETS</i>, the local machine&rsquo;s netmask will be
+used during matching.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>lisa</p></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>CUNETS = ALL</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">The user
+<b>lisa</b> may run any command on any host in the
+<i>CUNETS</i> alias (the class B network 128.138.0.0).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>operator</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>ALL = DUMPS, KILL, SHUTDOWN, HALT, REBOOT,
+PRINTING,\</p> </td>
+<td width="63%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+</td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>sudoedit /etc/printcap, /usr/oper/bin/</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">The
+<b>operator</b> user may run commands limited to simple
+maintenance. Here, those are commands related to backups,
+killing processes, the printing system, shutting down the
+system, and any commands in the directory
+<i>/usr/oper/bin/</i>. Note that one command in the DUMPS
+Cmnd_Alias includes a sha224 digest,
+<i>/home/operator/bin/start_backups</i>. This is because the
+directory containing the script is writable by the operator
+user. If the script is modified (resulting in a digest
+mismatch) it will no longer be possible to run it via
+<b>sudo</b>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>joe</p></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>ALL = /usr/bin/su operator</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">The user
+<b>joe</b> may only su(1) to operator.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>pete</p></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>HPPA = /usr/bin/passwd [A-Za-z]*, !/usr/bin/passwd
+root</p> </td>
+<td width="63%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>%opers</p></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>ALL = (: ADMINGRP) /usr/sbin/</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">Users in the
+<b>opers</b> group may run commands in <i>/usr/sbin/</i> as
+themselves with any group in the <i>ADMINGRP</i> Runas_Alias
+(the <b>adm</b> and <b>oper</b> groups).</p>
+
+<p style="margin-left:6%; margin-top: 1em">The user
+<b>pete</b> is allowed to change anyone&rsquo;s password
+except for root on the <i>HPPA</i> machines. Note that this
+assumes passwd(1) does not take multiple user names on the
+command line.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>bob</p></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>SPARC = (OP) ALL : SGI = (OP) ALL</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">The user
+<b>bob</b> may run anything on the <i>SPARC</i> and
+<i>SGI</i> machines as any user listed in the <i>OP</i>
+Runas_Alias (</p>
+
+<p><b>root</b> and <b>operator</b>. )</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>jim</p></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>+biglab = ALL</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">The user
+<b>jim</b> may run any command on machines in the
+<i>biglab</i> netgroup. <b>sudo</b> knows that
+&lsquo;&lsquo;biglab&rsquo;&rsquo; is a netgroup due to the
+&lsquo;+&rsquo; prefix.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>+secretaries</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>ALL = PRINTING, /usr/bin/adduser, /usr/bin/rmuser</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">Users in the
+<b>secretaries</b> netgroup need to help manage the printers
+as well as add and remove users, so they are allowed to run
+those commands on all machines.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>fred</p></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>ALL = (DB) NOPASSWD: ALL</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">The user
+<b>fred</b> can run commands as any user in the <i>DB</i>
+Runas_Alias (</p>
+
+<p><b>oracle</b> or <b>sybase</b> ) without giving a
+password.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>john</p></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>ALPHA = /usr/bin/su [!-]*, !/usr/bin/su *root*</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">On the
+<i>ALPHA</i> machines, user <b>john</b> may su to anyone
+except root but he is not allowed to specify any options to
+the su(1) command.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>jen</p></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>ALL, !SERVERS = ALL</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">The user
+<b>jen</b> may run any command on any machine except for
+those in the <i>SERVERS</i> Host_Alias (master, mail, www
+and ns).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>jill</p></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>SERVERS = /usr/bin/, !SU, !SHELLS</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">For any machine
+in the <i>SERVERS</i> Host_Alias, <b>jill</b> may run any
+commands in the directory <i>/usr/bin/</i> except for those
+commands belonging to the <i>SU</i> and <i>SHELLS</i>
+Cmnd_Aliases.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>steve</p></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>CSNETS = (operator) /usr/local/op_commands/</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">The user
+<b>steve</b> may run any command in the directory
+/usr/local/op_commands/ but only as user operator.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>matt</p></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>valkyrie = KILL</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">On his personal
+workstation, valkyrie, <b>matt</b> needs to be able to kill
+hung processes.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>WEBMASTERS</p></td>
+<td width="10%"></td>
+<td width="10%">
+
+
+<p>www = (www) ALL, (root) /usr/bin/su www</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">On the host www,
+any user in the <i>WEBMASTERS</i> User_Alias (will, wendy,
+and wim), may run any command as user www (which owns the
+web pages) or simply su(1) to www.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+
+
+<p>ALL</p></td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>CDROM = NOPASSWD: /sbin/umount /CDROM,\</p></td>
+<td width="63%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="6%"></td>
+<td width="11%">
+</td>
+<td width="10%">
+</td>
+<td width="10%">
+
+
+<p>/sbin/mount -o nosuidnodev /dev/cd0a /CDROM</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:6%; margin-top: 1em">Any user may
+mount or unmount a CD-ROM on the machines in the CDROM
+Host_Alias (orion, perseus, hercules) without entering a
+password. This is a bit tedious for users to type, so it is
+a prime candidate for encapsulating in a shell script.</p>
+
+<p style="margin-top: 1em"><b>SECURITY NOTES</b></p>
+
+<p style="margin-left:6%;"><b>Limitations of the</b>
+&lsquo;</p>
+
+<p>! &rsquo; operator</p>
+
+<p style="margin-left:6%;">It is generally not effective to
+&lsquo;&lsquo;subtract&rsquo;&rsquo; commands from
+<b>ALL</b> using the &lsquo;!&rsquo; operator. A user can
+trivially circumvent this by copying the desired command to
+a different name and then executing that. For example:</p>
+
+<p style="margin-left:6%; margin-top: 1em">bill ALL = ALL,
+!SU, !SHELLS</p>
+
+<p style="margin-left:6%; margin-top: 1em">Doesn&rsquo;t
+really prevent <b>bill</b> from running the commands listed
+in <i>SU</i> or <i>SHELLS</i> since he can simply copy those
+commands to a different name, or use a shell escape from an
+editor or other program. Therefore, these kind of
+restrictions should be considered advisory at best (and
+reinforced by policy).</p>
+
+<p style="margin-left:6%; margin-top: 1em">In general, if a
+user has sudo <b>ALL</b> there is nothing to prevent them
+from creating their own program that gives them a root shell
+(or making their own copy of a shell) regardless of any
+&lsquo;!&rsquo; elements in the user specification.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Security
+implications of</b> <i>fast_glob</i> <br>
+If the <i>fast_glob</i> option is in use, it is not possible
+to reliably negate commands where the path name includes
+globbing (aka wildcard) characters. This is because the C
+library&rsquo;s fnmatch(3) function cannot resolve relative
+paths. While this is typically only an inconvenience for
+rules that grant privileges, it can result in a security
+issue for rules that subtract or revoke privileges.</p>
+
+<p style="margin-left:6%; margin-top: 1em">For example,
+given the following <i>sudoers</i> entry:</p>
+
+<p style="margin-left:6%; margin-top: 1em">john ALL =
+/usr/bin/passwd [a-zA-Z0-9]*, /usr/bin/chsh [a-zA-Z0-9]*,\
+<br>
+/usr/bin/chfn [a-zA-Z0-9]*, !/usr/bin/* root</p>
+
+<p style="margin-left:6%; margin-top: 1em">User <b>john</b>
+can still run /usr/bin/passwd root if <i>fast_glob</i> is
+enabled by changing to <i>/usr/bin</i> and running ./passwd
+root instead.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Preventing
+shell escapes</b> <br>
+Once <b>sudo</b> executes a program, that program is free to
+do whatever it pleases, including run other programs. This
+can be a security issue since it is not uncommon for a
+program to allow shell escapes, which lets a user bypass
+<b>sudo</b>&rsquo;s access control and logging. Common
+programs that permit shell escapes include shells
+(obviously), editors, paginators, mail and terminal
+programs.</p>
+
+<p style="margin-left:6%; margin-top: 1em">There are two
+basic approaches to this problem:</p>
+
+<p style="margin-top: 1em">restrict</p>
+
+<p style="margin-left:19%; margin-top: 1em">Avoid giving
+users access to commands that allow the user to run
+arbitrary commands. Many editors have a restricted mode
+where shell escapes are disabled, though <b>sudoedit</b> is
+a better solution to running editors via <b>sudo</b>. Due to
+the large number of programs that offer shell escapes,
+restricting users to the set of programs that do not is
+often unworkable.</p>
+
+<p style="margin-top: 1em">noexec</p>
+
+<p style="margin-left:19%; margin-top: 1em">Many systems
+that support shared libraries have the ability to override
+default library functions by pointing an environment
+variable (usually LD_PRELOAD) to an alternate shared
+library. On such systems, <b>sudo</b>&rsquo;s <i>noexec</i>
+functionality can be used to prevent a program run by
+<b>sudo</b> from executing any other programs. Note,
+however, that this applies only to native dynamically-linked
+executables. Statically-linked executables and foreign
+executables running under binary emulation are not
+affected.</p>
+
+<p style="margin-left:19%; margin-top: 1em">The
+<i>noexec</i> feature is known to work on SunOS, Solaris,
+*BSD, Linux, IRIX, Tru64 UNIX, MacOS X, HP-UX 11.x and AIX
+5.3 and above. It should be supported on most operating
+systems that support the LD_PRELOAD environment variable.
+Check your operating system&rsquo;s manual pages for the
+dynamic linker (usually ld.so, ld.so.1, dyld, dld.sl, rld,
+or loader) to see if LD_PRELOAD is supported.</p>
+
+<p style="margin-left:19%; margin-top: 1em">To enable
+<i>noexec</i> for a command, use the NOEXEC tag as
+documented in the User Specification section above. Here is
+that example again:</p>
+
+<p style="margin-left:19%; margin-top: 1em">aaron shanty =
+NOEXEC: /usr/bin/more, /usr/bin/vi</p>
+
+<p style="margin-left:19%; margin-top: 1em">This allows
+user <b>aaron</b> to run <i>/usr/bin/more</i> and
+<i>/usr/bin/vi</i> with <i>noexec</i> enabled. This will
+prevent those two commands from executing other commands
+(such as a shell). If you are unsure whether or not your
+system is capable of supporting <i>noexec</i> you can always
+just try it out and check whether shell escapes work when
+<i>noexec</i> is enabled.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Note that
+restricting shell escapes is not a panacea. Programs running
+as root are still capable of many potentially hazardous
+operations (such as changing or overwriting files) that
+could lead to unintended privilege escalation. In the
+specific case of an editor, a safer approach is to give the
+user permission to run <b>sudoedit</b>.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Time stamp
+file checks</b> <i><br>
+sudoers</i> will check the ownership of its time stamp
+directory (</p>
+
+<p><i>/var/db/sudo</i> by default ) and ignore the
+directory&rsquo;s contents if it is not owned by root or if
+it is writable by a user other than root. On systems that
+allow non-root users to give away files via chown(2), if the
+time stamp directory is located in a world-writable
+directory (e.g., <i>/tmp</i>), it is possible for a user to
+create the time stamp directory before <b>sudo</b> is run.
+However, because <i>sudoers</i> checks the ownership and
+mode of the directory and its contents, the only damage that
+can be done is to &lsquo;&lsquo;hide&rsquo;&rsquo; files by
+putting them in the time stamp dir. This is unlikely to
+happen since once the time stamp dir is owned by root and
+inaccessible by any other user, the user placing files there
+would be unable to get them back out.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><i>sudoers</i>
+will not honor time stamps set far in the future. Time
+stamps with a date greater than current_time + 2 * TIMEOUT
+will be ignored and sudo will log and complain. This is done
+to keep a user from creating his/her own time stamp with a
+bogus date on systems that allow users to give away files if
+the time stamp directory is located in a world-writable
+directory.</p>
+
+<p style="margin-left:6%; margin-top: 1em">On systems where
+the boot time is available, <i>sudoers</i> will ignore time
+stamps that date from before the machine booted.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Since time stamp
+files live in the file system, they can outlive a
+user&rsquo;s login session. As a result, a user may be able
+to login, run a command with <b>sudo</b> after
+authenticating, logout, login again, and run <b>sudo</b>
+without authenticating so long as the time stamp
+file&rsquo;s modification time is within 5 minutes (or
+whatever the timeout is set to in <i>sudoers</i>). When the
+<i>tty_tickets</i> option is enabled, the time stamp has
+per-tty granularity but still may outlive the user&rsquo;s
+session. On Linux systems where the devpts filesystem is
+used, Solaris systems with the devices filesystem, as well
+as other systems that utilize a devfs filesystem that
+monotonically increase the inode number of devices as they
+are created (such as Mac OS X), <i>sudoers</i> is able to
+determine when a tty-based time stamp file is stale and will
+ignore it. Administrators should not rely on this feature as
+it is not universally available.</p>
+
+<p style="margin-top: 1em"><b>SEE ALSO</b></p>
+
+<p style="margin-left:6%;">ssh(1), su(1), fnmatch(3),
+glob(3), mktemp(3), strftime(3), sudoers.ldap(5),
+sudo_plugin(8), sudo(8), visudo(8)</p>
+
+<p style="margin-top: 1em"><b>CAVEATS</b></p>
+
+<p style="margin-left:6%;">The <i>sudoers</i> file should
+<b>always</b> be edited by the <b>visudo</b> command which
+locks the file and does grammatical checking. It is
+imperative that <i>sudoers</i> be free of syntax errors
+since <b>sudo</b> will not run with a syntactically
+incorrect <i>sudoers</i> file.</p>
+
+<p style="margin-left:6%; margin-top: 1em">When using
+netgroups of machines (as opposed to users), if you store
+fully qualified host name in the netgroup (as is usually the
+case), you either need to have the machine&rsquo;s host name
+be fully qualified as returned by the hostname command or
+use the <i>fqdn</i> option in <i>sudoers</i>.</p>
+
+<p style="margin-top: 1em"><b>BUGS</b></p>
+
+<p style="margin-left:6%;">If you feel you have found a bug
+in <b>sudo</b>, please submit a bug report at
+http://www.sudo.ws/sudo/bugs/</p>
+
+<p style="margin-top: 1em"><b>SUPPORT</b></p>
+
+<p style="margin-left:6%;">Limited free support is
+available via the sudo-users mailing list, see
+http://www.sudo.ws/mailman/listinfo/sudo-users to subscribe
+or search the archives.</p>
+
+<p style="margin-top: 1em"><b>DISCLAIMER</b></p>
+
+<p style="margin-left:6%;"><b>sudo</b> is provided
+&lsquo;&lsquo;AS IS&rsquo;&rsquo; and any express or implied
+warranties, including, but not limited to, the implied
+warranties of merchantability and fitness for a particular
+purpose are disclaimed. See the LICENSE file distributed
+with <b>sudo</b> or http://www.sudo.ws/sudo/license.html for
+complete details.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Sudo 1.8.6p7
+July&nbsp;16, 2012 Sudo 1.8.6p7</p>
+<hr>
+</body>
+</html>

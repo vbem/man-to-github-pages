@@ -1,0 +1,1065 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:30:35 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>B::Concise</title>
+
+</head>
+<body>
+
+<h1 align="center">B::Concise</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#ABBREVIATIONS">ABBREVIATIONS</a><br>
+<a href="#FORMATTING SPECIFICATIONS">FORMATTING SPECIFICATIONS</a><br>
+<a href="#One-Liner Command tips">One-Liner Command tips</a><br>
+<a href="#Using B::Concise outside of the O framework">Using B::Concise outside of the O framework</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">B::Concise
+&minus; Walk Perl syntax tree, printing concise info about
+ops</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">    perl &minus;MO=Concise[,OPTIONS] foo.pl
+    use B::Concise qw(set_style add_callback);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This compiler
+backend prints the internal OPs of a Perl program&rsquo;s
+syntax tree in one of several space-efficient text formats
+suitable for debugging the inner workings of perl or other
+compiler backends. It can print OPs in the order they appear
+in the <small>OP</small> tree, in the order they will
+execute, or in a text approximation to their tree structure,
+and the format of the information displayed is customizable.
+Its function is similar to that of perl&rsquo;s
+<b>&minus;Dx</b> debugging flag or the <b>B::Terse</b>
+module, but it is more sophisticated and flexible.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Here&rsquo;s
+two outputs (or &rsquo;renderings&rsquo;), using the
+&minus;exec and &minus;basic (i.e. default) formatting
+conventions on the same code snippet.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    % perl &minus;MO=Concise,&minus;exec &minus;e '$a = $b + 42'
+    1  &lt;0&gt; enter
+    2  &lt;;&gt; nextstate(main 1 &minus;e:1) v
+    3  &lt;#&gt; gvsv[*b] s
+    4  &lt;$&gt; const[IV 42] s
+ *  5  &lt;2&gt; add[t3] sK/2
+    6  &lt;#&gt; gvsv[*a] s
+    7  &lt;2&gt; sassign vKS/2
+    8  &lt;@&gt; leave[1 ref] vKP/REFC</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In this
+&minus;exec rendering, each opcode is executed in the order
+shown. The add opcode, marked with &rsquo;*&rsquo;, is
+discussed in more detail.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The 1st column
+is the op&rsquo;s sequence number, starting at 1, and is
+displayed in base 36 by default. Here they&rsquo;re purely
+linear; the sequences are very helpful when looking at code
+with loops and branches.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The symbol
+between angle brackets indicates the op&rsquo;s type, for
+example; &lt;2&gt; is a <small>BINOP</small> , &lt;@&gt; a
+<small>LISTOP</small> , and &lt;#&gt; is a
+<small>PADOP</small> , which is used in threaded perls. (see
+&quot; <small>OP</small> class abbreviations&quot;).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The opname, as
+in <b>&rsquo;add[t1]&rsquo;</b>, may be followed by
+op-specific information in parentheses or brackets (ex
+<b>&rsquo;[t1]&rsquo;</b>).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The op-flags
+(ex <b>&rsquo;sK/2&rsquo;</b>) are described in (&quot;
+<small>OP</small> flags abbreviations&quot;).</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    % perl &minus;MO=Concise &minus;e '$a = $b + 42'
+    8  &lt;@&gt; leave[1 ref] vKP/REFC &minus;&gt;(end)
+    1     &lt;0&gt; enter &minus;&gt;2
+    2     &lt;;&gt; nextstate(main 1 &minus;e:1) v &minus;&gt;3
+    7     &lt;2&gt; sassign vKS/2 &minus;&gt;8
+ *  5        &lt;2&gt; add[t1] sK/2 &minus;&gt;6
+    &minus;           &lt;1&gt; ex&minus;rv2sv sK/1 &minus;&gt;4
+    3              &lt;$&gt; gvsv(*b) s &minus;&gt;4
+    4           &lt;$&gt; const(IV 42) s &minus;&gt;5
+    &minus;        &lt;1&gt; ex&minus;rv2sv sKRM*/1 &minus;&gt;7
+    6           &lt;$&gt; gvsv(*a) s &minus;&gt;7</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The default
+rendering is top-down, so they&rsquo;re not in execution
+order. This form reflects the way the stack is used to parse
+and evaluate expressions; the add operates on the two terms
+below it in the tree.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Nullops appear
+as <tt>&quot;ex&minus;opname&quot;</tt>, where <i>opname</i>
+is an op that has been optimized away by perl. They&rsquo;re
+displayed with a sequence-number of &rsquo;&minus;&rsquo;,
+because they are not executed (they don&rsquo;t appear in
+previous example), they&rsquo;re printed here because they
+reflect the parse.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The arrow
+points to the sequence number of the next op; they&rsquo;re
+not displayed in &minus;exec mode, for obvious reasons.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+because this rendering was done on a non-threaded perl, the
+PADOPs in the previous examples are now SVOPs, and some (but
+not all) of the square brackets have been replaced by round
+ones. This is a subtle feature to provide some visual
+distinction between renderings on threaded and un-threaded
+perls.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Arguments that
+don&rsquo;t start with a hyphen are taken to be the names of
+subroutines to render; if no such functions are specified,
+the main body of the program (outside any subroutines, and
+not including use&rsquo;d or require&rsquo;d files) is
+rendered. Passing <tt>&quot;BEGIN&quot;</tt>,
+<tt>&quot;UNITCHECK&quot;</tt>, <tt>&quot;CHECK&quot;</tt>,
+<tt>&quot;INIT&quot;</tt>, or <tt>&quot;END&quot;</tt> will
+cause all of the corresponding special blocks to be printed.
+Arguments must follow options.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Options affect
+how things are rendered (ie printed). They&rsquo;re
+presented here by their visual effect, 1st being strongest.
+They&rsquo;re grouped according to how they interrelate;
+within each group the options are mutually exclusive (unless
+otherwise stated).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Options for
+Opcode Ordering</b> <br>
+These options control the &rsquo;vertical display&rsquo; of
+opcodes. The display &rsquo;order&rsquo; is also called
+&rsquo;mode&rsquo; elsewhere in this document. <b><br>
+&minus;basic</b></p>
+
+<p style="margin-left:17%;">Print OPs in the order they
+appear in the <small>OP</small> tree (a preorder traversal,
+starting at the root). The indentation of each
+<small>OP</small> shows its level in the tree, and the
+&rsquo;&minus;&gt;&rsquo; at the end of the line indicates
+the next opcode in execution order. This mode is the
+default, so the flag is included simply for
+completeness.</p>
+
+<p style="margin-left:11%;"><b>&minus;exec</b></p>
+
+<p style="margin-left:17%;">Print OPs in the order they
+would normally execute (for the majority of constructs this
+is a postorder traversal of the tree, ending at the root).
+In most cases the <small>OP</small> that usually follows a
+given <small>OP</small> will appear directly below it;
+alternate paths are shown by indentation. In cases like
+loops when control jumps out of a linear path, a
+&rsquo;goto&rsquo; line is generated.</p>
+
+<p style="margin-left:11%;"><b>&minus;tree</b></p>
+
+<p style="margin-left:17%;">Print OPs in a text
+approximation of a tree, with the root of the tree at the
+left and &rsquo;left&minus;to&minus;right&rsquo; order of
+children transformed into
+&rsquo;top&minus;to&minus;bottom&rsquo;. Because this mode
+grows both to the right and down, it isn&rsquo;t suitable
+for large programs (unless you have a very wide
+terminal).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Options for
+Line-Style</b> <br>
+These options select the line-style (or just style) used to
+render each opcode, and dictates what info is actually
+printed into each line. <b><br>
+&minus;concise</b></p>
+
+<p style="margin-left:17%;">Use the author&rsquo;s favorite
+set of formatting conventions. This is the default, of
+course.</p>
+
+<p style="margin-left:11%;"><b>&minus;terse</b></p>
+
+<p style="margin-left:17%;">Use formatting conventions that
+emulate the output of <b>B::Terse</b>. The basic mode is
+almost indistinguishable from the real <b>B::Terse</b>, and
+the exec mode looks very similar, but is in a more logical
+order and lacks curly brackets. <b>B::Terse</b>
+doesn&rsquo;t have a tree mode, so the tree mode is only
+vaguely reminiscent of <b>B::Terse</b>.</p>
+
+<p style="margin-left:11%;"><b>&minus;linenoise</b></p>
+
+<p style="margin-left:17%;">Use formatting conventions in
+which the name of each <small>OP</small> , rather than being
+written out in full, is represented by a one&minus; or
+two-character abbreviation. This is mainly a joke.</p>
+
+<p style="margin-left:11%;"><b>&minus;debug</b></p>
+
+<p style="margin-left:17%;">Use formatting conventions
+reminiscent of <b>B::Debug</b>; these aren&rsquo;t very
+concise at all.</p>
+
+<p style="margin-left:11%;"><b>&minus;env</b></p>
+
+<p style="margin-left:17%;">Use formatting conventions read
+from the environment variables
+<tt>&quot;B_CONCISE_FORMAT&quot;</tt>,
+<tt>&quot;B_CONCISE_GOTO_FORMAT&quot;</tt>, and
+<tt>&quot;B_CONCISE_TREE_FORMAT&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Options for
+tree-specific formatting <br>
+&minus;compact</b></p>
+
+<p style="margin-left:17%;">Use a tree format in which the
+minimum amount of space is used for the lines connecting
+nodes (one character in most cases). This squeezes out a few
+precious columns of screen real estate.</p>
+
+<p style="margin-left:11%;"><b>&minus;loose</b></p>
+
+<p style="margin-left:17%;">Use a tree format that uses
+longer edges to separate <small>OP</small> nodes. This
+format tends to look better than the compact one, especially
+in <small>ASCII</small> , and is the default.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p><b>&minus;vt</b></p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p>Use tree connecting characters drawn from the
+<small>VT100</small> line-drawing set. This looks better if
+your terminal supports it.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>&minus;ascii</b></p>
+
+<p style="margin-left:17%;">Draw the tree with standard
+<small>ASCII</small> characters like <tt>&quot;+&quot;</tt>
+and <tt>&quot;|&quot;</tt>. These don&rsquo;t look as clean
+as the <small>VT100</small> characters, but they&rsquo;ll
+work with almost any terminal (or the horizontal scrolling
+mode of <i>less</i>(1)) and are suitable for text
+documentation or email. This is the default.</p>
+
+<p style="margin-left:11%; margin-top: 1em">These are
+pairwise exclusive, i.e. compact or loose, vt or ascii.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Options
+controlling sequence numbering <br>
+&minus;base</b><i>n</i></p>
+
+<p style="margin-left:17%;">Print <small>OP</small>
+sequence numbers in base <i>n</i>. If <i>n</i> is greater
+than 10, the digit for 11 will be &rsquo;a&rsquo;, and so
+on. If <i>n</i> is greater than 36, the digit for 37 will be
+&rsquo;A&rsquo;, and so on until 62. Values greater than 62
+are not currently supported. The default is 36.</p>
+
+<p style="margin-left:11%;"><b>&minus;bigendian</b></p>
+
+<p style="margin-left:17%;">Print sequence numbers with the
+most significant digit first. This is the usual convention
+for Arabic numerals, and the default.</p>
+
+<p style="margin-left:11%;"><b>&minus;littleendian</b></p>
+
+<p style="margin-left:17%;">Print sequence numbers with the
+least significant digit first. This is obviously mutually
+exclusive with bigendian.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Other
+options <br>
+&minus;src</b></p>
+
+<p style="margin-left:17%;">With this option, the rendering
+of each statement (starting with the nextstate
+<small>OP</small> ) will be preceded by the 1st line of
+source code that generates it. For example:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    1  &lt;0&gt; enter
+    # 1: my $i;
+    2  &lt;;&gt; nextstate(main 1 junk.pl:1) v:{
+    3  &lt;0&gt; padsv[$i:1,10] vM/LVINTRO
+    # 3: for $i (0..9) {
+    4  &lt;;&gt; nextstate(main 3 junk.pl:3) v:{
+    5  &lt;0&gt; pushmark s
+    6  &lt;$&gt; const[IV 0] s
+    7  &lt;$&gt; const[IV 9] s
+    8  &lt;{&gt; enteriter(next&minus;&gt;j last&minus;&gt;m redo&minus;&gt;9)[$i:1,10] lKS
+    k  &lt;0&gt; iter s
+    l  &lt;|&gt; and(other&minus;&gt;9) vK/1
+    # 4:     print &quot;line &quot;;
+    9      &lt;;&gt; nextstate(main 2 junk.pl:4) v
+    a      &lt;0&gt; pushmark s
+    b      &lt;$&gt; const[PV &quot;line &quot;] s
+    c      &lt;@&gt; print vK
+    # 5:     print &quot;$i\n&quot;;
+    ...</pre>
+
+
+
+<p style="margin-left:11%;"><b>&minus;stash=&quot;somepackage&quot;</b></p>
+
+<p style="margin-left:17%;">With this,
+&quot;somepackage&quot; will be required, then the stash is
+inspected, and each function is rendered.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+options are pairwise exclusive. <b><br>
+&minus;main</b></p>
+
+<p style="margin-left:17%;">Include the main program in the
+output, even if subroutines were also specified. This
+rendering is normally suppressed when a subroutine name or
+reference is given.</p>
+
+<p style="margin-left:11%;"><b>&minus;nomain</b></p>
+
+<p style="margin-left:17%;">This restores the default
+behavior after you&rsquo;ve changed it with
+&rsquo;&minus;main&rsquo; (it&rsquo;s not normally needed).
+If no subroutine name/ref is given, main is rendered,
+regardless of this flag.</p>
+
+<p style="margin-left:11%;"><b>&minus;nobanner</b></p>
+
+<p style="margin-left:17%;">Renderings usually include a
+banner line identifying the function name or stringified
+subref. This suppresses the printing of the banner.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><small>TBC:</small>
+Remove the stringified coderef; while it provides a
+&rsquo;cookie&rsquo; for each function rendered, the cookies
+used should be 1,2,3.. not a random hex-address. It also
+complicates string comparison of two different trees.</p>
+
+<p style="margin-left:11%;"><b>&minus;banner</b></p>
+
+<p style="margin-left:17%;">restores default banner
+behavior.</p>
+
+<p style="margin-left:11%;"><b>&minus;banneris</b> =&gt;
+subref</p>
+
+<p style="margin-left:17%;"><small>TBC:</small> a hookpoint
+(and an option to set it) for a user-supplied function to
+produce a banner appropriate for users needs. It&rsquo;s not
+ideal, because the rendering-state variables, which are a
+natural candidate for use in concise.t, are unavailable to
+the user.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Option
+Stickiness</b> <br>
+If you invoke Concise more than once in a program, you
+should know that the options are &rsquo;sticky&rsquo;. This
+means that the options you provide in the first call will be
+remembered for the 2nd call, unless you re-specify or change
+them.</p>
+
+<h2>ABBREVIATIONS
+<a name="ABBREVIATIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The concise
+style uses symbols to convey maximum info with minimal
+clutter (like hex addresses). With just a little practice,
+you can start to see the flowers, not just the branches, in
+the trees.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>OP</small>
+class abbreviations</b> <br>
+These symbols appear before the op-name, and indicate the
+B:: namespace that represents the ops in your Perl code.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    0      OP (aka BASEOP)  An OP with no children
+    1      UNOP             An OP with one child
+    2      BINOP            An OP with two children
+    |      LOGOP            A control branch OP
+    @      LISTOP           An OP that could have lots of children
+    /      PMOP             An OP with a regular expression
+    $      SVOP             An OP with an SV
+    &quot;      PVOP             An OP with a string
+    {      LOOP             An OP that holds pointers for a loop
+    ;      COP              An OP that marks the start of a statement
+    #      PADOP            An OP with a GV on the pad</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>OP</small>
+flags abbreviations</b> <small><br>
+OP</small> flags are either public or private. The public
+flags alter the behavior of each opcode in consistent ways,
+and are represented by 0 or more single characters.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    v      OPf_WANT_VOID    Want nothing (void context)
+    s      OPf_WANT_SCALAR  Want single value (scalar context)
+    l      OPf_WANT_LIST    Want list of any length (list context)
+                            Want is unknown
+    K      OPf_KIDS         There is a firstborn child.
+    P      OPf_PARENS       This operator was parenthesized.
+                             (Or block needs explicit scope entry.)
+    R      OPf_REF          Certified reference.
+                             (Return container, not containee).
+    M      OPf_MOD          Will modify (lvalue).
+    S      OPf_STACKED      Some arg is arriving on the stack.
+    *      OPf_SPECIAL      Do something weird for this op (see op.h)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Private flags,
+if any are set for an opcode, are displayed after a
+&rsquo;/&rsquo;</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    8  &lt;@&gt; leave[1 ref] vKP/REFC &minus;&gt;(end)
+    7     &lt;2&gt; sassign vKS/2 &minus;&gt;8</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">They&rsquo;re
+opcode specific, and occur less often than the public ones,
+so they&rsquo;re represented by short mnemonics instead of
+single-chars; see <i>op.h</i> for gory details, or try this
+quick 2&minus;liner:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $&gt; perl &minus;MB::Concise &minus;de 1
+  DB&lt;1&gt; |x \%B::Concise::priv</pre>
+
+
+<h2>FORMATTING SPECIFICATIONS
+<a name="FORMATTING SPECIFICATIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">For each
+line-style (&rsquo;concise&rsquo;, &rsquo;terse&rsquo;,
+&rsquo;linenoise&rsquo;, etc.) there are 3 format-specs
+which control how OPs are rendered.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The first is
+the &rsquo;default&rsquo; format, which is used in both
+basic and exec modes to print all opcodes. The 2nd,
+goto-format, is used in exec mode when branches are
+encountered. They&rsquo;re not real opcodes, and are
+inserted to look like a closing curly brace. The tree-format
+is tree specific.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When a line is
+rendered, the correct format-spec is copied and scanned for
+the following items; data is substituted in, and other
+manipulations like basic indenting are done, for each opcode
+rendered.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There are 3
+kinds of items that may be populated; special patterns,
+#vars, and literal text, which is copied verbatim. (Yes,
+it&rsquo;s a set of s///g steps.)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Special
+Patterns</b> <br>
+These items are the primitives used to perform indenting,
+and to select text from amongst alternatives. <b><br>
+
+(x(</b><i>exec_text</i><b>;</b><i>basic_text</i><b>)x)</b></p>
+
+<p style="margin-left:17%;">Generates <i>exec_text</i> in
+exec mode, or <i>basic_text</i> in basic mode.</p>
+
+
+<p style="margin-left:11%;"><b>(*(</b><i>text</i><b>)*)</b></p>
+
+<p style="margin-left:17%;">Generates one copy of
+<i>text</i> for each indentation level.</p>
+
+
+<p style="margin-left:11%;"><b>(*(</b><i>text1</i><b>;</b><i>text2</i><b>)*)</b></p>
+
+<p style="margin-left:17%;">Generates one fewer copies of
+<i>text1</i> than the indentation level, followed by one
+copy of <i>text2</i> if the indentation level is more than
+0.</p>
+
+
+<p style="margin-left:11%;"><b>(?(</b><i>text1</i><b>#</b><i>varText2</i><b>)?)</b></p>
+
+<p style="margin-left:17%;">If the value of <i>var</i> is
+true (not empty or zero), generates the value of <i>var</i>
+surrounded by <i>text1</i> and <i>Text2</i>, otherwise
+nothing.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p><b>~</b></p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Any number of tildes and surrounding whitespace will be
+collapsed to a single space.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>#
+Variables</b> <br>
+These #vars represent opcode properties that you may want as
+part of your rendering. The &rsquo;#&rsquo; is intended as a
+private sigil; a #var&rsquo;s value is interpolated into the
+style-line, much like &quot;read <tt>$this</tt>&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">These vars take
+3 forms: <b><br>
+#</b><i>var</i></p>
+
+<p style="margin-left:17%;">A property named
+&rsquo;var&rsquo; is assumed to exist for the opcodes, and
+is interpolated into the rendering.</p>
+
+<p style="margin-left:11%;"><b>#</b><i>varN</i></p>
+
+<p style="margin-left:17%;">Generates the value of
+<i>var</i>, left justified to fill <i>N</i> spaces. Note
+that this means while you can have properties
+&rsquo;foo&rsquo; and &rsquo;foo2&rsquo;, you cannot render
+&rsquo;foo2&rsquo;, but you could with &rsquo;foo2a&rsquo;.
+You would be wise not to rely on this behavior going forward
+;&minus;)</p>
+
+<p style="margin-left:11%;"><b>#</b><i>Var</i></p>
+
+<p style="margin-left:17%;">This ucfirst form of #var
+generates a tag-value form of itself for display; it
+converts &rsquo;#Var&rsquo; into a &rsquo;Var =&gt;
+#var&rsquo; style, which is then handled as described above.
+(Imp-note: #Vars cannot be used for conditional-fills,
+because the =&gt; #var transform is done after the check for
+#Var&rsquo;s value).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+variables are &rsquo;defined&rsquo; by B::Concise; when they
+are used in a style, their respective values are plugged
+into the rendering of each opcode.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Only some of
+these are used by the standard styles, the others are
+provided for you to delve into optree mechanics, should you
+wish to add a new style (see &quot;add_style&quot; below)
+that uses them. You can also add new ones using
+&quot;add_callback&quot;. <b><br>
+#addr</b></p>
+
+<p style="margin-left:17%;">The address of the
+<small>OP</small> , in hexadecimal.</p>
+
+<p style="margin-left:11%;"><b>#arg</b></p>
+
+<p style="margin-left:17%;">The OP-specific information of
+the <small>OP</small> (such as the <small>SV</small> for an
+<small>SVOP</small> , the non-local exit pointers for a
+<small>LOOP</small> , etc.) enclosed in parentheses.</p>
+
+<p style="margin-left:11%;"><b>#class</b></p>
+
+<p style="margin-left:17%;">The B&minus;determined class of
+the <small>OP</small> , in all caps.</p>
+
+<p style="margin-left:11%;"><b>#classsym</b></p>
+
+<p style="margin-left:17%;">A single symbol abbreviating
+the class of the <small>OP</small> .</p>
+
+<p style="margin-left:11%;"><b>#coplabel</b></p>
+
+<p style="margin-left:17%;">The label of the statement or
+block the <small>OP</small> is the start of, if any.</p>
+
+<p style="margin-left:11%;"><b>#exname</b></p>
+
+<p style="margin-left:17%;">The name of the
+<small>OP</small> , or &rsquo;ex&minus;foo&rsquo; if the
+<small>OP</small> is a null that used to be a foo.</p>
+
+<p style="margin-left:11%;"><b>#extarg</b></p>
+
+<p style="margin-left:17%;">The target of the
+<small>OP</small> , or nothing for a nulled
+<small>OP</small> .</p>
+
+<p style="margin-left:11%;"><b>#firstaddr</b></p>
+
+<p style="margin-left:17%;">The address of the
+<small>OP</small> &rsquo;s first child, in hexadecimal.</p>
+
+<p style="margin-left:11%;"><b>#flags</b></p>
+
+<p style="margin-left:17%;">The <small>OP</small> &rsquo;s
+flags, abbreviated as a series of symbols.</p>
+
+<p style="margin-left:11%;"><b>#flagval</b></p>
+
+<p style="margin-left:17%;">The numeric value of the
+<small>OP</small> &rsquo;s flags.</p>
+
+<p style="margin-left:11%;"><b>#hints</b></p>
+
+<p style="margin-left:17%;">The <small>COP</small> &rsquo;s
+hint flags, rendered with abbreviated names if possible. An
+empty string if this is not a <small>COP</small> . Here are
+the symbols used:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    $ strict refs
+    &amp; strict subs
+    * strict vars
+   x$ explicit use/no strict refs
+   x&amp; explicit use/no strict subs
+   x* explicit use/no strict vars
+    i integers
+    l locale
+    b bytes
+    { block scope
+    % localise %^H
+    &lt; open in
+    &gt; open out
+    I overload int
+    F overload float
+    B overload binary
+    S overload string
+    R overload re
+    T taint
+    E eval
+    X filetest access
+    U utf&minus;8</pre>
+
+
+<p style="margin-left:11%;"><b>#hintsval</b></p>
+
+<p style="margin-left:17%;">The numeric value of the
+<small>COP</small> &rsquo;s hint flags, or an empty string
+if this is not a <small>COP</small> .</p>
+
+<p style="margin-left:11%;"><b>#hyphseq</b></p>
+
+<p style="margin-left:17%;">The sequence number of the
+<small>OP</small> , or a hyphen if it doesn&rsquo;t have
+one.</p>
+
+<p style="margin-left:11%;"><b>#label</b></p>
+
+<p style="margin-left:17%;">&rsquo; <small>NEXT</small>
+&rsquo;, &rsquo; <small>LAST</small> &rsquo;, or &rsquo;
+<small>REDO</small> &rsquo; if the <small>OP</small> is a
+target of one of those in exec mode, or empty otherwise.</p>
+
+<p style="margin-left:11%;"><b>#lastaddr</b></p>
+
+<p style="margin-left:17%;">The address of the
+<small>OP</small> &rsquo;s last child, in hexadecimal.</p>
+
+<p style="margin-left:11%;"><b>#name</b></p>
+
+<p style="margin-left:17%;">The <small>OP</small> &rsquo;s
+name.</p>
+
+<p style="margin-left:11%;"><b>#NAME</b></p>
+
+<p style="margin-left:17%;">The <small>OP</small> &rsquo;s
+name, in all caps.</p>
+
+<p style="margin-left:11%;"><b>#next</b></p>
+
+<p style="margin-left:17%;">The sequence number of the
+<small>OP</small> &rsquo;s next <small>OP</small> .</p>
+
+<p style="margin-left:11%;"><b>#nextaddr</b></p>
+
+<p style="margin-left:17%;">The address of the
+<small>OP</small> &rsquo;s next <small>OP</small> , in
+hexadecimal.</p>
+
+<p style="margin-left:11%;"><b>#noise</b></p>
+
+<p style="margin-left:17%;">A one&minus; or two-character
+abbreviation for the <small>OP</small> &rsquo;s name.</p>
+
+<p style="margin-left:11%;"><b>#private</b></p>
+
+<p style="margin-left:17%;">The <small>OP</small> &rsquo;s
+private flags, rendered with abbreviated names if
+possible.</p>
+
+<p style="margin-left:11%;"><b>#privval</b></p>
+
+<p style="margin-left:17%;">The numeric value of the
+<small>OP</small> &rsquo;s private flags.</p>
+
+<p style="margin-left:11%;"><b>#seq</b></p>
+
+<p style="margin-left:17%;">The sequence number of the
+<small>OP</small> . Note that this is a sequence number
+generated by B::Concise.</p>
+
+<p style="margin-left:11%;"><b>#seqnum</b></p>
+
+<p style="margin-left:17%;">5.8.x and earlier only. 5.9 and
+later do not provide this.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The real
+sequence number of the <small>OP</small> , as a regular
+number and not adjusted to be relative to the start of the
+real program. (This will generally be a fairly large number
+because all of <b>B::Concise</b> is compiled before your
+program is).</p>
+
+<p style="margin-left:11%;"><b>#opt</b></p>
+
+<p style="margin-left:17%;">Whether or not the op has been
+optimised by the peephole optimiser.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Only available
+in 5.9 and later.</p>
+
+<p style="margin-left:11%;"><b>#sibaddr</b></p>
+
+<p style="margin-left:17%;">The address of the
+<small>OP</small> &rsquo;s next youngest sibling, in
+hexadecimal.</p>
+
+<p style="margin-left:11%;"><b>#svaddr</b></p>
+
+<p style="margin-left:17%;">The address of the
+<small>OP</small> &rsquo;s <small>SV</small> , if it has an
+<small>SV</small> , in hexadecimal.</p>
+
+<p style="margin-left:11%;"><b>#svclass</b></p>
+
+<p style="margin-left:17%;">The class of the
+<small>OP</small> &rsquo;s <small>SV</small> , if it has
+one, in all caps (e.g., &rsquo; <small>IV</small>
+&rsquo;).</p>
+
+<p style="margin-left:11%;"><b>#svval</b></p>
+
+<p style="margin-left:17%;">The value of the
+<small>OP</small> &rsquo;s <small>SV</small> , if it has
+one, in a short human-readable format.</p>
+
+<p style="margin-left:11%;"><b>#targ</b></p>
+
+<p style="margin-left:17%;">The numeric value of the
+<small>OP</small> &rsquo;s targ.</p>
+
+<p style="margin-left:11%;"><b>#targarg</b></p>
+
+<p style="margin-left:17%;">The name of the variable the
+<small>OP</small> &rsquo;s targ refers to, if any, otherwise
+the letter t followed by the <small>OP</small> &rsquo;s targ
+in decimal.</p>
+
+<p style="margin-left:11%;"><b>#targarglife</b></p>
+
+<p style="margin-left:17%;">Same as <b>#targarg</b>, but
+followed by the <small>COP</small> sequence numbers that
+delimit the variable&rsquo;s lifetime (or &rsquo;end&rsquo;
+for a variable in an open scope) for a variable.</p>
+
+<p style="margin-left:11%;"><b>#typenum</b></p>
+
+<p style="margin-left:17%;">The numeric value of the
+<small>OP</small> &rsquo;s type, in decimal.</p>
+
+<h2>One-Liner Command tips
+<a name="One-Liner Command tips"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perl
+&minus;MO=Concise,bar foo.pl</p>
+
+<p style="margin-left:17%;">Renders only <i>bar()</i> from
+foo.pl. To see main, drop the &rsquo;,bar&rsquo;. To see
+both, add &rsquo;,&minus;main&rsquo;</p>
+
+<p style="margin-left:11%;">perl &minus;MDigest::MD5=md5
+&minus;MO=Concise,md5 &minus;e1</p>
+
+<p style="margin-left:17%;">Identifies md5 as an
+<small>XS</small> function. The export is needed so that
+<small>BC</small> can find it in main.</p>
+
+<p style="margin-left:11%;">perl &minus;MPOSIX
+&minus;MO=Concise,_POSIX_ARG_MAX &minus;e1</p>
+
+<p style="margin-left:17%;">Identifies _POSIX_ARG_MAX as a
+constant sub, optimized to an <small>IV</small> . Although
+<small>POSIX</small> isn&rsquo;t entirely consistent across
+platforms, this is likely to be present in virtually all of
+them.</p>
+
+<p style="margin-left:11%;">perl &minus;MPOSIX
+&minus;MO=Concise,a &minus;e &rsquo;print
+_POSIX_SAVED_IDS&rsquo;</p>
+
+<p style="margin-left:17%;">This renders a print statement,
+which includes a call to the function. It&rsquo;s identical
+to rendering a file with a use call and that single
+statement, except for the filename which appears in the
+nextstate ops.</p>
+
+<p style="margin-left:11%;">perl &minus;MPOSIX
+&minus;MO=Concise,a &minus;e &rsquo;sub
+a{_POSIX_SAVED_IDS}&rsquo;</p>
+
+<p style="margin-left:17%;">This is <b>very</b> similar to
+previous, only the first two ops differ. This subroutine
+rendering is more representative, insofar as a single main
+program will have many subs.</p>
+
+<p style="margin-left:11%;">perl &minus;MB::Concise
+&minus;e
+&rsquo;B::Concise::compile(&quot;&minus;exec&quot;,&quot;&minus;src&quot;,
+<br>
+\%B::Concise::)&minus;&gt;()&rsquo;</p>
+
+<p style="margin-left:17%;">This renders all functions in
+the B::Concise package with the source lines. It eschews the
+O framework so that the stashref can be passed directly to
+<i>B::Concise::compile()</i>. See &minus;stash option for a
+more convenient way to render a package.</p>
+
+<h2>Using B::Concise outside of the O framework
+<a name="Using B::Concise outside of the O framework"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The common (and
+original) usage of B::Concise was for command-line
+renderings of simple code, as given in
+<small>EXAMPLE</small> . But you can also use
+<b>B::Concise</b> from your code, and call <i>compile()</i>
+directly, and repeatedly. By doing so, you can avoid the
+compile-time only operation of O.pm, and even use the
+debugger to step through <i>B::Concise::compile()</i>
+itself.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Once
+you&rsquo;re doing this, you may alter Concise output by
+adding new rendering styles, and by optionally adding
+callback routines which populate new variables, if such were
+referenced from those (just added) styles.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example:
+Altering Concise Renderings</b></p>
+
+<pre style="margin-left:11%;">    use B::Concise qw(set_style add_callback);
+    add_style($yourStyleName =&gt; $defaultfmt, $gotofmt, $treefmt);
+    add_callback
+      ( sub {
+            my ($h, $op, $format, $level, $stylename) = @_;
+            $h&minus;&gt;{variable} = some_func($op);
+        });
+    $walker = B::Concise::compile(@options,@subnames,@subrefs);
+    $walker&minus;&gt;();</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>set_style()</i>
+<b><br>
+set_style</b> accepts 3 arguments, and updates the three
+format-specs comprising a line-style (basic-exec, goto,
+tree). It has one minor drawback though; it doesn&rsquo;t
+register the style under a new name. This can become an
+issue if you render more than once and switch styles. Thus
+you may prefer to use <i>add_style()</i> and/or
+<i>set_style_standard()</i> instead.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>set_style_standard($name)</b>
+<br>
+This restores one of the standard line-styles:
+<tt>&quot;terse&quot;</tt>, <tt>&quot;concise&quot;</tt>,
+<tt>&quot;linenoise&quot;</tt>, <tt>&quot;debug&quot;</tt>,
+<tt>&quot;env&quot;</tt>, into effect. It also accepts style
+names previously defined with <i>add_style()</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>add_style
+()</b> <br>
+This subroutine accepts a new style name and three style
+arguments as above, and creates, registers, and selects the
+newly named style. It is an error to re-add a style; call
+<i>set_style_standard()</i> to switch between several
+styles.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>add_callback
+()</b> <br>
+If your newly minted styles refer to any new #variables,
+you&rsquo;ll need to define a callback subroutine that will
+populate (or modify) those variables. They are then
+available for use in the style you&rsquo;ve chosen.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The callbacks
+are called for each opcode visited by Concise, in the same
+order as they are added. Each subroutine is passed five
+parameters.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  1. A hashref, containing the variable names and values which are
+     populated into the report&minus;line for the op
+  2. the op, as a B&lt;B::OP&gt; object
+  3. a reference to the format string
+  4. the formatting (indent) level
+  5. the selected stylename</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To define your
+own variables, simply add them to the hash, or change
+existing values if you need to. The level and format are
+passed in as references to scalars, but it is unlikely that
+they will need to be changed or even used.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Running</b>
+<i>B::Concise::compile()</i> <b><br>
+compile</b> accepts options as described above in &quot;
+<small>OPTIONS</small> &quot;, and arguments, which are
+either coderefs, or subroutine names.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It constructs
+and returns a <tt>$treewalker</tt> coderef, which when
+invoked, traverses, or walks, and renders the optrees of the
+given arguments to <small>STDOUT</small> . You can reuse
+this, and can change the rendering style used each time;
+thereafter the coderef renders in the new style.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>walk_output</b>
+lets you change the print destination from
+<small>STDOUT</small> to another open filehandle, or into a
+string passed as a ref (unless you&rsquo;ve built perl with
+&minus;Uuseperlio).</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my $walker = B::Concise::compile('&minus;terse','aFuncName', \&amp;aSubRef);  # 1
+    walk_output(\my $buf);
+    $walker&minus;&gt;();                        # 1 renders &minus;terse
+    set_style_standard('concise');      # 2
+    $walker&minus;&gt;();                        # 2 renders &minus;concise
+    $walker&minus;&gt;(@new);                    # 3 renders whatever
+    print &quot;3 different renderings: terse, concise, and @new: $buf\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">When
+<tt>$walker</tt> is called, it traverses the subroutines
+supplied when it was created, and renders them using the
+current style. You can change the style afterwards in
+several different ways:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  1. call C&lt;compile&gt;, altering style or mode/order
+  2. call C&lt;set_style_standard&gt;
+  3. call $walker, passing @new options</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Passing new
+options to the <tt>$walker</tt> is the easiest way to change
+amongst any pre-defined styles (the ones you add are
+automatically recognized as options), and is the only way to
+alter rendering order without calling compile again. Note
+however that rendering state is still shared amongst
+multiple <tt>$walker</tt> objects, so they must still be
+used in a coordinated manner.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>B::Concise::reset_sequence()</i>
+<br>
+This function (not exported) lets you reset the sequence
+numbers (note that they&rsquo;re numbered arbitrarily, their
+goal being to be human readable). Its purpose is mostly to
+support testing, i.e. to compare the concise output from two
+identical anonymous subroutines (but different instances).
+Without the reset, B::Concise, seeing that they&rsquo;re
+separate optrees, generates different sequence numbers in
+the output.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Errors</b>
+<br>
+Errors in rendering (non-existent function-name,
+non-existent coderef) are written to the
+<small>STDOUT</small> , or wherever you&rsquo;ve set it via
+<i>walk_output()</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Errors using
+the various *style* calls, and bad args to
+<i>walk_output()</i>, result in <i>die()</i>. Use an eval if
+you wish to catch these errors and continue processing.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Stephen
+McCamant, &lt;smcc@CSUA.Berkeley.EDU&gt;.</p>
+<hr>
+</body>
+</html>

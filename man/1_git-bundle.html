@@ -1,0 +1,293 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:34:08 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>GIT&minus;BUNDLE</title>
+
+</head>
+<body>
+
+<h1 align="center">GIT&minus;BUNDLE</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#SPECIFYING REFERENCES">SPECIFYING REFERENCES</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#GIT">GIT</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">git-bundle
+&minus; Move objects and refs by archive</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>git
+bundle</i> create &lt;file&gt;
+&lt;git&minus;rev&minus;list&minus;args&gt; <i><br>
+git bundle</i> verify &lt;file&gt; <i><br>
+git bundle</i> list&minus;heads &lt;file&gt;
+[&lt;refname&gt;...] <i><br>
+git bundle</i> unbundle &lt;file&gt;
+[&lt;refname&gt;...]</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Some workflows
+require that one or more branches of development on one
+machine be replicated on another machine, but the two
+machines cannot be directly connected, and therefore the
+interactive Git protocols (git, ssh, rsync, http) cannot be
+used. This command provides support for <i>git fetch</i> and
+<i>git pull</i> to operate by packaging objects and
+references in an archive at the originating machine, then
+importing those into another repository using <i>git
+fetch</i> and <i>git pull</i> after moving the archive by
+some means (e.g., by sneakernet). As no direct connection
+between the repositories exists, the user must specify a
+basis for the bundle that is held by the destination
+repository: the bundle assumes that all objects in the basis
+are already in the destination repository.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">create
+&lt;file&gt;</p>
+
+<p style="margin-left:17%;">Used to create a bundle named
+<i>file</i>. This requires the
+<i>git&minus;rev&minus;list&minus;args</i> arguments to
+define the bundle contents.</p>
+
+<p style="margin-left:11%; margin-top: 1em">verify
+&lt;file&gt;</p>
+
+<p style="margin-left:17%;">Used to check that a bundle
+file is valid and will apply cleanly to the current
+repository. This includes checks on the bundle format itself
+as well as checking that the prerequisite commits exist and
+are fully linked in the current repository. <i>git
+bundle</i> prints a list of missing commits, if any, and
+exits with a non&minus;zero status.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">list&minus;heads
+&lt;file&gt;</p>
+
+<p style="margin-left:17%;">Lists the references defined in
+the bundle. If followed by a list of references, only
+references matching those given are printed out.</p>
+
+<p style="margin-left:11%; margin-top: 1em">unbundle
+&lt;file&gt;</p>
+
+<p style="margin-left:17%;">Passes the objects in the
+bundle to <i>git index&minus;pack</i> for storage in the
+repository, then prints the names of all defined references.
+If a list of references is given, only references matching
+those in the list are printed. This command is really
+plumbing, intended to be called only by <i>git
+fetch</i>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&lt;git&minus;rev&minus;list&minus;args&gt;</p>
+
+<p style="margin-left:17%;">A list of arguments, acceptable
+to <i>git rev&minus;parse</i> and <i>git rev&minus;list</i>
+(and containing a named ref, see SPECIFYING REFERENCES
+below), that specifies the specific objects and references
+to transport. For example, master~10..master causes the
+current master reference to be packaged along with all
+objects added since its 10th ancestor commit. There is no
+explicit limit to the number of references and objects that
+may be packaged.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">[&lt;refname&gt;...]</p>
+
+<p style="margin-left:17%;">A list of references used to
+limit the references reported as available. This is
+principally of use to <i>git fetch</i>, which expects to
+receive only those references asked for and not necessarily
+everything in the pack (in this case, <i>git bundle</i> acts
+like <i>git fetch&minus;pack</i>).</p>
+
+<h2>SPECIFYING REFERENCES
+<a name="SPECIFYING REFERENCES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>git
+bundle</i> will only package references that are shown by
+<i>git show&minus;ref</i>: this includes heads, tags, and
+remote heads. References such as master~1 cannot be
+packaged, but are perfectly suitable for defining the basis.
+More than one reference may be packaged, and more than one
+basis can be specified. The objects packaged are those not
+contained in the union of the given bases. Each basis can be
+specified explicitly (e.g. ^master~10), or implicitly (e.g.
+master~10..master, &minus;&minus;since=10.days.ago
+master).</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is very
+important that the basis used be held by the destination. It
+is okay to err on the side of caution, causing the bundle
+file to contain objects already in the destination, as these
+are ignored when unpacking at the destination.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Assume you want
+to transfer the history from a repository R1 on machine A to
+another repository R2 on machine B. For whatever reason,
+direct connection between A and B is not allowed, but we can
+move data from A to B via some mechanism (CD, email, etc.).
+We want to update R2 with development made on the branch
+master in R1.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To bootstrap
+the process, you can first create a bundle that does not
+have any basis. You can use a tag to remember up to what
+commit you last processed, in order to make it easy to later
+update the other repository with an incremental bundle:</p>
+
+<p style="margin-left:17%; margin-top: 1em">machineA$ cd R1
+<br>
+machineA$ git bundle create file.bundle master <br>
+machineA$ git tag &minus;f lastR2bundle master</p>
+
+<p style="margin-left:11%; margin-top: 1em">Then you
+transfer file.bundle to the target machine B. Because this
+bundle does not require any existing object to be extracted,
+you can create a new repository on machine B by cloning from
+it:</p>
+
+<p style="margin-left:17%; margin-top: 1em">machineB$ git
+clone &minus;b master /home/me/tmp/file.bundle R2</p>
+
+<p style="margin-left:11%; margin-top: 1em">This will
+define a remote called &quot;origin&quot; in the resulting
+repository that lets you fetch and pull from the bundle. The
+$GIT_DIR/config file in R2 will have an entry like this:</p>
+
+<p style="margin-left:17%; margin-top: 1em">[remote
+&quot;origin&quot;] <br>
+url = /home/me/tmp/file.bundle <br>
+fetch = refs/heads/*:refs/remotes/origin/*</p>
+
+<p style="margin-left:11%; margin-top: 1em">To update the
+resulting mine.git repository, you can fetch or pull after
+replacing the bundle stored at /home/me/tmp/file.bundle with
+incremental updates.</p>
+
+<p style="margin-left:11%; margin-top: 1em">After working
+some more in the original repository, you can create an
+incremental bundle to update the other repository:</p>
+
+<p style="margin-left:17%; margin-top: 1em">machineA$ cd R1
+<br>
+machineA$ git bundle create file.bundle lastR2bundle..master
+<br>
+machineA$ git tag &minus;f lastR2bundle master</p>
+
+<p style="margin-left:11%; margin-top: 1em">You then
+transfer the bundle to the other machine to replace
+/home/me/tmp/file.bundle, and pull from it.</p>
+
+<p style="margin-left:17%; margin-top: 1em">machineB$ cd R2
+<br>
+machineB$ git pull</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you know up
+to what commit the intended recipient repository should have
+the necessary objects, you can use that knowledge to specify
+the basis, giving a cut&minus;off point to limit the
+revisions and objects that go in the resulting bundle. The
+previous example used the lastR2bundle tag for this purpose,
+but you can use any other options that you would give to the
+<b>git-log</b>(1) command. Here are more examples:</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can use a
+tag that is present in both:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bundle
+create mybundle v1.0.0..master</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can use a
+basis based on time:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bundle
+create mybundle &minus;&minus;since=10.days master</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can use the
+number of commits:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bundle
+create mybundle &minus;10 master</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can run
+git&minus;bundle verify to see if you can extract from a
+bundle that was created with a basis:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bundle
+verify mybundle</p>
+
+<p style="margin-left:11%; margin-top: 1em">This will list
+what commits you must have in order to extract from the
+bundle and will error out if you do not have them.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A bundle from a
+recipient repository&rsquo;s point of view is just like a
+regular repository which it fetches or pulls from. You can,
+for example, map references when fetching:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git fetch
+mybundle master:localRef</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can also
+see what references it offers:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git
+ls&minus;remote mybundle</p>
+
+<h2>GIT
+<a name="GIT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Part of the
+<b>git</b>(1) suite</p>
+<hr>
+</body>
+</html>

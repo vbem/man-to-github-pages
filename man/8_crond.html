@@ -1,0 +1,373 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:31:56 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>CRON</title>
+
+</head>
+<body>
+
+<h1 align="center">CRON</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#SIGNALS">SIGNALS</a><br>
+<a href="#CLUSTERING SUPPORT">CLUSTERING SUPPORT</a><br>
+<a href="#CAVEATS">CAVEATS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">crond &minus;
+daemon to execute scheduled commands</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>crond</b>
+[<b>-c</b> | <b>-h</b> | <b>-i</b> | <b>-n</b> | <b>-p</b> |
+<b>-P</b> | <b>-s</b> |
+<b>-m</b><i>&lt;mail</i><b>command&gt;</b>] <b><br>
+crond -x</b> [ext,sch,proc,pars,load,misc,test,bit]</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>Cron</i> is
+started from <i>/etc/rc.d/init.d</i> or <i>/etc/init.d</i>
+when classical sysvinit scripts are used. In case systemd is
+enabled, then unit file is installed into
+<i>/lib/systemd/system/crond.service</i> and daemon is
+started by <i>systemctl start crond.service</i> command. It
+returns immediately, thus, there is no need to need to start
+it with the &rsquo;&amp;&rsquo; parameter.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Cron</i>
+searches <i>/var/spool/cron</i> for crontab files which are
+named after accounts in <i>/etc/passwd;</i> The found
+crontabs are loaded into the memory. <i>Cron</i> also
+searches for <i>/etc/anacrontab</i> and any files in the
+<i>/etc/cron.d</i> directory, which have a different format
+(see <b>crontab</b>(5)). <i>Cron</i> examines all stored
+crontabs and checks each job to see if it needs to be run in
+the current minute. When executing commands, any output is
+mailed to the owner of the crontab (or to the user specified
+in the <i>MAILTO</i> environment variable in the crontab, if
+such exists). Any job output can also be sent to syslog by
+using the <b>&minus;s</b> option.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There are two
+ways how changes in crontables are checked. The first method
+is checking the modtime of a file. The second method is
+using the inotify support. Using of inotify is logged in the
+<i>/var/log/cron</i> log after the daemon is started. The
+inotify support checks for changes in all crontables and
+accesses the hard disk only when a change is detected.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When using the
+modtime option, <i>Cron</i> checks its crontables&rsquo;
+modtimes every minute to check for any changes and reloads
+the crontables which have changed. There is no need to
+restart <i>Cron</i> after some of the crontables were
+modified. The modtime option is also used when inotify can
+not be initialized.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Cron</i>
+checks these files and directories: <i><br>
+/etc/crontab</i></p>
+
+<p style="margin-left:22%;">system crontab. Nowadays the
+file is empty by default. Originally it was usually used to
+run daily, weekly, monthly jobs. By default these jobs are
+now run through anacron which reads <i>/etc/anacrontab</i>
+configuration file. See <b>anacrontab</b>(5) for more
+details.</p>
+
+<p style="margin-left:11%;"><i>/etc/cron.d/</i></p>
+
+<p style="margin-left:22%;">directory that contains system
+cronjobs stored for different users.</p>
+
+<p style="margin-left:11%;"><i>/var/spool/cron</i></p>
+
+<p style="margin-left:22%;">directory that contains user
+crontables created by the <i>crontab</i> command.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that the
+<b>crontab</b>(1) command updates the modtime of the spool
+directory whenever it changes a crontab.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Daylight
+Saving Time and other time changes</b> <br>
+Local time changes of less than three hours, such as those
+caused by the Daylight Saving Time changes, are handled in a
+special way. This only applies to jobs that run at a
+specific time and jobs that run with a granularity greater
+than one hour. Jobs that run more frequently are scheduled
+normally.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If time was
+adjusted one hour forward, those jobs that would have run in
+the interval that has been skipped will be run immediately.
+Conversely, if time was adjusted backward, running the same
+job twice is avoided.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Time changes of
+more than 3 hours are considered to be corrections to the
+clock or the timezone, and the new time is used
+immediately.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is possible
+to use different time zones for crontables. See
+<b>crontab</b>(5) for more information.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>PAM Access
+Control</b> <i><br>
+Cron</i> supports access control with PAM if the system has
+PAM installed. For more information, see <b>pam</b>(8). A
+PAM configuration file for <i>crond</i> is installed in
+<i>/etc/pam.d/crond</i>. The daemon loads the PAM
+environment from the pam_env module. This can be overridden
+by defining specific settings in the appropriate crontab
+file.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em"><b>&minus;h</b></p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">Prints a help message and
+exits.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>&minus;i</b></p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>Disables inotify support.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>&minus;m</b></p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>This option allows you to specify a shell command to use
+for sending <i>Cron</i> mail output instead of using
+<b>sendmail</b>(8) This command must accept a fully
+formatted mail message (with headers) on standard input and
+send it as a mail message to the recipients specified in the
+mail headers. Specifying the string <i>off</i> (i.e., crond
+-m off) will disable the sending of mail.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>&minus;n</b></p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>Tells the daemon to run in the foreground. This can be
+useful when starting it out of init. With this option is
+needed to change pam setting. <i>/etc/pam.d/crond</i> must
+not enable <i>pam_loginuid.so</i> module.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>&minus;p</b></p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>Allows <i>Cron</i> to accept any user set
+crontables.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>&minus;P</b></p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>Don&rsquo;t set PATH. PATH is instead inherited from the
+environment.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>&minus;c</b></p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>This option enables clustering support, as described
+below.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>&minus;s</b></p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>This option will direct <i>Cron</i> to send the job
+output to the system log using <b>syslog</b>(3). This is
+useful if your system does not have <b>sendmail</b>(8),
+installed or if mail is disabled.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>&minus;x</b></p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>This option allows you to set debug flags.</p></td></tr>
+</table>
+
+<h2>SIGNALS
+<a name="SIGNALS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">When the
+<i>SIGHUP</i> is received, the <i>Cron</i> daemon will close
+and reopen its log file. This proves to be useful in scripts
+which rotate and age log files. Naturally, this is not
+relevant if <i>Cron</i> was built to use
+<i>syslog</i>(3).</p>
+
+<h2>CLUSTERING SUPPORT
+<a name="CLUSTERING SUPPORT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In this version
+of <i>Cron</i> it is possible to use a network-mounted
+shared <i>/var/spool/cron</i> across a cluster of hosts and
+specify that only one of the hosts should run the crontab
+jobs in this directory at any one time. This is done by
+starting <i>Cron</i> with the <b>&minus;c</b> option, and
+have the <i>/var/spool/cron/.cron.hostname</i> file contain
+just one line, which represents the hostname of whichever
+host in the cluster should run the jobs. If this file does
+not exist, or the hostname in it does not match that
+returned by <b>gethostname</b>(2), then all crontab files in
+this directory are ignored. This has no effect on cron jobs
+specified in the <i>/etc/crontab</i> file or on files in the
+<i>/etc/cron.d</i> directory. These files are always run and
+considered host-specific.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Rather than
+editing <i>/var/spool/cron/.cron.hostname</i> directly, use
+the <b>&minus;n</b> option of <b>crontab</b>(1) to specify
+the host.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You should
+ensure that all hosts in a cluster, and the file server from
+which they mount the shared crontab directory, have closely
+synchronised clocks, e.g., using <b>ntpd</b>(8), otherwise
+the results will be very unpredictable.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Using cluster
+sharing automatically disables inotify support, because
+inotify cannot be relied on with network-mounted shared file
+systems.</p>
+
+<h2>CAVEATS
+<a name="CAVEATS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">All
+<b>crontab</b> files have to be regular files or symlinks to
+regular files, they must not be executable or writable for
+anyone else but the owner. This requirement can be
+overridden by using the <b>&minus;p</b> option on the crond
+command line. If inotify support is in use, changes in the
+symlinked crontabs are not automatically noticed by the cron
+daemon. The cron daemon must receive a SIGHUP signal to
+reload the crontabs. This is a limitation of the inotify
+API.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The syslog
+output will be used instead of mail, when sendmail is not
+installed.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>crontab</b>(1),
+<b>crontab</b>(5), <b>inotify</b>(7), <b>pam</b>(8)</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><a href="mailto:vixie@isc.org">Paul
+Vixie</a> <br>
+<a href="mailto:mmaslano@redhat.com">Marcela
+Ma&scaron;l&aacute;&#328;ov&aacute;</a> <br>
+<a href="mailto:colin@colin-dean.org">Colin Dean</a></p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,1394 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:37:51 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERLOPENTUT</title>
+
+</head>
+<body>
+
+<h1 align="center">PERLOPENTUT</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#Open a la shell">Open a la shell</a><br>
+<a href="#Open a la C">Open a la C</a><br>
+<a href="#Obscure Open Tricks">Obscure Open Tricks</a><br>
+<a href="#Other I/O Issues">Other I/O Issues</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHOR and COPYRIGHT">AUTHOR and COPYRIGHT</a><br>
+<a href="#HISTORY">HISTORY</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlopentut
+&minus; tutorial on opening things in Perl</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Perl has two
+simple, built-in ways to open files: the shell way for
+convenience, and the C way for precision. The shell way also
+has 2&minus; and 3&minus;argument forms, which have
+different semantics for handling the filename. The choice is
+yours.</p>
+
+<h2>Open a la shell
+<a name="Open a la shell"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Perl&rsquo;s
+<tt>&quot;open&quot;</tt> function was designed to mimic the
+way command-line redirection in the shell works. Here are
+some basic examples from the shell:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ myprogram file1 file2 file3
+    $ myprogram    &lt;  inputfile
+    $ myprogram    &gt;  outputfile
+    $ myprogram    &gt;&gt; outputfile
+    $ myprogram    |  otherprogram
+    $ otherprogram |  myprogram</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">And here are
+some more advanced examples:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ otherprogram      | myprogram f1 &minus; f2
+    $ otherprogram 2&gt;&amp;1 | myprogram &minus;
+    $ myprogram     &lt;&amp;3
+    $ myprogram     &gt;&amp;4</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Programmers
+accustomed to constructs like those above can take comfort
+in learning that Perl directly supports these familiar
+constructs using virtually the same syntax as the shell.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Simple
+Opens</b> <br>
+The <tt>&quot;open&quot;</tt> function takes two arguments:
+the first is a filehandle, and the second is a single string
+comprising both what to open and how to open it.
+<tt>&quot;open&quot;</tt> returns true when it works, and
+when it fails, returns a false value and sets the special
+variable <tt>$!</tt> to reflect the system error. If the
+filehandle was previously opened, it will be implicitly
+closed first.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open(INFO,      &quot;datafile&quot;) || die(&quot;can't open datafile: $!&quot;);
+    open(INFO,   &quot;&lt;  datafile&quot;) || die(&quot;can't open datafile: $!&quot;);
+    open(RESULTS,&quot;&gt;  runstats&quot;) || die(&quot;can't open runstats: $!&quot;);
+    open(LOG,    &quot;&gt;&gt; logfile &quot;) || die(&quot;can't open logfile:  $!&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you prefer
+the low-punctuation version, you could write that this
+way:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open INFO,   &quot;&lt;  datafile&quot;  or die &quot;can't open datafile: $!&quot;;
+    open RESULTS,&quot;&gt;  runstats&quot;  or die &quot;can't open runstats: $!&quot;;
+    open LOG,    &quot;&gt;&gt; logfile &quot;  or die &quot;can't open logfile:  $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">A few things to
+notice. First, the leading <tt>&quot;&lt;&quot;</tt> is
+optional. If omitted, Perl assumes that you want to open the
+file for reading.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note also that
+the first example uses the <tt>&quot;||&quot;</tt> logical
+operator, and the second uses <tt>&quot;or&quot;</tt>, which
+has lower precedence. Using <tt>&quot;||&quot;</tt> in the
+latter examples would effectively mean</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open INFO, ( &quot;&lt;  datafile&quot;  || die &quot;can't open datafile: $!&quot; );</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">which is
+definitely not what you want.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The other
+important thing to notice is that, just as in the shell, any
+whitespace before or after the filename is ignored. This is
+good, because you wouldn&rsquo;t want these to do different
+things:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open INFO,   &quot;&lt;datafile&quot;
+    open INFO,   &quot;&lt; datafile&quot;
+    open INFO,   &quot;&lt;  datafile&quot;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Ignoring
+surrounding whitespace also helps for when you read a
+filename in from a different file, and forget to trim it
+before opening:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $filename = &lt;INFO&gt;;         # oops, \n still there
+    open(EXTRA, &quot;&lt; $filename&quot;) || die &quot;can't open $filename: $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is not a
+bug, but a feature. Because <tt>&quot;open&quot;</tt> mimics
+the shell in its style of using redirection arrows to
+specify how to open the file, it also does so with respect
+to extra whitespace around the filename itself as well. For
+accessing files with naughty names, see &quot;Dispelling the
+Dweomer&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is also a
+3&minus;argument version of <tt>&quot;open&quot;</tt>, which
+lets you put the special redirection characters into their
+own argument:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open( INFO, &quot;&gt;&quot;, $datafile ) || die &quot;Can't create $datafile: $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In this case,
+the filename to open is the actual string in
+<tt>$datafile</tt>, so you don&rsquo;t have to worry about
+<tt>$datafile</tt> containing characters that might
+influence the open mode, or whitespace at the beginning of
+the filename that would be absorbed in the 2&minus;argument
+version. Also, any reduction of unnecessary string
+interpolation is a good thing.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Indirect
+Filehandles</b> <tt><br>
+&quot;open&quot;</tt>&rsquo;s first argument can be a
+reference to a filehandle. As of perl 5.6.0, if the argument
+is uninitialized, Perl will automatically create a
+filehandle and put a reference to it in the first argument,
+like so:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open( my $in, $infile )   or die &quot;Couldn't read $infile: $!&quot;;
+    while ( &lt;$in&gt; ) {
+        # do something with $_
+    }
+    close $in;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Indirect
+filehandles make namespace management easier. Since
+filehandles are global to the current package, two
+subroutines trying to open <tt>&quot;INFILE&quot;</tt> will
+clash. With two functions opening indirect filehandles like
+<tt>&quot;my $infile&quot;</tt>, there&rsquo;s no clash and
+no need to worry about future conflicts.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Another
+convenient behavior is that an indirect filehandle
+automatically closes when there are no more references to
+it:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sub firstline {
+        open( my $in, shift ) &amp;&amp; return scalar &lt;$in&gt;;
+        # no close() required
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Indirect
+filehandles also make it easy to pass filehandles to and
+return filehandles from subroutines:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    for my $file ( qw(this.conf that.conf) ) {
+        my $fin = open_or_throw('&lt;', $file);
+        process_conf( $fin );
+        # no close() needed
+    }
+    use Carp;
+    sub open_or_throw {
+        my ($mode, $filename) = @_;
+        open my $h, $mode, $filename
+            or croak &quot;Could not open '$filename': $!&quot;;
+        return $h;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Pipe
+Opens</b> <br>
+In C, when you want to open a file using the standard I/O
+library, you use the <tt>&quot;fopen&quot;</tt> function,
+but when opening a pipe, you use the
+<tt>&quot;popen&quot;</tt> function. But in the shell, you
+just use a different redirection character. That&rsquo;s
+also the case for Perl. The <tt>&quot;open&quot;</tt> call
+remains the same--just its argument differs.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the leading
+character is a pipe symbol, <tt>&quot;open&quot;</tt> starts
+up a new command and opens a write-only filehandle leading
+into that command. This lets you write into that handle and
+have what you write show up on that command&rsquo;s standard
+input. For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open(PRINTER, &quot;| lpr &minus;Plp1&quot;)    || die &quot;can't run lpr: $!&quot;;
+    print PRINTER &quot;stuff\n&quot;;
+    close(PRINTER)                  || die &quot;can't close lpr: $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If the trailing
+character is a pipe, you start up a new command and open a
+read-only filehandle leading out of that command. This lets
+whatever that command writes to its standard output show up
+on your handle for reading. For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open(NET, &quot;netstat &minus;i &minus;n |&quot;)    || die &quot;can't fork netstat: $!&quot;;
+    while (&lt;NET&gt;) { }               # do something with input
+    close(NET)                      || die &quot;can't close netstat: $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">What happens if
+you try to open a pipe to or from a non-existent command? If
+possible, Perl will detect the failure and set <tt>$!</tt>
+as usual. But if the command contains special shell
+characters, such as <tt>&quot;&gt;&quot;</tt> or
+<tt>&quot;*&quot;</tt>, called &rsquo;metacharacters&rsquo;,
+Perl does not execute the command directly. Instead, Perl
+runs the shell, which then tries to run the command. This
+means that it&rsquo;s the shell that gets the error
+indication. In such a case, the <tt>&quot;open&quot;</tt>
+call will only indicate failure if Perl can&rsquo;t even run
+the shell. See &quot;How can I capture <small>STDERR</small>
+from an external command?&quot; in perlfaq8 to see how to
+cope with this. There&rsquo;s also an explanation in
+perlipc.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you would
+like to open a bidirectional pipe, the IPC::Open2 library
+will handle this for you. Check out &quot;Bidirectional
+Communication with Another Process&quot; in perlipc</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">perl&minus;5.6.x
+introduced a version of piped open that executes a process
+based on its command line arguments without relying on the
+shell. (Similar to the <tt>&quot;system(@LIST)&quot;</tt>
+notation.) This is safer and faster than executing a single
+argument pipe-command, but does not allow special shell
+constructs. (It is also not supported on Microsoft Windows,
+Mac <small>OS</small> Classic or <small>RISC OS</small>
+.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here&rsquo;s an
+example of <tt>&quot;open '&minus;|'&quot;</tt>, which
+prints a random Unix fortune cookie as uppercase:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my $collection = shift(@ARGV);
+    open my $fortune, '&minus;|', 'fortune', $collection
+        or die &quot;Could not find fortune &minus; $!&quot;;
+    while (&lt;$fortune&gt;)
+    {
+        print uc($_);
+    }
+    close($fortune);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">And this
+<tt>&quot;open '|&minus;'&quot;</tt> pipes into lpr:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open my $printer, '|&minus;', 'lpr', '&minus;Plp1'
+        or die &quot;can't run lpr: $!&quot;;
+    print {$printer} &quot;stuff\n&quot;;
+    close($printer)
+        or die &quot;can't close lpr: $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>The Minus
+File</b> <br>
+Again following the lead of the standard shell utilities,
+Perl&rsquo;s <tt>&quot;open&quot;</tt> function treats a
+file whose name is a single minus, &quot;&minus;&quot;, in a
+special way. If you open minus for reading, it really means
+to access the standard input. If you open minus for writing,
+it really means to access the standard output.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If minus can be
+used as the default input or default output, what happens if
+you open a pipe into or out of minus? What&rsquo;s the
+default command it would run? The same script as
+you&rsquo;re currently running! This is actually a stealth
+<tt>&quot;fork&quot;</tt> hidden inside an
+<tt>&quot;open&quot;</tt> call. See &quot;Safe Pipe
+Opens&quot; in perlipc for details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Mixing Reads
+and Writes</b> <br>
+It is possible to specify both read and write access. All
+you do is add a &quot;+&quot; symbol in front of the
+redirection. But as in the shell, using a less-than on a
+file never creates a new file; it only opens an existing
+one. On the other hand, using a greater-than always clobbers
+(truncates to zero length) an existing file, or creates a
+brand-new one if there isn&rsquo;t an old one. Adding a
+&quot;+&quot; for read-write doesn&rsquo;t affect whether it
+only works on existing files or always clobbers existing
+ones.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open(WTMP, &quot;+&lt; /usr/adm/wtmp&quot;)
+        || die &quot;can't open /usr/adm/wtmp: $!&quot;;
+    open(SCREEN, &quot;+&gt; lkscreen&quot;)
+        || die &quot;can't open lkscreen: $!&quot;;
+    open(LOGFILE, &quot;+&gt;&gt; /var/log/applog&quot;)
+        || die &quot;can't open /var/log/applog: $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The first one
+won&rsquo;t create a new file, and the second one will
+always clobber an old one. The third one will create a new
+file if necessary and not clobber an old one, and it will
+allow you to read at any point in the file, but all writes
+will always go to the end. In short, the first case is
+substantially more common than the second and third cases,
+which are almost always wrong. (If you know C, the plus in
+Perl&rsquo;s <tt>&quot;open&quot;</tt> is historically
+derived from the one in C&rsquo;s fopen(3S), which it
+ultimately calls.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">In fact, when
+it comes to updating a file, unless you&rsquo;re working on
+a binary file as in the <small>WTMP</small> case above, you
+probably don&rsquo;t want to use this approach for updating.
+Instead, Perl&rsquo;s <b>&minus;i</b> flag comes to the
+rescue. The following command takes all the C, C
+<small>++</small> , or yacc source or header files and
+changes all their foo&rsquo;s to bar&rsquo;s, leaving the
+old version in the original filename with a
+&quot;.orig&quot; tacked on the end:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl &minus;i.orig &minus;pe 's/\bfoo\b/bar/g' *.[Cchy]</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is a short
+cut for some renaming games that are really the best way to
+update textfiles. See the second question in perlfaq5 for
+more details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Filters</b>
+<br>
+One of the most common uses for <tt>&quot;open&quot;</tt> is
+one you never even notice. When you process the
+<small>ARGV</small> filehandle using
+<tt>&quot;&lt;ARGV&gt;&quot;</tt>, Perl actually does an
+implicit open on each file in <tt>@ARGV</tt>. Thus a program
+called like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ myprogram file1 file2 file3</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">can have all
+its files opened and processed one at a time using a
+construct no more complex than:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    while (&lt;&gt;) {
+        # do something with $_
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If
+<tt>@ARGV</tt> is empty when the loop first begins, Perl
+pretends you&rsquo;ve opened up minus, that is, the standard
+input. In fact, <tt>$ARGV</tt>, the currently open file
+during <tt>&quot;&lt;ARGV&gt;&quot;</tt> processing, is even
+set to &quot;&minus;&quot; in these circumstances.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You are welcome
+to pre-process your <tt>@ARGV</tt> before starting the loop
+to make sure it&rsquo;s to your liking. One reason to do
+this might be to remove command options beginning with a
+minus. While you can always roll the simple ones by hand,
+the Getopts modules are good for this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Getopt::Std;
+    # &minus;v, &minus;D, &minus;o ARG, sets $opt_v, $opt_D, $opt_o
+    getopts(&quot;vDo:&quot;);
+    # &minus;v, &minus;D, &minus;o ARG, sets $args{v}, $args{D}, $args{o}
+    getopts(&quot;vDo:&quot;, \%args);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Or the standard
+Getopt::Long module to permit named arguments:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Getopt::Long;
+    GetOptions( &quot;verbose&quot;  =&gt; \$verbose,        # &minus;&minus;verbose
+                &quot;Debug&quot;    =&gt; \$debug,          # &minus;&minus;Debug
+                &quot;output=s&quot; =&gt; \$output );
+            # &minus;&minus;output=somestring or &minus;&minus;output somestring</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Another reason
+for preprocessing arguments is to make an empty argument
+list default to all files:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @ARGV = glob(&quot;*&quot;) unless @ARGV;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You could even
+filter out all but plain, text files. This is a bit silent,
+of course, and you might prefer to mention them on the
+way.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @ARGV = grep { &minus;f &amp;&amp; &minus;T } @ARGV;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you&rsquo;re
+using the <b>&minus;n</b> or <b>&minus;p</b> command-line
+options, you should put changes to <tt>@ARGV</tt> in a
+<tt>&quot;BEGIN{}&quot;</tt> block.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Remember that a
+normal <tt>&quot;open&quot;</tt> has special properties, in
+that it might call fopen(3S) or it might called popen(3S),
+depending on what its argument looks like; that&rsquo;s why
+it&rsquo;s sometimes called &quot;magic open&quot;.
+Here&rsquo;s an example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $pwdinfo = `domainname` =~ /^(\(none\))?$/
+                    ? '&lt; /etc/passwd'
+                    : 'ypcat passwd |';
+    open(PWD, $pwdinfo)
+                or die &quot;can't open $pwdinfo: $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This sort of
+thing also comes into play in filter processing. Because
+<tt>&quot;&lt;ARGV&gt;&quot;</tt> processing employs the
+normal, shell-style Perl <tt>&quot;open&quot;</tt>, it
+respects all the special things we&rsquo;ve already
+seen:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ myprogram f1 &quot;cmd1|&quot; &minus; f2 &quot;cmd2|&quot; f3 &lt; tmpfile</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">That program
+will read from the file <i>f1</i>, the process <i>cmd1</i>,
+standard input (<i>tmpfile</i> in this case), the <i>f2</i>
+file, the <i>cmd2</i> command, and finally the <i>f3</i>
+file.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Yes, this also
+means that if you have files named &quot;&minus;&quot; (and
+so on) in your directory, they won&rsquo;t be processed as
+literal files by <tt>&quot;open&quot;</tt>. You&rsquo;ll
+need to pass them as &quot;./&minus;&quot;, much as you
+would for the <i>rm</i> program, or you could use
+<tt>&quot;sysopen&quot;</tt> as described below.</p>
+
+<p style="margin-left:11%; margin-top: 1em">One of the more
+interesting applications is to change files of a certain
+name into pipes. For example, to autoprocess gzipped or
+compressed files by decompressing them with <i>gzip</i>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @ARGV = map { /\.(gz|Z)$/ ? &quot;gzip &minus;dc $_ |&quot; : $_  } @ARGV;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Or, if you have
+the <i><small>GET</small></i> program installed from
+<small>LWP</small> , you can fetch URLs before processing
+them:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @ARGV = map { m#^\w+://# ? &quot;GET $_ |&quot; : $_ } @ARGV;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">It&rsquo;s not
+for nothing that this is called magic
+<tt>&quot;&lt;ARGV&gt;&quot;</tt>. Pretty nifty, eh?</p>
+
+<h2>Open a la C
+<a name="Open a la C"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you want the
+convenience of the shell, then Perl&rsquo;s
+<tt>&quot;open&quot;</tt> is definitely the way to go. On
+the other hand, if you want finer precision than C&rsquo;s
+simplistic fopen(3S) provides you should look to
+Perl&rsquo;s <tt>&quot;sysopen&quot;</tt>, which is a direct
+hook into the <i>open</i>(2) system call. That does mean
+it&rsquo;s a bit more involved, but that&rsquo;s the price
+of precision.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;sysopen&quot;</tt>
+takes 3 (or 4) arguments.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sysopen HANDLE, PATH, FLAGS, [MASK]</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<small>HANDLE</small> argument is a filehandle just as with
+<tt>&quot;open&quot;</tt>. The <small>PATH</small> is a
+literal path, one that doesn&rsquo;t pay attention to any
+greater-thans or less-thans or pipes or minuses, nor ignore
+whitespace. If it&rsquo;s there, it&rsquo;s part of the
+path. The <small>FLAGS</small> argument contains one or more
+values derived from the Fcntl module that have been
+or&rsquo;d together using the bitwise &quot;|&quot;
+operator. The final argument, the <small>MASK</small> , is
+optional; if present, it is combined with the user&rsquo;s
+current umask for the creation mode of the file. You should
+usually omit this.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Although the
+traditional values of read-only, write-only, and read-write
+are 0, 1, and 2 respectively, this is known not to hold true
+on some systems. Instead, it&rsquo;s best to load in the
+appropriate constants first from the Fcntl module, which
+supplies the following standard flags:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    O_RDONLY            Read only
+    O_WRONLY            Write only
+    O_RDWR              Read and write
+    O_CREAT             Create the file if it doesn't exist
+    O_EXCL              Fail if the file already exists
+    O_APPEND            Append to the file
+    O_TRUNC             Truncate the file
+    O_NONBLOCK          Non&minus;blocking access</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Less common
+flags that are sometimes available on some operating systems
+include <tt>&quot;O_BINARY&quot;</tt>,
+<tt>&quot;O_TEXT&quot;</tt>, <tt>&quot;O_SHLOCK&quot;</tt>,
+<tt>&quot;O_EXLOCK&quot;</tt>, <tt>&quot;O_DEFER&quot;</tt>,
+<tt>&quot;O_SYNC&quot;</tt>, <tt>&quot;O_ASYNC&quot;</tt>,
+<tt>&quot;O_DSYNC&quot;</tt>, <tt>&quot;O_RSYNC&quot;</tt>,
+<tt>&quot;O_NOCTTY&quot;</tt>, <tt>&quot;O_NDELAY&quot;</tt>
+and <tt>&quot;O_LARGEFILE&quot;</tt>. Consult your
+<i>open</i>(2) manpage or its local equivalent for details.
+(Note: starting from Perl release 5.6 the
+<tt>&quot;O_LARGEFILE&quot;</tt> flag, if available, is
+automatically added to the <i>sysopen()</i> flags because
+large files are the default.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here&rsquo;s
+how to use <tt>&quot;sysopen&quot;</tt> to emulate the
+simple <tt>&quot;open&quot;</tt> calls we had before.
+We&rsquo;ll omit the <tt>&quot;|| die $!&quot;</tt> checks
+for clarity, but make sure you always check the return
+values in real code. These aren&rsquo;t quite the same,
+since <tt>&quot;open&quot;</tt> will trim leading and
+trailing whitespace, but you&rsquo;ll get the idea.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To open a file
+for reading:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open(FH, &quot;&lt; $path&quot;);
+    sysopen(FH, $path, O_RDONLY);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To open a file
+for writing, creating a new file if needed or else
+truncating an old file:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open(FH, &quot;&gt; $path&quot;);
+    sysopen(FH, $path, O_WRONLY | O_TRUNC | O_CREAT);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To open a file
+for appending, creating one if necessary:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open(FH, &quot;&gt;&gt; $path&quot;);
+    sysopen(FH, $path, O_WRONLY | O_APPEND | O_CREAT);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To open a file
+for update, where the file must already exist:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open(FH, &quot;+&lt; $path&quot;);
+    sysopen(FH, $path, O_RDWR);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">And here are
+things you can do with <tt>&quot;sysopen&quot;</tt> that you
+cannot do with a regular <tt>&quot;open&quot;</tt>. As
+you&rsquo;ll see, it&rsquo;s just a matter of controlling
+the flags in the third argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To open a file
+for writing, creating a new file which must not previously
+exist:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sysopen(FH, $path, O_WRONLY | O_EXCL | O_CREAT);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To open a file
+for appending, where that file must already exist:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sysopen(FH, $path, O_WRONLY | O_APPEND);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To open a file
+for update, creating a new file if necessary:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sysopen(FH, $path, O_RDWR | O_CREAT);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To open a file
+for update, where that file must not already exist:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sysopen(FH, $path, O_RDWR | O_EXCL | O_CREAT);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To open a file
+without blocking, creating one if necessary:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sysopen(FH, $path, O_WRONLY | O_NONBLOCK | O_CREAT);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Permissions
+a la mode</b> <br>
+If you omit the <small>MASK</small> argument to
+<tt>&quot;sysopen&quot;</tt>, Perl uses the octal value
+0666. The normal <small>MASK</small> to use for executables
+and directories should be 0777, and for anything else,
+0666.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Why so
+permissive? Well, it isn&rsquo;t really. The
+<small>MASK</small> will be modified by your process&rsquo;s
+current <tt>&quot;umask&quot;</tt>. A umask is a number
+representing <i>disabled</i> permissions bits; that is, bits
+that will not be turned on in the created file&rsquo;s
+permissions field.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For example, if
+your <tt>&quot;umask&quot;</tt> were 027, then the 020 part
+would disable the group from writing, and the 007 part would
+disable others from reading, writing, or executing. Under
+these conditions, passing <tt>&quot;sysopen&quot;</tt> 0666
+would create a file with mode 0640, since <tt>&quot;0666
+&amp; ~027&quot;</tt> is 0640.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You should
+seldom use the <small>MASK</small> argument to
+<tt>&quot;sysopen()&quot;</tt>. That takes away the
+user&rsquo;s freedom to choose what permission new files
+will have. Denying choice is almost always a bad thing. One
+exception would be for cases where sensitive or private data
+is being stored, such as with mail folders, cookie files,
+and internal temporary files.</p>
+
+<h2>Obscure Open Tricks
+<a name="Obscure Open Tricks"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Re-Opening
+Files (dups)</b> <br>
+Sometimes you already have a filehandle open, and want to
+make another handle that&rsquo;s a duplicate of the first
+one. In the shell, we place an ampersand in front of a file
+descriptor number when doing redirections. For example,
+<tt>&quot;2&gt;&amp;1&quot;</tt> makes descriptor 2
+(that&rsquo;s <small>STDERR</small> in Perl) be redirected
+into descriptor 1 (which is usually Perl&rsquo;s
+<small>STDOUT</small> ). The same is essentially true in
+Perl: a filename that begins with an ampersand is treated
+instead as a file descriptor if a number, or as a filehandle
+if a string.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open(SAVEOUT, &quot;&gt;&amp;SAVEERR&quot;) || die &quot;couldn't dup SAVEERR: $!&quot;;
+    open(MHCONTEXT, &quot;&lt;&amp;4&quot;)     || die &quot;couldn't dup fd4: $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">That means that
+if a function is expecting a filename, but you don&rsquo;t
+want to give it a filename because you already have the file
+open, you can just pass the filehandle with a leading
+ampersand. It&rsquo;s best to use a fully qualified handle
+though, just in case the function happens to be in a
+different package:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    somefunction(&quot;&amp;main::LOGFILE&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This way if
+<i>somefunction()</i> is planning on opening its argument,
+it can just use the already opened handle. This differs from
+passing a handle, because with a handle, you don&rsquo;t
+open the file. Here you have something you can pass to
+open.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you have one
+of those tricky, newfangled I/O objects that the C
+<small>++</small> folks are raving about, then this
+doesn&rsquo;t work because those aren&rsquo;t a proper
+filehandle in the native Perl sense. You&rsquo;ll have to
+use <i>fileno()</i> to pull out the proper descriptor
+number, assuming you can:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use IO::Socket;
+    $handle = IO::Socket::INET&minus;&gt;new(&quot;www.perl.com:80&quot;);
+    $fd = $handle&minus;&gt;fileno;
+    somefunction(&quot;&amp;$fd&quot;);  # not an indirect function call</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">It can be
+easier (and certainly will be faster) just to use real
+filehandles though:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use IO::Socket;
+    local *REMOTE = IO::Socket::INET&minus;&gt;new(&quot;www.perl.com:80&quot;);
+    die &quot;can't connect&quot; unless defined(fileno(REMOTE));
+    somefunction(&quot;&amp;main::REMOTE&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If the
+filehandle or descriptor number is preceded not just with a
+simple &quot;&amp;&quot; but rather with a
+&quot;&amp;=&quot; combination, then Perl will not create a
+completely new descriptor opened to the same place using the
+<i>dup</i>(2) system call. Instead, it will just make
+something of an alias to the existing one using the
+fdopen(3S) library call. This is slightly more parsimonious
+of systems resources, although this is less a concern these
+days. Here&rsquo;s an example of that:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $fd = $ENV{&quot;MHCONTEXTFD&quot;};
+    open(MHCONTEXT, &quot;&lt;&amp;=$fd&quot;)   or die &quot;couldn't fdopen $fd: $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you&rsquo;re
+using magic <tt>&quot;&lt;ARGV&gt;&quot;</tt>, you could
+even pass in as a command line argument in <tt>@ARGV</tt>
+something like <tt>&quot;&lt;&amp;=$MHCONTEXTFD&quot;</tt>,
+but we&rsquo;ve never seen anyone actually do this.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Dispelling
+the Dweomer</b> <br>
+Perl is more of a DWIMmer language than something like
+Java--where <small>DWIM</small> is an acronym for &quot;do
+what I mean&quot;. But this principle sometimes leads to
+more hidden magic than one knows what to do with. In this
+way, Perl is also filled with <i>dweomer</i>, an obscure
+word meaning an enchantment. Sometimes, Perl&rsquo;s DWIMmer
+is just too much like dweomer for comfort.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If magic
+<tt>&quot;open&quot;</tt> is a bit too magical for you, you
+don&rsquo;t have to turn to <tt>&quot;sysopen&quot;</tt>. To
+open a file with arbitrary weird characters in it,
+it&rsquo;s necessary to protect any leading and trailing
+whitespace. Leading whitespace is protected by inserting a
+<tt>&quot;./&quot;</tt> in front of a filename that starts
+with whitespace. Trailing whitespace is protected by
+appending an <small>ASCII NUL</small> byte
+(<tt>&quot;\0&quot;</tt>) at the end of the string.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $file =~ s#^(\s)#./$1#;
+    open(FH, &quot;&lt; $file\0&quot;)   || die &quot;can't open $file: $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This assumes,
+of course, that your system considers dot the current
+working directory, slash the directory separator, and
+disallows <small>ASCII</small> NULs within a valid filename.
+Most systems follow these conventions, including all
+<small>POSIX</small> systems as well as proprietary
+Microsoft systems. The only vaguely popular system that
+doesn&rsquo;t work this way is the &quot;Classic&quot;
+Macintosh system, which uses a colon where the rest of us
+use a slash. Maybe <tt>&quot;sysopen&quot;</tt> isn&rsquo;t
+such a bad idea after all.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+use <tt>&quot;&lt;ARGV&gt;&quot;</tt> processing in a
+totally boring and non-magical way, you could do this
+first:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    #   &quot;Sam sat on the ground and put his head in his hands.
+    #   'I wish I had never come here, and I don't want to see
+    #   no more magic,' he said, and fell silent.&quot;
+    for (@ARGV) {
+        s#^([^./])#./$1#;
+        $_ .= &quot;\0&quot;;
+    }
+    while (&lt;&gt;) {
+        # now process $_
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">But be warned
+that users will not appreciate being unable to use
+&quot;&minus;&quot; to mean standard input, per the standard
+convention.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Paths as
+Opens</b> <br>
+You&rsquo;ve probably noticed how Perl&rsquo;s
+<tt>&quot;warn&quot;</tt> and <tt>&quot;die&quot;</tt>
+functions can produce messages like:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Some warning at scriptname line 29, &lt;FH&gt; line 7.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">That&rsquo;s
+because you opened a filehandle <small>FH</small> , and had
+read in seven records from it. But what was the name of the
+file, rather than the handle?</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you
+aren&rsquo;t running with <tt>&quot;strict refs&quot;</tt>,
+or if you&rsquo;ve turned them off temporarily, then all you
+have to do is this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open($path, &quot;&lt; $path&quot;) || die &quot;can't open $path: $!&quot;;
+    while (&lt;$path&gt;) {
+        # whatever
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Since
+you&rsquo;re using the pathname of the file as its handle,
+you&rsquo;ll get warnings more like</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Some warning at scriptname line 29, &lt;/etc/motd&gt; line 7.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Single
+Argument Open</b> <br>
+Remember how we said that Perl&rsquo;s open took two
+arguments? That was a passive prevarication. You see, it can
+also take just one argument. If and only if the variable is
+a global variable, not a lexical, you can pass
+<tt>&quot;open&quot;</tt> just one argument, the filehandle,
+and it will get the path from the global scalar variable of
+the same name.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $FILE = &quot;/etc/motd&quot;;
+    open FILE or die &quot;can't open $FILE: $!&quot;;
+    while (&lt;FILE&gt;) {
+        # whatever
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Why is this
+here? Someone has to cater to the hysterical porpoises.
+It&rsquo;s something that&rsquo;s been in Perl since the
+very beginning, if not before.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Playing with
+<small>STDIN</small> and <small>STDOUT</small></b> <br>
+One clever move with <small>STDOUT</small> is to explicitly
+close it when you&rsquo;re done with the program.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    END { close(STDOUT) || die &quot;can't close stdout: $!&quot; }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you
+don&rsquo;t do this, and your program fills up the disk
+partition due to a command line redirection, it won&rsquo;t
+report the error exit with a failure status.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You don&rsquo;t
+have to accept the <small>STDIN</small> and
+<small>STDOUT</small> you were given. You are welcome to
+reopen them if you&rsquo;d like.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open(STDIN, &quot;&lt; datafile&quot;)
+        || die &quot;can't open datafile: $!&quot;;
+    open(STDOUT, &quot;&gt; output&quot;)
+        || die &quot;can't open output: $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">And then these
+can be accessed directly or passed on to subprocesses. This
+makes it look as though the program were initially invoked
+with those redirections from the command line.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It&rsquo;s
+probably more interesting to connect these to pipes. For
+example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $pager = $ENV{PAGER} || &quot;(less || more)&quot;;
+    open(STDOUT, &quot;| $pager&quot;)
+        || die &quot;can't fork a pager: $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This makes it
+appear as though your program were called with its stdout
+already piped into your pager. You can also use this kind of
+thing in conjunction with an implicit fork to yourself. You
+might do this if you would rather handle the post processing
+in your own program, just in a different process:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    head(100);
+    while (&lt;&gt;) {
+        print;
+    }
+    sub head {
+        my $lines = shift || 20;
+        return if $pid = open(STDOUT, &quot;|&minus;&quot;);       # return if parent
+        die &quot;cannot fork: $!&quot; unless defined $pid;
+        while (&lt;STDIN&gt;) {
+            last if &minus;&minus;$lines &lt; 0;
+            print;
+        }
+        exit;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This technique
+can be applied to repeatedly push as many filters on your
+output stream as you wish.</p>
+
+<h2>Other I/O Issues
+<a name="Other I/O Issues"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These topics
+aren&rsquo;t really arguments related to
+<tt>&quot;open&quot;</tt> or <tt>&quot;sysopen&quot;</tt>,
+but they do affect what you do with your open files.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Opening
+Non-File Files</b> <br>
+When is a file not a file? Well, you could say when it
+exists but isn&rsquo;t a plain file. We&rsquo;ll check
+whether it&rsquo;s a symbolic link first, just in case.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    if (&minus;l $file || ! &minus;f _) {
+        print &quot;$file is not a plain file\n&quot;;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">What other
+kinds of files are there than, well, files? Directories,
+symbolic links, named pipes, Unix-domain sockets, and block
+and character devices. Those are all files, too--just not
+<i>plain</i> files. This isn&rsquo;t the same issue as being
+a text file. Not all text files are plain files. Not all
+plain files are text files. That&rsquo;s why there are
+separate <tt>&quot;&minus;f&quot;</tt> and
+<tt>&quot;&minus;T&quot;</tt> file tests.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To open a
+directory, you should use the <tt>&quot;opendir&quot;</tt>
+function, then process it with <tt>&quot;readdir&quot;</tt>,
+carefully restoring the directory name if necessary:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    opendir(DIR, $dirname) or die &quot;can't opendir $dirname: $!&quot;;
+    while (defined($file = readdir(DIR))) {
+        # do something with &quot;$dirname/$file&quot;
+    }
+    closedir(DIR);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+process directories recursively, it&rsquo;s better to use
+the File::Find module. For example, this prints out all
+files recursively and adds a slash to their names if the
+file is a directory.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @ARGV = qw(.) unless @ARGV;
+    use File::Find;
+    find sub { print $File::Find::name, &minus;d &amp;&amp; '/', &quot;\n&quot; }, @ARGV;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This finds all
+bogus symbolic links beneath a particular directory:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    find sub { print &quot;$File::Find::name\n&quot; if &minus;l &amp;&amp; !&minus;e }, $dir;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">As you see,
+with symbolic links, you can just pretend that it is what it
+points to. Or, if you want to know <i>what</i> it points to,
+then <tt>&quot;readlink&quot;</tt> is called for:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    if (&minus;l $file) {
+        if (defined($whither = readlink($file))) {
+            print &quot;$file points to $whither\n&quot;;
+        } else {
+            print &quot;$file points nowhere: $!\n&quot;;
+        }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Opening
+Named Pipes</b> <br>
+Named pipes are a different matter. You pretend
+they&rsquo;re regular files, but their opens will normally
+block until there is both a reader and a writer. You can
+read more about them in &quot;Named Pipes&quot; in perlipc.
+Unix-domain sockets are rather different beasts as well;
+they&rsquo;re described in &quot;Unix-Domain
+<small>TCP</small> Clients and Servers&quot; in perlipc.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When it comes
+to opening devices, it can be easy and it can be tricky.
+We&rsquo;ll assume that if you&rsquo;re opening up a block
+device, you know what you&rsquo;re doing. The character
+devices are more interesting. These are typically used for
+modems, mice, and some kinds of printers. This is described
+in &quot;How do I read and write the serial port?&quot; in
+perlfaq8 It&rsquo;s often enough to open them carefully:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sysopen(TTYIN, &quot;/dev/ttyS1&quot;, O_RDWR | O_NDELAY | O_NOCTTY)
+                # (O_NOCTTY no longer needed on POSIX systems)
+        or die &quot;can't open /dev/ttyS1: $!&quot;;
+    open(TTYOUT, &quot;+&gt;&amp;TTYIN&quot;)
+        or die &quot;can't dup TTYIN: $!&quot;;
+    $ofh = select(TTYOUT); $| = 1; select($ofh);
+    print TTYOUT &quot;+++at\015&quot;;
+    $answer = &lt;TTYIN&gt;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">With
+descriptors that you haven&rsquo;t opened using
+<tt>&quot;sysopen&quot;</tt>, such as sockets, you can set
+them to be non-blocking using
+<tt>&quot;fcntl&quot;</tt>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Fcntl;
+    my $old_flags = fcntl($handle, F_GETFL, 0)
+        or die &quot;can't get flags: $!&quot;;
+    fcntl($handle, F_SETFL, $old_flags | O_NONBLOCK)
+        or die &quot;can't set non blocking: $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Rather than
+losing yourself in a morass of twisting, turning
+<tt>&quot;ioctl&quot;</tt>s, all dissimilar, if you&rsquo;re
+going to manipulate ttys, it&rsquo;s best to make calls out
+to the <i>stty</i>(1) program if you have it, or else use
+the portable <small>POSIX</small> interface. To figure this
+all out, you&rsquo;ll need to read the <i>termios</i>(3)
+manpage, which describes the <small>POSIX</small> interface
+to tty devices, and then <small>POSIX</small> , which
+describes Perl&rsquo;s interface to <small>POSIX</small> .
+There are also some high-level modules on
+<small>CPAN</small> that can help you with these games.
+Check out Term::ReadKey and Term::ReadLine.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Opening
+Sockets</b> <br>
+What else can you open? To open a connection using sockets,
+you won&rsquo;t use one of Perl&rsquo;s two open functions.
+See &quot;Sockets: Client/Server Communication&quot; in
+perlipc for that. Here&rsquo;s an example. Once you have it,
+you can use <small>FH</small> as a bidirectional
+filehandle.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use IO::Socket;
+    local *FH = IO::Socket::INET&minus;&gt;new(&quot;www.perl.com:80&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">For opening up
+a <small>URL</small> , the <small>LWP</small> modules from
+<small>CPAN</small> are just what the doctor ordered.
+There&rsquo;s no filehandle interface, but it&rsquo;s still
+easy to get the contents of a document:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use LWP::Simple;
+    $doc = get('http://www.cpan.org/');</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Binary
+Files</b> <br>
+On certain legacy systems with what could charitably be
+called terminally convoluted (some would say broken) I/O
+models, a file isn&rsquo;t a file--at least, not with
+respect to the C standard I/O library. On these old systems
+whose libraries (but not kernels) distinguish between text
+and binary streams, to get files to behave properly
+you&rsquo;ll have to bend over backwards to avoid nasty
+problems. On such infelicitous systems, sockets and pipes
+are already opened in binary mode, and there is currently no
+way to turn that off. With files, you have more options.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Another option
+is to use the <tt>&quot;binmode&quot;</tt> function on the
+appropriate handles before doing regular I/O on them:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    binmode(STDIN);
+    binmode(STDOUT);
+    while (&lt;STDIN&gt;) { print }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Passing
+<tt>&quot;sysopen&quot;</tt> a non-standard flag option will
+also open the file in binary mode on those systems that
+support it. This is the equivalent of opening the file
+normally, then calling <tt>&quot;binmode&quot;</tt> on the
+handle.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sysopen(BINDAT, &quot;records.data&quot;, O_RDWR | O_BINARY)
+        || die &quot;can't open records.data: $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Now you can use
+<tt>&quot;read&quot;</tt> and <tt>&quot;print&quot;</tt> on
+that handle without worrying about the non-standard system
+I/O library breaking your data. It&rsquo;s not a pretty
+picture, but then, legacy systems seldom are.
+<small>CP/M</small> will be with us until the end of days,
+and after.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On systems with
+exotic I/O systems, it turns out that, astonishingly enough,
+even unbuffered I/O using <tt>&quot;sysread&quot;</tt> and
+<tt>&quot;syswrite&quot;</tt> might do sneaky data
+mutilation behind your back.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    while (sysread(WHENCE, $buf, 1024)) {
+        syswrite(WHITHER, $buf, length($buf));
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Depending on
+the vicissitudes of your runtime system, even these calls
+may need <tt>&quot;binmode&quot;</tt> or
+<tt>&quot;O_BINARY&quot;</tt> first. Systems known to be
+free of such difficulties include Unix, the Mac
+<small>OS</small> , Plan 9, and Inferno.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>File
+Locking</b> <br>
+In a multitasking environment, you may need to be careful
+not to collide with other processes who want to do I/O on
+the same files as you are working on. You&rsquo;ll often
+need shared or exclusive locks on files for reading and
+writing respectively. You might just pretend that only
+exclusive locks exist.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Never use the
+existence of a file <tt>&quot;&minus;e $file&quot;</tt> as a
+locking indication, because there is a race condition
+between the test for the existence of the file and its
+creation. It&rsquo;s possible for another process to create
+a file in the slice of time between your existence check and
+your attempt to create the file. Atomicity is critical.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl&rsquo;s
+most portable locking interface is via the
+<tt>&quot;flock&quot;</tt> function, whose simplicity is
+emulated on systems that don&rsquo;t directly support it
+such as SysV or Windows. The underlying semantics may affect
+how it all works, so you should learn how
+<tt>&quot;flock&quot;</tt> is implemented on your
+system&rsquo;s port of Perl.</p>
+
+<p style="margin-left:11%; margin-top: 1em">File locking
+<i>does not</i> lock out another process that would like to
+do I/O. A file lock only locks out others trying to get a
+lock, not processes trying to do I/O. Because locks are
+advisory, if one process uses locking and another
+doesn&rsquo;t, all bets are off.</p>
+
+<p style="margin-left:11%; margin-top: 1em">By default, the
+<tt>&quot;flock&quot;</tt> call will block until a lock is
+granted. A request for a shared lock will be granted as soon
+as there is no exclusive locker. A request for an exclusive
+lock will be granted as soon as there is no locker of any
+kind. Locks are on file descriptors, not file names. You
+can&rsquo;t lock a file until you open it, and you
+can&rsquo;t hold on to a lock once the file has been
+closed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here&rsquo;s
+how to get a blocking shared lock on a file, typically used
+for reading:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use 5.004;
+    use Fcntl qw(:DEFAULT :flock);
+    open(FH, &quot;&lt; filename&quot;)  or die &quot;can't open filename: $!&quot;;
+    flock(FH, LOCK_SH)      or die &quot;can't lock filename: $!&quot;;
+    # now read from FH</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can get a
+non-blocking lock by using <tt>&quot;LOCK_NB&quot;</tt>.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    flock(FH, LOCK_SH | LOCK_NB)
+        or die &quot;can't lock filename: $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This can be
+useful for producing more user-friendly behaviour by warning
+if you&rsquo;re going to be blocking:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use 5.004;
+    use Fcntl qw(:DEFAULT :flock);
+    open(FH, &quot;&lt; filename&quot;)  or die &quot;can't open filename: $!&quot;;
+    unless (flock(FH, LOCK_SH | LOCK_NB)) {
+        $| = 1;
+        print &quot;Waiting for lock...&quot;;
+        flock(FH, LOCK_SH)  or die &quot;can't lock filename: $!&quot;;
+        print &quot;got it.\n&quot;
+    }
+    # now read from FH</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To get an
+exclusive lock, typically used for writing, you have to be
+careful. We <tt>&quot;sysopen&quot;</tt> the file so it can
+be locked before it gets emptied. You can get a nonblocking
+version using <tt>&quot;LOCK_EX | LOCK_NB&quot;</tt>.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use 5.004;
+    use Fcntl qw(:DEFAULT :flock);
+    sysopen(FH, &quot;filename&quot;, O_WRONLY | O_CREAT)
+        or die &quot;can't open filename: $!&quot;;
+    flock(FH, LOCK_EX)
+        or die &quot;can't lock filename: $!&quot;;
+    truncate(FH, 0)
+        or die &quot;can't truncate filename: $!&quot;;
+    # now write to FH</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Finally, due to
+the uncounted millions who cannot be dissuaded from wasting
+cycles on useless vanity devices called hit counters,
+here&rsquo;s how to increment a number in a file safely:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Fcntl qw(:DEFAULT :flock);
+    sysopen(FH, &quot;numfile&quot;, O_RDWR | O_CREAT)
+        or die &quot;can't open numfile: $!&quot;;
+    # autoflush FH
+    $ofh = select(FH); $| = 1; select ($ofh);
+    flock(FH, LOCK_EX)
+        or die &quot;can't write&minus;lock numfile: $!&quot;;
+    $num = &lt;FH&gt; || 0;
+    seek(FH, 0, 0)
+        or die &quot;can't rewind numfile : $!&quot;;
+    print FH $num+1, &quot;\n&quot;
+        or die &quot;can't write numfile: $!&quot;;
+    truncate(FH, tell(FH))
+        or die &quot;can't truncate numfile: $!&quot;;
+    close(FH)
+        or die &quot;can't close numfile: $!&quot;;</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>IO</small>
+Layers</b> <br>
+In Perl 5.8.0 a new I/O framework called &quot;PerlIO&quot;
+was introduced. This is a new &quot;plumbing&quot; for all
+the I/O happening in Perl; for the most part everything will
+work just as it did, but PerlIO also brought in some new
+features such as the ability to think of I/O as
+&quot;layers&quot;. One I/O layer may in addition to just
+moving the data also do transformations on the data. Such
+transformations may include compression and decompression,
+encryption and decryption, and transforming between various
+character encodings.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Full discussion
+about the features of PerlIO is out of scope for this
+tutorial, but here is how to recognize the layers being
+used:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The three&minus;(or more)&minus;argument form of
+<tt>&quot;open&quot;</tt> is being used and the second
+argument contains something else in addition to the usual
+<tt>'&lt;'</tt>, <tt>'&gt;'</tt>, <tt>'&gt;&gt;'</tt>,
+<tt>'|'</tt> and their variants, for example:</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    open(my $fh, &quot;&lt;:crlf&quot;, $fn);</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The two-argument form of
+<tt>&quot;binmode&quot;</tt> is being used, for example</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    binmode($fh, &quot;:encoding(utf16)&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">For more
+detailed discussion about PerlIO see PerlIO; for more
+detailed discussion about Unicode and I/O see
+perluniintro.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;open&quot;</tt> and <tt>&quot;sysopen&quot;</tt>
+functions in <i>perlfunc</i>(1); the system <i>open</i>(2),
+<i>dup</i>(2), <i>fopen</i>(3), and <i>fdopen</i>(3)
+manpages; the <small>POSIX</small> documentation.</p>
+
+<h2>AUTHOR and COPYRIGHT
+<a name="AUTHOR and COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright 1998
+Tom Christiansen.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This
+documentation is free; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Irrespective of
+its distribution, all code examples in these files are
+hereby placed into the public domain. You are permitted and
+encouraged to use this code in your own programs for fun or
+for profit as you see fit. A simple comment in the code
+giving credit would be courteous but is not required.</p>
+
+<h2>HISTORY
+<a name="HISTORY"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">First release:
+Sat Jan 9 08:09:11 <small>MST</small> 1999</p>
+<hr>
+</body>
+</html>

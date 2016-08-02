@@ -1,0 +1,861 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:32:06 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>DBD::File::Developers</title>
+
+</head>
+<body>
+
+<h1 align="center">DBD::File::Developers</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#CLASSES">CLASSES</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#COPYRIGHT AND LICENSE">COPYRIGHT AND LICENSE</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">DBD::File::Developers
+&minus; Developers documentation for DBD::File</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">    package DBD::myDriver;
+    use base qw( DBD::File );
+    sub driver
+    {
+        ...
+        my $drh = $proto&minus;&gt;SUPER::driver ($attr);
+        ...
+        return $drh&minus;&gt;{class};
+        }
+    sub CLONE { ... }
+    package DBD::myDriver::dr;
+    @ISA = qw( DBD::File::dr );
+    sub data_sources { ... }
+    ...
+    package DBD::myDriver::db;
+    @ISA = qw( DBD::File::db );
+    sub init_valid_attributes { ... }
+    sub init_default_attributes { ... }
+    sub set_versions { ... }
+    sub validate_STORE_attr { my ($dbh, $attrib, $value) = @_; ... }
+    sub validate_FETCH_attr { my ($dbh, $attrib) = @_; ... }
+    sub get_myd_versions { ... }
+    package DBD::myDriver::st;
+    @ISA = qw( DBD::File::st );
+    sub FETCH { ... }
+    sub STORE { ... }
+    package DBD::myDriver::Statement;
+    @ISA = qw( DBD::File::Statement );
+    package DBD::myDriver::Table;
+    @ISA = qw( DBD::File::Table );
+    my %reset_on_modify = (
+        myd_abc =&gt; &quot;myd_foo&quot;,
+        myd_mno =&gt; &quot;myd_bar&quot;,
+        );
+    __PACKAGE__&minus;&gt;register_reset_on_modify (\%reset_on_modify);
+    my %compat_map = (
+        abc =&gt; 'foo_abc',
+        xyz =&gt; 'foo_xyz',
+        );
+    __PACKAGE__&minus;&gt;register_compat_map (\%compat_map);
+    sub bootstrap_table_meta { ... }
+    sub init_table_meta { ... }
+    sub table_meta_attr_changed { ... }
+    sub open_data { ... }
+    sub fetch_row { ... }
+    sub push_row { ... }
+    sub push_names { ... }
+    # optimize the SQL engine by add one or more of
+    sub update_current_row { ... }
+    # or
+    sub update_specific_row { ... }
+    # or
+    sub update_one_row { ... }
+    # or
+    sub insert_new_row { ... }
+    # or
+    sub delete_current_row { ... }
+    # or
+    sub delete_one_row { ... }</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+describes how <small>DBD</small> developers can write
+DBD::File based <small>DBI</small> drivers. It supplements
+<small>DBI::DBD</small> and DBI::DBD::SqlEngine::Developers,
+which you should read first.</p>
+
+<h2>CLASSES
+<a name="CLASSES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Each
+<small>DBI</small> driver must provide a package global
+<tt>&quot;driver&quot;</tt> method and three
+<small>DBI</small> related classes: <br>
+DBD::File::dr</p>
+
+<p style="margin-left:17%;">Driver package, contains the
+methods <small>DBI</small> calls indirectly via
+<small>DBI</small> interface:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  DBI&minus;&gt;connect ('DBI:DBM:', undef, undef, {})
+  # invokes
+  package DBD::DBM::dr;
+  @DBD::DBM::dr::ISA = qw( DBD::File::dr );
+  sub connect ($$;$$$)
+  {
+      ...
+      }</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Similar for
+<tt>&quot;data_sources&quot;</tt> and
+<tt>&quot;disconnect_all&quot;</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Pure Perl
+<small>DBI</small> drivers derived from DBD::File do not
+usually need to override any of the methods provided through
+the DBD::XXX::dr package however if you need additional
+initialization in the connect method you may need to.</p>
+
+<p style="margin-left:11%;">DBD::File::db</p>
+
+<p style="margin-left:17%;">Contains the methods which are
+called through <small>DBI</small> database handles
+(<tt>$dbh</tt>). e.g.,</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  $sth = $dbh&minus;&gt;prepare (&quot;select * from foo&quot;);
+  # returns the f_encoding setting for table foo
+  $dbh&minus;&gt;csv_get_meta (&quot;foo&quot;, &quot;f_encoding&quot;);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">DBD::File
+provides the typical methods required here. Developers who
+write <small>DBI</small> drivers based on DBD::File need to
+override the methods <tt>&quot;set_versions&quot;</tt> and
+<tt>&quot;init_valid_attributes&quot;</tt>.</p>
+
+<p style="margin-left:11%;">DBD::File::st</p>
+
+<p style="margin-left:17%;">Contains the methods to deal
+with prepared statement handles. e.g.,</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  $sth&minus;&gt;execute () or die $sth&minus;&gt;errstr;</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>DBD::File</b>
+<br>
+This is the main package containing the routines to
+initialize DBD::File based <small>DBI</small> drivers.
+Primarily the <tt>&quot;DBD::File::driver&quot;</tt> method
+is invoked, either directly from <small>DBI</small> when the
+driver is initialized or from the derived class.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  package DBD::DBM;
+  use base qw( DBD::File );
+  sub driver
+  {
+      my ($class, $attr) = @_;
+      ...
+      my $drh = $class&minus;&gt;SUPER::driver ($attr);
+      ...
+      return $drh;
+      }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">It is not
+necessary to implement your own driver method as long as
+additional initialization (e.g. installing more private
+driver methods) is not required. You do not need to call
+<tt>&quot;setup_driver&quot;</tt> as DBD::File takes care of
+it.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>DBD::File::dr</b>
+<br>
+The driver package contains the methods <small>DBI</small>
+calls indirectly via the <small>DBI</small> interface (see
+&quot; <small>DBI</small> Class Methods&quot; in
+<small>DBI</small> ).</p>
+
+<p style="margin-left:11%; margin-top: 1em">DBD::File based
+<small>DBI</small> drivers usually do not need to implement
+anything here, it is enough to do the basic
+initialization:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  package DBD:XXX::dr;
+  @DBD::XXX::dr::ISA = qw (DBD::File::dr);
+  $DBD::XXX::dr::imp_data_size     = 0;
+  $DBD::XXX::dr::data_sources_attr = undef;
+  $DBD::XXX::ATTRIBUTION = &quot;DBD::XXX $DBD::XXX::VERSION by Hans Mustermann&quot;;</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>DBD::File::db</b>
+<br>
+This package defines the database methods, which are called
+via the <small>DBI</small> database handle
+<tt>$dbh</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Methods
+provided by DBD::File: <br>
+ping</p>
+
+<p style="margin-left:17%;">Simply returns the content of
+the <tt>&quot;Active&quot;</tt> attribute. Override when
+your driver needs more complicated actions here.</p>
+
+<p style="margin-left:11%;">prepare</p>
+
+<p style="margin-left:17%;">Prepares a new
+<small>SQL</small> statement to execute. Returns a statement
+handle, <tt>$sth</tt> &minus; instance of the DBD:XXX::st.
+It is neither required nor recommended to override this
+method.</p>
+
+<p style="margin-left:11%;"><small>FETCH</small></p>
+
+<p style="margin-left:17%;">Fetches an attribute of a
+<small>DBI</small> database object. Private handle
+attributes must have a prefix (this is mandatory). If a
+requested attribute is detected as a private attribute
+without a valid prefix, the driver prefix (written as
+<tt>$drv_prefix</tt>) is added.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The driver
+prefix is extracted from the attribute name and verified
+against <tt>&quot;$dbh&minus;&gt;{$drv_prefix .
+&quot;valid_attrs&quot;}&quot;</tt> (when it exists). If the
+requested attribute value is not listed as a valid
+attribute, this method croaks. If the attribute is valid and
+readonly (listed in <tt>&quot;$dbh&minus;&gt;{ $drv_prefix .
+&quot;readonly_attrs&quot; }&quot;</tt> when it exists), a
+real copy of the attribute value is returned. So it&rsquo;s
+not possible to modify <tt>&quot;f_valid_attrs&quot;</tt>
+from outside of DBD::File::db or a derived class.</p>
+
+<p style="margin-left:11%;"><small>STORE</small></p>
+
+<p style="margin-left:17%;">Stores a database private
+attribute. Private handle attributes must have a prefix
+(this is mandatory). If a requested attribute is detected as
+a private attribute without a valid prefix, the driver
+prefix (written as <tt>$drv_prefix</tt>) is added. If the
+database handle has an attribute
+<tt>&quot;${drv_prefix}_valid_attrs&quot;</tt> &minus; for
+attribute names which are not listed in that hash, this
+method croaks. If the database handle has an attribute
+<tt>&quot;${drv_prefix}_readonly_attrs&quot;</tt>, only
+attributes which are not listed there can be stored (once
+they are initialized). Trying to overwrite such an immutable
+attribute forces this method to croak.</p>
+
+<p style="margin-left:17%; margin-top: 1em">An example of a
+valid attributes list can be found in
+<tt>&quot;DBD::File::db::init_valid_attributes&quot;</tt>.</p>
+
+<p style="margin-left:11%;">set_versions</p>
+
+<p style="margin-left:17%;">This method sets the attribute
+<tt>&quot;f_version&quot;</tt> with the version of
+DBD::File.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This method is
+called at the begin of the <tt>&quot;connect ()&quot;</tt>
+phase.</p>
+
+<p style="margin-left:17%; margin-top: 1em">When overriding
+this method, do not forget to invoke the superior one.</p>
+
+<p style="margin-left:11%;">init_valid_attributes</p>
+
+<p style="margin-left:17%;">This method is called after the
+database handle is instantiated as the first attribute
+initialization.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;DBD::File::db::init_valid_attributes&quot;</tt>
+initializes the attributes
+<tt>&quot;f_valid_attrs&quot;</tt> and
+<tt>&quot;f_readonly_attrs&quot;</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">When overriding
+this method, do not forget to invoke the superior one,
+preferably before doing anything else. Compatibility table
+attribute access must be initialized here to allow DBD::File
+to instantiate the map tie:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    # for DBD::CSV
+    $dbh&minus;&gt;{csv_meta} = &quot;csv_tables&quot;;
+    # for DBD::DBM
+    $dbh&minus;&gt;{dbm_meta} = &quot;dbm_tables&quot;;
+    # for DBD::AnyData
+    $dbh&minus;&gt;{ad_meta}  = &quot;ad_tables&quot;;</pre>
+
+
+<p style="margin-left:11%;">init_default_attributes</p>
+
+<p style="margin-left:17%;">This method is called after the
+database handle is instantiated to initialize the default
+attributes.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;DBD::File::db::init_default_attributes&quot;</tt>
+initializes the attributes <tt>&quot;f_dir&quot;</tt>,
+<tt>&quot;f_meta&quot;</tt>,
+<tt>&quot;f_meta_map&quot;</tt>,
+<tt>&quot;f_version&quot;</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">When the
+derived implementor class provides the attribute to validate
+attributes (e.g. <tt>&quot;$dbh&minus;&gt;{dbm_valid_attrs}
+= {...};&quot;</tt>) or the attribute containing the
+immutable attributes (e.g.
+<tt>&quot;$dbh&minus;&gt;{dbm_readonly_attrs} =
+{...};&quot;</tt>), the attributes
+<tt>&quot;drv_valid_attrs&quot;</tt>,
+<tt>&quot;drv_readonly_attrs&quot;</tt>,
+<tt>&quot;drv_version&quot;</tt> and
+<tt>&quot;drv_meta&quot;</tt> are added (when available) to
+the list of valid and immutable attributes (where
+<tt>&quot;drv_&quot;</tt> is interpreted as the driver
+prefix).</p>
+
+<p style="margin-left:17%; margin-top: 1em">If
+<tt>&quot;drv_meta&quot;</tt> is set, an attribute with the
+name in <tt>&quot;drv_meta&quot;</tt> is initialized
+providing restricted read/write access to the meta data of
+the tables using <tt>&quot;DBD::File::TieTables&quot;</tt>
+in the first (table) level and
+<tt>&quot;DBD::File::TieMeta&quot;</tt> for the meta
+attribute level. <tt>&quot;DBD::File::TieTables&quot;</tt>
+uses <tt>&quot;DBD::DRV::Table::get_table_meta&quot;</tt> to
+initialize the second level tied hash on
+<small>FETCH/STORE.</small> The
+<tt>&quot;DBD::File::TieMeta&quot;</tt> class uses
+<tt>&quot;DBD::DRV::Table::get_table_meta_attr&quot;</tt> to
+<small>FETCH</small> attribute values and
+<tt>&quot;DBD::DRV::Table::set_table_meta_attr&quot;</tt> to
+<small>STORE</small> attribute values. This allows it to map
+meta attributes for compatibility reasons.</p>
+
+<p style="margin-left:11%;">get_single_table_meta <br>
+get_file_meta</p>
+
+<p style="margin-left:17%;">Retrieve an attribute from a
+table&rsquo;s meta information. The method signature is
+<tt>&quot;get_file_meta ($dbh, $table, $attr)&quot;</tt>.
+This method is called by the injected db handle method
+<tt>&quot;${drv_prefix}get_meta&quot;</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">While
+get_file_meta allows <tt>$table</tt> or <tt>$attr</tt> to be
+a list of tables or attributes to retrieve,
+get_single_table_meta allows only one table name and only
+one attribute name. A table name of <tt>'.'</tt> (single
+dot) is interpreted as the default table and this will
+retrieve the appropriate attribute globally from the dbh.
+This has the same restrictions as
+<tt>&quot;$dbh&minus;&gt;{$attrib}&quot;</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">get_file_meta
+allows <tt>'+'</tt> and <tt>'*'</tt> as wildcards for table
+names and <tt>$table</tt> being a regular expression
+matching against the table names (evaluated without the
+default table). The table name <tt>'*'</tt> is <i>all
+currently known tables, including the default one</i>. The
+table name <tt>'+'</tt> is <i>all table names which conform
+to <small>ANSI</small> file name restrictions</i>
+(/^[_A&minus;Za&minus;z0&minus;9]+$/).</p>
+
+<p style="margin-left:17%; margin-top: 1em">The table meta
+information is retrieved using the get_table_meta and
+get_table_meta_attr methods of the table class of the
+implementation.</p>
+
+<p style="margin-left:11%;">set_single_table_meta <br>
+set_file_meta</p>
+
+<p style="margin-left:17%;">Sets an attribute in a
+table&rsquo;s meta information. The method signature is
+<tt>&quot;set_file_meta ($dbh, $table, $attr,
+$value)&quot;</tt>. This method is called by the injected db
+handle method
+<tt>&quot;${drv_prefix}set_meta&quot;</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">While
+set_file_meta allows <tt>$table</tt> to be a list of tables
+and <tt>$attr</tt> to be a hash of several attributes to
+set, set_single_table_meta allows only one table name and
+only one attribute name/value pair.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The wildcard
+characters for the table name are the same as for
+get_file_meta.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The table meta
+information is updated using the get_table_meta and
+set_table_meta_attr methods of the table class of the
+implementation.</p>
+
+<p style="margin-left:11%;">clear_file_meta</p>
+
+<p style="margin-left:17%;">Clears all meta information
+cached about a table. The method signature is
+<tt>&quot;clear_file_meta ($dbh, $table)&quot;</tt>. This
+method is called by the injected db handle method
+<tt>&quot;${drv_prefix}clear_meta&quot;</tt>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>DBD::File::st</b>
+<br>
+Contains the methods to deal with prepared statement
+handles: <small><br>
+FETCH</small></p>
+
+<p style="margin-left:17%;">Fetches statement handle
+attributes. Supported attributes (for full overview see
+&quot;Statement Handle Attributes&quot; in
+<small>DBI</small> ) are <tt>&quot;NAME&quot;</tt>,
+<tt>&quot;TYPE&quot;</tt>, <tt>&quot;PRECISION&quot;</tt>
+and <tt>&quot;NULLABLE&quot;</tt> in case that
+SQL::Statement is used as <small>SQL</small> execution
+engine and a statement is successful prepared. When
+SQL::Statement has additional information about a table,
+those information are returned. Otherwise, the same defaults
+as in DBI::DBD::SqlEngine are used.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This method
+usually requires extending in a derived implementation. See
+<small>DBD::CSV</small> or <small>DBD::DBM</small> for some
+example.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>DBD::File::TableSource::FileSystem</b>
+<br>
+Provides data sources and table information on database
+driver and database handle level.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  package DBD::File::TableSource::FileSystem;
+  sub data_sources ($;$)
+  {
+      my ($class, $drh, $attrs) = @_;
+      ...
+      }
+  sub avail_tables
+  {
+      my ($class, $drh) = @_;
+      ...
+      }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;data_sources&quot;</tt> method is called when the
+user invokes any of the following:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  @ary = DBI&minus;&gt;data_sources ($driver);
+  @ary = DBI&minus;&gt;data_sources ($driver, \%attr);
+  @ary = $dbh&minus;&gt;data_sources ();
+  @ary = $dbh&minus;&gt;data_sources (\%attr);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;avail_tables&quot;</tt> method is called when the
+user invokes any of the following:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  @names = $dbh&minus;&gt;tables ($catalog, $schema, $table, $type);
+  $sth   = $dbh&minus;&gt;table_info ($catalog, $schema, $table, $type);
+  $sth   = $dbh&minus;&gt;table_info ($catalog, $schema, $table, $type, \%attr);
+  $dbh&minus;&gt;func (&quot;list_tables&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Every time
+where an <tt>&quot;\%attr&quot;</tt> argument can be
+specified, this <tt>&quot;\%attr&quot;</tt> object&rsquo;s
+<tt>&quot;sql_table_source&quot;</tt> attribute is preferred
+over the <tt>$dbh</tt> attribute or the driver default.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>DBD::File::DataSource::Stream</b></p>
+
+
+<pre style="margin-left:11%;">  package DBD::File::DataSource::Stream;
+  @DBD::File::DataSource::Stream::ISA = 'DBI::DBD::SqlEngine::DataSource';
+  sub complete_table_name
+  {
+      my ($self, $meta, $file, $respect_case) = @_;
+      ...
+      }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Clears all meta
+attributes identifying a file: <tt>&quot;f_fqfn&quot;</tt>,
+<tt>&quot;f_fqbn&quot;</tt> and <tt>&quot;f_fqln&quot;</tt>.
+The table name is set according to <tt>$respect_case</tt>
+and
+<tt>&quot;$meta&minus;&gt;{sql_identifier_case}&quot;</tt> (
+<small>SQL_IC_LOWER, SQL_IC_UPPER</small> ).</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  package DBD::File::DataSource::Stream;
+  sub apply_encoding
+  {
+      my ($self, $meta, $fn) = @_;
+      ...
+      }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Applies the
+encoding from <i>meta information</i>
+(<tt>&quot;$meta&minus;&gt;{f_encoding}&quot;</tt>) to the
+file handled opened in <tt>&quot;open_data&quot;</tt>.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  package DBD::File::DataSource::Stream;
+  sub open_data
+  {
+      my ($self, $meta, $attrs, $flags) = @_;
+      ...
+      }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Opens
+(<tt>&quot;dup (2)&quot;</tt>) the file handle provided in
+<tt>&quot;$meta&minus;&gt;{f_file}&quot;</tt>.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  package DBD::File::DataSource::Stream;
+  sub can_flock { ... }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Returns whether
+<tt>&quot;flock (2)&quot;</tt> is available or not (avoids
+retesting in subclasses).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>DBD::File::DataSource::File</b></p>
+
+
+<pre style="margin-left:11%;">  package DBD::File::DataSource::File;
+  sub complete_table_name ($$;$)
+  {
+      my ($self, $meta, $table, $respect_case) = @_;
+      ...
+      }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The method
+<tt>&quot;complete_table_name&quot;</tt> tries to map a
+filename to the associated table name. It is called with a
+partially filled meta structure for the resulting table
+containing at least the following attributes:
+<tt>&quot;f_ext&quot;</tt>, <tt>&quot;f_dir&quot;</tt>,
+<tt>&quot;f_lockfile&quot;</tt> and
+<tt>&quot;sql_identifier_case&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If a file/table
+map can be found then this method sets the
+<tt>&quot;f_fqfn&quot;</tt>, <tt>&quot;f_fqbn&quot;</tt>,
+<tt>&quot;f_fqln&quot;</tt> and
+<tt>&quot;table_name&quot;</tt> attributes in the meta
+structure. If a map cannot be found the table name will be
+undef.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  package DBD::File::DataSource::File;
+  sub open_data ($)
+  {
+      my ($self, $meta, $attrs, $flags) = @_;
+      ...
+      }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Depending on
+the attributes set in the table&rsquo;s meta data, the
+following steps are performed. Unless
+<tt>&quot;f_dontopen&quot;</tt> is set to a true value,
+<tt>&quot;f_fqfn&quot;</tt> must contain the full qualified
+file name for the table to work on (file2table ensures
+this). The encoding in <tt>&quot;f_encoding&quot;</tt> is
+applied if set and the file is opened. If
+<tt>&quot;&lt;f_fqln &quot;</tt>&gt; (full qualified lock
+name) is set, this file is opened, too. Depending on the
+value in <tt>&quot;f_lock&quot;</tt>, the appropriate lock
+is set on the opened data file or lock file.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>DBD::File::Statement</b>
+<br>
+Derives from DBI::SQL::Nano::Statement to provide following
+method: <br>
+open_table</p>
+
+<p style="margin-left:17%;">Implements the open_table
+method required by SQL::Statement and DBI::SQL::Nano. All
+the work for opening the file(s) belonging to the table is
+handled and parametrized in DBD::File::Table. Unless you
+intend to add anything to the following implementation, an
+empty DBD::XXX::Statement package satisfies DBD::File.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  sub open_table ($$$$$)
+  {
+      my ($self, $data, $table, $createMode, $lockMode) = @_;
+      my $class = ref $self;
+      $class =~ s/::Statement/::Table/;
+      my $flags = {
+          createMode =&gt; $createMode,
+          lockMode   =&gt; $lockMode,
+          };
+      $self&minus;&gt;{command} eq &quot;DROP&quot; and $flags&minus;&gt;{dropMode} = 1;
+      return $class&minus;&gt;new ($data, { table =&gt; $table }, $flags);
+      } # open_table</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>DBD::File::Table</b>
+<br>
+Derives from DBI::SQL::Nano::Table and provides physical
+file access for the table data which are stored in the
+files. <br>
+bootstrap_table_meta</p>
+
+<p style="margin-left:17%;">Initializes a table meta
+structure. Can be safely overridden in a derived class, as
+long as the <tt>&quot;SUPER&quot;</tt> method is called at
+the end of the overridden method.</p>
+
+<p style="margin-left:17%; margin-top: 1em">It copies the
+following attributes from the database into the table meta
+data <tt>&quot;f_dir&quot;</tt>, <tt>&quot;f_ext&quot;</tt>,
+<tt>&quot;f_encoding&quot;</tt>,
+<tt>&quot;f_lock&quot;</tt>, <tt>&quot;f_schema&quot;</tt>
+and <tt>&quot;f_lockfile&quot;</tt> and makes them sticky to
+the table.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This method
+should be called before you attempt to map between file name
+and table name to ensure the correct directory, extension
+etc. are used.</p>
+
+<p style="margin-left:11%;">init_table_meta</p>
+
+<p style="margin-left:17%;">Initializes more attributes of
+the table meta data &minus; usually more expensive ones
+(e.g. those which require class instantiations) &minus; when
+the file name and the table name could mapped.</p>
+
+<p style="margin-left:11%;">get_table_meta</p>
+
+<p style="margin-left:17%;">Returns the table meta data. If
+there are none for the required table, a new one is
+initialized. When it fails, nothing is returned. On success,
+the name of the table and the meta data structure is
+returned.</p>
+
+<p style="margin-left:11%;">get_table_meta_attr</p>
+
+<p style="margin-left:17%;">Returns a single attribute from
+the table meta data. If the attribute name appears in
+<tt>%compat_map</tt>, the attribute name is updated from
+there.</p>
+
+<p style="margin-left:11%;">set_table_meta_attr</p>
+
+<p style="margin-left:17%;">Sets a single attribute in the
+table meta data. If the attribute name appears in
+<tt>%compat_map</tt>, the attribute name is updated from
+there.</p>
+
+<p style="margin-left:11%;">table_meta_attr_changed</p>
+
+<p style="margin-left:17%;">Called when an attribute of the
+meta data is modified.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If the modified
+attribute requires to reset a calculated attribute, the
+calculated attribute is reset (deleted from meta data
+structure) and the <i>initialized</i> flag is removed, too.
+The decision is made based on
+<tt>%register_reset_on_modify</tt>.</p>
+
+<p style="margin-left:11%;">register_reset_on_modify</p>
+
+<p style="margin-left:17%;">Allows
+<tt>&quot;set_table_meta_attr&quot;</tt> to reset meta
+attributes when special attributes are modified. For
+DBD::File, modifying one of <tt>&quot;f_file&quot;</tt>,
+<tt>&quot;f_dir&quot;</tt>, <tt>&quot;f_ext&quot;</tt> or
+<tt>&quot;f_lockfile&quot;</tt> will reset
+<tt>&quot;f_fqfn&quot;</tt>. <small>DBD::DBM</small> extends
+the list for <tt>&quot;dbm_type&quot;</tt> and
+<tt>&quot;dbm_mldbm&quot;</tt> to reset the value of
+<tt>&quot;dbm_tietype&quot;</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If your
+<small>DBD</small> has calculated values in the meta data
+area, then call
+<tt>&quot;register_reset_on_modify&quot;</tt>:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  my %reset_on_modify = (xxx_foo =&gt; &quot;xxx_bar&quot;);
+  __PACKAGE__&minus;&gt;register_reset_on_modify (\%reset_on_modify);</pre>
+
+
+<p style="margin-left:11%;">register_compat_map</p>
+
+<p style="margin-left:17%;">Allows
+<tt>&quot;get_table_meta_attr&quot;</tt> and
+<tt>&quot;set_table_meta_attr&quot;</tt> to update the
+attribute name to the current favored one:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  # from DBD::DBM
+  my %compat_map = (dbm_ext =&gt; &quot;f_ext&quot;);
+  __PACKAGE__&minus;&gt;register_compat_map (\%compat_map);</pre>
+
+
+<p style="margin-left:11%;">open_file</p>
+
+<p style="margin-left:17%;">Called to open the
+table&rsquo;s data file.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Depending on
+the attributes set in the table&rsquo;s meta data, the
+following steps are performed. Unless
+<tt>&quot;f_dontopen&quot;</tt> is set to a true value,
+<tt>&quot;f_fqfn&quot;</tt> must contain the full qualified
+file name for the table to work on (file2table ensures
+this). The encoding in <tt>&quot;f_encoding&quot;</tt> is
+applied if set and the file is opened. If
+<tt>&quot;&lt;f_fqln &quot;</tt>&gt; (full qualified lock
+name) is set, this file is opened, too. Depending on the
+value in <tt>&quot;f_lock&quot;</tt>, the appropriate lock
+is set on the opened data file or lock file.</p>
+
+<p style="margin-left:17%; margin-top: 1em">After this is
+done, a derived class might add more steps in an overridden
+<tt>&quot;open_file&quot;</tt> method.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p>new</p></td>
+<td width="2%"></td>
+<td width="74%">
+
+
+<p>Instantiates the table. This is done in 3 steps:</p></td>
+<td width="9%">
+</td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em"> 1. get the table meta data
+ 2. open the data file
+ 3. bless the table data structure using inherited constructor new</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">It is not
+recommended to override the constructor of the table class.
+Find a reasonable place to add you extensions in one of the
+above four methods.</p>
+
+<p style="margin-left:11%;">drop</p>
+
+<p style="margin-left:17%;">Implements the abstract table
+method for the <tt>&quot;DROP&quot;</tt> command. Discards
+table meta data after all files belonging to the table are
+closed and unlinked.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Overriding this
+method might be reasonable in very rare cases.</p>
+
+<p style="margin-left:11%;">seek</p>
+
+<p style="margin-left:17%;">Implements the abstract table
+method used when accessing the table from the engine.
+<tt>&quot;seek&quot;</tt> is called every time the engine
+uses dumb algorithms for iterating over the table
+content.</p>
+
+<p style="margin-left:11%;">truncate</p>
+
+<p style="margin-left:17%;">Implements the abstract table
+method used when dumb table algorithms for
+<tt>&quot;UPDATE&quot;</tt> or <tt>&quot;DELETE&quot;</tt>
+need to truncate the table storage after the last written
+row.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You should
+consult the documentation of
+<tt>&quot;SQL::Eval::Table&quot;</tt> (see SQL::Eval) to get
+more information about the abstract methods of the
+table&rsquo;s base class you have to override and a
+description of the table meta information expected by the
+<small>SQL</small> engines.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The module
+DBD::File is currently maintained by</p>
+
+<p style="margin-left:11%; margin-top: 1em">H.Merijn Brand
+&lt; h.m.brand at xs4all.nl &gt; and Jens Rehsack &lt;
+rehsack at googlemail.com &gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">The original
+author is Jochen Wiedmann.</p>
+
+<h2>COPYRIGHT AND LICENSE
+<a name="COPYRIGHT AND LICENSE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (C)
+2010&minus;2013 by H.Merijn Brand &amp; Jens Rehsack</p>
+
+<p style="margin-left:11%; margin-top: 1em">All rights
+reserved.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You may freely
+distribute and/or modify this module under the terms of
+either the <small>GNU</small> General Public License (
+<small>GPL</small> ) or the Artistic License, as specified
+in the Perl <small>README</small> file.</p>
+<hr>
+</body>
+</html>

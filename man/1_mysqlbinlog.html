@@ -1,0 +1,1625 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:36:10 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>MYSQLBINLOG</title>
+
+</head>
+<body>
+
+<h1 align="center">MYSQLBINLOG</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#MYSQLBINLOG HEX DUMP FORMAT">MYSQLBINLOG HEX DUMP FORMAT</a><br>
+<a href="#MYSQLBINLOG ROW EVENT DISPLAY">MYSQLBINLOG ROW EVENT DISPLAY</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mysqlbinlog
+&minus; utility for processing binary log files</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="52%">
+
+
+<p style="margin-top: 1em"><b>mysqlbinlog [options]</b>
+<i>log_file</i> <b>...</b></p></td>
+<td width="37%">
+</td></tr>
+</table>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+server&acute;s binary log consists of files containing
+&ldquo;events&rdquo; that describe modifications to database
+contents. The server writes these files in binary format. To
+display their contents in text format, use the
+<b>mysqlbinlog</b> utility. You can also use
+<b>mysqlbinlog</b> to display the contents of relay log
+files written by a slave server in a replication setup
+because relay logs have the same format as binary logs. The
+binary log and relay log are discussed further in
+Section&nbsp;5.2.4, &ldquo;The Binary Log&rdquo;, and
+Section&nbsp;16.2.2, &ldquo;Replication Relay and Status
+Files&rdquo;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Invoke
+<b>mysqlbinlog</b> like this:</p>
+
+<p style="margin-left:17%; margin-top: 1em">shell&gt;
+<b>mysqlbinlog [</b><i>options</i><b>]</b> <i>log_file</i>
+<b>...</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">For example, to
+display the contents of the binary log file named
+binlog.000003, use this command:</p>
+
+<p style="margin-left:17%; margin-top: 1em">shell&gt;
+<b>mysqlbinlog binlog.0000003</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">The output
+includes events contained in binlog.000003. For
+statement&minus;based logging, event information includes
+the SQL statement, the ID of the server on which it was
+executed, the timestamp when the statement was executed, how
+much time it took, and so forth. For row&minus;based
+logging, the event indicates a row change rather than an SQL
+statement. See Section&nbsp;16.1.2, &ldquo;Replication
+Formats&rdquo;, for information about logging modes.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Events are
+preceded by header comments that provide additional
+information. For example:</p>
+
+<p style="margin-left:17%; margin-top: 1em"># at 141 <br>
+#100309 9:28:36 server id 123 end_log_pos 245 <br>
+Query thread_id=3350 exec_time=11 error_code=0</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the first
+line, the number following at indicates the starting
+position of the event in the binary log file.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The second line
+starts with a date and time indicating when the statement
+started on the server where the event originated. For
+replication, this timestamp is propagated to slave servers.
+server id is the server_id value of the server where the
+event originated. end_log_pos indicates where the next event
+starts (that is, it is the end position of the current event
++ 1). thread_id indicates which thread executed the event.
+exec_time is the time spent executing the event, on a master
+server. On a slave, it is the difference of the end
+execution time on the slave minus the beginning execution
+time on the master. The difference serves as an indicator of
+how much replication lags behind the master. error_code
+indicates the result from executing the event. Zero means
+that no error occurred.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The output from
+<b>mysqlbinlog</b> can be re&minus;executed (for example, by
+using it as input to <b>mysql</b>) to redo the statements in
+the log. This is useful for recovery operations after a
+server crash. For other usage examples, see the discussion
+later in this section and Section&nbsp;6.5,
+&ldquo;Point-in-Time (Incremental) Recovery Using the Binary
+Log&rdquo;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Normally, you
+use <b>mysqlbinlog</b> to read binary log files directly and
+apply them to the local MySQL server. It is also possible to
+read binary logs from a remote server by using the
+<b>&minus;&minus;read&minus;from&minus;remote&minus;server</b>
+option. To read remote binary logs, the connection parameter
+options can be given to indicate how to connect to the
+server. These options are <b>&minus;&minus;host</b>,
+<b>&minus;&minus;password</b>, <b>&minus;&minus;port</b>,
+<b>&minus;&minus;protocol</b>, <b>&minus;&minus;socket</b>,
+and <b>&minus;&minus;user</b>; they are ignored except when
+you also use the
+<b>&minus;&minus;read&minus;from&minus;remote&minus;server</b>
+option.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mysqlbinlog</b>
+supports the following options, which can be specified on
+the command line or in the [mysqlbinlog] and [client] option
+file groups. <b>mysqlbinlog</b> also supports the options
+for processing option files described at
+Section&nbsp;4.2.3.3.1, &ldquo;Command-Line Options that
+Affect Option-File Handling&rdquo;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;help</b>, <b>&minus;?</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Display a help
+message and exit.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;base64&minus;output[=</b><i>value</i><b>]</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">This option
+determines when events should be displayed encoded as
+base&minus;64 strings using BINLOG statements. The option
+has these allowable values (not case sensitive):</p>
+
+<p style="margin-left:23%; margin-top: 1em">&bull; AUTO
+(&quot;automatic&quot;) or UNSPEC (&quot;unspecified&quot;)
+displays BINLOG statements automatically when necessary
+(that is, for format description events and row events).
+This is the default if no
+<b>&minus;&minus;base64&minus;output</b> option is
+given.</p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><b><big>Note</big></b>
+<br>
+Automatic BINLOG display is the only safe behavior if you
+intend to use the output of <b>mysqlbinlog</b> to
+re&minus;execute binary log file contents. The other option
+values are intended only for debugging or testing purposes
+because they may produce output that does not include all
+events in executable form.</p>
+
+<p style="margin-left:23%; margin-top: 1em">&bull; ALWAYS
+displays BINLOG statements whenever possible. This is the
+implied value if the option is given as
+<b>&minus;&minus;base64&minus;output</b> without a
+value.</p>
+
+<p style="margin-left:23%; margin-top: 1em">&bull; NEVER
+causes BINLOG statements not to be displayed.
+<b>mysqlbinlog</b> exits with an error if a row event is
+found that must be displayed using BINLOG.</p>
+
+<p style="margin-left:23%; margin-top: 1em">&bull;
+DECODE&minus;ROWS specifies to <b>mysqlbinlog</b> that you
+intend for row events to be decoded and displayed as
+commented SQL statements by also specifying the
+<b>&minus;&minus;verbose</b> option. Like NEVER,
+DECODE&minus;ROWS suppresses display of BINLOG statements,
+but unlike NEVER, it does not exit with an error if a row
+event is found. <br>
+The <b>&minus;&minus;base64&minus;output</b> option was
+introduced in MySQL 5.1.5, to be given as
+<b>&minus;&minus;base64&minus;output</b> or
+<b>&minus;&minus;skip&minus;base64&minus;output</b> (with
+the sense of AUTO or NEVER). The option values described in
+the preceding list may be used as of MySQL 5.1.24, with the
+exception of UNSPEC and DECODE&minus;ROWS, which are
+available as of MySQL 5.1.28.</p>
+
+<p style="margin-left:23%; margin-top: 1em">For examples
+that show the effect of
+<b>&minus;&minus;base64&minus;output</b> and
+<b>&minus;&minus;verbose</b> on row event output, see the
+section called &ldquo;MYSQLBINLOG ROW EVENT
+DISPLAY&rdquo;.</p>
+
+<p style="margin-left:23%; margin-top: 1em">&bull;
+<b>&minus;&minus;character&minus;sets&minus;dir=</b><i>path</i></p>
+
+<p style="margin-left:23%; margin-top: 1em">The directory
+where character sets are installed. See Section&nbsp;9.5,
+&ldquo;Character Set Configuration&rdquo;.</p>
+
+<p style="margin-left:23%; margin-top: 1em">&bull;
+<b>&minus;&minus;database=</b><i>db_name</i>,
+<b>&minus;d</b> <i>db_name</i></p>
+
+<p style="margin-left:23%; margin-top: 1em">This option
+causes <b>mysqlbinlog</b> to output entries from the binary
+log (local log only) that occur while <i>db_name</i> is been
+selected as the default database by USE.</p>
+
+<p style="margin-left:23%; margin-top: 1em">The
+<b>&minus;&minus;database</b> option for <b>mysqlbinlog</b>
+is similar to the
+<b>&minus;&minus;binlog&minus;do&minus;db</b> option for
+<b>mysqld</b>, but can be used to specify only one database.
+If <b>&minus;&minus;database</b> is given multiple times,
+only the last instance is used.</p>
+
+<p style="margin-left:23%; margin-top: 1em">The effects of
+this option depend on whether the statement&minus;based or
+row&minus;based logging format is in use, in the same way
+that the effects of
+<b>&minus;&minus;binlog&minus;do&minus;db</b> depend on
+whether statement&minus;based or row&minus;based logging is
+in use.</p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><b><big>Statement-based
+logging</big></b><big>. The <b>&minus;&minus;database</b>
+option works as follows:</big></p>
+
+<p style="margin-left:29%; margin-top: 1em"><big>&bull;
+While <i>db_name</i> is the default database, statements are
+output whether they modify tables in <i>db_name</i> or a
+different database.</big></p>
+
+<p style="margin-left:29%; margin-top: 1em"><big>&bull;
+Unless <i>db_name</i> is selected as the default database,
+statements are not output, even if they modify tables in
+<i>db_name</i>.</big></p>
+
+<p style="margin-left:29%; margin-top: 1em"><big>&bull;
+There is an exception for CREATE DATABASE, ALTER DATABASE,
+and DROP DATABASE. The database being <i>created, altered,
+or dropped</i> is considered to be the default database when
+determining whether to output the statement. <br>
+Suppose that the binary log was created by executing these
+statements using
+statement&minus;based&minus;logging:</big></p>
+
+<p style="margin-left:35%; margin-top: 1em"><big>INSERT
+INTO test.t1 (i) VALUES(100); <br>
+INSERT INTO db2.t2 (j) VALUES(200); <br>
+USE test; <br>
+INSERT INTO test.t1 (i) VALUES(101); <br>
+INSERT INTO t1 (i) VALUES(102); <br>
+INSERT INTO db2.t2 (j) VALUES(201); <br>
+USE db2; <br>
+INSERT INTO test.t1 (i) VALUES(103); <br>
+INSERT INTO db2.t2 (j) VALUES(202); <br>
+INSERT INTO t2 (j) VALUES(203);</big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><b>mysqlbinlog
+&minus;&minus;database=test</b> does not output the first
+two INSERT statements because there is no default database.
+It outputs the three INSERT statements following USE test,
+but not the three INSERT statements following USE
+db2.</big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><b>mysqlbinlog
+&minus;&minus;database=db2</b> does not output the first two
+INSERT statements because there is no default database. It
+does not output the three INSERT statements following USE
+test, but does output the three INSERT statements following
+USE db2.</big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><b>Row-based
+logging</b>. <b>mysqlbinlog</b> outputs only entries that
+change tables belonging to <i>db_name</i>. The default
+database has no effect on this. Suppose that the binary log
+just described was created using row&minus;based logging
+rather than statement&minus;based logging. <b>mysqlbinlog
+&minus;&minus;database=test</b> outputs only those entries
+that modify t1 in the test database, regardless of whether
+USE was issued or what the default database is. If a server
+is running with binlog_format set to MIXED and you want it
+to be possible to use <b>mysqlbinlog</b> with the
+<b>&minus;&minus;database</b> option, you must ensure that
+tables that are modified are in the database selected by
+USE. (In particular, no cross&minus;database updates should
+be used.)</big></p>
+
+
+<p style="margin-left:35%; margin-top: 1em"><big><b><big>Note</big></b>
+<br>
+This option did not work correctly for <b>mysqlbinlog</b>
+with row&minus;based logging prior to MySQL 5.1.37.
+(<b><font color="#0000FF">Bug#42941</font></b></big>
+<font color="#000000">[1] <big>)</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;debug[=</b><i>debug_options</i><b>]</b>,
+<b>&minus;#
+[</b><i>debug_options</i><b>]</b></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Write
+a debugging log. A typical <i>debug_options</i> string is
+&acute;d:t:o,<i>file_name</i>&acute;. The default is
+&acute;d:t:o,/tmp/mysqlbinlog.trace&acute;.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;debug&minus;check</b></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Print
+some debugging information when the program exits. This
+option was added in MySQL 5.1.21.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;debug&minus;info</b></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Print
+debugging information and memory and CPU usage statistics
+when the program exits. This option was added in MySQL
+5.1.21.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;disable&minus;log&minus;bin</b>,
+<b>&minus;D</b></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Disable
+binary logging. This is useful for avoiding an endless loop
+if you use the <b>&minus;&minus;to&minus;last&minus;log</b>
+option and are sending the output to the same MySQL server.
+This option also is useful when restoring after a crash to
+avoid duplication of the statements you have
+logged.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>This
+option requires that you have the SUPER privilege. It causes
+<b>mysqlbinlog</b> to include a SET sql_log_bin = 0
+statement in its output to disable binary logging of the
+remaining output. The SET statement is ineffective unless
+you have the SUPER privilege.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;force&minus;read</b>,
+<b>&minus;f</b></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>With
+this option, if <b>mysqlbinlog</b> reads a binary log event
+that it does not recognize, it prints a warning, ignores the
+event, and continues. Without this option,
+<b>mysqlbinlog</b> stops if it reads such an
+event.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;hexdump</b>,
+<b>&minus;H</b></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Display
+a hex dump of the log in comments, as described in the
+section called &ldquo;MYSQLBINLOG HEX DUMP FORMAT&rdquo;.
+The hex output can be helpful for replication debugging.
+This option was added in MySQL 5.1.2.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;host=</b><i>host_name</i>, <b>&minus;h</b>
+<i>host_name</i></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Get
+the binary log from the MySQL server on the given
+host.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;local&minus;load=</b><i>path</i>,
+<b>&minus;l</b> <i>path</i></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Prepare
+local temporary files for LOAD DATA INFILE in the specified
+directory.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;offset=</b><i>N</i>, <b>&minus;o</b>
+<i>N</i></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Skip
+the first <i>N</i> entries in the log.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;password[=</b><i>password</i><b>]</b>,
+<b>&minus;p[</b><i>password</i><b>]</b></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>The
+password to use when connecting to the server. If you use
+the short option form (<b>&minus;p</b>), you <i>cannot</i>
+have a space between the option and the password. If you
+omit the <i>password</i> value following the
+<b>&minus;&minus;password</b> or <b>&minus;p</b> option on
+the command line, <b>mysqlbinlog</b> prompts for
+one.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Specifying
+a password on the command line should be considered
+insecure. See Section&nbsp;5.3.2.2, &ldquo;End-User
+Guidelines for Password Security&rdquo;. You can use an
+option file to avoid giving the password on the command
+line.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;port=</b><i>port_num</i>, <b>&minus;P</b>
+<i>port_num</i></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>The
+TCP/IP port number to use for connecting to a remote
+server.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;position=</b><i>N</i></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Deprecated.
+Use <b>&minus;&minus;start&minus;position</b> instead.
+<b>&minus;&minus;position</b> is removed in MySQL
+5.5.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;protocol={TCP|SOCKET|PIPE|MEMORY}</b></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>The
+connection protocol to use for connecting to the server. It
+is useful when the other connection parameters normally
+would cause a protocol to be used other than the one you
+want. For details on the allowable values, see
+Section&nbsp;4.2.2, &ldquo;Connecting to the MySQL
+Server&rdquo;.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;open&minus;files&minus;limit=</b><i>NUM</i></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Sets
+the open_files_limit variable, which is used to reserve file
+descriptors for <b>mysqlbinlog</b>.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;read&minus;from&minus;remote&minus;server</b>,
+<b>&minus;R</b></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Read
+the binary log from a MySQL server rather than reading a
+local log file. Any connection parameter options are ignored
+unless this option is given as well. These options are
+<b>&minus;&minus;host</b>, <b>&minus;&minus;password</b>,
+<b>&minus;&minus;port</b>, <b>&minus;&minus;protocol</b>,
+<b>&minus;&minus;socket</b>, and
+<b>&minus;&minus;user</b>.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>This
+option requires that the remote server be running. It works
+only for binary log files on the remote server, not relay
+log files.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;result&minus;file=</b><i>name</i>,
+<b>&minus;r</b> <i>name</i></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Direct
+output to the given file.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;server&minus;id=</b><i>id</i></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Display
+only those events created by the server having the given
+server ID. This option is available as of MySQL
+5.1.4.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;set&minus;charset=</b><i>charset_name</i></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Add
+a SET NAMES <i>charset_name</i> statement to the output to
+specify the character set to be used for processing log
+files. This option was added in MySQL
+5.1.12.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;short&minus;form</b>,
+<b>&minus;s</b></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Display
+only the statements contained in the log, without any extra
+information.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;socket=</b><i>path</i>, <b>&minus;S</b>
+<i>path</i></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>For
+connections to localhost, the Unix socket file to use, or,
+on Windows, the name of the named pipe to
+use.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;start&minus;datetime=</b><i>datetime</i></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Start
+reading the binary log at the first event having a timestamp
+equal to or later than the <i>datetime</i> argument. The
+<i>datetime</i> value is relative to the local time zone on
+the machine where you run <b>mysqlbinlog</b>. The value
+should be in a format accepted for the DATETIME or TIMESTAMP
+data types. For example:</big></font></p>
+
+
+<p style="margin-left:35%; margin-top: 1em"><font color="#000000"><big>shell&gt;
+<b>mysqlbinlog
+&minus;&minus;start&minus;datetime=&quot;2005&minus;12&minus;25
+11:25:56&quot; binlog.000003</b></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>This
+option is useful for point&minus;in&minus;time recovery. See
+Section&nbsp;6.3, &ldquo;Example Backup and Recovery
+Strategy&rdquo;.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;start&minus;position=</b><i>N</i>,
+<b>&minus;j</b> <i>N</i></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Start
+reading the binary log at the first event having a position
+equal to or greater than <i>N</i>. This option applies to
+the first log file named on the command
+line.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>This
+option is useful for point&minus;in&minus;time recovery. See
+Section&nbsp;6.3, &ldquo;Example Backup and Recovery
+Strategy&rdquo;.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;stop&minus;datetime=</b><i>datetime</i></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Stop
+reading the binary log at the first event having a timestamp
+equal to or later than the <i>datetime</i> argument. This
+option is useful for point&minus;in&minus;time recovery. See
+the description of the
+<b>&minus;&minus;start&minus;datetime</b> option for
+information about the <i>datetime</i>
+value.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>This
+option is useful for point&minus;in&minus;time recovery. See
+Section&nbsp;6.3, &ldquo;Example Backup and Recovery
+Strategy&rdquo;.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;stop&minus;position=</b><i>N</i></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Stop
+reading the binary log at the first event having a position
+equal to or greater than <i>N</i>. This option applies to
+the last log file named on the command
+line.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>This
+option is useful for point&minus;in&minus;time recovery. See
+Section&nbsp;6.3, &ldquo;Example Backup and Recovery
+Strategy&rdquo;.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;to&minus;last&minus;log</b>,
+<b>&minus;t</b></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Do
+not stop at the end of the requested binary log from a MySQL
+server, but rather continue printing until the end of the
+last binary log. If you send the output to the same MySQL
+server, this may lead to an endless loop. This option
+requires
+<b>&minus;&minus;read&minus;from&minus;remote&minus;server</b>.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;user=</b><i>user_name</i>, <b>&minus;u</b>
+<i>user_name</i></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>The
+MySQL user name to use when connecting to a remote
+server.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;verbose</b>,
+<b>&minus;v</b></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Reconstruct
+row events and display them as commented SQL statements. If
+this option is given twice, the output includes comments to
+indicate column data types and some metadata. This option
+was added in MySQL 5.1.28.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>For
+examples that show the effect of
+<b>&minus;&minus;base64&minus;output</b> and
+<b>&minus;&minus;verbose</b> on row event output, see the
+section called &ldquo;MYSQLBINLOG ROW EVENT
+DISPLAY&rdquo;.</big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>&bull;
+<b>&minus;&minus;version</b>,
+<b>&minus;V</b></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big>Display
+version information and exit.</big></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000"><big><big>You
+can also set the following variable by using
+<b>&minus;&minus;</b><i>var_name</i><b>=</b><i>value</i>
+syntax:</big></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big><big>&bull;
+open_files_limit</big></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big><big>Specify
+the number of open file descriptors to
+reserve.</big></big></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000"><big><big>You
+can pipe the output of <b>mysqlbinlog</b> into the
+<b>mysql</b> client to execute the events contained in the
+binary log. This technique is used to recover from a crash
+when you have an old backup (see Section&nbsp;6.5,
+&ldquo;Point-in-Time (Incremental) Recovery Using the Binary
+Log&rdquo;). For example:</big></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big><big>shell&gt;
+<b>mysqlbinlog binlog.000001 | mysql &minus;u root
+&minus;p</b></big></big></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000"><big><big>Or:</big></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big><big>shell&gt;
+<b>mysqlbinlog binlog.[0&minus;9]* | mysql &minus;u root
+&minus;p</b></big></big></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000"><big><big>You
+can also redirect the output of <b>mysqlbinlog</b> to a text
+file instead, if you need to modify the statement log first
+(for example, to remove statements that you do not want to
+execute for some reason). After editing the file, execute
+the statements that it contains by using it as input to the
+<b>mysql</b> program:</big></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big><big>shell&gt;
+<b>mysqlbinlog binlog.000001 &gt; tmpfile</b> <br>
+shell&gt; ... <i>edit tmpfile</i> ... <br>
+shell&gt; <b>mysql &minus;u root &minus;p &lt;
+tmpfile</b></big></big></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000"><big><big>When
+<b>mysqlbinlog</b> is invoked with the
+<b>&minus;&minus;start&minus;position</b> option, it
+displays only those events with an offset in the binary log
+greater than or equal to a given position (the given
+position must match the start of one event). It also has
+options to stop and start when it sees an event with a given
+date and time. This enables you to perform
+point&minus;in&minus;time recovery using the
+<b>&minus;&minus;stop&minus;datetime</b> option (to be able
+to say, for example, &ldquo;roll forward my databases to how
+they were today at 10:30
+a.m.&rdquo;).</big></big></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000"><big><big>If
+you have more than one binary log to execute on the MySQL
+server, the safe method is to process them all using a
+single connection to the server. Here is an example that
+demonstrates what may be
+<i>unsafe</i>:</big></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big><big>shell&gt;
+<b>mysqlbinlog binlog.000001 | mysql &minus;u root &minus;p
+# DANGER!!</b> <br>
+shell&gt; <b>mysqlbinlog binlog.000002 | mysql &minus;u root
+&minus;p # DANGER!!</b></big></big></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000"><big><big>Processing
+binary logs this way using different connections to the
+server causes problems if the first log file contains a
+CREATE TEMPORARY TABLE statement and the second log contains
+a statement that uses the temporary table. When the first
+<b>mysql</b> process terminates, the server drops the
+temporary table. When the second <b>mysql</b> process
+attempts to use the table, the server reports &ldquo;unknown
+table.&rdquo;</big></big></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000"><big><big>To
+avoid problems like this, use a <i>single</i> <b>mysql</b>
+process to execute the contents of all binary logs that you
+want to process. Here is one way to do
+so:</big></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big><big>shell&gt;
+<b>mysqlbinlog binlog.000001 binlog.000002 | mysql &minus;u
+root &minus;p</b></big></big></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000"><big><big>Another
+approach is to write all the logs to a single file and then
+process the file:</big></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big><big>shell&gt;
+<b>mysqlbinlog binlog.000001 &gt; /tmp/statements.sql</b>
+<br>
+shell&gt; <b>mysqlbinlog binlog.000002 &gt;&gt;
+/tmp/statements.sql</b> <br>
+shell&gt; <b>mysql &minus;u root &minus;p &minus;e
+&quot;source
+/tmp/statements.sql&quot;</b></big></big></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000"><big><big><b>mysqlbinlog</b>
+can produce output that reproduces a LOAD DATA INFILE
+operation without the original data file. <b>mysqlbinlog</b>
+copies the data to a temporary file and writes a LOAD DATA
+LOCAL INFILE statement that refers to the file. The default
+location of the directory where these files are written is
+system&minus;specific. To specify a directory explicitly,
+use the <b>&minus;&minus;local&minus;load</b>
+option.</big></big></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000"><big><big>Because
+<b>mysqlbinlog</b> converts LOAD DATA INFILE statements to
+LOAD DATA LOCAL INFILE statements (that is, it adds LOCAL),
+both the client and the server that you use to process the
+statements must be configured with the LOCAL capability
+enabled. See Section&nbsp;5.3.5, &ldquo;Security Issues with
+LOAD DATA LOCAL&rdquo;.</big></big></font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000"><big><big><b><big>Warning</big></b>
+<br>
+The temporary files created for LOAD DATA LOCAL statements
+are <i>not</i> automatically deleted because they are needed
+until you actually execute those statements. You should
+delete the temporary files yourself after you no longer need
+the statement log. The files can be found in the temporary
+file directory and have names like
+<i>original_file_name&minus;#&minus;#</i>.</big></big></font></p>
+
+<h2>MYSQLBINLOG HEX DUMP FORMAT
+<a name="MYSQLBINLOG HEX DUMP FORMAT"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big><big>The
+<b>&minus;&minus;hexdump</b> option causes
+<b>mysqlbinlog</b> to produce a hex dump of the binary log
+contents:</big></big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big><big>shell&gt;
+<b>mysqlbinlog &minus;&minus;hexdump
+master&minus;bin.000001</b></big></big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big><big>The
+hex output consists of comment lines beginning with #, so
+the output might look like this for the preceding
+command:</big></big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big><big>/*!40019
+SET @@session.max_insert_delayed_threads=0*/; <br>
+/*!50003 SET
+@OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
+<br>
+# at 4 <br>
+#051024 17:24:13 server id 1 end_log_pos 98 <br>
+# Position Timestamp Type Master ID Size Master Pos Flags
+<br>
+# 00000004 9d fc 5c 43 0f 01 00 00 00 5e 00 00 00 62 00 00
+00 00 00 <br>
+# 00000017 04 00 35 2e 30 2e 31 35 2d 64 65 62 75 67 2d 6c
+|..5.0.15.debug.l| <br>
+# 00000027 6f 67 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+|og..............| <br>
+# 00000037 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+|................| <br>
+# 00000047 00 00 00 00 9d fc 5c 43 13 38 0d 00 08 00 12 00
+|.......C.8......| <br>
+# 00000057 04 04 04 04 12 00 00 4b 00 04 1a |.......K...|
+<br>
+# Start: binlog v 4, server v 5.0.15&minus;debug&minus;log
+created 051024 17:24:13 <br>
+# at startup <br>
+ROLLBACK;</big></big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big><big>Hex
+dump output currently contains the elements in the following
+list. This format is subject to change. (For more
+information about binary log format, see</big></big></font>
+<big><big><b><font color="#0000FF">http://forge.mysql.com/wiki/MySQL_Internals_Binary_Log</font></b><font color="#000000">.)</font></big></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><big><font color="#000000">&bull;
+Position: The byte position within the log
+file.</font></big></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><big><font color="#000000">&bull;
+Timestamp: The event timestamp. In the example shown,
+&acute;9d fc 5c 43&acute; is the representation of
+&acute;051024 17:24:13&acute; in
+hexadecimal.</font></big></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><big><font color="#000000">&bull;
+Type: The event type code. In the example shown,
+&acute;0f&acute; indicates a FORMAT_DESCRIPTION_EVENT. The
+following table lists the possible type
+codes.</font></big></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><big><font color="#000000">&bull;
+Master ID: The server ID of the master that created the
+event.</font></big></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><big><font color="#000000">&bull;
+Size: The size in bytes of the event.</font></big></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><big><font color="#000000">&bull;
+Master Pos: The position of the next event in the original
+master log file.</font></big></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><big><font color="#000000">&bull;
+Flags: 16 flags. Currently, the following flags are used.
+The others are reserved for future
+use.</font></big></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><big><font color="#000000">&nbsp;</font></big></big></p>
+
+<h2>MYSQLBINLOG ROW EVENT DISPLAY
+<a name="MYSQLBINLOG ROW EVENT DISPLAY"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><font color="#000000">The
+following examples illustrate how <b>mysqlbinlog</b>
+displays row events that specify data modifications. These
+correspond to events with the WRITE_ROWS_EVENT,
+UPDATE_ROWS_EVENT, and DELETE_ROWS_EVENT type codes. The
+<b>&minus;&minus;base64&minus;output=DECODE&minus;ROWS</b>
+and <b>&minus;&minus;verbose</b> options may be used to
+affect row event output. These options are available as of
+MySQL 5.1.28.</font></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><font color="#000000">Suppose
+that the server is using row&minus;based binary logging and
+that you execute the following sequence of
+statements:</font></big></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><big><font color="#000000">CREATE
+TABLE t <br>
+( <br>
+id INT NOT NULL, <br>
+name VARCHAR(20) NOT NULL, <br>
+date DATE NULL <br>
+) ENGINE = InnoDB; <br>
+START TRANSACTION; <br>
+INSERT INTO t VALUES(1, &acute;apple&acute;, NULL); <br>
+UPDATE t SET name = &acute;pear&acute;, date =
+&acute;2009&minus;01&minus;01&acute; WHERE id = 1; <br>
+DELETE FROM t WHERE id = 1; <br>
+COMMIT;</font></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><font color="#000000">By
+default, <b>mysqlbinlog</b> displays row events encoded as
+base&minus;64 strings using BINLOG statements. Omitting
+extraneous lines, the output for the row events produced by
+the preceding statement sequence looks like
+this:</font></big></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><big><font color="#000000">shell&gt;
+<b>mysqlbinlog</b> <i>log_file</i> <br>
+... <br>
+# at 218</font></big></big></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="-9%">
+
+
+<p><big><big><font color="#000000">#080828 15:03:08 server
+id 1 end_log_pos 258</font></big></big></p></td>
+<td width="69%"></td>
+<td width="8%"></td>
+<td width="15%">
+
+
+<p><big><big><font color="#000000">Write_rows: table id 17
+flags: STMT_END_F</font></big></big></p></td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><big><big><font color="#000000">BINLOG
+&acute; <br>
+
+fAS3SBMBAAAALAAAANoAAAAAABEAAAAAAAAABHRlc3QAAXQAAwMPCgIUAAQ=
+<br>
+fAS3SBcBAAAAKAAAAAIBAAAQABEAAAAAAAEAA//8AQAAAAVhcHBsZQ==
+<br>
+&acute;/*!*/; <br>
+... <br>
+# at 302</font></big></big></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="-9%">
+
+
+<p><big><big><font color="#000000">#080828 15:03:08 server
+id 1 end_log_pos 356</font></big></big></p></td>
+<td width="69%"></td>
+<td width="8%"></td>
+<td width="15%">
+
+
+<p><big><big><font color="#000000">Update_rows: table id 17
+flags: STMT_END_F</font></big></big></p></td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><big><big><font color="#000000">BINLOG
+&acute; <br>
+
+fAS3SBMBAAAALAAAAC4BAAAAABEAAAAAAAAABHRlc3QAAXQAAwMPCgIUAAQ=
+<br>
+
+fAS3SBgBAAAANgAAAGQBAAAQABEAAAAAAAEAA////AEAAAAFYXBwbGX4AQAAAARwZWFyIbIP
+<br>
+&acute;/*!*/; <br>
+... <br>
+# at 400</font></big></big></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="-9%">
+
+
+<p><big><big><font color="#000000">#080828 15:03:08 server
+id 1 end_log_pos 442</font></big></big></p></td>
+<td width="69%"></td>
+<td width="8%"></td>
+<td width="15%">
+
+
+<p><big><big><font color="#000000">Delete_rows: table id 17
+flags: STMT_END_F</font></big></big></p></td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><big><big><font color="#000000">BINLOG
+&acute; <br>
+
+fAS3SBMBAAAALAAAAJABAAAAABEAAAAAAAAABHRlc3QAAXQAAwMPCgIUAAQ=
+<br>
+fAS3SBkBAAAAKgAAALoBAAAQABEAAAAAAAEAA//4AQAAAARwZWFyIbIP
+<br>
+&acute;/*!*/;</font></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><font color="#000000">To
+see the row events as comments in the form of
+&ldquo;pseudo&minus;SQL&rdquo; statements, run
+<b>mysqlbinlog</b> with the <b>&minus;&minus;verbose</b> or
+<b>&minus;v</b> option. The output will contain lines
+beginning with ###:</font></big></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><big><font color="#000000">shell&gt;
+<b>mysqlbinlog &minus;v</b> <i>log_file</i> <br>
+... <br>
+# at 218</font></big></big></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="-9%">
+
+
+<p><big><big><font color="#000000">#080828 15:03:08 server
+id 1 end_log_pos 258</font></big></big></p></td>
+<td width="69%"></td>
+<td width="8%"></td>
+<td width="15%">
+
+
+<p><big><big><font color="#000000">Write_rows: table id 17
+flags: STMT_END_F</font></big></big></p></td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><big><big><font color="#000000">BINLOG
+&acute; <br>
+
+fAS3SBMBAAAALAAAANoAAAAAABEAAAAAAAAABHRlc3QAAXQAAwMPCgIUAAQ=
+<br>
+fAS3SBcBAAAAKAAAAAIBAAAQABEAAAAAAAEAA//8AQAAAAVhcHBsZQ==
+<br>
+&acute;/*!*/; <br>
+### INSERT INTO test.t <br>
+### SET <br>
+### @1=1 <br>
+### @2=&acute;apple&acute; <br>
+### @3=NULL <br>
+... <br>
+# at 302</font></big></big></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="-9%">
+
+
+<p><big><big><font color="#000000">#080828 15:03:08 server
+id 1 end_log_pos 356</font></big></big></p></td>
+<td width="69%"></td>
+<td width="8%"></td>
+<td width="15%">
+
+
+<p><big><big><font color="#000000">Update_rows: table id 17
+flags: STMT_END_F</font></big></big></p></td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><big><big><font color="#000000">BINLOG
+&acute; <br>
+
+fAS3SBMBAAAALAAAAC4BAAAAABEAAAAAAAAABHRlc3QAAXQAAwMPCgIUAAQ=
+<br>
+
+fAS3SBgBAAAANgAAAGQBAAAQABEAAAAAAAEAA////AEAAAAFYXBwbGX4AQAAAARwZWFyIbIP
+<br>
+&acute;/*!*/; <br>
+### UPDATE test.t <br>
+### WHERE <br>
+### @1=1 <br>
+### @2=&acute;apple&acute; <br>
+### @3=NULL <br>
+### SET <br>
+### @1=1 <br>
+### @2=&acute;pear&acute; <br>
+### @3=&acute;2009:01:01&acute; <br>
+... <br>
+# at 400</font></big></big></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="-9%">
+
+
+<p><big><big><font color="#000000">#080828 15:03:08 server
+id 1 end_log_pos 442</font></big></big></p></td>
+<td width="69%"></td>
+<td width="8%"></td>
+<td width="15%">
+
+
+<p><big><big><font color="#000000">Delete_rows: table id 17
+flags: STMT_END_F</font></big></big></p></td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><big><big><font color="#000000">BINLOG
+&acute; <br>
+
+fAS3SBMBAAAALAAAAJABAAAAABEAAAAAAAAABHRlc3QAAXQAAwMPCgIUAAQ=
+<br>
+fAS3SBkBAAAAKgAAALoBAAAQABEAAAAAAAEAA//4AQAAAARwZWFyIbIP
+<br>
+&acute;/*!*/; <br>
+### DELETE FROM test.t <br>
+### WHERE <br>
+### @1=1 <br>
+### @2=&acute;pear&acute; <br>
+### @3=&acute;2009:01:01&acute;</font></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><font color="#000000">Specify
+<b>&minus;&minus;verbose</b> or <b>&minus;v</b> twice to
+also display data types and some metadata for each column.
+The output will contain an additional comment following each
+column change:</font></big></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><big><font color="#000000">shell&gt;
+<b>mysqlbinlog &minus;vv</b> <i>log_file</i> <br>
+... <br>
+# at 218</font></big></big></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="-9%">
+
+
+<p><big><big><font color="#000000">#080828 15:03:08 server
+id 1 end_log_pos 258</font></big></big></p></td>
+<td width="69%"></td>
+<td width="8%"></td>
+<td width="15%">
+
+
+<p><big><big><font color="#000000">Write_rows: table id 17
+flags: STMT_END_F</font></big></big></p></td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><big><big><font color="#000000">BINLOG
+&acute; <br>
+
+fAS3SBMBAAAALAAAANoAAAAAABEAAAAAAAAABHRlc3QAAXQAAwMPCgIUAAQ=
+<br>
+fAS3SBcBAAAAKAAAAAIBAAAQABEAAAAAAAEAA//8AQAAAAVhcHBsZQ==
+<br>
+&acute;/*!*/; <br>
+### INSERT INTO test.t <br>
+### SET <br>
+### @1=1 /* INT meta=0 nullable=0 is_null=0 */ <br>
+### @2=&acute;apple&acute; /* VARSTRING(20) meta=20
+nullable=0 is_null=0 */ <br>
+### @3=NULL /* VARSTRING(20) meta=0 nullable=1 is_null=1 */
+<br>
+... <br>
+# at 302</font></big></big></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="-9%">
+
+
+<p><big><big><font color="#000000">#080828 15:03:08 server
+id 1 end_log_pos 356</font></big></big></p></td>
+<td width="69%"></td>
+<td width="8%"></td>
+<td width="15%">
+
+
+<p><big><big><font color="#000000">Update_rows: table id 17
+flags: STMT_END_F</font></big></big></p></td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><big><big><font color="#000000">BINLOG
+&acute; <br>
+
+fAS3SBMBAAAALAAAAC4BAAAAABEAAAAAAAAABHRlc3QAAXQAAwMPCgIUAAQ=
+<br>
+
+fAS3SBgBAAAANgAAAGQBAAAQABEAAAAAAAEAA////AEAAAAFYXBwbGX4AQAAAARwZWFyIbIP
+<br>
+&acute;/*!*/; <br>
+### UPDATE test.t <br>
+### WHERE <br>
+### @1=1 /* INT meta=0 nullable=0 is_null=0 */ <br>
+### @2=&acute;apple&acute; /* VARSTRING(20) meta=20
+nullable=0 is_null=0 */ <br>
+### @3=NULL /* VARSTRING(20) meta=0 nullable=1 is_null=1 */
+<br>
+### SET <br>
+### @1=1 /* INT meta=0 nullable=0 is_null=0 */ <br>
+### @2=&acute;pear&acute; /* VARSTRING(20) meta=20
+nullable=0 is_null=0 */ <br>
+### @3=&acute;2009:01:01&acute; /* DATE meta=0 nullable=1
+is_null=0 */ <br>
+... <br>
+# at 400</font></big></big></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="-9%">
+
+
+<p><big><big><font color="#000000">#080828 15:03:08 server
+id 1 end_log_pos 442</font></big></big></p></td>
+<td width="69%"></td>
+<td width="8%"></td>
+<td width="15%">
+
+
+<p><big><big><font color="#000000">Delete_rows: table id 17
+flags: STMT_END_F</font></big></big></p></td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><big><big><font color="#000000">BINLOG
+&acute; <br>
+
+fAS3SBMBAAAALAAAAJABAAAAABEAAAAAAAAABHRlc3QAAXQAAwMPCgIUAAQ=
+<br>
+fAS3SBkBAAAAKgAAALoBAAAQABEAAAAAAAEAA//4AQAAAARwZWFyIbIP
+<br>
+&acute;/*!*/; <br>
+### DELETE FROM test.t <br>
+### WHERE <br>
+### @1=1 /* INT meta=0 nullable=0 is_null=0 */ <br>
+### @2=&acute;pear&acute; /* VARSTRING(20) meta=20
+nullable=0 is_null=0 */ <br>
+### @3=&acute;2009:01:01&acute; /* DATE meta=0 nullable=1
+is_null=0 */</font></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><font color="#000000">You
+can tell <b>mysqlbinlog</b> to suppress the BINLOG
+statements for row events by using the
+<b>&minus;&minus;base64&minus;output=DECODE&minus;ROWS</b>
+option. This is similar to
+<b>&minus;&minus;base64&minus;output=NEVER</b> but does not
+exit with an error if a row event is found. The combination
+of
+<b>&minus;&minus;base64&minus;output=DECODE&minus;ROWS</b>
+and <b>&minus;&minus;verbose</b> provides a convenient way
+to see row events only as SQL
+statements:</font></big></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><big><font color="#000000">shell&gt;
+<b>mysqlbinlog &minus;v
+&minus;&minus;base64&minus;output=DECODE&minus;ROWS</b>
+<i>log_file</i> <br>
+... <br>
+# at 218</font></big></big></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="-9%">
+
+
+<p><big><big><font color="#000000">#080828 15:03:08 server
+id 1 end_log_pos 258</font></big></big></p></td>
+<td width="69%"></td>
+<td width="8%"></td>
+<td width="15%">
+
+
+<p><big><big><font color="#000000">Write_rows: table id 17
+flags: STMT_END_F</font></big></big></p></td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><big><big><font color="#000000">###
+INSERT INTO test.t <br>
+### SET <br>
+### @1=1 <br>
+### @2=&acute;apple&acute; <br>
+### @3=NULL <br>
+... <br>
+# at 302</font></big></big></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="-9%">
+
+
+<p><big><big><font color="#000000">#080828 15:03:08 server
+id 1 end_log_pos 356</font></big></big></p></td>
+<td width="69%"></td>
+<td width="8%"></td>
+<td width="15%">
+
+
+<p><big><big><font color="#000000">Update_rows: table id 17
+flags: STMT_END_F</font></big></big></p></td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><big><big><font color="#000000">###
+UPDATE test.t <br>
+### WHERE <br>
+### @1=1 <br>
+### @2=&acute;apple&acute; <br>
+### @3=NULL <br>
+### SET <br>
+### @1=1 <br>
+### @2=&acute;pear&acute; <br>
+### @3=&acute;2009:01:01&acute; <br>
+... <br>
+# at 400</font></big></big></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="-9%">
+
+
+<p><big><big><font color="#000000">#080828 15:03:08 server
+id 1 end_log_pos 442</font></big></big></p></td>
+<td width="69%"></td>
+<td width="8%"></td>
+<td width="15%">
+
+
+<p><big><big><font color="#000000">Delete_rows: table id 17
+flags: STMT_END_F</font></big></big></p></td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><big><big><font color="#000000">###
+DELETE FROM test.t <br>
+### WHERE <br>
+### @1=1 <br>
+### @2=&acute;pear&acute; <br>
+### @3=&acute;2009:01:01&acute;</font></big></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><big><font color="#000000"><b><big>Note</big></b>
+<br>
+You should not suppress BINLOG statements if you intend to
+re&minus;execute <b>mysqlbinlog</b>
+output.</font></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><font color="#000000">The
+SQL statements produced by <b>&minus;&minus;verbose</b> for
+row events are much more readable than the corresponding
+BINLOG statements. However, they do not correspond exactly
+to the original SQL statements that generated the events.
+The following limitations apply:</font></big></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><big><font color="#000000">&bull;
+The original column names are lost and replaced by
+@<i>N</i>, where <i>N</i> is a column
+number.</font></big></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><big><font color="#000000">&bull;
+Character set information is not available in the binary
+log, which affects string column
+display:</font></big></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><big><font color="#000000">&bull;
+There is no distinction made between corresponding binary
+and nonbinary string types (BINARY and CHAR, VARBINARY and
+VARCHAR, BLOB and TEXT). The output uses a data type of
+STRING for fixed&minus;length strings and VARSTRING for
+variable&minus;length strings.</font></big></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><big><font color="#000000">&bull;
+For multi&minus;byte character sets, the maximum number of
+bytes per character is not present in the binary log, so the
+length for string types is displayed in bytes rather than in
+characters. For example, STRING(4) will be used as the data
+type for values from either of these column
+types:</font></big></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><big><font color="#000000">CHAR(4)
+CHARACTER SET latin1 <br>
+CHAR(2) CHARACTER SET ucs2</font></big></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><big><font color="#000000">&bull;
+Due to the storage format for events of type
+UPDATE_ROWS_EVENT, UPDATE statements are displayed with the
+WHERE clause preceding the SET
+clause.</font></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><font color="#000000">Proper
+interpretation of row events requires the information from
+the format description event at the beginning of the binary
+log. Because <b>mysqlbinlog</b> does not know in advance
+whether the rest of the log contains row events, by default
+it displays the format description event using a BINLOG
+statement in the initial part of the
+output.</font></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><font color="#000000">If
+the binary log is known not to contain any events requiring
+a BINLOG statement (that is, no row events), the
+<b>&minus;&minus;base64&minus;output=NEVER</b> option can be
+used to prevent this header from being
+written.</font></big></big></p>
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><font color="#000000">Copyright
+2007-2008 MySQL AB, 2008-2010 Sun Microsystems,
+Inc.</font></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><font color="#000000">This
+documentation is free software; you can redistribute it
+and/or modify it only under the terms of the GNU General
+Public License as published by the Free Software Foundation;
+version 2 of the License.</font></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><font color="#000000">This
+documentation is distributed in the hope that it will be
+useful, but WITHOUT ANY WARRANTY; without even the implied
+warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE. See the GNU General Public License for more
+details.</font></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><font color="#000000">You
+should have received a copy of the GNU General Public
+License along with the program; if not, write to the Free
+Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA 02110-1301 USA or see
+http://www.gnu.org/licenses/.</font></big></big></p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><big><big><font color="#000000">1.</font></big></big></p> </td>
+<td width="2%"></td>
+<td width="14%">
+
+
+
+<p style="margin-top: 1em"><big><big><font color="#000000">Bug#42941</font></big></big></p> </td>
+<td width="69%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><big><big><font color="#000000">http://bugs.mysql.com/bug.php?id=42941</font></big></big></p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><font color="#000000">For
+more information, please refer to the MySQL Reference
+Manual, which may already be installed locally and which is
+also available online at
+http://dev.mysql.com/doc/.</font></big></big></p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><font color="#000000">Sun
+Microsystems, Inc.
+(http://www.mysql.com/).</font></big></big></p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:36:24 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>open</title>
+
+</head>
+<body>
+
+<h1 align="center">open</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#NONPERLIO FUNCTIONALITY">NONPERLIO FUNCTIONALITY</a><br>
+<a href="#IMPLEMENTATION DETAILS">IMPLEMENTATION DETAILS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">open &minus;
+perl pragma to set default PerlIO layers for input and
+output</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">    use open IN  =&gt; &quot;:crlf&quot;, OUT =&gt; &quot;:bytes&quot;;
+    use open OUT =&gt; ':utf8';
+    use open IO  =&gt; &quot;:encoding(iso&minus;8859&minus;7)&quot;;
+    use open IO  =&gt; ':locale';
+    use open ':encoding(utf8)';
+    use open ':locale';
+    use open ':encoding(iso&minus;8859&minus;7)';
+    use open ':std';</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Full-fledged
+support for I/O layers is now implemented provided Perl is
+configured to use PerlIO as its <small>IO</small> system
+(which is now the default).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;open&quot;</tt> pragma serves as one of the
+interfaces to declare default &quot;layers&quot; (also known
+as &quot;disciplines&quot;) for all I/O. Any two-argument
+<i>open()</i>, <i>readpipe()</i> (aka qx//) and similar
+operators found within the lexical scope of this pragma will
+use the declared defaults. Even three-argument opens may be
+affected by this pragma when they don&rsquo;t specify
+<small>IO</small> layers in <small>MODE</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">With the
+<tt>&quot;IN&quot;</tt> subpragma you can declare the
+default layers of input streams, and with the
+<tt>&quot;OUT&quot;</tt> subpragma you can declare the
+default layers of output streams. With the
+<tt>&quot;IO&quot;</tt> subpragma you can control both input
+and output streams simultaneously.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you have a
+legacy encoding, you can use the
+<tt>&quot;:encoding(...)&quot;</tt> tag.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+set your encoding layers based on your locale environment
+variables, you can use the <tt>&quot;:locale&quot;</tt> tag.
+For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ENV{LANG} = 'ru_RU.KOI8&minus;R';
+    # the :locale will probe the locale environment variables like LANG
+    use open OUT =&gt; ':locale';
+    open(O, &quot;&gt;koi8&quot;);
+    print O chr(0x430); # Unicode CYRILLIC SMALL LETTER A = KOI8&minus;R 0xc1
+    close O;
+    open(I, &quot;&lt;koi8&quot;);
+    printf &quot;%#x\n&quot;, ord(&lt;I&gt;), &quot;\n&quot;; # this should print 0xc1
+    close I;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">These are
+equivalent</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use open ':encoding(utf8)';
+    use open IO =&gt; ':encoding(utf8)';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">as are
+these</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use open ':locale';
+    use open IO =&gt; ':locale';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">and these</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use open ':encoding(iso&minus;8859&minus;7)';
+    use open IO =&gt; ':encoding(iso&minus;8859&minus;7)';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The matching of
+encoding names is loose: case does not matter, and many
+encodings have several aliases. See Encode::Supported for
+details and the list of supported locales.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When
+<i>open()</i> is given an explicit list of layers (with the
+three-arg syntax), they override the list declared using
+this pragma. <i>open()</i> can also be given a single colon
+(:) for a layer name, to override this pragma and use the
+default (<tt>&quot;:raw&quot;</tt> on Unix,
+<tt>&quot;:crlf&quot;</tt> on Windows).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;:std&quot;</tt> subpragma on its own has no
+effect, but if combined with the <tt>&quot;:utf8&quot;</tt>
+or <tt>&quot;:encoding&quot;</tt> subpragmas, it converts
+the standard filehandles ( <small>STDIN</small> ,
+<small>STDOUT</small> , <small>STDERR</small> ) to comply
+with encoding selected for input/output handles. For
+example, if both input and out are chosen to be
+<tt>&quot;:encoding(utf8)&quot;</tt>, a
+<tt>&quot;:std&quot;</tt> will mean that
+<small>STDIN</small> , <small>STDOUT</small> , and
+<small>STDERR</small> are also in
+<tt>&quot;:encoding(utf8)&quot;</tt>. On the other hand, if
+only output is chosen to be in
+<tt>&quot;:encoding(koi8r)&quot;</tt>, a
+<tt>&quot;:std&quot;</tt> will cause only the
+<small>STDOUT</small> and <small>STDERR</small> to be in
+<tt>&quot;koi8r&quot;</tt>. The <tt>&quot;:locale&quot;</tt>
+subpragma implicitly turns on <tt>&quot;:std&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The logic of
+<tt>&quot;:locale&quot;</tt> is described in full in
+encoding, but in short it is first trying nl_langinfo(
+<small>CODESET</small> ) and then guessing from the
+<small>LC_ALL</small> and <small>LANG</small> locale
+environment variables.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Directory
+handles may also support PerlIO layers in the future.</p>
+
+<h2>NONPERLIO FUNCTIONALITY
+<a name="NONPERLIO FUNCTIONALITY"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If Perl is not
+built to use PerlIO as its <small>IO</small> system then
+only the two pseudo-layers <tt>&quot;:bytes&quot;</tt> and
+<tt>&quot;:crlf&quot;</tt> are available.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;:bytes&quot;</tt> layer corresponds to
+&quot;binary mode&quot; and the <tt>&quot;:crlf&quot;</tt>
+layer corresponds to &quot;text mode&quot; on platforms that
+distinguish between the two modes when opening files (which
+is many DOS-like platforms, including Windows). These two
+layers are no-ops on platforms where <i>binmode()</i> is a
+no-op, but perform their functions everywhere if PerlIO is
+enabled.</p>
+
+<h2>IMPLEMENTATION DETAILS
+<a name="IMPLEMENTATION DETAILS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">There is a
+class method in <tt>&quot;PerlIO::Layer&quot;
+&quot;find&quot;</tt> which is implemented as
+<small>XS</small> code. It is called by
+<tt>&quot;import&quot;</tt> to validate the layers:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   PerlIO::Layer::&minus;&gt;find(&quot;perlio&quot;)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The return
+value (if defined) is a Perl object, of class
+<tt>&quot;PerlIO::Layer&quot;</tt> which is created by the C
+code in <i>perlio.c</i>. As yet there is nothing useful you
+can do with the object at the perl level.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">&quot;binmode&quot;
+in perlfunc, &quot;open&quot; in perlfunc, perlunicode,
+PerlIO, encoding</p>
+<hr>
+</body>
+</html>

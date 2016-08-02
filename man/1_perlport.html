@@ -1,0 +1,3843 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:37:55 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERLPORT</title>
+
+</head>
+<body>
+
+<h1 align="center">PERLPORT</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#ISSUES">ISSUES</a><br>
+<a href="#CPAN Testers">CPAN Testers</a><br>
+<a href="#PLATFORMS">PLATFORMS</a><br>
+<a href="#FUNCTION IMPLEMENTATIONS">FUNCTION IMPLEMENTATIONS</a><br>
+<a href="#Supported Platforms">Supported Platforms</a><br>
+<a href="#EOL Platforms (Perl 5.14)">EOL Platforms (Perl 5.14)</a><br>
+<a href="#Supported Platforms (Perl 5.8)">Supported Platforms (Perl 5.8)</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHORS / CONTRIBUTORS">AUTHORS / CONTRIBUTORS</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlport
+&minus; Writing portable Perl</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Perl runs on
+numerous operating systems. While most of them share much in
+common, they also have their own unique features.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This document
+is meant to help you to find out what constitutes portable
+Perl code. That way once you make a decision to write
+portably, you know where the lines are drawn, and you can
+stay within them.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is a
+tradeoff between taking full advantage of one particular
+type of computer and taking advantage of a full range of
+them. Naturally, as you broaden your range and become more
+diverse, the common factors drop, and you are left with an
+increasingly smaller area of common ground in which you can
+operate to accomplish a particular task. Thus, when you
+begin attacking a problem, it is important to consider under
+which part of the tradeoff curve you want to operate.
+Specifically, you must decide whether it is important that
+the task that you are coding have the full generality of
+being portable, or whether to just get the job done right
+now. This is the hardest choice to be made. The rest is
+easy, because Perl provides many choices, whichever way you
+want to approach your problem.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Looking at it
+another way, writing portable code is usually about
+willfully limiting your available choices. Naturally, it
+takes discipline and sacrifice to do that. The product of
+portability and convenience may be a constant. You have been
+warned.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Be aware of two
+important points: <br>
+Not all Perl programs have to be portable</p>
+
+<p style="margin-left:17%;">There is no reason you should
+not use Perl as a language to glue Unix tools together, or
+to prototype a Macintosh application, or to manage the
+Windows registry. If it makes no sense to aim for
+portability for one reason or another in a given program,
+then don&rsquo;t bother.</p>
+
+<p style="margin-left:11%;">Nearly all of Perl already
+<i>is</i> portable</p>
+
+<p style="margin-left:17%;">Don&rsquo;t be fooled into
+thinking that it is hard to create portable Perl code. It
+isn&rsquo;t. Perl tries its level-best to bridge the gaps
+between what&rsquo;s available on different platforms, and
+all the means available to use those features. Thus almost
+all Perl code runs on any machine without modification. But
+there are some significant issues in writing portable code,
+and this document is entirely about those issues.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here&rsquo;s
+the general rule: When you approach a task commonly done
+using a whole range of platforms, think about writing
+portable code. That way, you don&rsquo;t sacrifice much by
+way of the implementation choices you can avail yourself of,
+and at the same time you can give your users lots of
+platform choices. On the other hand, when you have to take
+advantage of some unique feature of a particular platform,
+as is often the case with systems programming (whether for
+Unix, Windows, <small>VMS</small> , etc.), consider writing
+platform-specific code.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When the code
+will run on only two or three operating systems, you may
+need to consider only the differences of those particular
+systems. The important thing is to decide where the code
+will run and to be deliberate in your decision.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The material
+below is separated into three main sections: main issues of
+portability (&quot; <small>ISSUES</small> &quot;),
+platform-specific issues (&quot; <small>PLATFORMS</small>
+&quot;), and built-in perl functions that behave differently
+on various ports (&quot; <small>FUNCTION
+IMPLEMENTATIONS</small> &quot;).</p>
+
+<p style="margin-left:11%; margin-top: 1em">This
+information should not be considered complete; it includes
+possibly transient information about idiosyncrasies of some
+of the ports, almost all of which are in a state of constant
+evolution. Thus, this material should be considered a
+perpetual work in progress (<tt>&quot;&lt;IMG
+SRC=&quot;yellow_sign.gif&quot; ALT=&quot;Under
+Construction&quot;&gt;&quot;</tt>).</p>
+
+<h2>ISSUES
+<a name="ISSUES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Newlines</b>
+<br>
+In most operating systems, lines in files are terminated by
+newlines. Just what is used as a newline may vary from
+<small>OS</small> to <small>OS</small> . Unix traditionally
+uses <tt>&quot;\012&quot;</tt>, one type of DOSish I/O uses
+<tt>&quot;\015\012&quot;</tt>, and Mac&nbsp;
+<small>OS</small> uses <tt>&quot;\015&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl uses
+<tt>&quot;\n&quot;</tt> to represent the &quot;logical&quot;
+newline, where what is logical may depend on the platform in
+use. In MacPerl, <tt>&quot;\n&quot;</tt> always means
+<tt>&quot;\015&quot;</tt>. In DOSish perls,
+<tt>&quot;\n&quot;</tt> usually means
+<tt>&quot;\012&quot;</tt>, but when accessing a file in
+&quot;text&quot; mode, perl uses the
+<tt>&quot;:crlf&quot;</tt> layer that translates it to (or
+from) <tt>&quot;\015\012&quot;</tt>, depending on whether
+you&rsquo;re reading or writing. Unix does the same thing on
+ttys in canonical mode. <tt>&quot;\015\012&quot;</tt> is
+commonly referred to as <small>CRLF</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">To trim
+trailing newlines from text lines use <i>chomp()</i>. With
+default settings that function looks for a trailing
+<tt>&quot;\n&quot;</tt> character and thus trims in a
+portable way.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When dealing
+with binary files (or text files in binary mode) be sure to
+explicitly set $/ to the appropriate value for your file
+format before using <i>chomp()</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Because of the
+&quot;text&quot; mode translation, DOSish perls have
+limitations in using <tt>&quot;seek&quot;</tt> and
+<tt>&quot;tell&quot;</tt> on a file accessed in
+&quot;text&quot; mode. Stick to
+<tt>&quot;seek&quot;</tt>&minus;ing to locations you got
+from <tt>&quot;tell&quot;</tt> (and no others), and you are
+usually free to use <tt>&quot;seek&quot;</tt> and
+<tt>&quot;tell&quot;</tt> even in &quot;text&quot; mode.
+Using <tt>&quot;seek&quot;</tt> or <tt>&quot;tell&quot;</tt>
+or other file operations may be non-portable. If you use
+<tt>&quot;binmode&quot;</tt> on a file, however, you can
+usually <tt>&quot;seek&quot;</tt> and
+<tt>&quot;tell&quot;</tt> with arbitrary values in
+safety.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A common
+misconception in socket programming is that
+<tt>&quot;\n&quot;</tt> eq <tt>&quot;\012&quot;</tt>
+everywhere. When using protocols such as common Internet
+protocols, <tt>&quot;\012&quot;</tt> and
+<tt>&quot;\015&quot;</tt> are called for specifically, and
+the values of the logical <tt>&quot;\n&quot;</tt> and
+<tt>&quot;\r&quot;</tt> (carriage return) are not
+reliable.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    print SOCKET &quot;Hi there, client!\r\n&quot;;      # WRONG
+    print SOCKET &quot;Hi there, client!\015\012&quot;;  # RIGHT</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">However, using
+<tt>&quot;\015\012&quot;</tt> (or
+<tt>&quot;\cM\cJ&quot;</tt>, or
+<tt>&quot;\x0D\x0A&quot;</tt>) can be tedious and unsightly,
+as well as confusing to those maintaining the code. As such,
+the Socket module supplies the Right Thing for those who
+want it.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Socket qw(:DEFAULT :crlf);
+    print SOCKET &quot;Hi there, client!$CRLF&quot;      # RIGHT</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">When reading
+from a socket, remember that the default input record
+separator <tt>$/</tt> is <tt>&quot;\n&quot;</tt>, but robust
+socket code will recognize as either
+<tt>&quot;\012&quot;</tt> or <tt>&quot;\015\012&quot;</tt>
+as end of line:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    while (&lt;SOCKET&gt;) {
+        # ...
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Because both
+<small>CRLF</small> and <small>LF</small> end in
+<small>LF</small> , the input record separator can be set to
+<small>LF</small> and any <small>CR</small> stripped later.
+Better to write:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Socket qw(:DEFAULT :crlf);
+    local($/) = LF;      # not needed if $/ is already \012
+    while (&lt;SOCKET&gt;) {
+        s/$CR?$LF/\n/;   # not sure if socket uses LF or CRLF, OK
+    #   s/\015?\012/\n/; # same thing
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This example is
+preferred over the previous one--even for Unix
+platforms--because now any <tt>&quot;\015&quot;</tt>&rsquo;s
+(<tt>&quot;\cM&quot;</tt>&rsquo;s) are stripped out (and
+there was much rejoicing).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Similarly,
+functions that return text data--such as a function that
+fetches a web page--should sometimes translate newlines
+before returning the data, if they&rsquo;ve not yet been
+translated to the local newline representation. A single
+line of code will often suffice:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $data =~ s/\015?\012/\n/g;
+    return $data;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Some of this
+may be confusing. Here&rsquo;s a handy reference to the
+<small>ASCII CR</small> and <small>LF</small> characters.
+You can print it out and stick it in your wallet.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    LF  eq  \012  eq  \x0A  eq  \cJ  eq  chr(10)  eq  ASCII 10
+    CR  eq  \015  eq  \x0D  eq  \cM  eq  chr(13)  eq  ASCII 13
+             | Unix | DOS  | Mac  |
+        &minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;
+        \n   |  LF  |  LF  |  CR  |
+        \r   |  CR  |  CR  |  LF  |
+        \n * |  LF  | CRLF |  CR  |
+        \r * |  CR  |  CR  |  LF  |
+        &minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;
+        * text&minus;mode STDIO</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The Unix column
+assumes that you are not accessing a serial line (like a
+tty) in canonical mode. If you are, then <small>CR</small>
+on input becomes &quot;\n&quot;, and &quot;\n&quot; on
+output becomes <small>CRLF</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">These are just
+the most common definitions of <tt>&quot;\n&quot;</tt> and
+<tt>&quot;\r&quot;</tt> in Perl. There may well be others.
+For example, on an <small>EBCDIC</small> implementation such
+as z/OS ( <small>OS/390</small> ) or <small>OS/400</small>
+(using the <small>ILE</small> , the <small>PASE</small> is
+ASCII-based) the above material is similar to
+&quot;Unix&quot; but the code numbers change:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    LF  eq  \025  eq  \x15  eq  \cU  eq  chr(21)  eq  CP&minus;1047 21
+    LF  eq  \045  eq  \x25  eq           chr(37)  eq  CP&minus;0037 37
+    CR  eq  \015  eq  \x0D  eq  \cM  eq  chr(13)  eq  CP&minus;1047 13
+    CR  eq  \015  eq  \x0D  eq  \cM  eq  chr(13)  eq  CP&minus;0037 13
+             | z/OS | OS/400 |
+        &minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;
+        \n   |  LF  |  LF    |
+        \r   |  CR  |  CR    |
+        \n * |  LF  |  LF    |
+        \r * |  CR  |  CR    |
+        &minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;
+        * text&minus;mode STDIO</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Numbers
+endianness and Width</b> <br>
+Different CPUs store integers and floating point numbers in
+different orders (called <i>endianness</i>) and widths
+(32&minus;bit and 64&minus;bit being the most common today).
+This affects your programs when they attempt to transfer
+numbers in binary format from one <small>CPU</small>
+architecture to another, usually either &quot;live&quot; via
+network connection, or by storing the numbers to secondary
+storage such as a disk file or tape.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Conflicting
+storage orders make utter mess out of the numbers. If a
+little-endian host (Intel, <small>VAX</small> ) stores
+0x12345678 (305419896 in decimal), a big-endian host
+(Motorola, Sparc, <small>PA</small> ) reads it as 0x78563412
+(2018915346 in decimal). Alpha and <small>MIPS</small> can
+be either: Digital/Compaq used/uses them in little-endian
+mode; SGI/Cray uses them in big-endian mode. To avoid this
+problem in network (socket) connections use the
+<tt>&quot;pack&quot;</tt> and <tt>&quot;unpack&quot;</tt>
+formats <tt>&quot;n&quot;</tt> and <tt>&quot;N&quot;</tt>,
+the &quot;network&quot; orders. These are guaranteed to be
+portable.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As of perl
+5.9.2, you can also use the <tt>&quot;&gt;&quot;</tt> and
+<tt>&quot;&lt;&quot;</tt> modifiers to force big&minus; or
+little-endian byte-order. This is useful if you want to
+store signed integers or 64&minus;bit integers, for
+example.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can explore
+the endianness of your platform by unpacking a data
+structure packed in native format such as:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    print unpack(&quot;h*&quot;, pack(&quot;s2&quot;, 1, 2)), &quot;\n&quot;;
+    # '10002000' on e.g. Intel x86 or Alpha 21064 in little&minus;endian mode
+    # '00100020' on e.g. Motorola 68040</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you need to
+distinguish between endian architectures you could use
+either of the variables set like so:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $is_big_endian   = unpack(&quot;h*&quot;, pack(&quot;s&quot;, 1)) =~ /01/;
+    $is_little_endian = unpack(&quot;h*&quot;, pack(&quot;s&quot;, 1)) =~ /^1/;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Differing
+widths can cause truncation even between platforms of equal
+endianness. The platform of shorter width loses the upper
+parts of the number. There is no good solution for this
+problem except to avoid transferring or storing raw binary
+numbers.</p>
+
+<p style="margin-left:11%; margin-top: 1em">One can
+circumnavigate both these problems in two ways. Either
+transfer and store numbers always in text format, instead of
+raw binary, or else consider using modules like Data::Dumper
+(included in the standard distribution as of Perl 5.005) and
+Storable (included as of perl 5.8). Keeping all data as text
+significantly simplifies matters.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+v&minus;strings are portable only up to v2147483647
+(0x7FFFFFFF), that&rsquo;s how far <small>EBCDIC</small> ,
+or more precisely UTF-EBCDIC will go.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Files and
+Filesystems</b> <br>
+Most platforms these days structure files in a hierarchical
+fashion. So, it is reasonably safe to assume that all
+platforms support the notion of a &quot;path&quot; to
+uniquely identify a file on the system. How that path is
+really written, though, differs considerably.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Although
+similar, file path specifications differ between Unix,
+Windows, Mac&nbsp; <small>OS</small> , <small>OS/2</small> ,
+<small>VMS</small> , <small>VOS</small> ,
+<small>RISC&nbsp;OS</small> , and probably others. Unix, for
+example, is one of the few OSes that has the elegant idea of
+a single root directory.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>DOS</small>
+, <small>OS/2</small> , <small>VMS</small> ,
+<small>VOS</small> , and Windows can work similarly to Unix
+with <tt>&quot;/&quot;</tt> as path separator, or in their
+own idiosyncratic ways (such as having several root
+directories and various &quot;unrooted&quot; device files
+such <small>NIL:</small> and <small>LPT:</small> ).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Mac&nbsp;
+<small>OS</small> 9 and earlier used <tt>&quot;:&quot;</tt>
+as a path separator instead of <tt>&quot;/&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The filesystem
+may support neither hard links (<tt>&quot;link&quot;</tt>)
+nor symbolic links (<tt>&quot;symlink&quot;</tt>,
+<tt>&quot;readlink&quot;</tt>,
+<tt>&quot;lstat&quot;</tt>).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The filesystem
+may support neither access timestamp nor change timestamp
+(meaning that about the only portable timestamp is the
+modification timestamp), or one second granularity of any
+timestamps (e.g. the <small>FAT</small> filesystem limits
+the time granularity to two seconds).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The &quot;inode
+change timestamp&quot; (the <tt>&quot;&minus;C&quot;</tt>
+filetest) may really be the &quot;creation timestamp&quot;
+(which it is not in Unix).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>VOS</small>
+perl can emulate Unix filenames with <tt>&quot;/&quot;</tt>
+as path separator. The native pathname characters
+greater-than, less-than, number-sign, and percent-sign are
+always accepted.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>RISC&nbsp;OS</small>
+perl can emulate Unix filenames with <tt>&quot;/&quot;</tt>
+as path separator, or go native and use
+<tt>&quot;.&quot;</tt> for path separator and
+<tt>&quot;:&quot;</tt> to signal filesystems and disk
+names.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume Unix filesystem access semantics: that read, write,
+and execute are all the permissions there are, and even if
+they exist, that their semantics (for example what do r, w,
+and x mean on a directory) are the Unix ones. The various
+Unix/POSIX compatibility layers usually try to make
+interfaces like <i>chmod()</i> work, but sometimes there
+simply is no good mapping.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If all this is
+intimidating, have no (well, maybe only a little) fear.
+There are modules that can help. The File::Spec modules
+provide methods to do the Right Thing on whatever platform
+happens to be running the program.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use File::Spec::Functions;
+    chdir(updir());        # go up one directory
+    my $file = catfile(curdir(), 'temp', 'file.txt');
+    # on Unix and Win32, './temp/file.txt'
+    # on Mac OS Classic, ':temp:file.txt'
+    # on VMS, '[.temp]file.txt'</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">File::Spec is
+available in the standard distribution as of version
+5.004_05. File::Spec::Functions is only in File::Spec 0.7
+and later, and some versions of perl come with version 0.6.
+If File::Spec is not updated to 0.7 or later, you must use
+the object-oriented interface from File::Spec (or upgrade
+File::Spec).</p>
+
+<p style="margin-left:11%; margin-top: 1em">In general,
+production code should not have file paths hardcoded. Making
+them user-supplied or read from a configuration file is
+better, keeping in mind that file path syntax varies on
+different machines.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is
+especially noticeable in scripts like Makefiles and test
+suites, which often assume <tt>&quot;/&quot;</tt> as a path
+separator for subdirectories.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also of use is
+File::Basename from the standard distribution, which splits
+a pathname into pieces (base filename, full path to
+directory, and file suffix).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Even when on a
+single platform (if you can call Unix a single platform),
+remember not to count on the existence or the contents of
+particular system-specific files or directories, like
+<i>/etc/passwd</i>, <i>/etc/sendmail.conf</i>,
+<i>/etc/resolv.conf</i>, or even <i>/tmp/</i>. For example,
+<i>/etc/passwd</i> may exist but not contain the encrypted
+passwords, because the system is using some form of enhanced
+security. Or it may not contain all the accounts, because
+the system is using <small>NIS</small> . If code does need
+to rely on such a file, include a description of the file
+and its format in the code&rsquo;s documentation, then make
+it easy for the user to override the default location of the
+file.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume a text file will end with a newline. They should, but
+people forget.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Do not have two
+files or directories of the same name with different case,
+like <i>test.pl</i> and <i>Test.pl</i>, as many platforms
+have case-insensitive (or at least case-forgiving)
+filenames. Also, try not to have non-word characters (except
+for <tt>&quot;.&quot;</tt>) in the names, and keep them to
+the 8.3 convention, for maximum portability, onerous a
+burden though this may appear.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Likewise, when
+using the AutoSplit module, try to keep your functions to
+8.3 naming and case-insensitive conventions; or, at the
+least, make it so the resulting files have a unique
+(case-insensitively) first 8 characters.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Whitespace in
+filenames is tolerated on most systems, but not all, and
+even on systems where it might be tolerated, some utilities
+might become confused by such whitespace.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Many systems (
+<small>DOS</small> , <small>VMS ODS&minus;2</small> ) cannot
+have more than one <tt>&quot;.&quot;</tt> in their
+filenames.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume <tt>&quot;&gt;&quot;</tt> won&rsquo;t be the first
+character of a filename. Always use
+<tt>&quot;&lt;&quot;</tt> explicitly to open a file for
+reading, or even better, use the three-arg version of open,
+unless you want the user to be able to specify a pipe
+open.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open my $fh, '&lt;', $existing_file) or die $!;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If filenames
+might use strange characters, it is safest to open it with
+<tt>&quot;sysopen&quot;</tt> instead of
+<tt>&quot;open&quot;</tt>. <tt>&quot;open&quot;</tt> is
+magic and can translate characters like
+<tt>&quot;&gt;&quot;</tt>, <tt>&quot;&lt;&quot;</tt>, and
+<tt>&quot;|&quot;</tt>, which may be the wrong thing to do.
+(Sometimes, though, it&rsquo;s the right thing.) Three-arg
+open can also help protect against this translation in cases
+where it is undesirable.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t use
+<tt>&quot;:&quot;</tt> as a part of a filename since many
+systems use that for their own semantics (Mac
+<small>OS</small> Classic for separating pathname
+components, many networking schemes and utilities for
+separating the nodename and the pathname, and so on). For
+the same reasons, avoid <tt>&quot;@&quot;</tt>,
+<tt>&quot;;&quot;</tt> and <tt>&quot;|&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume that in pathnames you can collapse two leading
+slashes <tt>&quot;//&quot;</tt> into one: some networking
+and clustering filesystems have special semantics for that.
+Let the operating system to sort it out.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>portable
+filename characters</i> as defined by <small>ANSI</small> C
+are</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> a b c d e f g h i j k l m n o p q r t u v w x y z
+ A B C D E F G H I J K L M N O P Q R T U V W X Y Z
+ 0 1 2 3 4 5 6 7 8 9
+ . _ &minus;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">and the
+&quot;&minus;&quot; shouldn&rsquo;t be the first character.
+If you want to be hypercorrect, stay case-insensitive and
+within the 8.3 naming convention (all the files and
+directories have to be unique within one directory if their
+names are lowercased and truncated to eight characters
+before the <tt>&quot;.&quot;</tt>, if any, and to three
+characters after the <tt>&quot;.&quot;</tt>, if any). (And
+do not use <tt>&quot;.&quot;</tt>s in directory names.)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>System
+Interaction</b> <br>
+Not all platforms provide a command line. These are usually
+platforms that rely primarily on a Graphical User Interface
+( <small>GUI</small> ) for user interaction. A program
+requiring a command line interface might not work
+everywhere. This is probably for the user of the program to
+deal with, so don&rsquo;t stay up late worrying about
+it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Some platforms
+can&rsquo;t delete or rename files held open by the system,
+this limitation may also apply to changing filesystem
+metainformation like file permissions or owners. Remember to
+<tt>&quot;close&quot;</tt> files when you are done with
+them. Don&rsquo;t <tt>&quot;unlink&quot;</tt> or
+<tt>&quot;rename&quot;</tt> an open file. Don&rsquo;t
+<tt>&quot;tie&quot;</tt> or <tt>&quot;open&quot;</tt> a file
+already tied or opened; <tt>&quot;untie&quot;</tt> or
+<tt>&quot;close&quot;</tt> it first.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+open the same file more than once at a time for writing, as
+some operating systems put mandatory locks on such
+files.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume that write/modify permission on a directory gives the
+right to add or delete files/directories in that directory.
+That is filesystem specific: in some filesystems you need
+write/modify permission also (or even just) in the
+file/directory itself. In some filesystems (
+<small>AFS</small> , <small>DFS</small> ) the permission to
+add/delete directory entries is a completely separate
+permission.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume that a single <tt>&quot;unlink&quot;</tt> completely
+gets rid of the file: some filesystems (most notably the
+ones in <small>VMS</small> ) have versioned filesystems, and
+<i>unlink()</i> removes only the most recent one (it
+doesn&rsquo;t remove all the versions because by default the
+native tools on those platforms remove just the most recent
+version, too). The portable idiom to remove all the versions
+of a file is</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    1 while unlink &quot;file&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This will
+terminate if the file is undeleteable for some reason
+(protected, not there, and so on).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+count on a specific environment variable existing in
+<tt>%ENV</tt>. Don&rsquo;t count on <tt>%ENV</tt> entries
+being case-sensitive, or even case-preserving. Don&rsquo;t
+try to clear <tt>%ENV</tt> by saying <tt>&quot;%ENV =
+();&quot;</tt>, or, if you really have to, make it
+conditional on <tt>&quot;$^O ne 'VMS'&quot;</tt> since in
+<small>VMS</small> the <tt>%ENV</tt> table is much more than
+a per-process key-value string table.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On
+<small>VMS</small> , some entries in the <tt>%ENV</tt> hash
+are dynamically created when their key is used on a read if
+they did not previously exist. The values for
+<tt>$ENV{HOME}</tt>, <tt>$ENV{TERM}</tt>,
+<tt>$ENV{HOME}</tt>, and <tt>$ENV{USER}</tt>, are known to
+be dynamically generated. The specific names that are
+dynamically generated may vary with the version of the C
+library on <small>VMS</small> , and more may exist than is
+documented.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On
+<small>VMS</small> by default, changes to the <tt>%ENV</tt>
+hash are persistent after the process exits. This can cause
+unintended issues.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+count on signals or <tt>%SIG</tt> for anything.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+count on filename globbing. Use
+<tt>&quot;opendir&quot;</tt>, <tt>&quot;readdir&quot;</tt>,
+and <tt>&quot;closedir&quot;</tt> instead.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+count on per-program environment variables, or per-program
+current directories.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+count on specific values of <tt>$!</tt>, neither numeric nor
+especially the strings values. Users may switch their
+locales causing error messages to be translated into their
+languages. If you can trust a POSIXish environment, you can
+portably use the symbols defined by the Errno module, like
+<small>ENOENT</small> . And don&rsquo;t trust on the values
+of <tt>$!</tt> at all except immediately after a failed
+system call.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Command
+names versus file pathnames</b> <br>
+Don&rsquo;t assume that the name used to invoke a command or
+program with <tt>&quot;system&quot;</tt> or
+<tt>&quot;exec&quot;</tt> can also be used to test for the
+existence of the file that holds the executable code for
+that command or program. First, many systems have
+&quot;internal&quot; commands that are built-in to the shell
+or <small>OS</small> and while these commands can be
+invoked, there is no corresponding file. Second, some
+operating systems (e.g., Cygwin, <small>DJGPP</small> ,
+<small>OS/2</small> , and <small>VOS</small> ) have required
+suffixes for executable files; these suffixes are generally
+permitted on the command name but are not required. Thus, a
+command like &quot;perl&quot; might exist in a file named
+&quot;perl&quot;, &quot;perl.exe&quot;, or
+&quot;perl.pm&quot;, depending on the operating system. The
+variable &quot;_exe&quot; in the Config module holds the
+executable suffix, if any. Third, the <small>VMS</small>
+port carefully sets up $^X and <tt>$Config</tt>{perlpath} so
+that no further processing is required. This is just as
+well, because the matching regular expression used below
+would then have to deal with a possible trailing version
+number in the <small>VMS</small> file name.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To convert $^X
+to a file pathname, taking account of the requirements of
+the various operating system possibilities, say:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> use Config;
+ my $thisperl = $^X;
+ if ($^O ne 'VMS')
+    {$thisperl .= $Config{_exe} unless $thisperl =~ m/$Config{_exe}$/i;}</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To convert
+<tt>$Config</tt>{perlpath} to a file pathname, say:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> use Config;
+ my $thisperl = $Config{perlpath};
+ if ($^O ne 'VMS')
+    {$thisperl .= $Config{_exe} unless $thisperl =~ m/$Config{_exe}$/i;}</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Networking</b>
+<br>
+Don&rsquo;t assume that you can reach the public
+Internet.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume that there is only one way to get through firewalls
+to the public Internet.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume that you can reach outside world through any other
+port than 80, or some web proxy. ftp is blocked by many
+firewalls.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume that you can send email by connecting to the local
+<small>SMTP</small> port.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume that you can reach yourself or any node by the name
+&rsquo;localhost&rsquo;. The same goes for
+&rsquo;127.0.0.1&rsquo;. You will have to try both.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume that the host has only one network card, or that it
+can&rsquo;t bind to many virtual <small>IP</small>
+addresses.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume a particular network device name.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume a particular set of <i>ioctl()</i>s will work.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume that you can ping hosts and get replies.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume that any particular port (service) will respond.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume that Sys::Hostname (or any other <small>API</small>
+or command) returns either a fully qualified hostname or a
+non-qualified hostname: it all depends on how the system had
+been configured. Also remember that for things such as
+<small>DHCP</small> and <small>NAT</small> , the hostname
+you get back might not be very useful.</p>
+
+<p style="margin-left:11%; margin-top: 1em">All the above
+&quot;don&rsquo;t&quot;:s may look daunting, and they are,
+but the key is to degrade gracefully if one cannot reach the
+particular network service one wants. Croaking or hanging do
+not look very professional.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Interprocess
+Communication ( <small>IPC</small> )</b> <br>
+In general, don&rsquo;t directly access the system in code
+meant to be portable. That means, no
+<tt>&quot;system&quot;</tt>, <tt>&quot;exec&quot;</tt>,
+<tt>&quot;fork&quot;</tt>, <tt>&quot;pipe&quot;</tt>,
+<tt>&quot;``&quot;</tt>, <tt>&quot;qx//&quot;</tt>,
+<tt>&quot;open&quot;</tt> with a <tt>&quot;|&quot;</tt>, nor
+any of the other things that makes being a perl hacker worth
+being.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Commands that
+launch external processes are generally supported on most
+platforms (though many of them do not support any type of
+forking). The problem with using them arises from what you
+invoke them on. External tools are often named differently
+on different platforms, may not be available in the same
+location, might accept different arguments, can behave
+differently, and often present their results in a
+platform-dependent way. Thus, you should seldom depend on
+them to produce consistent results. (Then again, if
+you&rsquo;re calling <i>netstat &minus;a</i>, you probably
+don&rsquo;t expect it to run on both Unix and
+<small>CP/M</small> .)</p>
+
+<p style="margin-left:11%; margin-top: 1em">One especially
+common bit of Perl code is opening a pipe to
+<b>sendmail</b>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open(MAIL, '|/usr/lib/sendmail &minus;t')
+        or die &quot;cannot fork sendmail: $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is fine
+for systems programming when sendmail is known to be
+available. But it is not fine for many non-Unix systems, and
+even some Unix systems that may not have sendmail installed.
+If a portable solution is needed, see the various
+distributions on <small>CPAN</small> that deal with it.
+Mail::Mailer and Mail::Send in the MailTools distribution
+are commonly used, and provide several mailing methods,
+including mail, sendmail, and direct <small>SMTP</small>
+(via Net::SMTP) if a mail transfer agent is not available.
+Mail::Sendmail is a standalone module that provides simple,
+platform-independent mailing.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The Unix System
+V <small>IPC</small> (<tt>&quot;msg*(), sem*(),
+shm*()&quot;</tt>) is not available even on all Unix
+platforms.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Do not use
+either the bare result of <tt>&quot;pack(&quot;N&quot;, 10,
+20, 30, 40)&quot;</tt> or bare v&minus;strings (such as
+<tt>&quot;v10.20.30.40&quot;</tt>) to represent IPv4
+addresses: both forms just pack the four bytes into network
+order. That this would be equal to the C language
+<tt>&quot;in_addr&quot;</tt> struct (which is what the
+socket code internally uses) is not guaranteed. To be
+portable use the routines of the Socket extension, such as
+<tt>&quot;inet_aton()&quot;</tt>,
+<tt>&quot;inet_ntoa()&quot;</tt>, and
+<tt>&quot;sockaddr_in()&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The rule of
+thumb for portable code is: Do it all in portable Perl, or
+use a module (that may internally implement it with
+platform-specific code, but expose a common interface).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>External
+Subroutines ( <small>XS</small> )</b> <small><br>
+XS</small> code can usually be made to work with any
+platform, but dependent libraries, header files, etc., might
+not be readily available or portable, or the
+<small>XS</small> code itself might be platform-specific,
+just as Perl code might be. If the libraries and headers are
+portable, then it is normally reasonable to make sure the
+<small>XS</small> code is portable, too.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A different
+type of portability issue arises when writing
+<small>XS</small> code: availability of a C compiler on the
+end-user&rsquo;s system. C brings with it its own
+portability issues, and writing <small>XS</small> code will
+expose you to some of those. Writing purely in Perl is an
+easier way to achieve portability.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Standard
+Modules</b> <br>
+In general, the standard modules work across platforms.
+Notable exceptions are the <small>CPAN</small> module (which
+currently makes connections to external programs that may
+not be available), platform-specific modules (like
+ExtUtils::MM_VMS), and <small>DBM</small> modules.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is no one
+<small>DBM</small> module available on all platforms.
+SDBM_File and the others are generally available on all Unix
+and DOSish ports, but not in MacPerl, where only NBDM_File
+and DB_File are available.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The good news
+is that at least some <small>DBM</small> module should be
+available, and AnyDBM_File will use whichever module it can
+find. Of course, then the code needs to be fairly strict,
+dropping to the greatest common factor (e.g., not exceeding
+1K for each record), so that it will work with any
+<small>DBM</small> module. See AnyDBM_File for more
+details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Time and
+Date</b> <br>
+The system&rsquo;s notion of time of day and calendar date
+is controlled in widely different ways. Don&rsquo;t assume
+the timezone is stored in <tt>$ENV{TZ}</tt>, and even if it
+is, don&rsquo;t assume that you can control the timezone
+through that variable. Don&rsquo;t assume anything about the
+three-letter timezone abbreviations (for example that
+<small>MST</small> would be the Mountain Standard Time,
+it&rsquo;s been known to stand for Moscow Standard Time). If
+you need to use timezones, express them in some unambiguous
+format like the exact number of minutes offset from
+<small>UTC</small> , or the <small>POSIX</small> timezone
+format.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume that the epoch starts at 00:00:00, January 1, 1970,
+because that is <small>OS&minus;</small> and
+implementation-specific. It is better to store a date in an
+unambiguous representation. The <small>ISO</small> 8601
+standard defines YYYY-MM-DD as the date format, or
+<small>YYYY&minus;MM&minus;DDTHH:MM:SS</small> (that&rsquo;s
+a literal &quot;T&quot; separating the date from the time).
+Please do use the <small>ISO</small> 8601 instead of making
+us guess what date 02/03/04 might be. <small>ISO</small>
+8601 even sorts nicely as-is. A text representation (like
+&quot;1987&minus;12&minus;18&quot;) can be easily converted
+into an OS-specific value using a module like Date::Parse.
+An array of values, such as those returned by
+<tt>&quot;localtime&quot;</tt>, can be converted to an
+OS-specific representation using Time::Local.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When
+calculating specific times, such as for tests in time or
+date modules, it may be appropriate to calculate an offset
+for the epoch.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    require Time::Local;
+    my $offset = Time::Local::timegm(0, 0, 0, 1, 0, 70);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The value for
+<tt>$offset</tt> in Unix will be <tt>0</tt>, but in Mac
+<small>OS</small> Classic will be some large number.
+<tt>$offset</tt> can then be added to a Unix time value to
+get what should be the proper value on any system.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Character
+sets and character encoding</b> <br>
+Assume very little about character sets.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Assume nothing
+about numerical values (<tt>&quot;ord&quot;</tt>,
+<tt>&quot;chr&quot;</tt>) of characters. Do not use explicit
+code point ranges (like \xHH&minus;\xHH); use for example
+symbolic character classes like
+<tt>&quot;[:print:]&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Do not assume
+that the alphabetic characters are encoded contiguously (in
+the numeric sense). There may be gaps.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Do not assume
+anything about the ordering of the characters. The lowercase
+letters may come before or after the uppercase letters; the
+lowercase and uppercase may be interlaced so that both
+&quot;a&quot; and &quot;A&quot; come before &quot;b&quot;;
+the accented and other international characters may be
+interlaced so that ae comes before &quot;b&quot;.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Internationalisation</b>
+<br>
+If you may assume <small>POSIX</small> (a rather large
+assumption), you may read more about the
+<small>POSIX</small> locale system from perllocale. The
+locale system at least attempts to make things a little bit
+more portable, or at least more convenient and
+native-friendly for non-English users. The system affects
+character sets and encoding, and date and time
+formatting--amongst other things.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you really
+want to be international, you should consider Unicode. See
+perluniintro and perlunicode for more information.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+use non-ASCII bytes (outside the bytes 0x00..0x7f) in the
+&quot;source code&quot; of your code, to be portable you
+have to be explicit about what bytes they are. Someone might
+for example be using your code under a
+<small>UTF&minus;8</small> locale, in which case random
+native bytes might be illegal (&quot;Malformed
+<small>UTF&minus;8</small> ...&quot;) This means that for
+example embedding <small>ISO</small> 8859&minus;1 bytes
+beyond 0x7f into your strings might cause trouble later. If
+the bytes are native 8&minus;bit bytes, you can use the
+<tt>&quot;bytes&quot;</tt> pragma. If the bytes are in a
+string (regular expression being a curious string), you can
+often also use the <tt>&quot;\xHH&quot;</tt> notation
+instead of embedding the bytes as-is. (If you want to write
+your code in <small>UTF&minus;8</small> , you can use the
+<tt>&quot;utf8&quot;</tt>.) The <tt>&quot;bytes&quot;</tt>
+and <tt>&quot;utf8&quot;</tt> pragmata are available since
+Perl 5.6.0.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>System
+Resources</b> <br>
+If your code is destined for systems with severely
+constrained (or missing!) virtual memory systems then you
+want to be <i>especially</i> mindful of avoiding wasteful
+constructs such as:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my @lines = &lt;$very_large_file&gt;;            # bad
+    while (&lt;$fh&gt;) {$file .= $_}                # sometimes bad
+    my $file = join('', &lt;$fh&gt;);                # better</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The last two
+constructs may appear unintuitive to most people. The first
+repeatedly grows a string, whereas the second allocates a
+large chunk of memory in one go. On some systems, the second
+is more efficient that the first.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Security</b>
+<br>
+Most multi-user platforms provide basic levels of security,
+usually implemented at the filesystem level. Some, however,
+unfortunately do not. Thus the notion of user id, or
+&quot;home&quot; directory, or even the state of being
+logged-in, may be unrecognizable on many platforms. If you
+write programs that are security-conscious, it is usually
+best to know what type of system you will be running under
+so that you can write code explicitly for that platform (or
+class of platforms).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume the Unix filesystem access semantics: the operating
+system or the filesystem may be using some
+<small>ACL</small> systems, which are richer languages than
+the usual rwx. Even if the rwx exist, their semantics might
+be different.</p>
+
+<p style="margin-left:11%; margin-top: 1em">(From security
+viewpoint testing for permissions before attempting to do
+something is silly anyway: if one tries this, there is
+potential for race conditions. Someone or something might
+change the permissions between the permissions check and the
+actual operation. Just try the operation.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume the Unix user and group semantics: especially,
+don&rsquo;t expect the <tt>$&lt;</tt> and <tt>$&gt;</tt> (or
+the <tt>$(</tt> and <tt>$)</tt>) to work for switching
+identities (or memberships).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Don&rsquo;t
+assume set-uid and set-gid semantics. (And even if you do,
+think twice: set-uid and set-gid are a known can of security
+worms.)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Style</b>
+<br>
+For those times when it is necessary to have
+platform-specific code, consider keeping the
+platform-specific code in one place, making porting to other
+platforms easier. Use the Config module and the special
+variable <tt>$^O</tt> to differentiate platforms, as
+described in &quot; <small>PLATFORMS</small> &quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Be careful in
+the tests you supply with your module or programs. Module
+code may be fully portable, but its tests might not be. This
+often happens when tests spawn off other processes or call
+external programs to aid in the testing, or when (as noted
+above) the tests assume certain things about the filesystem
+and paths. Be careful not to depend on a specific output
+style for errors, such as when checking <tt>$!</tt> after a
+failed system call. Using <tt>$!</tt> for anything else than
+displaying it as output is doubtful (though see the Errno
+module for testing reasonably portably for error value).
+Some platforms expect a certain output format, and Perl on
+those platforms may have been adjusted accordingly. Most
+specifically, don&rsquo;t anchor a regex when testing an
+error value.</p>
+
+<h2>CPAN Testers
+<a name="CPAN Testers"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Modules
+uploaded to <small>CPAN</small> are tested by a variety of
+volunteers on different platforms. These <small>CPAN</small>
+testers are notified by mail of each new upload, and reply
+to the list with <small>PASS</small> , <small>FAIL</small> ,
+<small>NA</small> (not applicable to this platform), or
+<small>UNKNOWN</small> (unknown), along with any relevant
+notations.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The purpose of
+the testing is twofold: one, to help developers fix any
+problems in their code that crop up because of lack of
+testing on other platforms; two, to provide users with
+information about whether a given module works on a given
+platform.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also see:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="71%">
+
+
+<p>Mailing list:
+cpan&minus;testers&minus;discuss@perl.org</p> </td>
+<td width="12%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="71%">
+
+
+<p>Testing results: &lt;http://www.cpantesters.org/&gt;</p></td>
+<td width="12%">
+</td></tr>
+</table>
+
+<h2>PLATFORMS
+<a name="PLATFORMS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">As of version
+5.002, Perl is built with a <tt>$^O</tt> variable that
+indicates the operating system it was built on. This was
+implemented to help speed up code that would otherwise have
+to <tt>&quot;use Config&quot;</tt> and use the value of
+<tt>$Config{osname}</tt>. Of course, to get more detailed
+information about the system, looking into <tt>%Config</tt>
+is certainly recommended.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>%Config</tt>
+cannot always be trusted, however, because it was built at
+compile time. If perl was built in one place, then
+transferred elsewhere, some values may be wrong. The values
+may even have been edited after the fact.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Unix</b>
+<br>
+Perl works on a bewildering variety of Unix and Unix-like
+platforms (see e.g. most of the files in the <i>hints/</i>
+directory in the source code kit). On most of these systems,
+the value of <tt>$^O</tt> (hence <tt>$Config{'osname'}</tt>,
+too) is determined either by lowercasing and stripping
+punctuation from the first field of the string returned by
+typing <tt>&quot;uname &minus;a&quot;</tt> (or a similar
+command) at the shell prompt or by testing the file system
+for the presence of uniquely named files such as a kernel or
+header file. Here, for example, are a few of the more
+popular Unix flavors:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    uname         $^O        $Config{'archname'}
+    &minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;
+    AIX           aix        aix
+    BSD/OS        bsdos      i386&minus;bsdos
+    Darwin        darwin     darwin
+    dgux          dgux       AViiON&minus;dgux
+    DYNIX/ptx     dynixptx   i386&minus;dynixptx
+    FreeBSD       freebsd    freebsd&minus;i386
+    Haiku         haiku      BePC&minus;haiku
+    Linux         linux      arm&minus;linux
+    Linux         linux      i386&minus;linux
+    Linux         linux      i586&minus;linux
+    Linux         linux      ppc&minus;linux
+    HP&minus;UX         hpux       PA&minus;RISC1.1
+    IRIX          irix       irix
+    Mac OS X      darwin     darwin
+    NeXT 3        next       next&minus;fat
+    NeXT 4        next       OPENSTEP&minus;Mach
+    openbsd       openbsd    i386&minus;openbsd
+    OSF1          dec_osf    alpha&minus;dec_osf
+    reliantunix&minus;n svr4       RM400&minus;svr4
+    SCO_SV        sco_sv     i386&minus;sco_sv
+    SINIX&minus;N       svr4       RM400&minus;svr4
+    sn4609        unicos     CRAY_C90&minus;unicos
+    sn6521        unicosmk   t3e&minus;unicosmk
+    sn9617        unicos     CRAY_J90&minus;unicos
+    SunOS         solaris    sun4&minus;solaris
+    SunOS         solaris    i86pc&minus;solaris
+    SunOS4        sunos      sun4&minus;sunos</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Because the
+value of <tt>$Config{archname}</tt> may depend on the
+hardware architecture, it can vary more than the value of
+<tt>$^O</tt>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>DOS</small>
+and Derivatives</b> <br>
+Perl has long been ported to Intel-style microcomputers
+running under systems like PC-DOS, MS-DOS,
+<small>OS/2</small> , and most Windows platforms you can
+bring yourself to mention (except for Windows
+<small>CE</small> , if you count that). Users familiar with
+<i><small>COMMAND</small> .COM</i> or <i><small>CMD</small>
+.EXE</i> style shells should be aware that each of these
+file specifications may have subtle differences:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my $filespec0 = &quot;c:/foo/bar/file.txt&quot;;
+    my $filespec1 = &quot;c:\\foo\\bar\\file.txt&quot;;
+    my $filespec2 = 'c:\foo\bar\file.txt';
+    my $filespec3 = 'c:\\foo\\bar\\file.txt';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">System calls
+accept either <tt>&quot;/&quot;</tt> or
+<tt>&quot;\&quot;</tt> as the path separator. However, many
+command-line utilities of <small>DOS</small> vintage treat
+<tt>&quot;/&quot;</tt> as the option prefix, so may get
+confused by filenames containing <tt>&quot;/&quot;</tt>.
+Aside from calling any external programs,
+<tt>&quot;/&quot;</tt> will work just fine, and probably
+better, as it is more consistent with popular usage, and
+avoids the problem of remembering what to backwhack and what
+not to.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <small>DOS
+FAT</small> filesystem can accommodate only &quot;8.3&quot;
+style filenames. Under the &quot;case-insensitive, but
+case-preserving&quot; <small>HPFS</small> (
+<small>OS/2</small> ) and <small>NTFS</small> (
+<small>NT</small> ) filesystems you may have to be careful
+about case returned with functions like
+<tt>&quot;readdir&quot;</tt> or used with functions like
+<tt>&quot;open&quot;</tt> or
+<tt>&quot;opendir&quot;</tt>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>DOS</small>
+also treats several filenames as special, such as
+<small>AUX</small> , <small>PRN</small> , <small>NUL</small>
+, <small>CON</small> , <small>COM1</small> ,
+<small>LPT1</small> , <small>LPT2</small> , etc.
+Unfortunately, sometimes these filenames won&rsquo;t even
+work if you include an explicit directory prefix. It is best
+to avoid such filenames, if you want your code to be
+portable to <small>DOS</small> and its derivatives.
+It&rsquo;s hard to know what these all are,
+unfortunately.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Users of these
+operating systems may also wish to make use of scripts such
+as <i>pl2bat.bat</i> or <i>pl2cmd</i> to put wrappers around
+your scripts.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Newline
+(<tt>&quot;\n&quot;</tt>) is translated as
+<tt>&quot;\015\012&quot;</tt> by <small>STDIO</small> when
+reading from and writing to files (see
+&quot;Newlines&quot;).
+<tt>&quot;binmode(FILEHANDLE)&quot;</tt> will keep
+<tt>&quot;\n&quot;</tt> translated as
+<tt>&quot;\012&quot;</tt> for that filehandle. Since it is a
+no-op on other systems, <tt>&quot;binmode&quot;</tt> should
+be used for cross-platform code that deals with binary data.
+That&rsquo;s assuming you realize in advance that your data
+is in binary. General-purpose programs should often assume
+nothing about their data.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>$^O</tt> variable and the <tt>$Config{archname}</tt>
+values for various DOSish perls are as follows:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">     OS            $^O      $Config{archname}   ID    Version
+     &minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;
+     MS&minus;DOS        dos        ?
+     PC&minus;DOS        dos        ?
+     OS/2          os2        ?
+     Windows 3.1   ?          ?                 0      3 01
+     Windows 95    MSWin32    MSWin32&minus;x86       1      4 00
+     Windows 98    MSWin32    MSWin32&minus;x86       1      4 10
+     Windows ME    MSWin32    MSWin32&minus;x86       1      ?
+     Windows NT    MSWin32    MSWin32&minus;x86       2      4 xx
+     Windows NT    MSWin32    MSWin32&minus;ALPHA     2      4 xx
+     Windows NT    MSWin32    MSWin32&minus;ppc       2      4 xx
+     Windows 2000  MSWin32    MSWin32&minus;x86       2      5 00
+     Windows XP    MSWin32    MSWin32&minus;x86       2      5 01
+     Windows 2003  MSWin32    MSWin32&minus;x86       2      5 02
+     Windows Vista MSWin32    MSWin32&minus;x86       2      6 00
+     Windows 7     MSWin32    MSWin32&minus;x86       2      6 01
+     Windows 7     MSWin32    MSWin32&minus;x64       2      6 01
+     Windows 2008  MSWin32    MSWin32&minus;x86       2      6 01
+     Windows 2008  MSWin32    MSWin32&minus;x64       2      6 01
+     Windows CE    MSWin32    ?                 3
+     Cygwin        cygwin     cygwin</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The various
+MSWin32 Perl&rsquo;s can distinguish the <small>OS</small>
+they are running on via the value of the fifth element of
+the list returned from <i>Win32::GetOSVersion()</i>. For
+example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    if ($^O eq 'MSWin32') {
+        my @os_version_info = Win32::GetOSVersion();
+        print +('3.1','95','NT')[$os_version_info[4]],&quot;\n&quot;;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">There are also
+<i>Win32::IsWinNT()</i> and <i>Win32::IsWin95()</i>, try
+<tt>&quot;perldoc Win32&quot;</tt>, and as of libwin32 0.19
+(not part of the core Perl distribution)
+<i>Win32::GetOSName()</i>. The very portable
+<i>POSIX::uname()</i> will work too:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    c:\&gt; perl &minus;MPOSIX &minus;we &quot;print join '|', uname&quot;
+    Windows NT|moonru|5.0|Build 2195 (Service Pack 2)|x86</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Also see:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The djgpp environment for
+<small>DOS</small> , &lt;http://www.delorie.com/djgpp/&gt;
+and perldos.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The <small>EMX</small> environment for
+<small>DOS</small> , <small>OS/2</small> , etc.
+emx@iaehv.nl, &lt;ftp://hobbes.nmsu.edu/pub/os2/dev/emx/&gt;
+Also perlos2.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Build instructions for Win32 in perlwin32, or under the
+Cygnus environment in perlcygwin.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The <tt>&quot;Win32::*&quot;</tt> modules in Win32.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The ActiveState Pages,
+&lt;http://www.activestate.com/&gt;</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The Cygwin environment for Win32;
+<i><small>README</small> .cygwin</i> (installed as
+perlcygwin), &lt;http://www.cygwin.com/&gt;</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The U/WIN environment for Win32,
+&lt;http://www.research.att.com/sw/tools/uwin/&gt;</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Build instructions for <small>OS/2</small> , perlos2</p></td></tr>
+</table>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>VMS</small></b>
+<br>
+Perl on <small>VMS</small> is discussed in perlvms in the
+perl distribution.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The official
+name of <small>VMS</small> as of this writing is
+OpenVMS.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl on
+<small>VMS</small> can accept either
+<small>VMS&minus;</small> or Unix-style file specifications
+as in either of the following:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl &minus;ne &quot;print if /perl_setup/i&quot; SYS$LOGIN:LOGIN.COM
+    $ perl &minus;ne &quot;print if /perl_setup/i&quot; /sys$login/login.com</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">but not a
+mixture of both as in:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl &minus;ne &quot;print if /perl_setup/i&quot; sys$login:/login.com
+    Can't open sys$login:/login.com: file specification syntax error</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Interacting
+with Perl from the Digital Command Language (
+<small>DCL</small> ) shell often requires a different set of
+quotation marks than Unix shells do. For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl &minus;e &quot;print &quot;&quot;Hello, world.\n&quot;&quot;&quot;
+    Hello, world.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">There are
+several ways to wrap your perl scripts in <small>DCL</small>
+<i>.COM</i> files, if you are so inclined. For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ write sys$output &quot;Hello from DCL!&quot;
+    $ if p1 .eqs. &quot;&quot;
+    $ then perl &minus;x 'f$environment(&quot;PROCEDURE&quot;)
+    $ else perl &minus;x &minus; 'p1 'p2 'p3 'p4 'p5 'p6 'p7 'p8
+    $ deck/dollars=&quot;__END__&quot;
+    #!/usr/bin/perl
+    print &quot;Hello from Perl!\n&quot;;
+    __END__
+    $ endif</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Do take care
+with <tt>&quot;$ ASSIGN/nolog/user SYS$COMMAND:
+SYS$INPUT&quot;</tt> if your perl-in-DCL script expects to
+do things like <tt>&quot;$read =
+&lt;STDIN&gt;;&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<small>VMS</small> operating system has two filesystems,
+known as <small>ODS&minus;2</small> and
+<small>ODS&minus;5</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+<small>ODS&minus;2</small> , filenames are in the format
+&quot;name.extension;version&quot;. The maximum length for
+filenames is 39 characters, and the maximum length for
+extensions is also 39 characters. Version is a number from 1
+to 32767. Valid characters are
+<tt>&quot;/[A&minus;Z0&minus;9$_&minus;]/&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<small>ODS&minus;2</small> filesystem is case-insensitive
+and does not preserve case. Perl simulates this by
+converting all filenames to lowercase internally.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+<small>ODS&minus;5</small> , filenames may have almost any
+character in them and can include Unicode characters.
+Characters that could be misinterpreted by the
+<small>DCL</small> shell or file parsing utilities need to
+be prefixed with the <tt>&quot;^&quot;</tt> character, or
+replaced with hexadecimal characters prefixed with the
+<tt>&quot;^&quot;</tt> character. Such prefixing is only
+needed with the pathnames are in <small>VMS</small> format
+in applications. Programs that can accept the Unix format of
+pathnames do not need the escape characters. The maximum
+length for filenames is 255 characters. The
+<small>ODS&minus;5</small> file system can handle both a
+case preserved and a case sensitive mode.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>ODS&minus;5</small>
+is only available on the OpenVMS for 64 bit platforms.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Support for the
+extended file specifications is being done as optional
+settings to preserve backward compatibility with Perl
+scripts that assume the previous <small>VMS</small>
+limitations.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In general
+routines on <small>VMS</small> that get a Unix format file
+specification should return it in a Unix format, and when
+they get a <small>VMS</small> format specification they
+should return a <small>VMS</small> format unless they are
+documented to do a conversion.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For routines
+that generate return a file specification,
+<small>VMS</small> allows setting if the C library which
+Perl is built on if it will be returned in
+<small>VMS</small> format or in Unix format.</p>
+
+<p style="margin-left:11%; margin-top: 1em">With the
+<small>ODS&minus;2</small> file system, there is not much
+difference in syntax of filenames without paths for
+<small>VMS</small> or Unix. With the extended character set
+available with <small>ODS&minus;5</small> there can be a
+significant difference.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Because of
+this, existing Perl scripts written for <small>VMS</small>
+were sometimes treating <small>VMS</small> and Unix
+filenames interchangeably. Without the extended character
+set enabled, this behavior will mostly be maintained for
+backwards compatibility.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When extended
+characters are enabled with <small>ODS&minus;5</small> , the
+handling of Unix formatted file specifications is to that of
+a Unix system.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>VMS</small>
+file specifications without extensions have a trailing dot.
+An equivalent Unix file specification should not show the
+trailing dot.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The result of
+all of this, is that for <small>VMS</small> , for portable
+scripts, you can not depend on Perl to present the filenames
+in lowercase, to be case sensitive, and that the filenames
+could be returned in either Unix or <small>VMS</small>
+format.</p>
+
+<p style="margin-left:11%; margin-top: 1em">And if a
+routine returns a file specification, unless it is intended
+to convert it, it should return it in the same format as it
+found it.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;readdir&quot;</tt>
+by default has traditionally returned lowercased filenames.
+When the <small>ODS&minus;5</small> support is enabled, it
+will return the exact case of the filename on the disk.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Files without
+extensions have a trailing period on them, so doing a
+<tt>&quot;readdir&quot;</tt> in the default mode with a file
+named <i>A.;5</i> will return <i>a.</i> when
+<small>VMS</small> is (though that file could be opened with
+<tt>&quot;open(FH, 'A')&quot;</tt>).</p>
+
+<p style="margin-left:11%; margin-top: 1em">With support
+for extended file specifications and if
+<tt>&quot;opendir&quot;</tt> was given a Unix format
+directory, a file named <i>A.;5</i> will return <i>a</i> and
+optionally in the exact case on the disk. When
+<tt>&quot;opendir&quot;</tt> is given a <small>VMS</small>
+format directory, then <tt>&quot;readdir&quot;</tt> should
+return <i>a.</i>, and again with the optionally the exact
+case.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>RMS</small>
+had an eight level limit on directory depths from any rooted
+logical (allowing 16 levels overall) prior to
+<small>VMS</small> 7.2, and even with versions of
+<small>VMS</small> on <small>VAX</small> up through 7.3.
+Hence <tt>&quot;PERL_ROOT:[LIB.2.3.4.5.6.7.8]&quot;</tt> is
+a valid directory specification but
+<tt>&quot;PERL_ROOT:[LIB.2.3.4.5.6.7.8.9]&quot;</tt> is not.
+<i>Makefile.PL</i> authors might have to take this into
+account, but at least they can refer to the former as
+<tt>&quot;/PERL_ROOT/lib/2/3/4/5/6/7/8/&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Pumpkings and
+module integrators can easily see whether files with too
+many directory levels have snuck into the core by running
+the following in the top-level source directory:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> $ perl &minus;ne &quot;$_=~s/\s+.*//; print if scalar(split /\//) &gt; 8;&quot; &lt; MANIFEST</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+VMS::Filespec module, which gets installed as part of the
+build process on <small>VMS</small> , is a pure Perl module
+that can easily be installed on non-VMS platforms and can be
+helpful for conversions to and from <small>RMS</small>
+native formats. It is also now the only way that you should
+check to see if <small>VMS</small> is in a case sensitive
+mode.</p>
+
+<p style="margin-left:11%; margin-top: 1em">What
+<tt>&quot;\n&quot;</tt> represents depends on the type of
+file opened. It usually represents <tt>&quot;\012&quot;</tt>
+but it could also be <tt>&quot;\015&quot;</tt>,
+<tt>&quot;\012&quot;</tt>, <tt>&quot;\015\012&quot;</tt>,
+<tt>&quot;\000&quot;</tt>, <tt>&quot;\040&quot;</tt>, or
+nothing depending on the file organization and record
+format. The VMS::Stdio module provides access to the special
+<i>fopen()</i> requirements of files with unusual attributes
+on <small>VMS</small> .</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>TCP/IP</small>
+stacks are optional on <small>VMS</small> , so socket
+routines might not be implemented. <small>UDP</small>
+sockets may not be supported.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<small>TCP/IP</small> library support for all current
+versions of <small>VMS</small> is dynamically loaded if
+present, so even if the routines are configured, they may
+return a status indicating that they are not
+implemented.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The value of
+<tt>$^O</tt> on OpenVMS is &quot; <small>VMS</small> &quot;.
+To determine the architecture that you are running on
+without resorting to loading all of <tt>%Config</tt> you can
+examine the content of the <tt>@INC</tt> array like so:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    if (grep(/VMS_AXP/, @INC)) {
+        print &quot;I'm on Alpha!\n&quot;;
+    } elsif (grep(/VMS_VAX/, @INC)) {
+        print &quot;I'm on VAX!\n&quot;;
+    } elsif (grep(/VMS_IA64/, @INC)) {
+        print &quot;I'm on IA64!\n&quot;;
+    } else {
+        print &quot;I'm not so sure about where $^O is...\n&quot;;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In general, the
+significant differences should only be if Perl is running on
+<small>VMS_VAX</small> or one of the 64 bit OpenVMS
+platforms.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On
+<small>VMS</small> , perl determines the <small>UTC</small>
+offset from the
+<tt>&quot;SYS$TIMEZONE_DIFFERENTIAL&quot;</tt> logical name.
+Although the <small>VMS</small> epoch began at
+17&minus;NOV&minus;1858 00:00:00.00, calls to
+<tt>&quot;localtime&quot;</tt> are adjusted to count offsets
+from 01&minus;JAN&minus;1970 00:00:00.00, just like
+Unix.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also see:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em"><i><small>README</small>
+.vms</i> (installed as <i>README_vms</i>), perlvms</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>vmsperl list, vmsperl&minus;subscribe@perl.org</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>vmsperl on the web,
+&lt;http://www.sidhe.org/vmsperl/index.html&gt;</p> </td></tr>
+</table>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>VOS</small></b>
+<br>
+Perl on <small>VOS</small> (also known as OpenVOS) is
+discussed in <i><small>README</small> .vos</i> in the perl
+distribution (installed as perlvos). Perl on
+<small>VOS</small> can accept either
+<small>VOS&minus;</small> or Unix-style file specifications
+as in either of the following:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl &minus;ne &quot;print if /perl_setup/i&quot; &gt;system&gt;notices
+    $ perl &minus;ne &quot;print if /perl_setup/i&quot; /system/notices</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">or even a
+mixture of both as in:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl &minus;ne &quot;print if /perl_setup/i&quot; &gt;system/notices</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Even though
+<small>VOS</small> allows the slash character to appear in
+object names, because the <small>VOS</small> port of Perl
+interprets it as a pathname delimiting character,
+<small>VOS</small> files, directories, or links whose names
+contain a slash character cannot be processed. Such files
+must be renamed before they can be processed by Perl.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Older releases
+of <small>VOS</small> (prior to OpenVOS Release 17.0) limit
+file names to 32 or fewer characters, prohibit file names
+from starting with a <tt>&quot;&minus;&quot;</tt> character,
+and prohibit file names from containing any character
+matching <tt>&quot;tr/
+!#%&amp;'()*;&lt;=&gt;?//&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Newer releases
+of <small>VOS</small> (OpenVOS Release 17.0 or later)
+support a feature known as extended names. On these
+releases, file names can contain up to 255 characters, are
+prohibited from starting with a <tt>&quot;&minus;&quot;</tt>
+character, and the set of prohibited characters is reduced
+to any character matching
+<tt>&quot;tr/#%*&lt;&gt;?//&quot;</tt>. There are
+restrictions involving spaces and apostrophes: these
+characters must not begin or end a name, nor can they
+immediately precede or follow a period. Additionally, a
+space must not immediately precede another space or hyphen.
+Specifically, the following character combinations are
+prohibited: space-space, space-hyphen, period-space,
+space-period, period-apostrophe, apostrophe-period, leading
+or trailing space, and leading or trailing apostrophe.
+Although an extended file name is limited to 255 characters,
+a path name is still limited to 256 characters.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The value of
+<tt>$^O</tt> on <small>VOS</small> is &quot;
+<small>VOS</small> &quot;. To determine the architecture
+that you are running on without resorting to loading all of
+<tt>%Config</tt> you can examine the content of the
+<tt>@INC</tt> array like so:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    if ($^O =~ /VOS/) {
+        print &quot;I'm on a Stratus box!\n&quot;;
+    } else {
+        print &quot;I'm not on a Stratus box!\n&quot;;
+        die;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Also see:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="51%">
+
+
+<p style="margin-top: 1em"><i><small>README</small>
+.vos</i> (installed as perlvos)</p></td>
+<td width="32%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="51%">
+
+
+<p>The <small>VOS</small> mailing list.</p></td>
+<td width="32%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">There is no
+specific mailing list for Perl on <small>VOS</small> . You
+can post comments to the comp.sys.stratus newsgroup, or use
+the contact information located in the distribution files on
+the Stratus Anonymous <small>FTP</small> site.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="75%">
+
+
+<p style="margin-top: 1em"><small>VOS</small> Perl on the
+web at
+&lt;http://ftp.stratus.com/pub/vos/posix/posix.html&gt;</p> </td>
+<td width="8%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>EBCDIC</small>
+Platforms</b> <br>
+Recent versions of Perl have been ported to platforms such
+as <small>OS/400</small> on <small>AS/400</small>
+minicomputers as well as <small>OS/390</small> ,
+<small>VM/ESA</small> , and <small>BS2000</small> for S/390
+Mainframes. Such computers use <small>EBCDIC</small>
+character sets internally (usually Character Code Set
+<small>ID</small> 0037 for <small>OS/400</small> and either
+1047 or POSIX-BC for S/390 systems). On the mainframe perl
+currently works under the &quot;Unix system services for
+<small>OS/390</small> &quot; (formerly known as
+OpenEdition), <small>VM/ESA</small> OpenEdition, or the
+<small>BS200</small> POSIX-BC system ( <small>BS2000</small>
+is supported in perl 5.6 and greater). See perlos390 for
+details. Note that for <small>OS/400</small> there is also a
+port of Perl 5.8.1/5.9.0 or later to the <small>PASE</small>
+which is ASCII-based (as opposed to <small>ILE</small> which
+is EBCDIC-based), see perlos400.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As of R2.5 of
+<small>USS</small> for <small>OS/390</small> and Version 2.3
+of <small>VM/ESA</small> these Unix sub-systems do not
+support the <tt>&quot;#!&quot;</tt> shebang trick for script
+invocation. Hence, on <small>OS/390</small> and
+<small>VM/ESA</small> perl scripts can be executed with a
+header similar to the following simple script:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    : # use perl
+        eval 'exec /usr/local/bin/perl &minus;S $0 ${1+&quot;$@&quot;}'
+            if 0;
+    #!/usr/local/bin/perl     # just a comment really
+    print &quot;Hello from perl!\n&quot;;</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>OS/390</small>
+will support the <tt>&quot;#!&quot;</tt> shebang trick in
+release 2.8 and beyond. Calls to <tt>&quot;system&quot;</tt>
+and backticks can use <small>POSIX</small> shell syntax on
+all S/390 systems.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On the
+<small>AS/400</small> , if <small>PERL5</small> is in your
+library list, you may need to wrap your perl scripts in a
+<small>CL</small> procedure to invoke them like so:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    BEGIN
+      CALL PGM(PERL5/PERL) PARM('/QOpenSys/hello.pl')
+    ENDPGM</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This will
+invoke the perl script <i>hello.pl</i> in the root of the
+QOpenSys file system. On the <small>AS/400</small> calls to
+<tt>&quot;system&quot;</tt> or backticks must use
+<small>CL</small> syntax.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On these
+platforms, bear in mind that the <small>EBCDIC</small>
+character set may have an effect on what happens with some
+perl functions (such as <tt>&quot;chr&quot;</tt>,
+<tt>&quot;pack&quot;</tt>, <tt>&quot;print&quot;</tt>,
+<tt>&quot;printf&quot;</tt>, <tt>&quot;ord&quot;</tt>,
+<tt>&quot;sort&quot;</tt>, <tt>&quot;sprintf&quot;</tt>,
+<tt>&quot;unpack&quot;</tt>), as well as bit-fiddling with
+<small>ASCII</small> constants using operators like
+<tt>&quot;^&quot;</tt>, <tt>&quot;&amp;&quot;</tt> and
+<tt>&quot;|&quot;</tt>, not to mention dealing with socket
+interfaces to <small>ASCII</small> computers (see
+&quot;Newlines&quot;).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Fortunately,
+most web servers for the mainframe will correctly translate
+the <tt>&quot;\n&quot;</tt> in the following statement to
+its <small>ASCII</small> equivalent (<tt>&quot;\r&quot;</tt>
+is the same under both Unix and <small>OS/390</small> &amp;
+<small>VM/ESA</small> ):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    print &quot;Content&minus;type: text/html\r\n\r\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The values of
+<tt>$^O</tt> on some of these platforms includes:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    uname         $^O        $Config{'archname'}
+    &minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;
+    OS/390        os390      os390
+    OS400         os400      os400
+    POSIX&minus;BC      posix&minus;bc   BS2000&minus;posix&minus;bc
+    VM/ESA        vmesa      vmesa</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Some simple
+tricks for determining if you are running on an
+<small>EBCDIC</small> platform could include any of the
+following (perhaps all):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    if (&quot;\t&quot; eq &quot;\005&quot;)   { print &quot;EBCDIC may be spoken here!\n&quot;; }
+    if (ord('A') == 193) { print &quot;EBCDIC may be spoken here!\n&quot;; }
+    if (chr(169) eq 'z') { print &quot;EBCDIC may be spoken here!\n&quot;; }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">One thing you
+may not want to rely on is the <small>EBCDIC</small>
+encoding of punctuation characters since these may differ
+from code page to code page (and once your module or script
+is rumoured to work with <small>EBCDIC</small> , folks will
+want it to work with all <small>EBCDIC</small> character
+sets).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also see:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">perlos390,
+<i><small>README</small> .os390</i>, <i>perlbs2000</i>,
+<i><small>README</small> .vmesa</i>, perlebcdic.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The perl&minus;mvs@perl.org list is for discussion of
+porting issues as well as general usage issues for all
+<small>EBCDIC</small> Perls. Send a message body of
+&quot;subscribe perl-mvs&quot; to majordomo@perl.org.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><small>AS/400</small> Perl information at
+&lt;http://as400.rochester.ibm.com/&gt; as well as on
+<small>CPAN</small> in the <i>ports/</i> directory.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Acorn
+<small>RISC OS</small></b> <br>
+Because Acorns use <small>ASCII</small> with newlines
+(<tt>&quot;\n&quot;</tt>) in text files as
+<tt>&quot;\012&quot;</tt> like Unix, and because Unix
+filename emulation is turned on by default, most simple
+scripts will probably work &quot;out of the box&quot;. The
+native filesystem is modular, and individual filesystems are
+free to be case-sensitive or insensitive, and are usually
+case-preserving. Some native filesystems have name length
+limits, which file and directory names are silently
+truncated to fit. Scripts should be aware that the standard
+filesystem currently has a name length limit of <b>10</b>
+characters, with up to 77 items in a directory, but other
+filesystems may not impose such limitations.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Native
+filenames are of the form</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Filesystem#Special_Field::DiskName.$.Directory.Directory.File</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">where</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Special_Field is not usually present, but may contain . and $ .
+    Filesystem =~ m|[A&minus;Za&minus;z0&minus;9_]|
+    DsicName   =~ m|[A&minus;Za&minus;z0&minus;9_/]|
+    $ represents the root directory
+    . is the path separator
+    @ is the current directory (per filesystem but machine global)
+    ^ is the parent directory
+    Directory and File =~ m|[^\0&minus; &quot;\.\$\%\&amp;:\@\\^\|\177]+|</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The default
+filename translation is roughly
+<tt>&quot;tr|/.|./|;&quot;</tt></p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+<tt>&quot;&quot;ADFS::HardDisk.$.File&quot; ne
+'ADFS::HardDisk.$.File'&quot;</tt> and that the second stage
+of <tt>&quot;$&quot;</tt> interpolation in regular
+expressions will fall foul of the <tt>$.</tt> if scripts are
+not careful.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Logical paths
+specified by system variables containing comma-separated
+search lists are also allowed; hence
+<tt>&quot;System:Modules&quot;</tt> is a valid filename, and
+the filesystem will prefix <tt>&quot;Modules&quot;</tt> with
+each section of <tt>&quot;System$Path&quot;</tt> until a
+name is made that points to an object on disk. Writing to a
+new file <tt>&quot;System:Modules&quot;</tt> would be
+allowed only if <tt>&quot;System$Path&quot;</tt> contains a
+single item list. The filesystem will also expand system
+variables in filenames if enclosed in angle brackets, so
+<tt>&quot;&lt;System$Dir&gt;.Modules&quot;</tt> would look
+for the file
+<tt>&quot;$ENV{'System$Dir'}&nbsp;.&nbsp;'Modules'&quot;</tt>.
+The obvious implication of this is that <b>fully qualified
+filenames can start with &quot;&lt;&gt;&quot;</b> and should
+be protected when <tt>&quot;open&quot;</tt> is used for
+input.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Because
+<tt>&quot;.&quot;</tt> was in use as a directory separator
+and filenames could not be assumed to be unique after 10
+characters, Acorn implemented the C compiler to strip the
+trailing <tt>&quot;.c&quot; &quot;.h&quot;
+&quot;.s&quot;</tt> and <tt>&quot;.o&quot;</tt> suffix from
+filenames specified in source code and store the respective
+files in subdirectories named after the suffix. Hence files
+are translated:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    foo.h           h.foo
+    C:foo.h         C:h.foo        (logical path variable)
+    sys/os.h        sys.h.os       (C compiler groks Unix&minus;speak)
+    10charname.c    c.10charname
+    10charname.o    o.10charname
+    11charname_.c   c.11charname   (assuming filesystem truncates at 10)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The Unix
+emulation library&rsquo;s translation of filenames to native
+assumes that this sort of translation is required, and it
+allows a user-defined list of known suffixes that it will
+transpose in this fashion. This may seem transparent, but
+consider that with these rules <i>foo/bar/baz.h</i> and
+<i>foo/bar/h/baz</i> both map to <i>foo.bar.h.baz</i>, and
+that <tt>&quot;readdir&quot;</tt> and
+<tt>&quot;glob&quot;</tt> cannot and do not attempt to
+emulate the reverse mapping. Other
+<tt>&quot;.&quot;</tt>&rsquo;s in filenames are translated
+to <tt>&quot;/&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As implied
+above, the environment accessed through <tt>%ENV</tt> is
+global, and the convention is that program specific
+environment variables are of the form
+<tt>&quot;Program$Name&quot;</tt>. Each filesystem maintains
+a current directory, and the current filesystem&rsquo;s
+current directory is the <b>global</b> current directory.
+Consequently, sociable programs don&rsquo;t change the
+current directory but rely on full pathnames, and programs
+(and Makefiles) cannot assume that they can spawn a child
+process which can change the current directory without
+affecting its parent (and everyone else for that
+matter).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Because native
+operating system filehandles are global and are currently
+allocated down from 255, with 0 being a reserved value, the
+Unix emulation library emulates Unix filehandles.
+Consequently, you can&rsquo;t rely on passing
+<tt>&quot;STDIN&quot;</tt>, <tt>&quot;STDOUT&quot;</tt>, or
+<tt>&quot;STDERR&quot;</tt> to your children.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The desire of
+users to express filenames of the form
+<tt>&quot;&lt;Foo$Dir&gt;.Bar&quot;</tt> on the command line
+unquoted causes problems, too: <tt>&quot;``&quot;</tt>
+command output capture has to perform a guessing game. It
+assumes that a string
+<tt>&quot;&lt;[^&lt;&gt;]+\$[^&lt;&gt;]&gt;&quot;</tt> is a
+reference to an environment variable, whereas anything else
+involving <tt>&quot;&lt;&quot;</tt> or
+<tt>&quot;&gt;&quot;</tt> is redirection, and generally
+manages to be 99% right. Of course, the problem remains that
+scripts cannot rely on any Unix tools being available, or
+that any tools found have Unix-like command line
+arguments.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Extensions and
+<small>XS</small> are, in theory, buildable by anyone using
+free tools. In practice, many don&rsquo;t, as users of the
+Acorn platform are used to binary distributions. MakeMaker
+does run, but no available make currently copes with
+MakeMaker&rsquo;s makefiles; even if and when this should be
+fixed, the lack of a Unix-like shell will cause problems
+with makefile rules, especially lines of the form
+<tt>&quot;cd sdbm &amp;&amp; make all&quot;</tt>, and
+anything using quoting.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&quot;
+<small>RISC&nbsp;OS</small> &quot; is the proper name for
+the operating system, but the value in <tt>$^O</tt> is
+&quot;riscos&quot; (because we don&rsquo;t like
+shouting).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Other
+perls</b> <br>
+Perl has been ported to many platforms that do not fit into
+any of the categories listed above. Some, such as AmigaOS,
+BeOS, <small>HP</small> MPE/iX, <small>QNX</small> , Plan 9,
+and <small>VOS</small> , have been well-integrated into the
+standard Perl source code kit. You may need to see the
+<i>ports/</i> directory on <small>CPAN</small> for
+information, and possibly binaries, for the likes of: aos,
+Atari <small>ST</small> , lynxos, riscos, Novell Netware,
+Tandem Guardian, <i>etc.</i> (Yes, we know that some of
+these OSes may fall under the Unix category, but we are not
+a standards body.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Some
+approximate operating system names and their <tt>$^O</tt>
+values in the &quot; <small>OTHER</small> &quot; category
+include:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    OS            $^O        $Config{'archname'}
+    &minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;
+    Amiga DOS     amigaos    m68k&minus;amigos
+    BeOS          beos
+    MPE/iX        mpeix      PA&minus;RISC1.1</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">See also:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Amiga, <i><small>README</small>
+.amiga</i> (installed as perlamiga).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Be <small>OS</small> , <i><small>README</small>
+.beos</i></p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><small>HP</small> 300 MPE/iX, <i><small>README</small>
+.mpeix</i> and Mark Bixby&rsquo;s web page
+&lt;http://www.bixby.org/mark/porting.html&gt;</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>A free perl5&minus;based <small>PERL</small> .NLM for
+Novell Netware is available in precompiled binary and source
+code form from &lt;http://www.novell.com/&gt; as well as
+from <small>CPAN</small> .</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Plan&nbsp;9, <i><small>README</small> .plan9</i></p></td></tr>
+</table>
+
+<h2>FUNCTION IMPLEMENTATIONS
+<a name="FUNCTION IMPLEMENTATIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Listed below
+are functions that are either completely unimplemented or
+else have been implemented differently on various platforms.
+Following each description will be, in parentheses, a list
+of platforms that the description applies to.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The list may
+well be incomplete, or even wrong in some places. When in
+doubt, consult the platform-specific <small>README</small>
+files in the Perl source distribution, and any other
+documentation resources accompanying a given port.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Be aware,
+moreover, that even among Unix-ish systems there are
+variations.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For many
+functions, you can also query <tt>%Config</tt>, exported by
+default from the Config module. For example, to check
+whether the platform has the <tt>&quot;lstat&quot;</tt>
+call, check <tt>$Config{d_lstat}</tt>. See Config for a full
+description of available variables.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Alphabetical
+Listing of Perl Functions</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">&minus;X</p></td>
+<td width="9%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em"><tt>&quot;&minus;w&quot;</tt>
+only inspects the read-only file attribute (
+<small>FILE_ATTRIBUTE_READONLY</small> ), which determines
+whether the directory can be deleted, not whether it can be
+written to. Directories always have read and write access
+unless denied by discretionary access control lists (DACLs).
+(Win32)</p> </td></tr>
+</table>
+
+
+<p style="margin-left:23%; margin-top: 1em"><tt>&quot;&minus;r&quot;</tt>,
+<tt>&quot;&minus;w&quot;</tt>,
+<tt>&quot;&minus;x&quot;</tt>, and
+<tt>&quot;&minus;o&quot;</tt> tell whether the file is
+accessible, which may not reflect UIC-based file
+protections. ( <small>VMS</small> )</p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><tt>&quot;&minus;s&quot;</tt>
+by name on an open file will return the space reserved on
+disk, rather than the current extent.
+<tt>&quot;&minus;s&quot;</tt> on an open filehandle returns
+the current size. ( <small>RISC&nbsp;OS</small> )</p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><tt>&quot;&minus;R&quot;</tt>,
+<tt>&quot;&minus;W&quot;</tt>,
+<tt>&quot;&minus;X&quot;</tt>, <tt>&quot;&minus;O&quot;</tt>
+are indistinguishable from <tt>&quot;&minus;r&quot;</tt>,
+<tt>&quot;&minus;w&quot;</tt>,
+<tt>&quot;&minus;x&quot;</tt>,
+<tt>&quot;&minus;o&quot;</tt>. (Win32, <small>VMS</small> ,
+<small>RISC&nbsp;OS</small> )</p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><tt>&quot;&minus;g&quot;</tt>,
+<tt>&quot;&minus;k&quot;</tt>,
+<tt>&quot;&minus;l&quot;</tt>,
+<tt>&quot;&minus;u&quot;</tt>, <tt>&quot;&minus;A&quot;</tt>
+are not particularly meaningful. (Win32, <small>VMS</small>
+, <small>RISC&nbsp;OS</small> )</p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><tt>&quot;&minus;p&quot;</tt>
+is not particularly meaningful. ( <small>VMS</small> ,
+<small>RISC&nbsp;OS</small> )</p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><tt>&quot;&minus;d&quot;</tt>
+is true if passed a device spec without an explicit
+directory. ( <small>VMS</small> )</p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><tt>&quot;&minus;x&quot;</tt>
+(or <tt>&quot;&minus;X&quot;</tt>) determine if a file ends
+in one of the executable suffixes.
+<tt>&quot;&minus;S&quot;</tt> is meaningless. (Win32)</p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><tt>&quot;&minus;x&quot;</tt>
+(or <tt>&quot;&minus;X&quot;</tt>) determine if a file has
+an executable file type. ( <small>RISC&nbsp;OS</small> )</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p style="margin-top: 1em">alarm</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">Emulated using timers that must
+be explicitly polled whenever Perl wants to dispatch
+&quot;safe signals&quot; and therefore cannot interrupt
+blocking system calls. (Win32)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p>atan2</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>Due to issues with various CPUs, math libraries,
+compilers, and standards, results for
+<tt>&quot;atan2()&quot;</tt> may vary depending on any
+combination of the above. Perl attempts to conform to the
+Open Group/IEEE standards for the results returned from
+<tt>&quot;atan2()&quot;</tt>, but cannot force the issue if
+the system Perl is run on does not allow it. (Tru64, HP-UX
+10.20)</p> </td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">The current
+version of the standards for <tt>&quot;atan2()&quot;</tt> is
+available at
+&lt;http://www.opengroup.org/onlinepubs/009695399/functions/atan2.html&gt;.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p style="margin-top: 1em">binmode</p></td>
+<td width="1%"></td>
+<td width="35%">
+
+
+<p style="margin-top: 1em">Meaningless. (
+<small>RISC&nbsp;OS</small> )</p></td>
+<td width="42%">
+</td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">Reopens file
+and restores pointer; if function fails, underlying
+filehandle may be closed, or pointer may be in a different
+position. ( <small>VMS</small> )</p>
+
+<p style="margin-left:23%; margin-top: 1em">The value
+returned by <tt>&quot;tell&quot;</tt> may be affected after
+the call, and the filehandle may be flushed. (Win32)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p style="margin-top: 1em">chmod</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">Only good for changing
+&quot;owner&quot; read-write access, &quot;group&quot;, and
+&quot;other&quot; bits are meaningless. (Win32)</p></td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">Only good for
+changing &quot;owner&quot; and &quot;other&quot; read-write
+access. ( <small>RISC&nbsp;OS</small> )</p>
+
+<p style="margin-left:23%; margin-top: 1em">Access
+permissions are mapped onto <small>VOS</small>
+access-control list changes. ( <small>VOS</small> )</p>
+
+<p style="margin-left:23%; margin-top: 1em">The actual
+permissions set depend on the value of the
+<tt>&quot;CYGWIN&quot;</tt> in the <small>SYSTEM</small>
+environment settings. (Cygwin)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p style="margin-top: 1em">chown</p></td>
+<td width="5%"></td>
+<td width="63%">
+
+
+<p style="margin-top: 1em">Not implemented. (Win32,
+Plan&nbsp;9, <small>RISC&nbsp;OS</small> )</p></td>
+<td width="14%">
+</td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">Does nothing,
+but won&rsquo;t fail. (Win32)</p>
+
+<p style="margin-left:23%; margin-top: 1em">A little funky,
+because <small>VOS</small> &rsquo;s notion of ownership is a
+little funky ( <small>VOS</small> ).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em">chroot</p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">Not implemented. (Win32,
+<small>VMS</small> , Plan&nbsp;9,
+<small>RISC&nbsp;OS</small> , <small>VOS</small> ,
+<small>VM/ESA</small> )</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>crypt</p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>May not be available if library or source was not
+provided when building perl. (Win32)</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">dbmclose</p>
+
+<p style="margin-left:23%;">Not implemented. (
+<small>VMS</small> , Plan&nbsp;9, <small>VOS</small> )</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>dbmopen</p></td>
+<td width="1%"></td>
+<td width="54%">
+
+
+<p>Not implemented. ( <small>VMS</small> , Plan&nbsp;9,
+<small>VOS</small> )</p></td>
+<td width="23%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>dump</p></td>
+<td width="1%"></td>
+<td width="54%">
+
+
+<p>Not useful. ( <small>RISC&nbsp;OS</small> )</p></td>
+<td width="23%">
+</td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">Not supported.
+(Cygwin, Win32)</p>
+
+<p style="margin-left:23%; margin-top: 1em">Invokes
+<small>VMS</small> debugger. ( <small>VMS</small> )</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p style="margin-top: 1em">exec</p></td>
+<td width="6%"></td>
+<td width="48%">
+
+
+<p style="margin-top: 1em">Implemented via Spawn. (
+<small>VM/ESA</small> )</p></td>
+<td width="29%">
+</td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">Does not
+automatically flush output handles on some platforms.
+(SunOS, Solaris, HP-UX)</p>
+
+<p style="margin-left:23%; margin-top: 1em">Not supported.
+(Symbian <small>OS</small> )</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p style="margin-top: 1em">exit</p></td>
+<td width="6%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">Emulates Unix <i>exit()</i>
+(which considers <tt>&quot;exit 1&quot;</tt> to indicate an
+error) by mapping the <tt>1</tt> to <small>SS$_ABORT</small>
+(<tt>44</tt>). This behavior may be overridden with the
+pragma <tt>&quot;use vmsish 'exit'&quot;</tt>. As with the
+<small>CRTL</small> &rsquo;s <i>exit()</i> function,
+<tt>&quot;exit 0&quot;</tt> is also mapped to an exit status
+of <small>SS$_NORMAL</small> (<tt>1</tt>); this mapping
+cannot be overridden. Any other argument to <i>exit()</i> is
+used directly as Perl&rsquo;s exit status. On
+<small>VMS</small> , unless the future
+<small>POSIX_EXIT</small> mode is enabled, the exit code
+should always be a valid <small>VMS</small> exit code and
+not a generic number. When the <small>POSIX_EXIT</small>
+mode is enabled, a generic number will be encoded in a
+method compatible with the C library _POSIX_EXIT macro so
+that it can be decoded by other programs, particularly ones
+written in C, like the <small>GNV</small> package. (
+<small>VMS</small> )</p></td></tr>
+</table>
+
+
+<p style="margin-left:23%; margin-top: 1em"><tt>&quot;exit()&quot;</tt>
+resets file pointers, which is a problem when called from a
+child process (created by <tt>&quot;fork()&quot;</tt>) in
+<tt>&quot;BEGIN&quot;</tt>. A workaround is to use
+<tt>&quot;POSIX::_exit&quot;</tt>. (Solaris)</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    exit unless $Config{archname} =~ /\bsolaris\b/;
+    require POSIX and POSIX::_exit(0);</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p style="margin-top: 1em">fcntl</p></td>
+<td width="5%"></td>
+<td width="37%">
+
+
+<p style="margin-top: 1em">Not implemented. (Win32)</p></td>
+<td width="40%">
+</td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">Some functions
+available based on the version of <small>VMS</small> . (
+<small>VMS</small> )</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p style="margin-top: 1em">flock</p></td>
+<td width="5%"></td>
+<td width="74%">
+
+
+<p style="margin-top: 1em">Not implemented (
+<small>VMS</small> , <small>RISC&nbsp;OS</small> ,
+<small>VOS</small> ).</p></td>
+<td width="3%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p>fork</p></td>
+<td width="5%"></td>
+<td width="74%">
+
+
+<p>Not implemented. (AmigaOS, <small>RISC&nbsp;OS</small> ,
+<small>VM/ESA</small> , <small>VMS</small> )</p></td>
+<td width="3%">
+</td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">Emulated using
+multiple interpreters. See perlfork. (Win32)</p>
+
+<p style="margin-left:23%; margin-top: 1em">Does not
+automatically flush output handles on some platforms.
+(SunOS, Solaris, HP-UX)</p>
+
+<p style="margin-left:11%;">getlogin</p>
+
+<p style="margin-left:23%;">Not implemented. (
+<small>RISC&nbsp;OS</small> )</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>getpgrp</p></td>
+<td width="1%"></td>
+<td width="59%">
+
+
+<p>Not implemented. (Win32, <small>VMS</small> ,
+<small>RISC&nbsp;OS</small> )</p></td>
+<td width="18%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>getppid</p></td>
+<td width="1%"></td>
+<td width="59%">
+
+
+<p>Not implemented. (Win32, <small>RISC&nbsp;OS</small>
+)</p> </td>
+<td width="18%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">getpriority</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+<small>VMS</small> , <small>RISC&nbsp;OS</small> ,
+<small>VOS</small> , <small>VM/ESA</small> )</p>
+
+<p style="margin-left:11%;">getpwnam</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32)</p>
+
+<p style="margin-left:23%; margin-top: 1em">Not useful. (
+<small>RISC&nbsp;OS</small> )</p>
+
+<p style="margin-left:11%;">getgrnam</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+<small>VMS</small> , <small>RISC&nbsp;OS</small> )</p>
+
+<p style="margin-left:11%;">getnetbyname</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+Plan&nbsp;9)</p>
+
+<p style="margin-left:11%;">getpwuid</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32)</p>
+
+<p style="margin-left:23%; margin-top: 1em">Not useful. (
+<small>RISC&nbsp;OS</small> )</p>
+
+<p style="margin-left:11%;">getgrgid</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+<small>VMS</small> , <small>RISC&nbsp;OS</small> )</p>
+
+<p style="margin-left:11%;">getnetbyaddr</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+Plan&nbsp;9)</p>
+
+<p style="margin-left:11%;">getprotobynumber <br>
+getservbyport <br>
+getpwent</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+<small>VM/ESA</small> )</p>
+
+<p style="margin-left:11%;">getgrent</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+<small>VMS</small> , <small>VM/ESA</small> )</p>
+
+<p style="margin-left:11%;">gethostbyname</p>
+
+
+<p style="margin-left:23%;"><tt>&quot;gethostbyname('localhost')&quot;</tt>
+does not work everywhere: you may have to use
+<tt>&quot;gethostbyname('127.0.0.1')&quot;</tt>.
+(Irix&nbsp;5)</p>
+
+<p style="margin-left:11%;">gethostent</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32)</p>
+
+<p style="margin-left:11%;">getnetent</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+Plan&nbsp;9)</p>
+
+<p style="margin-left:11%;">getprotoent</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+Plan&nbsp;9)</p>
+
+<p style="margin-left:11%;">getservent</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+Plan&nbsp;9)</p>
+
+<p style="margin-left:11%;">sethostent</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+Plan&nbsp;9, <small>RISC&nbsp;OS</small> )</p>
+
+<p style="margin-left:11%;">setnetent</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+Plan&nbsp;9, <small>RISC&nbsp;OS</small> )</p>
+
+<p style="margin-left:11%;">setprotoent</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+Plan&nbsp;9, <small>RISC&nbsp;OS</small> )</p>
+
+<p style="margin-left:11%;">setservent</p>
+
+<p style="margin-left:23%;">Not implemented. (Plan&nbsp;9,
+Win32, <small>RISC&nbsp;OS</small> )</p>
+
+<p style="margin-left:11%;">endpwent</p>
+
+<p style="margin-left:23%;">Not implemented. (MPE/iX,
+<small>VM/ESA</small> , Win32)</p>
+
+<p style="margin-left:11%;">endgrent</p>
+
+<p style="margin-left:23%;">Not implemented. (MPE/iX,
+<small>RISC&nbsp;OS</small> , <small>VM/ESA</small> ,
+<small>VMS</small> , Win32)</p>
+
+<p style="margin-left:11%;">endhostent</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32)</p>
+
+<p style="margin-left:11%;">endnetent</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+Plan&nbsp;9)</p>
+
+<p style="margin-left:11%;">endprotoent</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+Plan&nbsp;9)</p>
+
+<p style="margin-left:11%;">endservent</p>
+
+<p style="margin-left:23%;">Not implemented. (Plan&nbsp;9,
+Win32)</p>
+
+<p style="margin-left:11%;">getsockopt
+<small>SOCKET</small> ,LEVEL,OPTNAME</p>
+
+<p style="margin-left:23%;">Not implemented.
+(Plan&nbsp;9)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>glob</p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>This operator is implemented via the File::Glob
+extension on most platforms. See File::Glob for portability
+information.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>gmtime</p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>In theory, <i>gmtime()</i> is reliable from &minus;2**63
+to 2**63&minus;1. However, because work arounds in the
+implementation use floating point numbers, it will become
+inaccurate as the time gets larger. This is a bug and will
+be fixed in the future.</p></td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">On
+<small>VOS</small> , time values are 32&minus;bit
+quantities.</p>
+
+<p style="margin-left:11%;">ioctl <small>FILEHANDLE</small>
+,FUNCTION,SCALAR</p>
+
+<p style="margin-left:23%;">Not implemented. (
+<small>VMS</small> )</p>
+
+<p style="margin-left:23%; margin-top: 1em">Available only
+for socket handles, and it does what the
+<i>ioctlsocket()</i> call in the Winsock <small>API</small>
+does. (Win32)</p>
+
+<p style="margin-left:23%; margin-top: 1em">Available only
+for socket handles. ( <small>RISC&nbsp;OS</small> )</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p>kill</p></td>
+<td width="6%"></td>
+<td width="77%">
+
+
+<p>Not implemented, hence not useful for taint checking. (
+<small>RISC&nbsp;OS</small> )</p></td></tr>
+</table>
+
+
+<p style="margin-left:23%; margin-top: 1em"><tt>&quot;kill()&quot;</tt>
+doesn&rsquo;t have the semantics of
+<tt>&quot;raise()&quot;</tt>, i.e. it doesn&rsquo;t send a
+signal to the identified process like it does on Unix
+platforms. Instead <tt>&quot;kill($sig, $pid)&quot;</tt>
+terminates the process identified by <tt>$pid</tt>, and
+makes it exit immediately with exit status <tt>$sig</tt>. As
+in Unix, if <tt>$sig</tt> is 0 and the specified process
+exists, it returns true without actually terminating it.
+(Win32)</p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><tt>&quot;kill(&minus;9,
+$pid)&quot;</tt> will terminate the process specified by
+<tt>$pid</tt> and recursively all child processes owned by
+it. This is different from the Unix semantics, where the
+signal will be delivered to all processes in the same
+process group as the process specified by <tt>$pid</tt>.
+(Win32)</p>
+
+<p style="margin-left:23%; margin-top: 1em">Is not
+supported for process identification number of 0 or negative
+numbers. ( <small>VMS</small> )</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p style="margin-top: 1em">link</p></td>
+<td width="6%"></td>
+<td width="60%">
+
+
+<p style="margin-top: 1em">Not implemented. (MPE/iX,
+<small>RISC&nbsp;OS</small> , <small>VOS</small> )</p></td>
+<td width="17%">
+</td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">Link count not
+updated because hard links are not quite that hard (They are
+sort of half-way between hard and soft links). (AmigaOS)</p>
+
+<p style="margin-left:23%; margin-top: 1em">Hard links are
+implemented on Win32 under <small>NTFS</small> only. They
+are natively supported on Windows 2000 and later. On Windows
+<small>NT</small> they are implemented using the Windows
+<small>POSIX</small> subsystem support and the Perl process
+will need Administrator or Backup Operator privileges to
+create hard links.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Available on 64
+bit OpenVMS 8.2 and later. ( <small>VMS</small> )</p>
+
+<p style="margin-left:11%;">localtime</p>
+
+<p style="margin-left:23%;"><i>localtime()</i> has the same
+range as &quot;gmtime&quot;, but because time zone rules
+change its accuracy for historical and future times may
+degrade but usually by no more than an hour.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p>lstat</p></td>
+<td width="5%"></td>
+<td width="40%">
+
+
+<p>Not implemented. ( <small>RISC&nbsp;OS</small> )</p></td>
+<td width="37%">
+</td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">Return values
+(especially for device and inode) may be bogus. (Win32)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em">msgctl</p></td>
+<td width="3%"></td>
+<td width="77%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>msgget</p></td>
+<td width="3%"></td>
+<td width="77%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>msgsnd</p></td>
+<td width="3%"></td>
+<td width="77%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>msgrcv</p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>Not implemented. (Win32, <small>VMS</small> ,
+Plan&nbsp;9, <small>RISC&nbsp;OS</small> ,
+<small>VOS</small> )</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>open</p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>open to <tt>&quot;|&minus;&quot;</tt> and
+<tt>&quot;&minus;|&quot;</tt> are unsupported. (Win32,
+<small>RISC&nbsp;OS</small> )</p></td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">Opening a
+process does not automatically flush output handles on some
+platforms. (SunOS, Solaris, HP-UX)</p>
+
+<p style="margin-left:11%;">readlink</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+<small>VMS</small> , <small>RISC&nbsp;OS</small> )</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>rename</p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>Can&rsquo;t move directories between directories on
+different logical volumes. (Win32)</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">rewinddir</p>
+
+<p style="margin-left:23%;">Will not cause <i>readdir()</i>
+to re-read the directory stream. The entries already read
+before the <i>rewinddir()</i> call will just be returned
+again from a cache buffer. (Win32)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>select</p></td>
+<td width="3%"></td>
+<td width="63%">
+
+
+<p>Only implemented on sockets. (Win32, <small>VMS</small>
+)</p> </td>
+<td width="14%">
+</td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">Only reliable
+on sockets. ( <small>RISC&nbsp;OS</small> )</p>
+
+<p style="margin-left:23%; margin-top: 1em">Note that the
+<tt>&quot;select FILEHANDLE&quot;</tt> form is generally
+portable.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em">semctl</p></td>
+<td width="3%"></td>
+<td width="59%">
+</td>
+<td width="18%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>semget</p></td>
+<td width="3%"></td>
+<td width="59%">
+</td>
+<td width="18%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>semop</p></td>
+<td width="3%"></td>
+<td width="59%">
+
+
+<p>Not implemented. (Win32, <small>VMS</small> ,
+<small>RISC&nbsp;OS</small> )</p></td>
+<td width="18%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">setgrent</p>
+
+<p style="margin-left:23%;">Not implemented. (MPE/iX,
+<small>VMS</small> , Win32, <small>RISC&nbsp;OS</small>
+)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>setpgrp</p></td>
+<td width="1%"></td>
+<td width="66%">
+
+
+<p>Not implemented. (Win32, <small>VMS</small> ,
+<small>RISC&nbsp;OS</small> , <small>VOS</small> )</p></td>
+<td width="11%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">setpriority</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+<small>VMS</small> , <small>RISC&nbsp;OS</small> ,
+<small>VOS</small> )</p>
+
+<p style="margin-left:11%;">setpwent</p>
+
+<p style="margin-left:23%;">Not implemented. (MPE/iX,
+Win32, <small>RISC&nbsp;OS</small> )</p>
+
+<p style="margin-left:11%;">setsockopt</p>
+
+<p style="margin-left:23%;">Not implemented.
+(Plan&nbsp;9)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>shmctl</p></td>
+<td width="78%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>shmget</p></td>
+<td width="78%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>shmread</p></td>
+<td width="78%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">shmwrite</p>
+
+<p style="margin-left:23%;">Not implemented. (Win32,
+<small>VMS</small> , <small>RISC&nbsp;OS</small> ,
+<small>VOS</small> )</p>
+
+<p style="margin-left:11%;">sockatmark</p>
+
+<p style="margin-left:23%;">A relatively recent addition to
+socket functions, may not be implemented even in Unix
+platforms.</p>
+
+<p style="margin-left:11%;">socketpair</p>
+
+<p style="margin-left:23%;">Not implemented. (
+<small>RISC&nbsp;OS</small> , <small>VM/ESA</small> )</p>
+
+<p style="margin-left:23%; margin-top: 1em">Available on
+OpenVOS Release 17.0 or later. ( <small>VOS</small> )</p>
+
+<p style="margin-left:23%; margin-top: 1em">Available on 64
+bit OpenVMS 8.2 and later. ( <small>VMS</small> )</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p>stat</p></td>
+<td width="6%"></td>
+<td width="77%">
+
+
+<p>Platforms that do not have rdev, blksize, or blocks will
+return these as &rsquo;&rsquo;, so numeric comparison or
+manipulation of these fields may cause &rsquo;not
+numeric&rsquo; warnings.</p></td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">ctime not
+supported on <small>UFS</small> (Mac&nbsp;
+<small>OS&nbsp;</small> X).</p>
+
+<p style="margin-left:23%; margin-top: 1em">ctime is
+creation time instead of inode change time (Win32).</p>
+
+<p style="margin-left:23%; margin-top: 1em">device and
+inode are not meaningful. (Win32)</p>
+
+<p style="margin-left:23%; margin-top: 1em">device and
+inode are not necessarily reliable. ( <small>VMS</small>
+)</p>
+
+<p style="margin-left:23%; margin-top: 1em">mtime, atime
+and ctime all return the last modification time. Device and
+inode are not necessarily reliable. (
+<small>RISC&nbsp;OS</small> )</p>
+
+<p style="margin-left:23%; margin-top: 1em">dev, rdev,
+blksize, and blocks are not available. inode is not
+meaningful and will differ between stat calls on the same
+file. (os2)</p>
+
+<p style="margin-left:23%; margin-top: 1em">some versions
+of cygwin when doing a stat(&quot;foo&quot;) and if not
+finding it may then attempt to stat(&quot;foo.exe&quot;)
+(Cygwin)</p>
+
+<p style="margin-left:23%; margin-top: 1em">On Win32
+<i>stat()</i> needs to open the file to determine the link
+count and update attributes that may have been changed
+through hard links. Setting ${^WIN32_SLOPPY_STAT} to a true
+value speeds up <i>stat()</i> by not performing this
+operation. (Win32)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p style="margin-top: 1em">symlink</p></td>
+<td width="1%"></td>
+<td width="51%">
+
+
+<p style="margin-top: 1em">Not implemented. (Win32,
+<small>RISC&nbsp;OS</small> )</p></td>
+<td width="26%">
+</td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">Implemented on
+64 bit <small>VMS</small> 8.3. <small>VMS</small> requires
+the symbolic link to be in Unix syntax if it is intended to
+resolve to a valid path.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p style="margin-top: 1em">syscall</p></td>
+<td width="1%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">Not implemented. (Win32,
+<small>VMS</small> , <small>RISC&nbsp;OS</small> ,
+<small>VOS</small> , <small>VM/ESA</small> )</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>sysopen</p></td>
+<td width="1%"></td>
+<td width="77%">
+
+
+<p>The traditional &quot;0&quot;, &quot;1&quot;, and
+&quot;2&quot; MODEs are implemented with different numeric
+values on some systems. The flags exported by
+<tt>&quot;Fcntl&quot;</tt> (O_RDONLY, O_WRONLY, O_RDWR)
+should work everywhere though. (Mac&nbsp; <small>OS</small>
+, <small>OS/390</small> , <small>VM/ESA</small> )</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>system</p></td>
+<td width="1%"></td>
+<td width="77%">
+
+
+<p>As an optimization, may not call the command shell
+specified in <tt>$ENV{PERL5SHELL}</tt>. <tt>&quot;system(1,
+@args)&quot;</tt> spawns an external process and immediately
+returns its process designator, without waiting for it to
+terminate. Return value may be used subsequently in
+<tt>&quot;wait&quot;</tt> or <tt>&quot;waitpid&quot;</tt>.
+Failure to <i>spawn()</i> a subprocess is indicated by
+setting $? to &quot;255 &lt;&lt; 8&quot;. <tt>$?</tt> is set
+in a way compatible with Unix (i.e. the exitstatus of the
+subprocess is obtained by &quot;$? &gt;&gt; 8&quot;, as
+described in the documentation). (Win32)</p></td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">There is no
+shell to process metacharacters, and the native standard is
+to pass a command line terminated by &quot;\n&quot;
+&quot;\r&quot; or &quot;\0&quot; to the spawned program.
+Redirection such as <tt>&quot;&gt; foo&quot;</tt> is
+performed (if at all) by the run time library of the spawned
+program. <tt>&quot;system&quot;</tt> <i>list</i> will call
+the Unix emulation library&rsquo;s <tt>&quot;exec&quot;</tt>
+emulation, which attempts to provide emulation of the stdin,
+stdout, stderr in force in the parent, providing the child
+program uses a compatible version of the emulation library.
+<i>scalar</i> will call the native command line direct and
+no such emulation of a child Unix program will exists.
+Mileage <b>will</b> vary. ( <small>RISC&nbsp;OS</small>
+)</p>
+
+<p style="margin-left:23%; margin-top: 1em">Does not
+automatically flush output handles on some platforms.
+(SunOS, Solaris, HP-UX)</p>
+
+<p style="margin-left:23%; margin-top: 1em">The return
+value is POSIX-like (shifted up by 8 bits), which only
+allows room for a made-up value derived from the severity
+bits of the native 32&minus;bit condition code (unless
+overridden by <tt>&quot;use vmsish 'status'&quot;</tt>). If
+the native condition code is one that has a
+<small>POSIX</small> value encoded, the <small>POSIX</small>
+value will be decoded to extract the expected exit value.
+For more details see &quot;$?&quot; in perlvms. (
+<small>VMS</small> )</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p style="margin-top: 1em">times</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">&quot;cumulative&quot; times
+will be bogus. On anything other than Windows
+<small>NT</small> or Windows 2000, &quot;system&quot; time
+will be bogus, and &quot;user&quot; time is actually the
+time returned by the <i>clock()</i> function in the C
+runtime library. (Win32)</p></td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">Not useful. (
+<small>RISC&nbsp;OS</small> )</p>
+
+<p style="margin-left:11%;">truncate</p>
+
+<p style="margin-left:23%;">Not implemented. (Older
+versions of <small>VMS</small> )</p>
+
+<p style="margin-left:23%; margin-top: 1em">Truncation to
+same-or-shorter lengths only. ( <small>VOS</small> )</p>
+
+<p style="margin-left:23%; margin-top: 1em">If a
+<small>FILEHANDLE</small> is supplied, it must be writable
+and opened in append mode (i.e., use <tt>&quot;open(FH,
+'&gt;&gt;filename')&quot;</tt> or
+<tt>&quot;sysopen(FH,...,O_APPEND|O_RDWR)&quot;</tt>. If a
+filename is supplied, it should not be held open elsewhere.
+(Win32)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p>umask</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>Returns undef where unavailable, as of version
+5.005.</p> </td></tr>
+</table>
+
+
+<p style="margin-left:23%; margin-top: 1em"><tt>&quot;umask&quot;</tt>
+works but the correct permissions are set only when the file
+is finally closed. (AmigaOS)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p style="margin-top: 1em">utime</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">Only the modification time is
+updated. (BeOS, <small>VMS</small> ,
+<small>RISC&nbsp;OS</small> )</p></td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">May not behave
+as expected. Behavior depends on the C runtime
+library&rsquo;s implementation of <i>utime()</i>, and the
+filesystem being used. The <small>FAT</small> filesystem
+typically does not support an &quot;access time&quot; field,
+and it may limit timestamps to a granularity of two seconds.
+(Win32)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p style="margin-top: 1em">wait</p></td>
+<td width="1%"></td>
+<td width="77%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>waitpid</p></td>
+<td width="1%"></td>
+<td width="77%">
+
+
+<p>Can only be applied to process handles returned for
+processes spawned using <tt>&quot;system(1, ...)&quot;</tt>
+or pseudo processes created with
+<tt>&quot;fork()&quot;</tt>. (Win32)</p></td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">Not useful. (
+<small>RISC&nbsp;OS</small> )</p>
+
+<h2>Supported Platforms
+<a name="Supported Platforms"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+platforms are known to build Perl 5.12 (as of April 2010,
+its release date) from the standard source code distribution
+available at &lt;http://www.cpan.org/src&gt; <br>
+Linux (x86, <small>ARM</small> , <small>IA64</small> ) <br>
+HP-UX</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p><small>AIX</small></p></td>
+<td width="85%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">Win32</p>
+
+<p style="margin-left:17%;">Windows 2000 <br>
+Windows <small>XP</small> <br>
+Windows Server 2003 <br>
+Windows Vista <br>
+Windows Server 2008 <br>
+Windows 7</p>
+
+<p style="margin-left:11%;">Cygwin <br>
+Solaris (x86, <small>SPARC</small> ) <br>
+OpenVMS</p>
+
+<p style="margin-left:17%;">Alpha (7.2 and later) <br>
+I64 (8.2 and later)</p>
+
+<p style="margin-left:11%;">Symbian <br>
+NetBSD <br>
+FreeBSD <br>
+Debian GNU/kFreeBSD <br>
+Haiku <br>
+Irix (6.5. What else?) <br>
+OpenBSD <br>
+Dragonfly <small>BSD <br>
+QNX</small> Neutrino <small>RTOS</small> (6.5.0) <br>
+MirOS <small>BSD</small></p>
+
+<p style="margin-left:17%;">Caveats: <br>
+time_t issues that may or may not be fixed</p>
+
+<p style="margin-left:11%;">Symbian (Series 60 v3, 3.2 and
+5 &minus; what else?) <br>
+Stratus <small>VOS</small> / OpenVOS</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p><small>AIX</small></p></td>
+<td width="85%">
+</td></tr>
+</table>
+
+<h2>EOL Platforms (Perl 5.14)
+<a name="EOL Platforms (Perl 5.14)"></a>
+</h2>
+
+
+<p style="margin-left:11%;">The following platforms were
+supported by a previous version of Perl but have been
+officially removed from Perl&rsquo;s source code as of 5.12:
+<br>
+Atari MiNT <br>
+Apollo Domain/OS <br>
+Apple Mac <small>OS</small> 8/9 <br>
+Tenon Machten</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+platforms were supported up to 5.10. They may still have
+worked in 5.12, but supporting code has been removed for
+5.14: <br>
+Windows 95 <br>
+Windows 98 <br>
+Windows <small>ME</small> <br>
+Windows <small>NT4</small></p>
+
+<h2>Supported Platforms (Perl 5.8)
+<a name="Supported Platforms (Perl 5.8)"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">As of July 2002
+(the Perl release 5.8.0), the following platforms were able
+to build Perl from the standard source code distribution
+available at &lt;http://www.cpan.org/src/&gt;</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        AIX
+        BeOS
+        BSD/OS          (BSDi)
+        Cygwin
+        DG/UX
+        DOS DJGPP       1)
+        DYNIX/ptx
+        EPOC R5
+        FreeBSD
+        HI&minus;UXMPP        (Hitachi) (5.8.0 worked but we didn't know it)
+        HP&minus;UX
+        IRIX
+        Linux
+        Mac OS Classic
+        Mac OS X        (Darwin)
+        MPE/iX
+        NetBSD
+        NetWare
+        NonStop&minus;UX
+        ReliantUNIX     (formerly SINIX)
+        OpenBSD
+        OpenVMS         (formerly VMS)
+        Open UNIX       (Unixware) (since Perl 5.8.1/5.9.0)
+        OS/2
+        OS/400          (using the PASE) (since Perl 5.8.1/5.9.0)
+        PowerUX
+        POSIX&minus;BC        (formerly BS2000)
+        QNX
+        Solaris
+        SunOS 4
+        SUPER&minus;UX        (NEC)
+        Tru64 UNIX      (formerly DEC OSF/1, Digital UNIX)
+        UNICOS
+        UNICOS/mk
+        UTS
+        VOS
+        Win95/98/ME/2K/XP 2)
+        WinCE
+        z/OS            (formerly OS/390)
+        VM/ESA
+        1) in DOS mode either the DOS or OS/2 ports can be used
+        2) compilers: Borland, MinGW (GCC), VC6</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+platforms worked with the previous releases (5.6 and 5.7),
+but we did not manage either to fix or to test these in time
+for the 5.8.0 release. There is a very good chance that many
+of these will work fine with the 5.8.0.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        BSD/OS
+        DomainOS
+        Hurd
+        LynxOS
+        MachTen
+        PowerMAX
+        SCO SV
+        SVR4
+        Unixware
+        Windows 3.1</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Known to be
+broken for 5.8.0 (but 5.6.1 and 5.7.2 can be used):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        AmigaOS</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+platforms have been known to build Perl from source in the
+past (5.005_03 and earlier), but we haven&rsquo;t been able
+to verify their status for the current release, either
+because the hardware/software platforms are rare or because
+we don&rsquo;t have an active champion on these
+platforms--or both. They used to work, though, so go ahead
+and try compiling them, and let perlbug@perl.org of any
+trouble.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        3b1
+        A/UX
+        ConvexOS
+        CX/UX
+        DC/OSx
+        DDE SMES
+        DOS EMX
+        Dynix
+        EP/IX
+        ESIX
+        FPS
+        GENIX
+        Greenhills
+        ISC
+        MachTen 68k
+        MPC
+        NEWS&minus;OS
+        NextSTEP
+        OpenSTEP
+        Opus
+        Plan 9
+        RISC/os
+        SCO ODT/OSR
+        Stellar
+        SVR2
+        TI1500
+        TitanOS
+        Ultrix
+        Unisys Dynix</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+platforms have their own source code distributions and
+binaries available via
+&lt;http://www.cpan.org/ports/&gt;</p>
+
+<pre style="margin-left:11%; margin-top: 1em">                                Perl release
+        OS/400 (ILE)            5.005_02
+        Tandem Guardian         5.004</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+platforms have only binaries available via
+&lt;http://www.cpan.org/ports/index.html&gt; :</p>
+
+<pre style="margin-left:11%; margin-top: 1em">                                Perl release
+        Acorn RISCOS            5.005_02
+        AOS                     5.002
+        LynxOS                  5.004_02</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Although we do
+suggest that you always build your own Perl from the source
+code, both for maximal configurability and for security, in
+case you are in a hurry you can check
+&lt;http://www.cpan.org/ports/index.html&gt; for binary
+distributions.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlaix,
+perlamiga, perlbeos, perlbs2000, perlce, perlcygwin,
+perldgux, perldos, perlepoc, perlebcdic, perlfreebsd,
+perlhurd, perlhpux, perlirix, perlmacos, perlmacosx,
+perlmpeix, perlnetware, perlos2, perlos390, perlos400,
+perlplan9, perlqnx, perlsolaris, perltru64, perlunicode,
+perlvmesa, perlvms, perlvos, perlwin32, and Win32.</p>
+
+<h2>AUTHORS / CONTRIBUTORS
+<a name="AUTHORS / CONTRIBUTORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Abigail
+&lt;abigail@foad.org&gt;, Charles Bailey
+&lt;bailey@newman.upenn.edu&gt;, Graham Barr
+&lt;gbarr@pobox.com&gt;, Tom Christiansen
+&lt;tchrist@perl.com&gt;, Nicholas Clark
+&lt;nick@ccl4.org&gt;, Thomas Dorner
+&lt;Thomas.Dorner@start.de&gt;, Andy Dougherty
+&lt;doughera@lafayette.edu&gt;, Dominic Dunlop
+&lt;domo@computer.org&gt;, Neale Ferguson
+&lt;neale@vma.tabnsw.com.au&gt;, David J. Fiander
+&lt;davidf@mks.com&gt;, Paul Green
+&lt;Paul.Green@stratus.com&gt;, M.J.T. Guy
+&lt;mjtg@cam.ac.uk&gt;, Jarkko Hietaniemi
+&lt;jhi@iki.fi&gt;, Luther Huffman
+&lt;lutherh@stratcom.com&gt;, Nick Ing-Simmons
+&lt;nick@ing&minus;simmons.net&gt;, Andreas J. Koenig
+&lt;a.koenig@mind.de&gt;, Markus Laker
+&lt;mlaker@contax.co.uk&gt;, Andrew M. Langmead
+&lt;aml@world.std.com&gt;, Larry Moore
+&lt;ljmoore@freespace.net&gt;, Paul Moore
+&lt;Paul.Moore@uk.origin&minus;it.com&gt;, Chris Nandor
+&lt;pudge@pobox.com&gt;, Matthias Neeracher
+&lt;neeracher@mac.com&gt;, Philip Newton
+&lt;pne@cpan.org&gt;, Gary Ng
+&lt;71564.1743@CompuServe.COM&gt;, Tom Phoenix
+&lt;rootbeer@teleport.com&gt;, Andre Pirard
+&lt;A.Pirard@ulg.ac.be&gt;, Peter Prymmer
+&lt;pvhp@forte.com&gt;, Hugo van der Sanden
+&lt;hv@crypt0.demon.co.uk&gt;, Gurusamy Sarathy
+&lt;gsar@activestate.com&gt;, Paul J. Schinder
+&lt;schinder@pobox.com&gt;, Michael G Schwern
+&lt;schwern@pobox.com&gt;, Dan Sugalski
+&lt;dan@sidhe.org&gt;, Nathan Torkington
+&lt;gnat@frii.com&gt;, John Malmberg
+&lt;wb8tyw@qsl.net&gt;</p>
+<hr>
+</body>
+</html>

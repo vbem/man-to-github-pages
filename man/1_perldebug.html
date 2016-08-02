@@ -1,0 +1,2051 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:37:27 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERLDEBUG</title>
+
+</head>
+<body>
+
+<h1 align="center">PERLDEBUG</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#The Perl Debugger">The Perl Debugger</a><br>
+<a href="#Debugging Regular Expressions">Debugging Regular Expressions</a><br>
+<a href="#Debugging Memory Usage">Debugging Memory Usage</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#BUGS">BUGS</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perldebug
+&minus; Perl debugging</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">First of all,
+have you tried using the <b>&minus;w</b> switch?</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you&rsquo;re
+new to the Perl debugger, you may prefer to read perldebtut,
+which is a tutorial introduction to the debugger.</p>
+
+<h2>The Perl Debugger
+<a name="The Perl Debugger"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you invoke
+Perl with the <b>&minus;d</b> switch, your script runs under
+the Perl source debugger. This works like an interactive
+Perl environment, prompting for debugger commands that let
+you examine source code, set breakpoints, get stack
+backtraces, change the values of variables, etc. This is so
+convenient that you often fire up the debugger all by itself
+just to test out Perl constructs interactively to see what
+they do. For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl &minus;d &minus;e 42</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In Perl, the
+debugger is not a separate program the way it usually is in
+the typical compiled environment. Instead, the
+<b>&minus;d</b> flag tells the compiler to insert source
+information into the parse trees it&rsquo;s about to hand
+off to the interpreter. That means your code must first
+compile correctly for the debugger to work on it. Then when
+the interpreter starts up, it preloads a special Perl
+library file containing the debugger.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The program
+will halt <i>right before</i> the first run-time executable
+statement (but see below regarding compile-time statements)
+and ask you to enter a debugger command. Contrary to popular
+expectations, whenever the debugger halts and shows you a
+line of code, it always displays the line it&rsquo;s
+<i>about</i> to execute, rather than the one it has just
+executed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Any command not
+recognized by the debugger is directly executed
+(<tt>&quot;eval&quot;</tt>&rsquo;d) as Perl code in the
+current package. (The debugger uses the <small>DB</small>
+package for keeping its own state information.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that the
+said <tt>&quot;eval&quot;</tt> is bound by an implicit
+scope. As a result any newly introduced lexical variable or
+any modified capture buffer content is lost after the eval.
+The debugger is a nice environment to learn Perl, but if you
+interactively experiment using material which should be in
+the same scope, stuff it in one line.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For any text
+entered at the debugger prompt, leading and trailing
+whitespace is first stripped before further processing. If a
+debugger command coincides with some function in your own
+program, merely precede the function with something that
+doesn&rsquo;t look like a debugger command, such as a
+leading <tt>&quot;;&quot;</tt> or perhaps a
+<tt>&quot;+&quot;</tt>, or by wrapping it with parentheses
+or braces.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Calling the
+Debugger</b> <br>
+There are several ways to call the debugger: <br>
+perl &minus;d program_name</p>
+
+<p style="margin-left:17%;">On the given program identified
+by <tt>&quot;program_name&quot;</tt>.</p>
+
+<p style="margin-left:11%;">perl &minus;d &minus;e 0</p>
+
+<p style="margin-left:17%;">Interactively supply an
+arbitrary <tt>&quot;expression&quot;</tt> using
+<tt>&quot;&minus;e&quot;</tt>.</p>
+
+<p style="margin-left:11%;">perl &minus;d:Ptkdb
+program_name</p>
+
+<p style="margin-left:17%;">Debug a given program via the
+<tt>&quot;Devel::Ptkdb&quot;</tt> <small>GUI</small> .</p>
+
+<p style="margin-left:11%;">perl &minus;dt
+threaded_program_name</p>
+
+<p style="margin-left:17%;">Debug a given program using
+threads (experimental).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Debugger
+Commands</b> <br>
+The interactive debugger understands the following
+commands:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>h</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Prints out a summary help message</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>h [command]</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Prints out a help message for the given debugger
+command.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>h h</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>The special argument of <tt>&quot;h h&quot;</tt>
+produces the entire help page, which is quite long.</p></td></tr>
+</table>
+
+<p style="margin-left:29%; margin-top: 1em">If the output
+of the <tt>&quot;h h&quot;</tt> command (or any command, for
+that matter) scrolls past your screen, precede the command
+with a leading pipe symbol so that it&rsquo;s run through
+your pager, as in</p>
+
+<pre style="margin-left:29%; margin-top: 1em">    DB&gt; |h h</pre>
+
+
+<p style="margin-left:29%; margin-top: 1em">You may change
+the pager which is used via <tt>&quot;o pager=...&quot;</tt>
+command.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em">p expr</p></td>
+<td width="9%"></td>
+<td width="71%">
+
+
+<p style="margin-top: 1em">Same as <tt>&quot;print
+{$DB::OUT} expr&quot;</tt> in the current package. In
+particular, because this is just Perl&rsquo;s own
+<tt>&quot;print&quot;</tt> function, this means that nested
+data structures and objects are not dumped, unlike with the
+<tt>&quot;x&quot;</tt> command.</p></td></tr>
+</table>
+
+<p style="margin-left:29%; margin-top: 1em">The
+<tt>&quot;DB::OUT&quot;</tt> filehandle is opened to
+<i>/dev/tty</i>, regardless of where <small>STDOUT</small>
+may be redirected to.</p>
+
+<p style="margin-left:11%;">x [maxdepth] expr</p>
+
+<p style="margin-left:29%;">Evaluates its expression in
+list context and dumps out the result in a pretty-printed
+fashion. Nested data structures are printed out recursively,
+unlike the real <tt>&quot;print&quot;</tt> function in Perl.
+When dumping hashes, you&rsquo;ll probably prefer &rsquo;x
+\%h&rsquo; rather than &rsquo;x <tt>%h</tt>&rsquo;. See
+Dumpvalue if you&rsquo;d like to do this yourself.</p>
+
+<p style="margin-left:29%; margin-top: 1em">The output
+format is governed by multiple options described under
+&quot;Configurable Options&quot;.</p>
+
+<p style="margin-left:29%; margin-top: 1em">If the
+<tt>&quot;maxdepth&quot;</tt> is included, it must be a
+numeral <i>N</i>; the value is dumped only <i>N</i> levels
+deep, as if the <tt>&quot;dumpDepth&quot;</tt> option had
+been temporarily set to <i>N</i>.</p>
+
+<p style="margin-left:11%;">V [pkg [vars]]</p>
+
+<p style="margin-left:29%;">Display all (or some) variables
+in package (defaulting to <tt>&quot;main&quot;</tt>) using a
+data pretty-printer (hashes show their keys and values so
+you see what&rsquo;s what, control characters are made
+printable, etc.). Make sure you don&rsquo;t put the type
+specifier (like <tt>&quot;$&quot;</tt>) there, just the
+symbol names, like this:</p>
+
+<pre style="margin-left:29%; margin-top: 1em">    V DB filename line</pre>
+
+
+<p style="margin-left:29%; margin-top: 1em">Use
+<tt>&quot;~pattern&quot;</tt> and
+<tt>&quot;!pattern&quot;</tt> for positive and negative
+regexes.</p>
+
+<p style="margin-left:29%; margin-top: 1em">This is similar
+to calling the <tt>&quot;x&quot;</tt> command on each
+applicable var.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p>X [vars]</p></td>
+<td width="6%"></td>
+<td width="53%">
+
+
+<p>Same as <tt>&quot;V currentpackage
+[vars]&quot;</tt>.</p> </td>
+<td width="18%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">y [level [vars]]</p>
+
+<p style="margin-left:29%;">Display all (or some) lexical
+variables (mnemonic: <tt>&quot;mY&quot;</tt> variables) in
+the current scope or <i>level</i> scopes higher. You can
+limit the variables that you see with <i>vars</i> which
+works exactly as it does for the <tt>&quot;V&quot;</tt> and
+<tt>&quot;X&quot;</tt> commands. Requires the
+<tt>&quot;PadWalker&quot;</tt> module version 0.08 or
+higher; will warn if this isn&rsquo;t installed. Output is
+pretty-printed in the same style as for
+<tt>&quot;V&quot;</tt> and the format is controlled by the
+same options.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p>T</p></td>
+<td width="6%"></td>
+<td width="71%">
+
+
+<p>Produce a stack backtrace. See below for details on its
+output.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p>s [expr]</p></td>
+<td width="6%"></td>
+<td width="71%">
+
+
+<p>Single step. Executes until the beginning of another
+statement, descending into subroutine calls. If an
+expression is supplied that includes function calls, it too
+will be single-stepped.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p>n [expr]</p></td>
+<td width="6%"></td>
+<td width="71%">
+
+
+<p>Next. Executes over subroutine calls, until the
+beginning of the next statement. If an expression is
+supplied that includes function calls, those functions will
+be executed with stops before each statement.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p>r</p></td>
+<td width="6%"></td>
+<td width="71%">
+
+
+<p>Continue until the return from the current subroutine.
+Dump the return value if the <tt>&quot;PrintRet&quot;</tt>
+option is set (default).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p>&lt; <small>CR</small> &gt;</p></td>
+<td width="6%"></td>
+<td width="71%">
+
+
+<p>Repeat last <tt>&quot;n&quot;</tt> or
+<tt>&quot;s&quot;</tt> command.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">c [line|sub]</p>
+
+<p style="margin-left:29%;">Continue, optionally inserting
+a one-time-only breakpoint at the specified line or
+subroutine.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>l</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>List next window of lines.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>l min+incr</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>List <tt>&quot;incr+1&quot;</tt> lines starting at
+<tt>&quot;min&quot;</tt>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>l min-max</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>List lines <tt>&quot;min&quot;</tt> through
+<tt>&quot;max&quot;</tt>. <tt>&quot;l &minus;&quot;</tt> is
+synonymous to <tt>&quot;&minus;&quot;</tt>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>l line</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>List a single line.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>l subname</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>List first window of lines from subroutine.
+<i>subname</i> may be a variable that contains a code
+reference.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>&minus;</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>List previous window of lines.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>v [line]</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>View a few lines of code around the current line.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>.</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Return the internal debugger pointer to the line last
+executed, and print out that line.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>f filename</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Switch to viewing a different file or
+<tt>&quot;eval&quot;</tt> statement. If <i>filename</i> is
+not a full pathname found in the values of <tt>%INC</tt>, it
+is considered a regex.</p></td></tr>
+</table>
+
+
+<p style="margin-left:29%; margin-top: 1em"><tt>&quot;eval&quot;</tt>ed
+strings (when accessible) are considered to be filenames:
+<tt>&quot;f (eval 7)&quot;</tt> and <tt>&quot;f eval
+7\b&quot;</tt> access the body of the 7th
+<tt>&quot;eval&quot;</tt>ed string (in the order of
+execution). The bodies of the currently executed
+<tt>&quot;eval&quot;</tt> and of <tt>&quot;eval&quot;</tt>ed
+strings that define subroutines are saved and thus
+accessible.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p style="margin-top: 1em">/pattern/</p></td>
+<td width="4%"></td>
+<td width="71%">
+
+
+<p style="margin-top: 1em">Search forwards for pattern (a
+Perl regex); final / is optional. The search is
+case-insensitive by default.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p>?pattern?</p></td>
+<td width="4%"></td>
+<td width="71%">
+
+
+<p>Search backwards for pattern; final ? is optional. The
+search is case-insensitive by default.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p>L [abw]</p></td>
+<td width="4%"></td>
+<td width="71%">
+
+
+<p>List (default all) actions, breakpoints and watch
+expressions</p> </td></tr>
+</table>
+
+<p style="margin-left:11%;">S [[!]regex]</p>
+
+<p style="margin-left:29%;">List subroutine names [not]
+matching the regex.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>t [n]</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Toggle trace mode (see also the
+<tt>&quot;AutoTrace&quot;</tt> option). Optional argument is
+the maximum number of levels to trace below the current one;
+anything deeper than that will be silent.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>t [n] expr</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Trace through execution of <tt>&quot;expr&quot;</tt>.
+Optional first argument is the maximum number of levels to
+trace below the current one; anything deeper than that will
+be silent. See &quot;Frame Listing Output Examples&quot; in
+perldebguts for examples.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>b</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Sets breakpoint on current line</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">b [line] [condition]</p>
+
+<p style="margin-left:29%;">Set a breakpoint before the
+given line. If a condition is specified, it&rsquo;s
+evaluated each time the statement is reached: a breakpoint
+is taken only if the condition is true. Breakpoints may only
+be set on lines that begin an executable statement.
+Conditions don&rsquo;t use <tt>&quot;if&quot;</tt>:</p>
+
+<pre style="margin-left:29%; margin-top: 1em">    b 237 $x &gt; 30
+    b 237 ++$count237 &lt; 11
+    b 33 /pattern/i</pre>
+
+
+<p style="margin-left:29%; margin-top: 1em">If the line
+number is <tt>&quot;.&quot;</tt>, sets a breakpoint on the
+current line:</p>
+
+<pre style="margin-left:29%; margin-top: 1em">    b . $n &gt; 100</pre>
+
+
+<p style="margin-left:11%;">b [file]:[line] [condition]</p>
+
+<p style="margin-left:29%;">Set a breakpoint before the
+given line in a (possibly different) file. If a condition is
+specified, it&rsquo;s evaluated each time the statement is
+reached: a breakpoint is taken only if the condition is
+true. Breakpoints may only be set on lines that begin an
+executable statement. Conditions don&rsquo;t use
+<tt>&quot;if&quot;</tt>:</p>
+
+<pre style="margin-left:29%; margin-top: 1em">    b lib/MyModule.pm:237 $x &gt; 30
+    b /usr/lib/perl5/site_perl/CGI.pm:100 ++$count100 &lt; 11</pre>
+
+
+<p style="margin-left:11%;">b subname [condition]</p>
+
+<p style="margin-left:29%;">Set a breakpoint before the
+first line of the named subroutine. <i>subname</i> may be a
+variable containing a code reference (in this case
+<i>condition</i> is not supported).</p>
+
+<p style="margin-left:11%;">b postpone subname
+[condition]</p>
+
+<p style="margin-left:29%;">Set a breakpoint at first line
+of subroutine after it is compiled.</p>
+
+<p style="margin-left:11%;">b load filename</p>
+
+<p style="margin-left:29%;">Set a breakpoint before the
+first executed line of the <i>filename</i>, which should be
+a full pathname found amongst the <tt>%INC</tt> values.</p>
+
+<p style="margin-left:11%;">b compile subname</p>
+
+<p style="margin-left:29%;">Sets a breakpoint before the
+first statement executed after the specified subroutine is
+compiled.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>B line</p></td>
+<td width="9%"></td>
+<td width="68%">
+
+
+<p>Delete a breakpoint from the specified <i>line</i>.</p></td>
+<td width="3%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>B *</p></td>
+<td width="9%"></td>
+<td width="68%">
+
+
+<p>Delete all installed breakpoints.</p></td>
+<td width="3%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">disable [file]:[line]</p>
+
+<p style="margin-left:29%;">Disable the breakpoint so it
+won&rsquo;t stop the execution of the program. Breakpoints
+are enabled by default and can be re-enabled using the
+<tt>&quot;enable&quot;</tt> command.</p>
+
+<p style="margin-left:11%;">disable [line]</p>
+
+<p style="margin-left:29%;">Disable the breakpoint so it
+won&rsquo;t stop the execution of the program. Breakpoints
+are enabled by default and can be re-enabled using the
+<tt>&quot;enable&quot;</tt> command.</p>
+
+<p style="margin-left:29%; margin-top: 1em">This is done
+for a breakpoint in the current file.</p>
+
+<p style="margin-left:11%;">enable [file]:[line]</p>
+
+<p style="margin-left:29%;">Enable the breakpoint so it
+will stop the execution of the program.</p>
+
+<p style="margin-left:11%;">enable [line]</p>
+
+<p style="margin-left:29%;">Enable the breakpoint so it
+will stop the execution of the program.</p>
+
+<p style="margin-left:29%; margin-top: 1em">This is done
+for a breakpoint in the current file.</p>
+
+<p style="margin-left:11%;">a [line] command</p>
+
+<p style="margin-left:29%;">Set an action to be done before
+the line is executed. If <i>line</i> is omitted, set an
+action on the line about to be executed. The sequence of
+steps taken by the debugger is</p>
+
+<pre style="margin-left:29%; margin-top: 1em">  1. check for a breakpoint at this line
+  2. print the line if necessary (tracing)
+  3. do any actions associated with that line
+  4. prompt user if at a breakpoint or in single&minus;step
+  5. evaluate line</pre>
+
+
+<p style="margin-left:29%; margin-top: 1em">For example,
+this will print out <tt>$foo</tt> every time line 53 is
+passed:</p>
+
+<pre style="margin-left:29%; margin-top: 1em">    a 53 print &quot;DB FOUND $foo\n&quot;</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>A line</p></td>
+<td width="9%"></td>
+<td width="71%">
+
+
+<p>Delete an action from the specified line.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>A *</p></td>
+<td width="9%"></td>
+<td width="71%">
+
+
+<p>Delete all installed actions.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>w expr</p></td>
+<td width="9%"></td>
+<td width="71%">
+
+
+<p>Add a global watch-expression. Whenever a watched global
+changes the debugger will stop and display the old and new
+values.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>W expr</p></td>
+<td width="9%"></td>
+<td width="71%">
+
+
+<p>Delete watch-expression</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>W *</p></td>
+<td width="9%"></td>
+<td width="71%">
+
+
+<p>Delete all watch-expressions.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>o</p></td>
+<td width="9%"></td>
+<td width="71%">
+
+
+<p>Display all options.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">o booloption ...</p>
+
+<p style="margin-left:29%;">Set each listed Boolean option
+to the value <tt>1</tt>.</p>
+
+<p style="margin-left:11%;">o anyoption? ...</p>
+
+<p style="margin-left:29%;">Print out the value of one or
+more options.</p>
+
+<p style="margin-left:11%;">o option=value ...</p>
+
+<p style="margin-left:29%;">Set the value of one or more
+options. If the value has internal whitespace, it should be
+quoted. For example, you could set <tt>&quot;o
+pager=&quot;less &minus;MQeicsNfr&quot;&quot;</tt> to call
+<b>less</b> with those specific options. You may use either
+single or double quotes, but if you do, you must escape any
+embedded instances of same sort of quote you began with, as
+well as any escaping any escapes that immediately precede
+that quote but which are not meant to escape the quote
+itself. In other words, you follow single-quoting rules
+irrespective of the quote; eg: <tt>&quot;o option='this
+isn\'t bad'&quot;</tt> or <tt>&quot;o option=&quot;She said,
+\&quot;Isn't it?\&quot;&quot;&quot;</tt>.</p>
+
+<p style="margin-left:29%; margin-top: 1em">For historical
+reasons, the <tt>&quot;=value&quot;</tt> is optional, but
+defaults to 1 only where it is safe to do so--that is,
+mostly for Boolean options. It is always better to assign a
+specific value using <tt>&quot;=&quot;</tt>. The
+<tt>&quot;option&quot;</tt> can be abbreviated, but for
+clarity probably should not be. Several options can be set
+together. See &quot;Configurable Options&quot; for a list of
+these.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p>&lt; ?</p></td>
+<td width="14%"></td>
+<td width="69%">
+
+
+<p>List out all pre-prompt Perl command actions.</p></td>
+<td width="2%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">&lt; [ command ]</p>
+
+<p style="margin-left:29%;">Set an action (Perl command) to
+happen before every debugger prompt. A multi-line command
+may be entered by backslashing the newlines.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>&lt; *</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Delete all pre-prompt Perl command actions.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>&lt;&lt; command</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Add an action (Perl command) to happen before every
+debugger prompt. A multi-line command may be entered by
+backwhacking the newlines.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>&gt; ?</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>List out post-prompt Perl command actions.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>&gt; command</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Set an action (Perl command) to happen after the prompt
+when you&rsquo;ve just given a command to return to
+executing the script. A multi-line command may be entered by
+backslashing the newlines (we bet you couldn&rsquo;t have
+guessed this by now).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>&gt; *</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Delete all post-prompt Perl command actions.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>&gt;&gt; command</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Adds an action (Perl command) to happen after the prompt
+when you&rsquo;ve just given a command to return to
+executing the script. A multi-line command may be entered by
+backslashing the newlines.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>{ ?</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>List out pre-prompt debugger commands.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">{ [ command ]</p>
+
+<p style="margin-left:29%;">Set an action (debugger
+command) to happen before every debugger prompt. A
+multi-line command may be entered in the customary
+fashion.</p>
+
+<p style="margin-left:29%; margin-top: 1em">Because this
+command is in some senses new, a warning is issued if you
+appear to have accidentally entered a block instead. If
+that&rsquo;s what you mean to do, write it as with
+<tt>&quot;;{ ... }&quot;</tt> or even <tt>&quot;do { ...
+}&quot;</tt>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>{ *</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Delete all pre-prompt debugger commands.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>{{ command</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Add an action (debugger command) to happen before every
+debugger prompt. A multi-line command may be entered, if you
+can guess how: see above.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>! number</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Redo a previous command (defaults to the previous
+command).</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>! &minus;number</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Redo number&rsquo;th previous command.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>! pattern</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Redo last command that started with pattern. See
+<tt>&quot;o recallCommand&quot;</tt>, too.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>!! cmd</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Run cmd in a subprocess (reads from
+<small>DB::IN</small> , writes to <small>DB::OUT</small> )
+See <tt>&quot;o shellBang&quot;</tt>, also. Note that the
+user&rsquo;s current shell (well, their <tt>$ENV{SHELL}</tt>
+variable) will be used, which can interfere with proper
+interpretation of exit status or signal and coredump
+information.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>source file</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Read and execute debugger commands from <i>file</i>.
+<i>file</i> may itself contain <tt>&quot;source&quot;</tt>
+commands.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>H &minus;number</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Display last n commands. Only commands longer than one
+character are listed. If <i>number</i> is omitted, list them
+all.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>q or ^D</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Quit. (&quot;quit&quot; doesn&rsquo;t work for this,
+unless you&rsquo;ve made an alias) This is the only
+supported way to exit the debugger, though typing
+<tt>&quot;exit&quot;</tt> twice might work.</p></td></tr>
+</table>
+
+<p style="margin-left:29%; margin-top: 1em">Set the
+<tt>&quot;inhibit_exit&quot;</tt> option to 0 if you want to
+be able to step off the end the script. You may also need to
+set <tt>$finished</tt> to 0 if you want to step through
+global destruction.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">R</p></td>
+<td width="17%"></td>
+<td width="71%">
+
+
+<p style="margin-top: 1em">Restart the debugger by
+<tt>&quot;exec()&quot;</tt>ing a new session. We try to
+maintain your history across this, but internal settings and
+command-line options may be lost.</p></td></tr>
+</table>
+
+<p style="margin-left:29%; margin-top: 1em">The following
+setting are currently preserved: history, breakpoints,
+actions, debugger options, and the Perl command-line options
+<b>&minus;w</b>, <b>&minus;I</b>, and <b>&minus;e</b>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p style="margin-top: 1em">|dbcmd</p></td>
+<td width="7%"></td>
+<td width="71%">
+
+
+<p style="margin-top: 1em">Run the debugger command, piping
+<small>DB::OUT</small> into your current pager.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>||dbcmd</p></td>
+<td width="7%"></td>
+<td width="71%">
+
+
+<p>Same as <tt>&quot;|dbcmd&quot;</tt> but
+<small>DB::OUT</small> is temporarily
+<tt>&quot;select&quot;</tt>ed as well.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">= [alias value]</p>
+
+<p style="margin-left:29%;">Define a command alias,
+like</p>
+
+<pre style="margin-left:29%; margin-top: 1em">    = quit q</pre>
+
+
+<p style="margin-left:29%; margin-top: 1em">or list current
+aliases.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>command</p></td>
+<td width="7%"></td>
+<td width="71%">
+
+
+<p>Execute command as a Perl statement. A trailing
+semicolon will be supplied. If the Perl statement would
+otherwise be confused for a Perl debugger, use a leading
+semicolon, too.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>m expr</p></td>
+<td width="7%"></td>
+<td width="71%">
+
+
+<p>List which methods may be called on the result of the
+evaluated expression. The expression may evaluated to a
+reference to a blessed object, or to a package name.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>M</p></td>
+<td width="7%"></td>
+<td width="71%">
+
+
+<p>Display all loaded modules and their versions.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">man [manpage]</p>
+
+<p style="margin-left:29%;">Despite its name, this calls
+your system&rsquo;s default documentation viewer on the
+given page, or on the viewer itself if <i>manpage</i> is
+omitted. If that viewer is <b>man</b>, the current
+<tt>&quot;Config&quot;</tt> information is used to invoke
+<b>man</b> using the proper <small>MANPATH</small> or
+<b>&minus;M&nbsp;</b><i>manpath</i> option. Failed lookups
+of the form <tt>&quot;XXX&quot;</tt> that match known
+manpages of the form <i>perlXXX</i> will be retried. This
+lets you type <tt>&quot;man debug&quot;</tt> or
+<tt>&quot;man op&quot;</tt> from the debugger.</p>
+
+<p style="margin-left:29%; margin-top: 1em">On systems
+traditionally bereft of a usable <b>man</b> command, the
+debugger invokes <b>perldoc</b>. Occasionally this
+determination is incorrect due to recalcitrant vendors or
+rather more felicitously, to enterprising users. If you fall
+into either category, just manually set the
+<tt>$DB::doccmd</tt> variable to whatever viewer to view the
+Perl documentation on your system. This may be set in an rc
+file, or through direct assignment. We&rsquo;re still
+waiting for a working example of something along the lines
+of:</p>
+
+<pre style="margin-left:29%; margin-top: 1em">    $DB::doccmd = 'netscape &minus;remote http://something.here/';</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Configurable
+Options</b> <br>
+The debugger has numerous options settable using the
+<tt>&quot;o&quot;</tt> command, either interactively or from
+the environment or an rc file. (./.perldb or ~/.perldb under
+Unix.) <br>
+&quot;recallCommand&quot;, &quot;ShellBang&quot;</p>
+
+<p style="margin-left:29%;">The characters used to recall
+command or spawn shell. By default, both are set to
+<tt>&quot;!&quot;</tt>, which is unfortunate.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>&quot;pager&quot;</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Program to use for output of pager-piped commands (those
+beginning with a <tt>&quot;|&quot;</tt> character.) By
+default, <tt>$ENV{PAGER}</tt> will be used. Because the
+debugger uses your current terminal characteristics for bold
+and underlining, if the chosen pager does not pass escape
+sequences through unchanged, the output of some debugger
+commands will not be readable when sent through the
+pager.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>&quot;tkRunning&quot;</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Run Tk while prompting (with ReadLine).</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">&quot;signalLevel&quot;,
+&quot;warnLevel&quot;, &quot;dieLevel&quot;</p>
+
+<p style="margin-left:29%;">Level of verbosity. By default,
+the debugger leaves your exceptions and warnings alone,
+because altering them can break correctly running programs.
+It will attempt to print a message when uncaught
+<small>INT</small> , <small>BUS</small> , or
+<small>SEGV</small> signals arrive. (But see the mention of
+signals in &quot; <small>BUGS</small> &quot; below.)</p>
+
+<p style="margin-left:29%; margin-top: 1em">To disable this
+default safe mode, set these values to something higher than
+0. At a level of 1, you get backtraces upon receiving any
+kind of warning (this is often annoying) or exception (this
+is often valuable). Unfortunately, the debugger cannot
+discern fatal exceptions from non-fatal ones. If
+<tt>&quot;dieLevel&quot;</tt> is even 1, then your non-fatal
+exceptions are also traced and unceremoniously altered if
+they came from <tt>&quot;eval'ed&quot;</tt> strings or from
+any kind of <tt>&quot;eval&quot;</tt> within modules
+you&rsquo;re attempting to load. If
+<tt>&quot;dieLevel&quot;</tt> is 2, the debugger
+doesn&rsquo;t care where they came from: It usurps your
+exception handler and prints out a trace, then modifies all
+exceptions with its own embellishments. This may perhaps be
+useful for some tracing purposes, but tends to hopelessly
+destroy any program that takes its exception handling
+seriously.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>&quot;AutoTrace&quot;</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Trace mode (similar to <tt>&quot;t&quot;</tt> command,
+but can be put into <tt>&quot;PERLDB_OPTS&quot;</tt>).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>&quot;LineInfo&quot;</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>File or pipe to print line number info to. If it is a
+pipe (say, <tt>&quot;|visual_perl_db&quot;</tt>), then a
+short message is used. This is the mechanism used to
+interact with a slave editor or visual debugger, such as the
+special <tt>&quot;vi&quot;</tt> or
+<tt>&quot;emacs&quot;</tt> hooks, or the
+<tt>&quot;ddd&quot;</tt> graphical debugger.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">&quot;inhibit_exit&quot;</p>
+
+<p style="margin-left:29%;">If 0, allows <i>stepping
+off</i> the end of the script.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>&quot;PrintRet&quot;</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Print return value after <tt>&quot;r&quot;</tt> command
+if set (default).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>&quot;ornaments&quot;</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Affects screen appearance of the command line (see
+Term::ReadLine). There is currently no way to disable these,
+which can render some output illegible on some displays, or
+with some pagers. This is considered a bug.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>&quot;frame&quot;</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Affects the printing of messages upon entry and exit
+from subroutines. If <tt>&quot;frame &amp; 2&quot;</tt> is
+false, messages are printed on entry only. (Printing on exit
+might be useful if interspersed with other messages.)</p></td></tr>
+</table>
+
+<p style="margin-left:29%; margin-top: 1em">If
+<tt>&quot;frame &amp; 4&quot;</tt>, arguments to functions
+are printed, plus context and caller info. If
+<tt>&quot;frame &amp; 8&quot;</tt>, overloaded
+<tt>&quot;stringify&quot;</tt> and <tt>&quot;tie&quot;</tt>d
+<tt>&quot;FETCH&quot;</tt> is enabled on the printed
+arguments. If <tt>&quot;frame &amp; 16&quot;</tt>, the
+return value from the subroutine is printed.</p>
+
+<p style="margin-left:29%; margin-top: 1em">The length at
+which the argument list is truncated is governed by the next
+option:</p>
+
+<p style="margin-left:11%;">&quot;maxTraceLen&quot;</p>
+
+<p style="margin-left:29%;">Length to truncate the argument
+list when the <tt>&quot;frame&quot;</tt> option&rsquo;s bit
+4 is set.</p>
+
+<p style="margin-left:11%;">&quot;windowSize&quot;</p>
+
+<p style="margin-left:29%;">Change the size of code list
+window (default is 10 lines).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+options affect what happens with <tt>&quot;V&quot;</tt>,
+<tt>&quot;X&quot;</tt>, and <tt>&quot;x&quot;</tt> commands:
+<br>
+&quot;arrayDepth&quot;, &quot;hashDepth&quot;</p>
+
+<p style="margin-left:29%;">Print only first N elements
+(&rsquo;&rsquo; for all).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>&quot;dumpDepth&quot;</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Limit recursion depth to N levels when dumping
+structures. Negative values are interpreted as infinity.
+Default: infinity.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">&quot;compactDump&quot;,
+&quot;veryCompact&quot;</p>
+
+<p style="margin-left:29%;">Change the style of array and
+hash output. If <tt>&quot;compactDump&quot;</tt>, short
+array may be printed on one line.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>&quot;globPrint&quot;</p></td>
+<td width="1%"></td>
+<td width="54%">
+
+
+<p>Whether to print contents of globs.</p></td>
+<td width="17%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">&quot;DumpDBFiles&quot;</p>
+
+<p style="margin-left:29%;">Dump arrays holding debugged
+files.</p>
+
+<p style="margin-left:11%;">&quot;DumpPackages&quot;</p>
+
+<p style="margin-left:29%;">Dump symbol tables of
+packages.</p>
+
+<p style="margin-left:11%;">&quot;DumpReused&quot;</p>
+
+<p style="margin-left:29%;">Dump contents of
+&quot;reused&quot; addresses.</p>
+
+<p style="margin-left:11%;">&quot;quote&quot;,
+&quot;HighBit&quot;, &quot;undefPrint&quot;</p>
+
+<p style="margin-left:29%;">Change the style of string
+dump. The default value for <tt>&quot;quote&quot;</tt> is
+<tt>&quot;auto&quot;</tt>; one can enable double-quotish or
+single-quotish format by setting it to
+<tt>&quot;&quot;&quot;</tt> or <tt>&quot;'&quot;</tt>,
+respectively. By default, characters with their high bit set
+are printed verbatim.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p>&quot;UsageOnly&quot;</p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Rudimentary per-package memory usage dump. Calculates
+total size of strings found in variables in the package.
+This does not include lexicals in a module&rsquo;s file
+scope, or lost in closures.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">After the rc
+file is read, the debugger reads the
+<tt>$ENV{PERLDB_OPTS}</tt> environment variable and parses
+this as the remainder of a &quot;O ...&quot; line as one
+might enter at the debugger prompt. You may place the
+initialization options <tt>&quot;TTY&quot;</tt>,
+<tt>&quot;noTTY&quot;</tt>, <tt>&quot;ReadLine&quot;</tt>,
+and <tt>&quot;NonStop&quot;</tt> there.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If your rc file
+contains:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  parse_options(&quot;NonStop=1 LineInfo=db.out AutoTrace&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">then your
+script will run without human intervention, putting trace
+information into the file <i>db.out</i>. (If you interrupt
+it, you&rsquo;d better reset <tt>&quot;LineInfo&quot;</tt>
+to <i>/dev/tty</i> if you expect to see anything.)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p style="margin-top: 1em">&quot;TTY&quot;</p></td>
+<td width="7%"></td>
+<td width="71%">
+
+
+<p style="margin-top: 1em">The <small>TTY</small> to use
+for debugging I/O.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>&quot;noTTY&quot;</p></td>
+<td width="7%"></td>
+<td width="71%">
+
+
+<p>If set, the debugger goes into
+<tt>&quot;NonStop&quot;</tt> mode and will not connect to a
+<small>TTY</small> . If interrupted (or if control goes to
+the debugger via explicit setting of <tt>$DB::signal</tt> or
+<tt>$DB::single</tt> from the Perl script), it connects to a
+<small>TTY</small> specified in the <tt>&quot;TTY&quot;</tt>
+option at startup, or to a tty found at runtime using the
+<tt>&quot;Term::Rendezvous&quot;</tt> module of your
+choice.</p> </td></tr>
+</table>
+
+<p style="margin-left:29%; margin-top: 1em">This module
+should implement a method named <tt>&quot;new&quot;</tt>
+that returns an object with two methods:
+<tt>&quot;IN&quot;</tt> and <tt>&quot;OUT&quot;</tt>. These
+should return filehandles to use for debugging input and
+output correspondingly. The <tt>&quot;new&quot;</tt> method
+should inspect an argument containing the value of
+<tt>$ENV{PERLDB_NOTTY}</tt> at startup, or
+<tt>&quot;$ENV{HOME}/.perldbtty$$&quot;</tt> otherwise. This
+file is not inspected for proper ownership, so security
+hazards are theoretically possible.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p style="margin-top: 1em">&quot;ReadLine&quot;</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p style="margin-top: 1em">If false, readline support in
+the debugger is disabled in order to debug applications that
+themselves use ReadLine.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p>&quot;NonStop&quot;</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>If set, the debugger goes into non-interactive mode
+until interrupted, or programmatically by setting
+<tt>$DB::signal</tt> or <tt>$DB::single</tt>.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Here&rsquo;s an
+example of using the <tt>$ENV{PERLDB_OPTS}</tt>
+variable:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ PERLDB_OPTS=&quot;NonStop frame=2&quot; perl &minus;d myprogram</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">That will run
+the script <b>myprogram</b> without human intervention,
+printing out the call tree with entry and exit points. Note
+that <tt>&quot;NonStop=1 frame=2&quot;</tt> is equivalent to
+<tt>&quot;N f=2&quot;</tt>, and that originally, options
+could be uniquely abbreviated by the first letter (modulo
+the <tt>&quot;Dump*&quot;</tt> options). It is nevertheless
+recommended that you always spell them out in full for
+legibility and future compatibility.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Other examples
+include</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ PERLDB_OPTS=&quot;NonStop LineInfo=listing frame=2&quot; perl &minus;d myprogram</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">which runs
+script non-interactively, printing info on each entry into a
+subroutine and each executed line into the file named
+<i>listing</i>. (If you interrupt it, you would better reset
+<tt>&quot;LineInfo&quot;</tt> to something
+&quot;interactive&quot;!)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Other examples
+include (using standard shell syntax to show environment
+variable settings):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $ ( PERLDB_OPTS=&quot;NonStop frame=1 AutoTrace LineInfo=tperl.out&quot;
+      perl &minus;d myprogram )</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">which may be
+useful for debugging a program that uses
+<tt>&quot;Term::ReadLine&quot;</tt> itself. Do not forget to
+detach your shell from the <small>TTY</small> in the window
+that corresponds to <i>/dev/ttyXX</i>, say, by issuing a
+command like</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $ sleep 1000000</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">See
+&quot;Debugger Internals&quot; in perldebguts for
+details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Debugger
+Input/Output</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em">Prompt</p></td>
+<td width="3%"></td>
+<td width="57%">
+
+
+<p style="margin-top: 1em">The debugger prompt is something
+like</p> </td>
+<td width="20%">
+</td></tr>
+</table>
+
+<pre style="margin-left:23%; margin-top: 1em">    DB&lt;8&gt;</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">or even</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    DB&lt;&lt;17&gt;&gt;</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">where that
+number is the command number, and which you&rsquo;d use to
+access with the built-in <b>csh</b>&minus;like history
+mechanism. For example, <tt>&quot;!17&quot;</tt> would
+repeat command number 17. The depth of the angle brackets
+indicates the nesting depth of the debugger. You could get
+more than one set of brackets, for example, if you&rsquo;d
+already at a breakpoint and then printed the result of a
+function call that itself has a breakpoint, or you step into
+an expression via <tt>&quot;s/n/t expression&quot;</tt>
+command.</p>
+
+<p style="margin-left:11%;">Multiline commands</p>
+
+<p style="margin-left:23%;">If you want to enter a
+multi-line command, such as a subroutine definition with
+several statements or a format, escape the newline that
+would normally end the debugger command with a backslash.
+Here&rsquo;s an example:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">      DB&lt;1&gt; for (1..4) {         \
+      cont:     print &quot;ok\n&quot;;   \
+      cont: }
+      ok
+      ok
+      ok
+      ok</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">Note that this
+business of escaping a newline is specific to interactive
+commands typed into the debugger.</p>
+
+<p style="margin-left:11%;">Stack backtrace</p>
+
+<p style="margin-left:23%;">Here&rsquo;s an example of what
+a stack backtrace via <tt>&quot;T&quot;</tt> command might
+look like:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    $ = main::infested called from file 'Ambulation.pm' line 10
+    @ = Ambulation::legs(1, 2, 3, 4) called from file 'camel_flea' line 7
+    $ = main::pests('bactrian', 4) called from file 'camel_flea' line 4</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">The left-hand
+character up there indicates the context in which the
+function was called, with <tt>&quot;$&quot;</tt> and
+<tt>&quot;@&quot;</tt> meaning scalar or list contexts
+respectively, and <tt>&quot;.&quot;</tt> meaning void
+context (which is actually a sort of scalar context). The
+display above says that you were in the function
+<tt>&quot;main::infested&quot;</tt> when you ran the stack
+dump, and that it was called in scalar context from line 10
+of the file <i>Ambulation.pm</i>, but without any arguments
+at all, meaning it was called as <tt>&amp;infested</tt>. The
+next stack frame shows that the function
+<tt>&quot;Ambulation::legs&quot;</tt> was called in list
+context from the <i>camel_flea</i> file with four arguments.
+The last stack frame shows that
+<tt>&quot;main::pests&quot;</tt> was called in scalar
+context, also from <i>camel_flea</i>, but from line 4.</p>
+
+<p style="margin-left:23%; margin-top: 1em">If you execute
+the <tt>&quot;T&quot;</tt> command from inside an active
+<tt>&quot;use&quot;</tt> statement, the backtrace will
+contain both a <tt>&quot;require&quot;</tt> frame and an
+<tt>&quot;eval&quot;</tt> frame.</p>
+
+<p style="margin-left:11%;">Line Listing Format</p>
+
+<p style="margin-left:23%;">This shows the sorts of output
+the <tt>&quot;l&quot;</tt> command can produce:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    DB&lt;&lt;13&gt;&gt; l
+  101:                @i{@i} = ();
+  102:b               @isa{@i,$pack} = ()
+  103                     if(exists $i{$prevpack} || exists $isa{$pack});
+  104             }
+  105
+  106             next
+  107==&gt;              if(exists $isa{$pack});
+  108
+  109:a           if ($extra&minus;&minus; &gt; 0) {
+  110:                %isa = ($pack,1);</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">Breakable lines
+are marked with <tt>&quot;:&quot;</tt>. Lines with
+breakpoints are marked by <tt>&quot;b&quot;</tt> and those
+with actions by <tt>&quot;a&quot;</tt>. The line
+that&rsquo;s about to be executed is marked by
+<tt>&quot;==&gt;&quot;</tt>.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Please be aware
+that code in debugger listings may not look the same as your
+original source code. Line directives and external source
+filters can alter the code before Perl sees it, causing code
+to move from its original positions or take on entirely
+different forms.</p>
+
+<p style="margin-left:11%;">Frame listing</p>
+
+<p style="margin-left:23%;">When the
+<tt>&quot;frame&quot;</tt> option is set, the debugger would
+print entered (and optionally exited) subroutines in
+different styles. See perldebguts for incredibly long
+examples of these.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Debugging
+Compile-Time Statements</b> <br>
+If you have compile-time executable statements (such as code
+within <small>BEGIN</small> , <small>UNITCHECK</small> and
+<small>CHECK</small> blocks or <tt>&quot;use&quot;</tt>
+statements), these will <i>not</i> be stopped by debugger,
+although <tt>&quot;require&quot;</tt>s and
+<small>INIT</small> blocks will, and compile-time statements
+can be traced with the <tt>&quot;AutoTrace&quot;</tt> option
+set in <tt>&quot;PERLDB_OPTS&quot;</tt>). From your own Perl
+code, however, you can transfer control back to the debugger
+using the following statement, which is harmless if the
+debugger is not running:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $DB::single = 1;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you set
+<tt>$DB::single</tt> to 2, it&rsquo;s equivalent to having
+just typed the <tt>&quot;n&quot;</tt> command, whereas a
+value of 1 means the <tt>&quot;s&quot;</tt> command. The
+<tt>$DB::trace</tt> variable should be set to 1 to simulate
+having typed the <tt>&quot;t&quot;</tt> command.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Another way to
+debug compile-time code is to start the debugger, set a
+breakpoint on the <i>load</i> of some module:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    DB&lt;7&gt; b load f:/perllib/lib/Carp.pm
+  Will stop on load of 'f:/perllib/lib/Carp.pm'.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">and then
+restart the debugger using the <tt>&quot;R&quot;</tt>
+command (if possible). One can use <tt>&quot;b compile
+subname&quot;</tt> for the same purpose.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Debugger
+Customization</b> <br>
+The debugger probably contains enough configuration hooks
+that you won&rsquo;t ever have to modify it yourself. You
+may change the behaviour of the debugger from within the
+debugger using its <tt>&quot;o&quot;</tt> command, from the
+command line via the <tt>&quot;PERLDB_OPTS&quot;</tt>
+environment variable, and from customization files.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can do some
+customization by setting up a <i>.perldb</i> file, which
+contains initialization code. For instance, you could make
+aliases like these (the last one is one people expect to be
+there):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $DB::alias{'len'}  = 's/^len(.*)/p length($1)/';
+    $DB::alias{'stop'} = 's/^stop (at|in)/b/';
+    $DB::alias{'ps'}   = 's/^ps\b/p scalar /';
+    $DB::alias{'quit'} = 's/^quit(\s*)/exit/';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can change
+options from <i>.perldb</i> by using calls like this
+one;</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    parse_options(&quot;NonStop=1 LineInfo=db.out AutoTrace=1 frame=2&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The code is
+executed in the package <tt>&quot;DB&quot;</tt>. Note that
+<i>.perldb</i> is processed before processing
+<tt>&quot;PERLDB_OPTS&quot;</tt>. If <i>.perldb</i> defines
+the subroutine <tt>&quot;afterinit&quot;</tt>, that function
+is called after debugger initialization ends. <i>.perldb</i>
+may be contained in the current directory, or in the home
+directory. Because this file is sourced in by Perl and may
+contain arbitrary commands, for security reasons, it must be
+owned by the superuser or the current user, and writable by
+no one but its owner.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can mock
+<small>TTY</small> input to debugger by adding arbitrary
+commands to <tt>@DB::typeahead</tt>. For example, your
+<i>.perldb</i> file might contain:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sub afterinit { push @DB::typeahead, &quot;b 4&quot;, &quot;b 6&quot;; }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Which would
+attempt to set breakpoints on lines 4 and 6 immediately
+after debugger initialization. Note that
+<tt>@DB::typeahead</tt> is not a supported interface and is
+subject to change in future releases.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+modify the debugger, copy <i>perl5db.pl</i> from the Perl
+library to another name and hack it to your heart&rsquo;s
+content. You&rsquo;ll then want to set your
+<tt>&quot;PERL5DB&quot;</tt> environment variable to say
+something like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    BEGIN { require &quot;myperl5db.pl&quot; }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">As a last
+resort, you could also use <tt>&quot;PERL5DB&quot;</tt> to
+customize the debugger by directly setting internal
+variables or calling debugger functions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that any
+variables and functions that are not documented in this
+document (or in perldebguts) are considered for internal use
+only, and as such are subject to change without notice.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Readline
+Support / History in the Debugger</b> <br>
+As shipped, the only command-line history supplied is a
+simplistic one that checks for leading exclamation points.
+However, if you install the Term::ReadKey and Term::ReadLine
+modules from <small>CPAN</small> (such as
+Term::ReadLine::Gnu, Term::ReadLine::Perl, ...) you will
+have full editing capabilities much like those
+<small>GNU</small> <i>readline</i>(3) provides. Look for
+these in the <i>modules/by&minus;module/Term</i> directory
+on <small>CPAN</small> . These do not support normal
+<b>vi</b> command-line editing, however.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A rudimentary
+command-line completion is also available, including lexical
+variables in the current scope if the
+<tt>&quot;PadWalker&quot;</tt> module is installed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Without
+Readline support you may see the symbols &quot;^[[A&quot;,
+&quot;^[[C&quot;, &quot;^[[B&quot;, &quot;^[[D&quot;&quot;,
+&quot;^H&quot;, ... when using the arrow keys and/or the
+backspace key.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Editor
+Support for Debugging</b> <br>
+If you have the <small>FSF</small> &rsquo;s version of
+<b>emacs</b> installed on your system, it can interact with
+the Perl debugger to provide an integrated software
+development environment reminiscent of its interactions with
+C debuggers.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Recent versions
+of Emacs come with a start file for making <b>emacs</b> act
+like a syntax-directed editor that understands (some of)
+Perl&rsquo;s syntax. See perlfaq3.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A similar setup
+by Tom Christiansen for interacting with any vendor-shipped
+<b>vi</b> and the X11 window system is also available. This
+works similarly to the integrated multiwindow support that
+<b>emacs</b> provides, where the debugger drives the editor.
+At the time of this writing, however, that tool&rsquo;s
+eventual location in the Perl distribution was
+uncertain.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Users of
+<b>vi</b> should also look into <b>vim</b> and <b>gvim</b>,
+the mousey and windy version, for coloring of Perl
+keywords.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that only
+perl can truly parse Perl, so all such <small>CASE</small>
+tools fall somewhat short of the mark, especially if you
+don&rsquo;t program your Perl as a C programmer might.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>The Perl
+Profiler</b> <br>
+If you wish to supply an alternative debugger for Perl to
+run, invoke your script with a colon and a package argument
+given to the <b>&minus;d</b> flag. Perl&rsquo;s alternative
+debuggers include a Perl profiler, Devel::NYTProf, which is
+available separately as a <small>CPAN</small> distribution.
+To profile your Perl program in the file <i>mycode.pl</i>,
+just type:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl &minus;d:NYTProf mycode.pl</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">When the script
+terminates the profiler will create a database of the
+profile information that you can turn into reports using the
+profiler&rsquo;s tools. See &lt;perlperf&gt; for
+details.</p>
+
+<h2>Debugging Regular Expressions
+<a name="Debugging Regular Expressions"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;use
+re 'debug'&quot;</tt> enables you to see the gory details of
+how the Perl regular expression engine works. In order to
+understand this typically voluminous output, one must not
+only have some idea about how regular expression matching
+works in general, but also know how Perl&rsquo;s regular
+expressions are internally compiled into an automaton. These
+matters are explored in some detail in &quot;Debugging
+Regular Expressions&quot; in perldebguts.</p>
+
+<h2>Debugging Memory Usage
+<a name="Debugging Memory Usage"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Perl contains
+internal support for reporting its own memory usage, but
+this is a fairly advanced concept that requires some
+understanding of how memory allocation works. See
+&quot;Debugging Perl Memory Usage&quot; in perldebguts for
+the details.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">You did try the
+<b>&minus;w</b> switch, didn&rsquo;t you?</p>
+
+<p style="margin-left:11%; margin-top: 1em">perldebtut,
+perldebguts, re, <small>DB</small> , Devel::NYTProf,
+Dumpvalue, and perlrun.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When debugging
+a script that uses #! and is thus normally found in
+<tt>$PATH</tt>, the &minus;S option causes perl to search
+<tt>$PATH</tt> for it, so you don&rsquo;t have to type the
+path or <tt>&quot;which $scriptname&quot;</tt>.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $ perl &minus;Sd foo.pl</pre>
+
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">You cannot get
+stack frame information or in any fashion debug functions
+that were not compiled by Perl, such as those from C or C
+<small>++</small> extensions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you alter
+your <tt>@_</tt> arguments in a subroutine (such as with
+<tt>&quot;shift&quot;</tt> or <tt>&quot;pop&quot;</tt>), the
+stack backtrace will not show the original values.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The debugger
+does not currently work in conjunction with the
+<b>&minus;W</b> command-line switch, because it itself is
+not free of warnings.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you&rsquo;re
+in a slow syscall (like <tt>&quot;wait&quot;</tt>ing,
+<tt>&quot;accept&quot;</tt>ing, or
+<tt>&quot;read&quot;</tt>ing from your keyboard or a socket)
+and haven&rsquo;t set up your own <tt>$SIG{INT}</tt>
+handler, then you won&rsquo;t be able to CTRL-C your way
+back to the debugger, because the debugger&rsquo;s own
+<tt>$SIG{INT}</tt> handler doesn&rsquo;t understand that it
+needs to raise an exception to <i>longjmp</i>(3) out of slow
+syscalls.</p>
+<hr>
+</body>
+</html>

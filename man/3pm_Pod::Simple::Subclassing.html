@@ -1,0 +1,1481 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:38:27 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Pod::Simple::Subclassing</title>
+
+</head>
+<body>
+
+<h1 align="center">Pod::Simple::Subclassing</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#Events">Events</a><br>
+<a href="#More Pod::Simple Methods">More Pod::Simple Methods</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#SUPPORT">SUPPORT</a><br>
+<a href="#COPYRIGHT AND DISCLAIMERS">COPYRIGHT AND DISCLAIMERS</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple::Subclassing
+&minus;&minus; write a formatter as a Pod::Simple
+subclass</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  package Pod::SomeFormatter;
+  use Pod::Simple;
+  @ISA = qw(Pod::Simple);
+  $VERSION = '1.01';
+  use strict;
+  sub _handle_element_start {
+        my($parser, $element_name, $attr_hash_r) = @_;
+        ...
+  }
+  sub _handle_element_end {
+        my($parser, $element_name, $attr_hash_r) = @_;
+        # NOTE: $attr_hash_r is only present when $element_name is &quot;over&quot; or &quot;begin&quot;
+        # The remaining code excerpts will mostly ignore this $attr_hash_r, as it is
+        # mostly useless. It is documented where &quot;over&minus;*&quot; and &quot;begin&quot; events are
+        # documented.
+        ...
+  }
+  sub _handle_text {
+        my($parser, $text) = @_;
+        ...
+  }
+  1;</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+is about using Pod::Simple to write a Pod processor,
+generally a Pod formatter. If you just want to know about
+using an existing Pod formatter, instead see its
+documentation and see also the docs in Pod::Simple.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The zeroeth
+step in writing a Pod formatter is to make sure that there
+isn&rsquo;t already a decent one in <small>CPAN.</small> See
+&lt;http://search.cpan.org/&gt;, and run a search on the
+name of the format you want to render to. Also consider
+joining the Pod People list
+&lt;http://lists.perl.org/showlist.cgi?name=pod&minus;people&gt;
+and asking whether anyone has a formatter for that format --
+maybe someone cobbled one together but just hasn&rsquo;t
+released it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The first step
+in writing a Pod processor is to read perlpodspec, which
+contains notes information on writing a Pod parser (which
+has been largely taken care of by Pod::Simple), but also a
+lot of requirements and recommendations for writing a
+formatter.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The second step
+is to actually learn the format you&rsquo;re planning to
+format to -- or at least as much as you need to know to
+represent Pod, which probably isn&rsquo;t much.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The third step
+is to pick which of Pod::Simple&rsquo;s interfaces you want
+to use -- the basic interface via Pod::Simple or
+Pod::Simple::Methody is event-based, sort of like
+HTML::Parser&rsquo;s interface, or sort of like
+XML::Parser&rsquo;s &quot;Handlers&quot; interface), but
+Pod::Simple::PullParser provides a token-stream interface,
+sort of like HTML::TokeParser&rsquo;s interface;
+Pod::Simple::SimpleTree provides a simple tree interface,
+rather like XML::Parser&rsquo;s &quot;Tree&quot; interface.
+Users familiar with XML-handling will find one of these
+styles relatively familiar; but if you would be even more at
+home with <small>XML,</small> there are classes that produce
+an <small>XML</small> representation of the Pod stream,
+notably Pod::Simple::XMLOutStream; you can feed the output
+of such a class to whatever <small>XML</small> parsing
+system you are most at home with.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The last step
+is to write your code based on how the events (or tokens, or
+tree-nodes, or the <small>XML,</small> or however
+you&rsquo;re parsing) will map to constructs in the output
+format. Also sure to consider how to escape text nodes
+containing arbitrary text, and also what to do with text
+nodes that represent preformatted text (from verbatim
+sections).</p>
+
+<h2>Events
+<a name="Events"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>TODO</small>
+intro... mention that events are supplied for implicits,
+like for missing &gt;&rsquo;s</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the
+following section, we use <small>XML</small> to represent
+the event structure associated with a particular construct.
+That is, <small>TODO</small> <br>
+&quot;$parser&minus;&gt;_handle_element_start(
+<i>element_name</i><tt>,</tt> <i>attr_hashref</i>
+<tt>)&quot;</tt> <br>
+&quot;$parser&minus;&gt;_handle_element_end(
+<i>element_name</i> <tt>)&quot;</tt> <br>
+&quot;$parser&minus;&gt;_handle_text( <i>text_string</i>
+<tt>)&quot;</tt></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>TODO</small>
+describe <br>
+events with an element_name of Document</p>
+
+<p style="margin-left:17%;">Parsing a document produces
+this event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;Document start_line=&quot;543&quot;&gt;
+        ...all events...
+  &lt;/Document&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The value of
+the <i>start_line</i> attribute will be the line number of
+the first Pod directive in the document.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If there is no
+Pod in the given document, then the event structure will be
+this:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;Document contentless=&quot;1&quot; start_line=&quot;543&quot;&gt;
+  &lt;/Document&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">In that case,
+the value of the <i>start_line</i> attribute will not be
+meaningful; under current implementations, it will probably
+be the line number of the last line in the file.</p>
+
+<p style="margin-left:11%;">events with an element_name of
+Para</p>
+
+<p style="margin-left:17%;">Parsing a plain (non-verbatim,
+non-directive, non-data) paragraph in a Pod document
+produces this event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        &lt;Para start_line=&quot;543&quot;&gt;
+          ...all events in this paragraph...
+        &lt;/Para&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The value of
+the <i>start_line</i> attribute will be the line number of
+the start of the paragraph.</p>
+
+<p style="margin-left:17%; margin-top: 1em">For example,
+parsing this paragraph of Pod:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  The value of the I&lt;start_line&gt; attribute will be the
+  line number of the start of the paragraph.</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">produces this
+event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        &lt;Para start_line=&quot;129&quot;&gt;
+          The value of the
+          &lt;I&gt;
+                start_line
+          &lt;/I&gt;
+           attribute will be the line number of the first Pod directive
+          in the document.
+        &lt;/Para&gt;</pre>
+
+
+<p style="margin-left:11%;">events with an element_name of
+B, C, F, or I.</p>
+
+<p style="margin-left:17%;">Parsing a B&lt;...&gt;
+formatting code (or of course any of its semantically
+identical syntactic variants
+B&lt;&lt;&nbsp;...&nbsp;&gt;&gt;, or
+B&lt;&lt;&lt;&lt;&nbsp;...&nbsp;&gt;&gt;&gt;&gt;, etc.)
+produces this event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">          &lt;B&gt;
+                ...stuff...
+          &lt;/B&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Currently,
+there are no attributes conveyed.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Parsing C, F,
+or I codes produce the same structure, with only a different
+element name.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If your parser
+object has been set to accept other formatting codes, then
+they will be presented like these B/C/F/I codes -- i.e.,
+without any attributes.</p>
+
+<p style="margin-left:11%;">events with an element_name of
+S</p>
+
+<p style="margin-left:17%;">Normally, parsing an
+S&lt;...&gt; sequence produces this event structure, just as
+if it were a B/C/F/I code:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">          &lt;S&gt;
+                ...stuff...
+          &lt;/S&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">However,
+Pod::Simple (and presumably all derived parsers) offers the
+<tt>&quot;nbsp_for_S&quot;</tt> option which, if enabled,
+will suppress all S events, and instead change all spaces in
+the content to non-breaking spaces. This is intended for
+formatters that output to a format that has no code that
+means the same as S&lt;...&gt;, but which has a
+code/character that means non-breaking space.</p>
+
+<p style="margin-left:11%;">events with an element_name of
+X</p>
+
+<p style="margin-left:17%;">Normally, parsing an
+X&lt;...&gt; sequence produces this event structure, just as
+if it were a B/C/F/I code:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">          &lt;X&gt;
+                ...stuff...
+          &lt;/X&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">However,
+Pod::Simple (and presumably all derived parsers) offers the
+<tt>&quot;nix_X_codes&quot;</tt> option which, if enabled,
+will suppress all X events and ignore their content. For
+formatters/processors that don&rsquo;t use X events, this is
+presumably quite useful.</p>
+
+<p style="margin-left:11%;">events with an element_name of
+L</p>
+
+<p style="margin-left:17%;">Because the L&lt;...&gt; is the
+most complex construct in the language, it should not
+surprise you that the events it generates are the most
+complex in the language. Most of complexity is hidden away
+in the attribute values, so for those of you writing a Pod
+formatter that produces a non-hypertextual format, you can
+just ignore the attributes and treat an L event structure
+like a formatting element that (presumably) doesn&rsquo;t
+actually produce a change in formatting. That is, the
+content of the L event structure (as opposed to its
+attributes) is always what text should be displayed.</p>
+
+<p style="margin-left:17%; margin-top: 1em">There are, at
+first glance, three kinds of L links: <small>URL,</small>
+man, and pod.</p>
+
+<p style="margin-left:17%; margin-top: 1em">When a
+L&lt;<i>some_url</i>&gt; code is parsed, it produces this
+event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;L content&minus;implicit=&quot;yes&quot; raw=&quot;that_url&quot; to=&quot;that_url&quot; type=&quot;url&quot;&gt;
+        that_url
+  &lt;/L&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The
+<tt>&quot;type=&quot;url&quot;&quot;</tt> attribute is
+always specified for this type of L code.</p>
+
+<p style="margin-left:17%; margin-top: 1em">For example,
+this Pod source:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  L&lt;http://www.perl.com/CPAN/authors/&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">produces this
+event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;L content&minus;implicit=&quot;yes&quot; raw=&quot;http://www.perl.com/CPAN/authors/&quot; to=&quot;http://www.perl.com/CPAN/authors/&quot; type=&quot;url&quot;&gt;
+        http://www.perl.com/CPAN/authors/
+  &lt;/L&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">When a
+L&lt;<i>manpage(section)</i>&gt; code is parsed (and these
+are fairly rare and not terribly useful), it produces this
+event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;L content&minus;implicit=&quot;yes&quot; raw=&quot;manpage(section)&quot; to=&quot;manpage(section)&quot; type=&quot;man&quot;&gt;
+        manpage(section)
+  &lt;/L&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The
+<tt>&quot;type=&quot;man&quot;&quot;</tt> attribute is
+always specified for this type of L code.</p>
+
+<p style="margin-left:17%; margin-top: 1em">For example,
+this Pod source:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  L&lt;crontab(5)&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">produces this
+event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;L content&minus;implicit=&quot;yes&quot; raw=&quot;crontab(5)&quot; to=&quot;crontab(5)&quot; type=&quot;man&quot;&gt;
+        crontab(5)
+  &lt;/L&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">In the rare
+cases where a man page link has a specified, that text
+appears in a <i>section</i> attribute. For example, this Pod
+source:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  L&lt;crontab(5)/&quot;ENVIRONMENT&quot;&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">will produce
+this event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;L content&minus;implicit=&quot;yes&quot; raw=&quot;crontab(5)/&amp;quot;ENVIRONMENT&amp;quot;&quot; section=&quot;ENVIRONMENT&quot; to=&quot;crontab(5)&quot; type=&quot;man&quot;&gt;
+        &quot;ENVIRONMENT&quot; in crontab(5)
+  &lt;/L&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">In the rare
+case where the Pod document has code like
+L&lt;<i>sometext</i>|<i>manpage(section)</i>&gt;, then the
+<i>sometext</i> will appear as the content of the element,
+the <i>manpage(section)</i> text will appear only as the
+value of the <i>to</i> attribute, and there will be no
+<tt>&quot;content&minus;implicit=&quot;yes&quot;&quot;</tt>
+attribute (whose presence means that the Pod parser had to
+infer what text should appear as the link text -- as opposed
+to cases where that attribute is absent, which means that
+the Pod parser did <i>not</i> have to infer the link text,
+because that L code explicitly specified some link
+text.)</p>
+
+<p style="margin-left:17%; margin-top: 1em">For example,
+this Pod source:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  L&lt;hell itself!|crontab(5)&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">will produce
+this event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;L raw=&quot;hell itself!|crontab(5)&quot; to=&quot;crontab(5)&quot; type=&quot;man&quot;&gt;
+        hell itself!
+  &lt;/L&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The last type
+of L structure is for links to/within Pod documents. It is
+the most complex because it can have a <i>to</i> attribute,
+<i>or</i> a <i>section</i> attribute, or both. The
+<tt>&quot;type=&quot;pod&quot;&quot;</tt> attribute is
+always specified for this type of L code.</p>
+
+<p style="margin-left:17%; margin-top: 1em">In the most
+common case, the simple case of a L&lt;podpage&gt; code
+produces this event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;L content&minus;implicit=&quot;yes&quot; raw=&quot;podpage&quot; to=&quot;podpage&quot; type=&quot;pod&quot;&gt;
+        podpage
+  &lt;/L&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">For example,
+this Pod source:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  L&lt;Net::Ping&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">produces this
+event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;L content&minus;implicit=&quot;yes&quot; raw=&quot;Net::Ping&quot; to=&quot;Net::Ping&quot; type=&quot;pod&quot;&gt;
+        Net::Ping
+  &lt;/L&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">In cases where
+there is link-text explicitly specified, it is to be found
+in the content of the element (and not the attributes), just
+as with the L&lt;<i>sometext</i>|<i>manpage(section)</i>&gt;
+case discussed above. For example, this Pod source:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  L&lt;Perl Error Messages|perldiag&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">produces this
+event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;L raw=&quot;Perl Error Messages|perldiag&quot; to=&quot;perldiag&quot; type=&quot;pod&quot;&gt;
+        Perl Error Messages
+  &lt;/L&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">In cases of
+links to a section in the current Pod document, there is a
+<i>section</i> attribute instead of a <i>to</i> attribute.
+For example, this Pod source:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  L&lt;/&quot;Member Data&quot;&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">produces this
+event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;L content&minus;implicit=&quot;yes&quot; raw=&quot;/&amp;quot;Member Data&amp;quot;&quot; section=&quot;Member Data&quot; type=&quot;pod&quot;&gt;
+        &quot;Member Data&quot;
+  &lt;/L&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">As another
+example, this Pod source:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  L&lt;the various attributes|/&quot;Member Data&quot;&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">produces this
+event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;L raw=&quot;the various attributes|/&amp;quot;Member Data&amp;quot;&quot; section=&quot;Member Data&quot; type=&quot;pod&quot;&gt;
+        the various attributes
+  &lt;/L&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">In cases of
+links to a section in a different Pod document, there are
+both a <i>section</i> attribute and a to attribute. For
+example, this Pod source:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  L&lt;perlsyn/&quot;Basic BLOCKs and Switch Statements&quot;&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">produces this
+event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;L content&minus;implicit=&quot;yes&quot; raw=&quot;perlsyn/&amp;quot;Basic BLOCKs and Switch Statements&amp;quot;&quot; section=&quot;Basic BLOCKs and Switch Statements&quot; to=&quot;perlsyn&quot; type=&quot;pod&quot;&gt;
+        &quot;Basic BLOCKs and Switch Statements&quot; in perlsyn
+  &lt;/L&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">As another
+example, this Pod source:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  L&lt;SWITCH statements|perlsyn/&quot;Basic BLOCKs and Switch Statements&quot;&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">produces this
+event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;L raw=&quot;SWITCH statements|perlsyn/&amp;quot;Basic BLOCKs and Switch Statements&amp;quot;&quot; section=&quot;Basic BLOCKs and Switch Statements&quot; to=&quot;perlsyn&quot; type=&quot;pod&quot;&gt;
+        SWITCH statements
+  &lt;/L&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Incidentally,
+note that we do not distinguish between these syntaxes:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  L&lt;/&quot;Member Data&quot;&gt;
+  L&lt;&quot;Member Data&quot;&gt;
+  L&lt;/Member Data&gt;
+  L&lt;Member Data&gt;    [deprecated syntax]</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">That is, they
+all produce the same event structure (for the most part),
+namely:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;L content&minus;implicit=&quot;yes&quot; raw=&quot;$depends_on_syntax&quot; section=&quot;Member Data&quot; type=&quot;pod&quot;&gt;
+        &amp;#34;Member Data&amp;#34;
+  &lt;/L&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The <i>raw</i>
+attribute depends on what the raw content of the
+<tt>&quot;L&lt;&gt;&quot;</tt> is, so that is why the event
+structure is the same &quot;for the most part&quot;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If you have not
+guessed it yet, the <i>raw</i> attribute contains the raw,
+original, unescaped content of the
+<tt>&quot;L&lt;&gt;&quot;</tt> formatting code. In addition
+to the examples above, take notice of the following event
+structure produced by the following
+<tt>&quot;L&lt;&gt;&quot;</tt> formatting code.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  L&lt;click B&lt;here&gt;|page/About the C&lt;&minus;M&gt; switch&gt;
+  &lt;L raw=&quot;click B&lt;here&gt;|page/About the C&lt;&minus;M&gt; switch&quot; section=&quot;About the &minus;M switch&quot; to=&quot;page&quot; type=&quot;pod&quot;&gt;
+        click B&lt;here&gt;
+  &lt;/L&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Specifically,
+notice that the formatting codes are present and unescaped
+in <i>raw</i>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">There is a
+known bug in the <i>raw</i> attribute where any surrounding
+whitespace is condensed into a single &rsquo; &rsquo;. For
+example, given L&lt; link&gt;, <i>raw</i> will be &quot;
+link&quot;.</p>
+
+<p style="margin-left:11%;">events with an element_name of
+E or Z</p>
+
+<p style="margin-left:17%;">While there are Pod codes
+E&lt;...&gt; and Z&lt;&gt;, these <i>do not</i> produce any
+E or Z events -- that is, there are no such events as E or
+Z.</p>
+
+<p style="margin-left:11%;">events with an element_name of
+Verbatim</p>
+
+<p style="margin-left:17%;">When a Pod verbatim paragraph (
+<small>AKA</small> &quot;codeblock&quot;) is parsed, it
+produces this event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;Verbatim start_line=&quot;543&quot; xml:space=&quot;preserve&quot;&gt;
+        ...text...
+  &lt;/Verbatim&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The value of
+the <i>start_line</i> attribute will be the line number of
+the first line of this verbatim block. The <i>xml:space</i>
+attribute is always present, and always has the value
+&quot;preserve&quot;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The text
+content will have tabs already expanded.</p>
+
+<p style="margin-left:11%;">events with an element_name of
+head1 .. head4</p>
+
+<p style="margin-left:17%;">When a &quot;=head1 ...&quot;
+directive is parsed, it produces this event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;head1&gt;
+        ...stuff...
+  &lt;/head1&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">For example, a
+directive consisting of this:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =head1 Options to C&lt;new&gt; et al.</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">will produce
+this event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;head1 start_line=&quot;543&quot;&gt;
+        Options to
+        &lt;C&gt;
+          new
+        &lt;/C&gt;
+         et al.
+  &lt;/head1&gt;</pre>
+
+
+
+<p style="margin-left:17%; margin-top: 1em">&quot;=head2&quot;
+thru &quot;=head4&quot; directives are the same, except for
+the element names in the event structure.</p>
+
+<p style="margin-left:11%;">events with an element_name of
+encoding</p>
+
+<p style="margin-left:17%;">In the default case, the events
+corresponding to <tt>&quot;=encoding&quot;</tt> directives
+are not emitted. They are emitted if
+<tt>&quot;keep_encoding_directive&quot;</tt> is true. In
+that case they produce event structures like &quot;events
+with an element_name of head1 .. head4&quot; above.</p>
+
+<p style="margin-left:11%;">events with an element_name of
+over-bullet</p>
+
+<p style="margin-left:17%;">When an &quot;=over ...
+=back&quot; block is parsed where the items are a bulleted
+list, it will produce this event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;over&minus;bullet indent=&quot;4&quot; start_line=&quot;543&quot;&gt;
+        &lt;item&minus;bullet start_line=&quot;545&quot;&gt;
+          ...Stuff...
+        &lt;/item&minus;bullet&gt;
+        ...more item&minus;bullets...
+  &lt;/over&minus;bullet fake&minus;closer=&quot;1&quot;&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The attribute
+<i>fake-closer</i> is only present if it is a true value; it
+is not present if it is a false value. It is shown in the
+above example to illustrate where the attribute is (in the
+<b>closing</b> tag). It signifies that the
+<tt>&quot;=over&quot;</tt> did not have a matching
+<tt>&quot;=back&quot;</tt>, and thus Pod::Simple had to
+create a fake closer.</p>
+
+<p style="margin-left:17%; margin-top: 1em">For example,
+this Pod source:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =over
+  =item *
+  Something
+  =back</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Would produce
+an event structure that does <b>not</b> have the
+<i>fake-closer</i> attribute, whereas this Pod source:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =over
+  =item *
+  Gasp! An unclosed =over block!</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">would. The rest
+of the over&minus;* examples will not demonstrate this
+attribute, but they all can have it. See
+Pod::Checker&rsquo;s source for an example of this attribute
+being used.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The value of
+the <i>indent</i> attribute is whatever value is after the
+&quot;=over&quot; directive, as in &quot;=over 8&quot;. If
+no such value is specified in the directive, then the
+<i>indent</i> attribute has the value &quot;4&quot;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">For example,
+this Pod source:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =over
+  =item *
+  Stuff
+  =item *
+  Bar I&lt;baz&gt;!
+  =back</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">produces this
+event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;over&minus;bullet indent=&quot;4&quot; start_line=&quot;10&quot;&gt;
+        &lt;item&minus;bullet start_line=&quot;12&quot;&gt;
+          Stuff
+        &lt;/item&minus;bullet&gt;
+        &lt;item&minus;bullet start_line=&quot;14&quot;&gt;
+          Bar &lt;I&gt;baz&lt;/I&gt;!
+        &lt;/item&minus;bullet&gt;
+  &lt;/over&minus;bullet&gt;</pre>
+
+
+<p style="margin-left:11%;">events with an element_name of
+over-number</p>
+
+<p style="margin-left:17%;">When an &quot;=over ...
+=back&quot; block is parsed where the items are a numbered
+list, it will produce this event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;over&minus;number indent=&quot;4&quot; start_line=&quot;543&quot;&gt;
+        &lt;item&minus;number number=&quot;1&quot; start_line=&quot;545&quot;&gt;
+          ...Stuff...
+        &lt;/item&minus;number&gt;
+        ...more item&minus;number...
+  &lt;/over&minus;bullet&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">This is like
+the &quot;over-bullet&quot; event structure; but note that
+the contents are &quot;item-number&quot; instead of
+&quot;item-bullet&quot;, and note that they will have a
+&quot;number&quot; attribute, which some
+formatters/processors may ignore (since, for example,
+there&rsquo;s no need for it in <small>HTML</small> when
+producing an &quot;&lt; <small>UL</small> &gt;&lt;
+<small>LI</small> &gt;...&lt;/LI&gt;...&lt;/UL&gt;&quot;
+structure), but which any processor may use.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Note that the
+values for the <i>number</i> attributes of
+&quot;item-number&quot; elements in a given
+&quot;over-number&quot; area <i>will</i> start at 1 and go
+up by one each time. If the Pod source doesn&rsquo;t follow
+that order (even though it really should should!), whatever
+numbers it has will be ignored (with the correct values
+being put in the <i>number</i> attributes), and an error
+message might be issued to the user.</p>
+
+<p style="margin-left:11%;">events with an element_name of
+over-text</p>
+
+<p style="margin-left:17%;">These events are somewhat
+unlike the other over&minus;* structures, as far as what
+their contents are. When an &quot;=over ... =back&quot;
+block is parsed where the items are a list of text
+&quot;subheadings&quot;, it will produce this event
+structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;over&minus;text indent=&quot;4&quot; start_line=&quot;543&quot;&gt;
+        &lt;item&minus;text&gt;
+          ...stuff...
+        &lt;/item&minus;text&gt;
+        ...stuff (generally Para or Verbatim elements)...
+        &lt;item&minus;text&gt;
+        ...more item&minus;text and/or stuff...
+  &lt;/over&minus;text&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The
+<i>indent</i> and <i>fake-closer</i> attributes are as with
+the other over&minus;* events.</p>
+
+<p style="margin-left:17%; margin-top: 1em">For example,
+this Pod source:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =over
+  =item Foo
+  Stuff
+  =item Bar I&lt;baz&gt;!
+  Quux
+  =back</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">produces this
+event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;over&minus;text indent=&quot;4&quot; start_line=&quot;20&quot;&gt;
+        &lt;item&minus;text start_line=&quot;22&quot;&gt;
+          Foo
+        &lt;/item&minus;text&gt;
+        &lt;Para start_line=&quot;24&quot;&gt;
+          Stuff
+        &lt;/Para&gt;
+        &lt;item&minus;text start_line=&quot;26&quot;&gt;
+          Bar
+                &lt;I&gt;
+                  baz
+                &lt;/I&gt;
+          !
+        &lt;/item&minus;text&gt;
+        &lt;Para start_line=&quot;28&quot;&gt;
+          Quux
+        &lt;/Para&gt;
+  &lt;/over&minus;text&gt;</pre>
+
+
+<p style="margin-left:11%;">events with an element_name of
+over-block</p>
+
+<p style="margin-left:17%;">These events are somewhat
+unlike the other over&minus;* structures, as far as what
+their contents are. When an &quot;=over ... =back&quot;
+block is parsed where there are no items, it will produce
+this event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;over&minus;block indent=&quot;4&quot; start_line=&quot;543&quot;&gt;
+        ...stuff (generally Para or Verbatim elements)...
+  &lt;/over&minus;block&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The
+<i>indent</i> and <i>fake-closer</i> attributes are as with
+the other over&minus;* events.</p>
+
+<p style="margin-left:17%; margin-top: 1em">For example,
+this Pod source:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =over
+  For cutting off our trade with all parts of the world
+  For transporting us beyond seas to be tried for pretended offenses
+  He is at this time transporting large armies of foreign mercenaries to
+  complete the works of death, desolation and tyranny, already begun with
+  circumstances of cruelty and perfidy scarcely paralleled in the most
+  barbarous ages, and totally unworthy the head of a civilized nation.
+  =back</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">will produce
+this event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;over&minus;block indent=&quot;4&quot; start_line=&quot;2&quot;&gt;
+        &lt;Para start_line=&quot;4&quot;&gt;
+          For cutting off our trade with all parts of the world
+        &lt;/Para&gt;
+        &lt;Para start_line=&quot;6&quot;&gt;
+          For transporting us beyond seas to be tried for pretended offenses
+        &lt;/Para&gt;
+        &lt;Para start_line=&quot;8&quot;&gt;
+          He is at this time transporting large armies of [...more text...]
+        &lt;/Para&gt;
+  &lt;/over&minus;block&gt;</pre>
+
+
+<p style="margin-left:11%;">events with an element_name of
+over-empty</p>
+
+<p style="margin-left:17%;"><b>Note: These events are only
+triggered if &quot;parse_empty_lists()&quot; is set to a
+true value.</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">These events
+are somewhat unlike the other over&minus;* structures, as
+far as what their contents are. When an &quot;=over ...
+=back&quot; block is parsed where there is no content, it
+will produce this event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;over&minus;empty indent=&quot;4&quot; start_line=&quot;543&quot;&gt;
+  &lt;/over&minus;empty&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The
+<i>indent</i> and <i>fake-closer</i> attributes are as with
+the other over&minus;* events.</p>
+
+<p style="margin-left:17%; margin-top: 1em">For example,
+this Pod source:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =over
+  =over
+  =back
+  =back</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">will produce
+this event structure:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  &lt;over&minus;block indent=&quot;4&quot; start_line=&quot;1&quot;&gt;
+        &lt;over&minus;empty indent=&quot;4&quot; start_line=&quot;3&quot;&gt;
+        &lt;/over&minus;empty&gt;
+  &lt;/over&minus;block&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Note that the
+outer <tt>&quot;=over&quot;</tt> is a block because it has
+no <tt>&quot;=item&quot;</tt>s but still has content: the
+inner <tt>&quot;=over&quot;</tt>. The inner
+<tt>&quot;=over&quot;</tt>, in turn, is completely empty,
+and is treated as such.</p>
+
+<p style="margin-left:11%;">events with an element_name of
+item-bullet</p>
+
+<p style="margin-left:17%;">See &quot;events with an
+element_name of over-bullet&quot;, above.</p>
+
+<p style="margin-left:11%;">events with an element_name of
+item-number</p>
+
+<p style="margin-left:17%;">See &quot;events with an
+element_name of over-number&quot;, above.</p>
+
+<p style="margin-left:11%;">events with an element_name of
+item-text</p>
+
+<p style="margin-left:17%;">See &quot;events with an
+element_name of over-text&quot;, above.</p>
+
+<p style="margin-left:11%;">events with an element_name of
+for</p>
+
+<p style="margin-left:17%;"><small>TODO...</small></p>
+
+<p style="margin-left:11%;">events with an element_name of
+Data</p>
+
+<p style="margin-left:17%;"><small>TODO...</small></p>
+
+<h2>More Pod::Simple Methods
+<a name="More Pod::Simple Methods"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple
+provides a lot of methods that aren&rsquo;t generally
+interesting to the end user of an existing Pod formatter,
+but some of which you might find useful in writing a Pod
+formatter. They are listed below. The first several methods
+(the accept_* methods) are for declaring the capabilities of
+your parser, notably what <tt>&quot;=for</tt>
+<i>targetname</i><tt>&quot;</tt> sections it&rsquo;s
+interested in, what extra N&lt;...&gt; codes it accepts
+beyond the ones described in the <i>perlpod</i>. <br>
+&quot;$parser&minus;&gt;accept_targets( <i>SOMEVALUE</i>
+<tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">As the parser sees sections
+like:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        =for html  &lt;img src=&quot;fig1.jpg&quot;&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">or</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        =begin html
+          &lt;img src=&quot;fig1.jpg&quot;&gt;
+        =end html</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">...the parser
+will ignore these sections unless your subclass has
+specified that it wants to see sections targeted to
+&quot;html&quot; (or whatever the formatter name is).</p>
+
+<p style="margin-left:17%; margin-top: 1em">If you want to
+process all sections, even if they&rsquo;re not targeted for
+you, call this before you start parsing:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  $parser&minus;&gt;accept_targets('*');</pre>
+
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;accept_targets_as_text(
+<i>SOMEVALUE</i> <tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">This is like accept_targets,
+except that it specifies also that the content of sections
+for this target should be treated as Pod text even if the
+target name in &quot;=for <i>targetname</i>&quot;
+doesn&rsquo;t start with a &quot;:&quot;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">At time of
+writing, I don&rsquo;t think you&rsquo;ll need to use
+this.</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;accept_codes(
+<i>Codename</i><tt>,</tt> <i>Codename</i><tt>...
+)&quot;</tt></p>
+
+<p style="margin-left:17%;">This tells the parser that you
+accept additional formatting codes, beyond just the standard
+ones (I B C L F S X, plus the two weird ones you don&rsquo;t
+actually see in the parse tree, Z and E). For example, to
+also accept codes &quot;N&quot;, &quot;R&quot;, and
+&quot;W&quot;:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        $parser&minus;&gt;accept_codes( qw( N R W ) );</pre>
+
+
+
+<p style="margin-left:17%; margin-top: 1em"><b><small>TODO:</small>
+document how this interacts with =extend, and long element
+names</b></p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;accept_directive_as_data(
+<i>directive_name</i> <tt>)&quot;</tt> <br>
+&quot;$parser&minus;&gt;accept_directive_as_verbatim(
+<i>directive_name</i> <tt>)&quot;</tt> <br>
+&quot;$parser&minus;&gt;accept_directive_as_processed(
+<i>directive_name</i> <tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">In the unlikely situation that
+you need to tell the parser that you will accept additional
+directives (&quot;=foo&quot; things), you need to first set
+the parser to treat its content as data (i.e., not really
+processed at all), or as verbatim (mostly just expanding
+tabs), or as processed text (parsing formatting codes like
+B&lt;...&gt;).</p>
+
+<p style="margin-left:17%; margin-top: 1em">For example, to
+accept a new directive &quot;=method&quot;, you&rsquo;d
+presumably use:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        $parser&minus;&gt;accept_directive_as_processed(&quot;method&quot;);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">so that you
+could have Pod lines like:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        =method I&lt;$whatever&gt; thing B&lt;um&gt;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Making up your
+own directives breaks compatibility with other Pod
+formatters, in a way that using &quot;=for <i>target</i>
+...&quot; lines doesn&rsquo;t; however, you may find this
+useful if you&rsquo;re making a Pod superset format where
+you don&rsquo;t need to worry about compatibility.</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;nbsp_for_S(
+<i>BOOLEAN</i> <tt>);&quot;</tt></p>
+
+<p style="margin-left:17%;">Setting this attribute to a
+true value (and by default it is false) will turn
+&quot;S&lt;...&gt;&quot; sequences into sequences of words
+separated by <tt>&quot;\xA0&quot;</tt> (non-breaking space)
+characters. For example, it will take this:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        I like S&lt;Dutch apple pie&gt;, don't you?</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">and treat it as
+if it were:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        I like DutchE&lt;nbsp&gt;appleE&lt;nbsp&gt;pie, don't you?</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">This is handy
+for output formats that don&rsquo;t have anything quite like
+an &quot;S&lt;...&gt;&quot; code, but which do have a code
+for non-breaking space.</p>
+
+<p style="margin-left:17%; margin-top: 1em">There is
+currently no method for going the other way; but I can
+probably provide one upon request.</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;version_report()&quot;</p>
+
+<p style="margin-left:17%;">This returns a string reporting
+the <tt>$VERSION</tt> value from your module (and its
+classname) as well as the <tt>$VERSION</tt> value of
+Pod::Simple. Note that perlpodspec requires output formats
+(wherever possible) to note this detail in a comment in the
+output format. For example, for some kind of
+<small>SGML</small> output format:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        print OUT &quot;&lt;!&minus;&minus; \n&quot;, $parser&minus;&gt;version_report, &quot;\n &minus;&minus;&gt;&quot;;</pre>
+
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;pod_para_count()&quot;</p>
+
+<p style="margin-left:17%;">This returns the count of Pod
+paragraphs seen so far.</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;line_count()&quot;</p>
+
+<p style="margin-left:17%;">This is the current line number
+being parsed. But you might find the &quot;line_number&quot;
+event attribute more accurate, when it is present.</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;nix_X_codes(
+<i>SOMEVALUE</i> <tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">This attribute, when set to a
+true value (and it is false by default) ignores any
+&quot;X&lt;...&gt;&quot; sequences in the document being
+parsed. Many formats don&rsquo;t actually use the content of
+these codes, so have no reason to process them.</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;keep_encoding_directive(
+<i>SOMEVALUE</i> <tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">This attribute, when set to a
+true value (it is false by default) will keep
+<tt>&quot;=encoding&quot;</tt> and its content in the event
+structure. Most formats don&rsquo;t actually need to process
+the content of an <tt>&quot;=encoding&quot;</tt> directive,
+even when this directive sets the encoding and the processor
+makes use of the encoding information. Indeed, it is
+possible to know the encoding without processing the
+directive content.</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;merge_text(
+<i>SOMEVALUE</i> <tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">This attribute, when set to a
+true value (and it is false by default) makes sure that only
+one event (or token, or node) will be created for any single
+contiguous sequence of text. For example, consider this
+somewhat contrived example:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        I just LOVE Z&lt;&gt;hotE&lt;32&gt;apple pie!</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">When that is
+parsed and events are about to be called on it, it may
+actually seem to be four different text events, one right
+after another: one event for &quot;I just <small>LOVE
+&quot;,</small> one for &quot;hot&quot;, one for &quot;
+&quot;, and one for &quot;apple pie!&quot;. But if you have
+merge_text on, then you&rsquo;re guaranteed that it will be
+fired as one text event: &quot;I just <small>LOVE</small>
+hot apple pie!&quot;.</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;code_handler(
+<i>CODE_REF</i> <tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">This specifies code that should
+be called when a code line is seen (i.e., a line outside of
+the Pod). Normally this is undef, meaning that no code
+should be called. If you provide a routine, it should start
+out like this:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        sub get_code_line {  # or whatever you'll call it
+          my($line, $line_number, $parser) = @_;
+          ...
+        }</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Note, however,
+that sometimes the Pod events aren&rsquo;t processed in
+exactly the same order as the code lines are -- i.e., if you
+have a file with Pod, then code, then more Pod, sometimes
+the code will be processed (via whatever you have
+code_handler call) before the all of the preceding Pod has
+been processed.</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;cut_handler(
+<i>CODE_REF</i> <tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">This is just like the
+code_handler attribute, except that it&rsquo;s for
+&quot;=cut&quot; lines, not code lines. The same caveats
+apply. &quot;=cut&quot; lines are unlikely to be
+interesting, but this is included for completeness.</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;pod_handler(
+<i>CODE_REF</i> <tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">This is just like the
+code_handler attribute, except that it&rsquo;s for
+&quot;=pod&quot; lines, not code lines. The same caveats
+apply. &quot;=pod&quot; lines are unlikely to be
+interesting, but this is included for completeness.</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;whiteline_handler(
+<i>CODE_REF</i> <tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">This is just like the
+code_handler attribute, except that it&rsquo;s for lines
+that are seemingly blank but have whitespace (&quot; &quot;
+and/or &quot;\t&quot;) on them, not code lines. The same
+caveats apply. These lines are unlikely to be interesting,
+but this is included for completeness.</p>
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;whine(
+<i>linenumber</i><tt>,</tt> <i>complaint string</i>
+<tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">This notes a problem in the
+Pod, which will be reported to in the &quot;Pod Errors&quot;
+section of the document and/or send to
+<small>STDERR,</small> depending on the values of the
+attributes <tt>&quot;no_whining&quot;</tt>,
+<tt>&quot;no_errata_section&quot;</tt>, and
+<tt>&quot;complain_stderr&quot;</tt>.</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;scream(
+<i>linenumber</i><tt>,</tt> <i>complaint string</i>
+<tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">This notes an error like
+<tt>&quot;whine&quot;</tt> does, except that it is not
+suppressible with <tt>&quot;no_whining&quot;</tt>. This
+should be used only for very serious errors.</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;source_dead(1)&quot;</p>
+
+<p style="margin-left:17%;">This aborts parsing of the
+current document, by switching on the flag that indicates
+that <small>EOF</small> has been seen. In particularly
+drastic cases, you might want to do this. It&rsquo;s rather
+nicer than just calling <tt>&quot;die&quot;</tt>!</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;hide_line_numbers(
+<i>SOMEVALUE</i> <tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">Some subclasses that
+indiscriminately dump event attributes (well, except for
+ones beginning with &quot;~&quot;) can use this object
+attribute for refraining to dump the &quot;start_line&quot;
+attribute.</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;no_whining(
+<i>SOMEVALUE</i> <tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">This attribute, if set to true,
+will suppress reports of non-fatal error messages. The
+default value is false, meaning that complaints <i>are</i>
+reported. How they get reported depends on the values of the
+attributes <tt>&quot;no_errata_section&quot;</tt> and
+<tt>&quot;complain_stderr&quot;</tt>.</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;no_errata_section(
+<i>SOMEVALUE</i> <tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">This attribute, if set to true,
+will suppress generation of an errata section. The default
+value is false -- i.e., an errata section will be
+generated.</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;complain_stderr(
+<i>SOMEVALUE</i> <tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">This attribute, if set to true
+will send complaints to <small>STDERR.</small> The default
+value is false -- i.e., complaints do not go to
+<small>STDERR.</small></p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;bare_output(
+<i>SOMEVALUE</i> <tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">Some formatter subclasses use
+this as a flag for whether output should have prologue and
+epilogue code omitted. For example, setting this to true for
+an <small>HTML</small> formatter class should omit the
+&quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;...&lt;/title&gt;&lt;body&gt;...&quot;
+prologue and the &quot;&lt;/body&gt;&lt;/html&gt;&quot;
+epilogue.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If you want to
+set this to true, you should probably also set
+<tt>&quot;no_whining&quot;</tt> or at least
+<tt>&quot;no_errata_section&quot;</tt> to true.</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;preserve_whitespace(
+<i>SOMEVALUE</i> <tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">If you set this attribute to a
+true value, the parser will try to preserve whitespace in
+the output. This means that such formatting conventions as
+two spaces after periods will be preserved by the parser.
+This is primarily useful for output formats that treat
+whitespace as significant (such as text or *roff, but not
+<small>HTML</small> ).</p>
+
+
+<p style="margin-left:11%;">&quot;$parser&minus;&gt;parse_empty_lists(
+<i>SOMEVALUE</i> <tt>)&quot;</tt></p>
+
+<p style="margin-left:17%;">If this attribute is set to
+true, the parser will not ignore empty
+<tt>&quot;=over&quot;</tt>/<tt>&quot;=back&quot;</tt>
+blocks. The type of <tt>&quot;=over&quot;</tt> will be
+<i>empty</i>, documented above, &quot;events with an
+element_name of over-empty&quot;.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple --
+event-based Pod-parsing framework</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple::Methody
+-- like Pod::Simple, but each sort of event calls its own
+method (like <tt>&quot;start_head3&quot;</tt>)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple::PullParser
+-- a Pod-parsing framework like Pod::Simple, but with a
+token-stream interface</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple::SimpleTree
+-- a Pod-parsing framework like Pod::Simple, but with a tree
+interface</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple::Checker
+-- a simple Pod::Simple subclass that reads documents, and
+then makes a plaintext report of any errors found in the
+document</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple::DumpAsXML
+-- for dumping Pod documents as tidily indented
+<small>XML,</small> showing each event on its own line</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple::XMLOutStream
+-- dumps a Pod document as <small>XML</small> (without
+introducing extra whitespace as Pod::Simple::DumpAsXML
+does).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple::DumpAsText
+-- for dumping Pod documents as tidily indented text,
+showing each event on its own line</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple::LinkSection
+-- class for objects representing the values of the
+<small>TODO</small> and <small>TODO</small> attributes of
+L&lt;...&gt; elements</p>
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Escapes --
+the module the Pod::Simple uses for evaluating E&lt;...&gt;
+content</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple::Text
+-- a simple plaintext formatter for Pod</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple::TextContent
+-- like Pod::Simple::Text, but makes no effort for indent or
+wrap the text being formatted</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple::HTML
+-- a simple <small>HTML</small> formatter for Pod</p>
+
+<p style="margin-left:11%; margin-top: 1em">perlpod</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlpodspec</p>
+
+<p style="margin-left:11%; margin-top: 1em">perldoc</p>
+
+<h2>SUPPORT
+<a name="SUPPORT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Questions or
+discussion about <small>POD</small> and Pod::Simple should
+be sent to the pod&minus;people@perl.org mail list. Send an
+empty email to pod&minus;people&minus;subscribe@perl.org to
+subscribe.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This module is
+managed in an open GitHub repository,
+&lt;https://github.com/theory/pod&minus;simple/&gt;. Feel
+free to fork and contribute, or to clone
+&lt;git://github.com/theory/pod&minus;simple.git&gt; and
+send patches!</p>
+
+<p style="margin-left:11%; margin-top: 1em">Patches against
+Pod::Simple are welcome. Please send bug reports to
+&lt;bug&minus;pod&minus;simple@rt.cpan.org&gt;.</p>
+
+<h2>COPYRIGHT AND DISCLAIMERS
+<a name="COPYRIGHT AND DISCLAIMERS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (c)
+2002 Sean M. Burke.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This library is
+free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This program is
+distributed in the hope that it will be useful, but without
+any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple was
+created by Sean M. Burke &lt;sburke@cpan.org&gt;. But
+don&rsquo;t bother him, he&rsquo;s retired.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple is
+maintained by:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="55%">
+
+
+<p>Allison Randal <tt>&quot;allison@perl.org&quot;</tt></p></td>
+<td width="28%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="55%">
+
+
+<p>Hans Dieter Pearcey
+<tt>&quot;hdp@cpan.org&quot;</tt></p> </td>
+<td width="28%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="55%">
+
+
+<p>David E. Wheeler
+<tt>&quot;dwheeler@cpan.org&quot;</tt></p> </td>
+<td width="28%">
+</td></tr>
+ </table>
+<hr>
+</body>
+</html>

@@ -1,0 +1,836 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:30:15 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Git</title>
+
+</head>
+<body>
+
+<h1 align="center">Git</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#CONSTRUCTORS">CONSTRUCTORS</a><br>
+<a href="#METHODS">METHODS</a><br>
+<a href="#ERROR HANDLING">ERROR HANDLING</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Git &minus;
+Perl interface to the Git version control system</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  use Git;
+  my $version = Git::command_oneline('version');
+  git_cmd_try { Git::command_noisy('update&minus;server&minus;info') }
+              '%s failed w/ code %d';
+  my $repo = Git&minus;&gt;repository (Directory =&gt; '/srv/git/cogito.git');
+  my @revs = $repo&minus;&gt;command('rev&minus;list', '&minus;&minus;since=last monday', '&minus;&minus;all');
+  my ($fh, $c) = $repo&minus;&gt;command_output_pipe('rev&minus;list', '&minus;&minus;since=last monday', '&minus;&minus;all');
+  my $lastrev = &lt;$fh&gt;; chomp $lastrev;
+  $repo&minus;&gt;command_close_pipe($fh, $c);
+  my $lastrev = $repo&minus;&gt;command_oneline( [ 'rev&minus;list', '&minus;&minus;all' ],
+                                        STDERR =&gt; 0 );
+  my $sha1 = $repo&minus;&gt;hash_and_insert_object('file.txt');
+  my $tempfile = tempfile();
+  my $size = $repo&minus;&gt;cat_blob($sha1, $tempfile);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This module
+provides Perl scripts easy way to interface the Git version
+control system. The modules have an easy and well-tested way
+to call arbitrary Git commands; in the future, the interface
+will also provide specialized methods for doing easily
+operations which are not totally trivial to do over the
+generic command interface.</p>
+
+<p style="margin-left:11%; margin-top: 1em">While some
+commands can be executed outside of any context (e.g.
+&rsquo;version&rsquo; or &rsquo;init&rsquo;), most
+operations require a repository context, which in practice
+means getting an instance of the Git object using the
+<i>repository()</i> constructor. (In the future, we will
+also get a <i>new_repository()</i> constructor.) All
+commands called as methods of the object are then executed
+in the context of the repository.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Part of the
+&quot;repository state&quot; is also information about path
+to the attached working copy (unless you work with a bare
+repository). You can also navigate inside of the working
+copy using the <tt>&quot;wc_chdir()&quot;</tt> method. (Note
+that the repository object is self-contained and will not
+change working directory of your process.)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>TODO:</small>
+In the future, we might also do</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        my $remoterepo = $repo&minus;&gt;remote_repository (Name =&gt; 'cogito', Branch =&gt; 'master');
+        $remoterepo ||= Git&minus;&gt;remote_repository ('http://git.or.cz/cogito.git/');
+        my @refs = $remoterepo&minus;&gt;refs();</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Currently, the
+module merely wraps calls to external Git tools. In the
+future, it will provide a much faster way to interact with
+Git by linking directly to libgit. This should be completely
+opaque to the user, though (performance increase
+notwithstanding).</p>
+
+<h2>CONSTRUCTORS
+<a name="CONSTRUCTORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">repository (
+<small>OPTIONS</small> ) <br>
+repository ( <small>DIRECTORY</small> ) <br>
+repository ()</p>
+
+<p style="margin-left:17%;">Construct a new repository
+object. <tt>&quot;OPTIONS&quot;</tt> are passed in a hash
+like fashion, using key and value pairs. Possible options
+are:</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><b>Repository</b>
+&minus; Path to the Git repository.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><b>WorkingCopy</b>
+&minus; Path to the associated working copy; not strictly
+required as many commands will happily crunch on a bare
+repository.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><b>WorkingSubdir</b>
+&minus; Subdirectory in the working copy to work inside.
+Just left undefined if you do not want to limit the scope of
+operations.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><b>Directory</b>
+&minus; Path to the Git working directory in its usual
+setup. The <tt>&quot;.git&quot;</tt> directory is searched
+in the directory and all the parent directories; if found,
+<tt>&quot;WorkingCopy&quot;</tt> is set to the directory
+containing it and <tt>&quot;Repository&quot;</tt> to the
+<tt>&quot;.git&quot;</tt> directory itself. If no
+<tt>&quot;.git&quot;</tt> directory was found, the
+<tt>&quot;Directory&quot;</tt> is assumed to be a bare
+repository, <tt>&quot;Repository&quot;</tt> is set to point
+at it and <tt>&quot;WorkingCopy&quot;</tt> is left
+undefined. If the <tt>$GIT_DIR</tt> environment variable is
+set, things behave as expected as well.</p>
+
+<p style="margin-left:17%; margin-top: 1em">You should not
+use both <tt>&quot;Directory&quot;</tt> and either of
+<tt>&quot;Repository&quot;</tt> and
+<tt>&quot;WorkingCopy&quot;</tt> &minus; the results of that
+are undefined.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Alternatively,
+a directory path may be passed as a single scalar argument
+to the constructor; it is equivalent to setting only the
+<tt>&quot;Directory&quot;</tt> option field.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Calling the
+constructor with no options whatsoever is equivalent to
+calling it with <tt>&quot;Directory =&gt; '.'&quot;</tt>. In
+general, if you are building a standard porcelain command,
+simply doing <tt>&quot;Git&minus;&gt;repository()&quot;</tt>
+should do the right thing and setup the object to reflect
+exactly where the user is right now.</p>
+
+<h2>METHODS
+<a name="METHODS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">command (
+<small>COMMAND</small> [, <small>ARGUMENTS...</small> ] )
+<br>
+command ( [ <small>COMMAND, ARGUMENTS...</small> ], { Opt
+=&gt; Val ... } )</p>
+
+<p style="margin-left:17%;">Execute the given Git
+<tt>&quot;COMMAND&quot;</tt> (specify it without the
+&rsquo;git&minus;&rsquo; prefix), optionally with the
+specified extra <tt>&quot;ARGUMENTS&quot;</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The second more
+elaborate form can be used if you want to further adjust the
+command execution. Currently, only one option is
+supported:</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><b><small>STDERR</small></b>
+&minus; How to deal with the command&rsquo;s error output.
+By default (<tt>&quot;undef&quot;</tt>) it is delivered to
+the caller&rsquo;s <tt>&quot;STDERR&quot;</tt>. A false
+value (0 or &rsquo;&rsquo;) will cause it to be thrown away.
+If you want to process it, you can get it in a filehandle
+you specify, but you must be extremely careful; if the error
+output is not very short and you want to read it in the same
+process as where you called <tt>&quot;command()&quot;</tt>,
+you are set up for a nice deadlock!</p>
+
+<p style="margin-left:17%; margin-top: 1em">The method can
+be called without any instance or on a specified Git
+repository (in that case the command will be run in the
+repository context).</p>
+
+<p style="margin-left:17%; margin-top: 1em">In scalar
+context, it returns all the command output in a single
+string (verbatim).</p>
+
+<p style="margin-left:17%; margin-top: 1em">In array
+context, it returns an array containing lines printed to the
+command&rsquo;s stdout (without trailing newlines).</p>
+
+<p style="margin-left:17%; margin-top: 1em">In both cases,
+the command&rsquo;s stdin and stderr are the same as the
+caller&rsquo;s.</p>
+
+<p style="margin-left:11%;">command_oneline (
+<small>COMMAND</small> [, <small>ARGUMENTS...</small> ] )
+<br>
+command_oneline ( [ <small>COMMAND, ARGUMENTS...</small> ],
+{ Opt =&gt; Val ... } )</p>
+
+<p style="margin-left:17%;">Execute the given
+<tt>&quot;COMMAND&quot;</tt> in the same way as
+<i>command()</i> does but always return a scalar string
+containing the first line of the command&rsquo;s standard
+output.</p>
+
+<p style="margin-left:11%;">command_output_pipe (
+<small>COMMAND</small> [, <small>ARGUMENTS...</small> ] )
+<br>
+command_output_pipe ( [ <small>COMMAND, ARGUMENTS...</small>
+], { Opt =&gt; Val ... } )</p>
+
+<p style="margin-left:17%;">Execute the given
+<tt>&quot;COMMAND&quot;</tt> in the same way as
+<i>command()</i> does but return a pipe filehandle from
+which the command output can be read.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The function
+can return <tt>&quot;($pipe, $ctx)&quot;</tt> in array
+context. See <tt>&quot;command_close_pipe()&quot;</tt> for
+details.</p>
+
+<p style="margin-left:11%;">command_input_pipe (
+<small>COMMAND</small> [, <small>ARGUMENTS...</small> ] )
+<br>
+command_input_pipe ( [ <small>COMMAND, ARGUMENTS...</small>
+], { Opt =&gt; Val ... } )</p>
+
+<p style="margin-left:17%;">Execute the given
+<tt>&quot;COMMAND&quot;</tt> in the same way as
+<i>command_output_pipe()</i> does but return an input pipe
+filehandle instead; the command output is not captured.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The function
+can return <tt>&quot;($pipe, $ctx)&quot;</tt> in array
+context. See <tt>&quot;command_close_pipe()&quot;</tt> for
+details.</p>
+
+<p style="margin-left:11%;">command_close_pipe (
+<small>PIPE</small> [, <small>CTX</small> ] )</p>
+
+<p style="margin-left:17%;">Close the
+<tt>&quot;PIPE&quot;</tt> as returned from
+<tt>&quot;command_*_pipe()&quot;</tt>, checking whether the
+command finished successfully. The optional
+<tt>&quot;CTX&quot;</tt> argument is required if you want to
+see the command name in the error message, and it is the
+second value returned by
+<tt>&quot;command_*_pipe()&quot;</tt> when called in array
+context. The call idiom is:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        my ($fh, $ctx) = $r&minus;&gt;command_output_pipe('status');
+        while (&lt;$fh&gt;) { ... }
+        $r&minus;&gt;command_close_pipe($fh, $ctx);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Note that you
+should not rely on whatever actually is in
+<tt>&quot;CTX&quot;</tt>; currently it is simply the command
+name but in future the context might have more complicated
+structure.</p>
+
+<p style="margin-left:11%;">command_bidi_pipe (
+<small>COMMAND</small> [, <small>ARGUMENTS...</small> ]
+)</p>
+
+<p style="margin-left:17%;">Execute the given
+<tt>&quot;COMMAND&quot;</tt> in the same way as
+<i>command_output_pipe()</i> does but return both an input
+pipe filehandle and an output pipe filehandle.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The function
+will return return <tt>&quot;($pid, $pipe_in, $pipe_out,
+$ctx)&quot;</tt>. See
+<tt>&quot;command_close_bidi_pipe()&quot;</tt> for
+details.</p>
+
+<p style="margin-left:11%;">command_close_bidi_pipe (
+<small>PID, PIPE_IN, PIPE_OUT</small> [, <small>CTX</small>
+] )</p>
+
+<p style="margin-left:17%;">Close the
+<tt>&quot;PIPE_IN&quot;</tt> and
+<tt>&quot;PIPE_OUT&quot;</tt> as returned from
+<tt>&quot;command_bidi_pipe()&quot;</tt>, checking whether
+the command finished successfully. The optional
+<tt>&quot;CTX&quot;</tt> argument is required if you want to
+see the command name in the error message, and it is the
+fourth value returned by
+<tt>&quot;command_bidi_pipe()&quot;</tt>. The call idiom
+is:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        my ($pid, $in, $out, $ctx) = $r&minus;&gt;command_bidi_pipe('cat&minus;file &minus;&minus;batch&minus;check');
+        print $out &quot;000000000\n&quot;;
+        while (&lt;$in&gt;) { ... }
+        $r&minus;&gt;command_close_bidi_pipe($pid, $in, $out, $ctx);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Note that you
+should not rely on whatever actually is in
+<tt>&quot;CTX&quot;</tt>; currently it is simply the command
+name but in future the context might have more complicated
+structure.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;PIPE_IN&quot;</tt>
+and <tt>&quot;PIPE_OUT&quot;</tt> may be
+<tt>&quot;undef&quot;</tt> if they have been closed prior to
+calling this function. This may be useful in a
+query-response type of commands where caller first writes a
+query and later reads response, eg:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        my ($pid, $in, $out, $ctx) = $r&minus;&gt;command_bidi_pipe('cat&minus;file &minus;&minus;batch&minus;check');
+        print $out &quot;000000000\n&quot;;
+        close $out;
+        while (&lt;$in&gt;) { ... }
+        $r&minus;&gt;command_close_bidi_pipe($pid, $in, undef, $ctx);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">This idiom may
+prevent potential dead locks caused by data sent to the
+output pipe not being flushed and thus not reaching the
+executed command.</p>
+
+<p style="margin-left:11%;">command_noisy (
+<small>COMMAND</small> [, <small>ARGUMENTS...</small> ]
+)</p>
+
+<p style="margin-left:17%;">Execute the given
+<tt>&quot;COMMAND&quot;</tt> in the same way as
+<i>command()</i> does but do not capture the command output
+&minus; the standard output is not redirected and goes to
+the standard output of the caller application.</p>
+
+<p style="margin-left:17%; margin-top: 1em">While the
+method is called <i>command_noisy()</i>, you might want to
+as well use it for the most silent Git commands which you
+know will never pollute your stdout but you want to avoid
+the overhead of the pipe setup when calling them.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The function
+returns only after the command has finished running.</p>
+
+<p style="margin-left:11%;">version ()</p>
+
+<p style="margin-left:17%;">Return the Git version in
+use.</p>
+
+<p style="margin-left:11%;">exec_path ()</p>
+
+<p style="margin-left:17%;">Return path to the Git
+sub-command executables (the same as <tt>&quot;git
+&minus;&minus;exec&minus;path&quot;</tt>). Useful mostly
+only internally.</p>
+
+<p style="margin-left:11%;">html_path ()</p>
+
+<p style="margin-left:17%;">Return path to the Git html
+documentation (the same as <tt>&quot;git
+&minus;&minus;html&minus;path&quot;</tt>). Useful mostly
+only internally.</p>
+
+<p style="margin-left:11%;">get_tz_offset (
+<small>TIME</small> )</p>
+
+<p style="margin-left:17%;">Return the time zone offset
+from <small>GMT</small> in the form +/&minus;HHMM where
+<small>HH</small> is the number of hours from
+<small>GMT</small> and <small>MM</small> is the number of
+minutes. This is the equivalent of what
+strftime(&quot;%z&quot;, ...) would provide on a
+<small>GNU</small> platform.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If
+<small>TIME</small> is not supplied, the current local time
+is used.</p>
+
+<p style="margin-left:11%;">prompt ( <small>PROMPT ,
+ISPASSWORD</small> )</p>
+
+<p style="margin-left:17%;">Query user
+<tt>&quot;PROMPT&quot;</tt> and return answer from user.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Honours
+<small>GIT_ASKPASS</small> and <small>SSH_ASKPASS</small>
+environment variables for querying the user. If no *_ASKPASS
+variable is set or an error occoured, the terminal is tried
+as a fallback. If <tt>&quot;ISPASSWORD&quot;</tt> is set and
+true, the terminal disables echo.</p>
+
+<p style="margin-left:11%;">repo_path ()</p>
+
+<p style="margin-left:17%;">Return path to the git
+repository. Must be called on a repository instance.</p>
+
+<p style="margin-left:11%;">wc_path ()</p>
+
+<p style="margin-left:17%;">Return path to the working
+copy. Must be called on a repository instance.</p>
+
+<p style="margin-left:11%;">wc_subdir ()</p>
+
+<p style="margin-left:17%;">Return path to the subdirectory
+inside of a working copy. Must be called on a repository
+instance.</p>
+
+<p style="margin-left:11%;">wc_chdir (
+<small>SUBDIR</small> )</p>
+
+<p style="margin-left:17%;">Change the working copy
+subdirectory to work within. The <tt>&quot;SUBDIR&quot;</tt>
+is relative to the working copy root directory (not the
+current subdirectory). Must be called on a repository
+instance attached to a working copy and the directory must
+exist.</p>
+
+<p style="margin-left:11%;">config (
+<small>VARIABLE</small> )</p>
+
+<p style="margin-left:17%;">Retrieve the configuration
+<tt>&quot;VARIABLE&quot;</tt> in the same manner as
+<tt>&quot;config&quot;</tt> does. In scalar context requires
+the variable to be set only one time (exception is thrown
+otherwise), in array context returns allows the variable to
+be set multiple times and returns all the values.</p>
+
+<p style="margin-left:11%;">config_bool (
+<small>VARIABLE</small> )</p>
+
+<p style="margin-left:17%;">Retrieve the bool configuration
+<tt>&quot;VARIABLE&quot;</tt>. The return value is usable as
+a boolean in perl (and <tt>&quot;undef&quot;</tt> if
+it&rsquo;s not defined, of course).</p>
+
+<p style="margin-left:11%;">config_path (
+<small>VARIABLE</small> )</p>
+
+<p style="margin-left:17%;">Retrieve the path configuration
+<tt>&quot;VARIABLE&quot;</tt>. The return value is an
+expanded path or <tt>&quot;undef&quot;</tt> if it&rsquo;s
+not defined.</p>
+
+<p style="margin-left:11%;">config_int (
+<small>VARIABLE</small> )</p>
+
+<p style="margin-left:17%;">Retrieve the integer
+configuration <tt>&quot;VARIABLE&quot;</tt>. The return
+value is simple decimal number. An optional value suffix of
+&rsquo;k&rsquo;, &rsquo;m&rsquo;, or &rsquo;g&rsquo; in the
+config file will cause the value to be multiplied by 1024,
+1048576 (1024^2), or 1073741824 (1024^3) prior to output. It
+would return <tt>&quot;undef&quot;</tt> if configuration
+variable is not defined,</p>
+
+<p style="margin-left:11%;">get_colorbool (
+<small>NAME</small> )</p>
+
+<p style="margin-left:17%;">Finds if color should be used
+for NAMEd operation from the configuration, and returns
+boolean (true for &quot;use color&quot;, false for &quot;do
+not use color&quot;).</p>
+
+<p style="margin-left:11%;">get_color ( <small>SLOT,
+COLOR</small> )</p>
+
+<p style="margin-left:17%;">Finds color for
+<small>SLOT</small> from the configuration, while defaulting
+to <small>COLOR,</small> and returns the <small>ANSI</small>
+color escape sequence:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        print $repo&minus;&gt;get_color(&quot;color.interactive.prompt&quot;, &quot;underline blue white&quot;);
+        print &quot;some text&quot;;
+        print $repo&minus;&gt;get_color(&quot;&quot;, &quot;normal&quot;);</pre>
+
+
+<p style="margin-left:11%;">remote_refs (
+<small>REPOSITORY</small> [, <small>GROUPS</small> [,
+<small>REFGLOBS</small> ] ] )</p>
+
+<p style="margin-left:17%;">This function returns a hashref
+of refs stored in a given remote repository. The hash is in
+the format <tt>&quot;refname =\&quot;</tt> hash&gt;. For
+tags, the <tt>&quot;refname&quot;</tt> entry contains the
+tag object while a <tt>&quot;refname^{}&quot;</tt> entry
+gives the tagged objects.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;REPOSITORY&quot;</tt>
+has the same meaning as the appropriate
+<tt>&quot;git&minus;ls&minus;remote&quot;</tt> argument;
+either a <small>URL</small> or a remote name (if called on a
+repository instance). <tt>&quot;GROUPS&quot;</tt> is an
+optional arrayref that can contain &rsquo;tags&rsquo; to
+return all the tags and/or &rsquo;heads&rsquo; to return all
+the heads. <tt>&quot;REFGLOB&quot;</tt> is an optional array
+of strings containing a shell-like glob to further limit the
+refs returned in the hash; the meaning is again the same as
+the appropriate
+<tt>&quot;git&minus;ls&minus;remote&quot;</tt> argument.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This function
+may or may not be called on a repository instance. In the
+former case, remote names as defined in the repository are
+recognized as repository specifiers.</p>
+
+<p style="margin-left:11%;">ident ( <small>TYPE</small> |
+<small>IDENTSTR</small> ) <br>
+ident_person ( <small>TYPE</small> | <small>IDENTSTR</small>
+| <small>IDENTARRAY</small> )</p>
+
+<p style="margin-left:17%;">This suite of functions
+retrieves and parses ident information, as stored in the
+commit and tag objects or produced by <tt>&quot;var
+GIT_type_IDENT&quot;</tt> (thus <tt>&quot;TYPE&quot;</tt>
+can be either <i>author</i> or <i>committer</i>; case is
+insignificant).</p>
+
+<p style="margin-left:17%; margin-top: 1em">The
+<tt>&quot;ident&quot;</tt> method retrieves the ident
+information from <tt>&quot;git var&quot;</tt> and either
+returns it as a scalar string or as an array with the fields
+parsed. Alternatively, it can take a prepared ident string
+(e.g. from the commit object) and just parse it.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;ident_person&quot;</tt>
+returns the person part of the ident &minus; name and email;
+it can take the same arguments as <tt>&quot;ident&quot;</tt>
+or the array returned by <tt>&quot;ident&quot;</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The synopsis is
+like:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        my ($name, $email, $time_tz) = ident('author');
+        &quot;$name &lt;$email&gt;&quot; eq ident_person('author');
+        &quot;$name &lt;$email&gt;&quot; eq ident_person($name);
+        $time_tz =~ /^\d+ [+&minus;]\d{4}$/;</pre>
+
+
+<p style="margin-left:11%;">hash_object ( <small>TYPE,
+FILENAME</small> )</p>
+
+<p style="margin-left:17%;">Compute the <small>SHA1</small>
+object id of the given <tt>&quot;FILENAME&quot;</tt>
+considering it is of the <tt>&quot;TYPE&quot;</tt> object
+type (<tt>&quot;blob&quot;</tt>,
+<tt>&quot;commit&quot;</tt>, <tt>&quot;tree&quot;</tt>).</p>
+
+<p style="margin-left:17%; margin-top: 1em">The method can
+be called without any instance or on a specified Git
+repository, it makes zero difference.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The function
+returns the <small>SHA1</small> hash.</p>
+
+<p style="margin-left:11%;">hash_and_insert_object (
+<small>FILENAME</small> )</p>
+
+<p style="margin-left:17%;">Compute the <small>SHA1</small>
+object id of the given <tt>&quot;FILENAME&quot;</tt> and add
+the object to the object database.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The function
+returns the <small>SHA1</small> hash.</p>
+
+<p style="margin-left:11%;">cat_blob ( <small>SHA1,
+FILEHANDLE</small> )</p>
+
+<p style="margin-left:17%;">Prints the contents of the blob
+identified by <tt>&quot;SHA1&quot;</tt> to
+<tt>&quot;FILEHANDLE&quot;</tt> and returns the number of
+bytes printed.</p>
+
+<p style="margin-left:11%;">credential_read(
+<small>FILEHANDLE</small> )</p>
+
+<p style="margin-left:17%;">Reads credential key-value
+pairs from <tt>&quot;FILEHANDLE&quot;</tt>. Reading stops at
+<small>EOF</small> or when an empty line is encountered.
+Each line must be of the form <tt>&quot;key=value&quot;</tt>
+with a non-empty key. Function returns hash with all read
+values. Any white space (other than new-line character) is
+preserved.</p>
+
+<p style="margin-left:11%;">credential_write(
+<small>FILEHANDLE, CREDENTIAL_HASHREF</small> )</p>
+
+<p style="margin-left:17%;">Writes credential key-value
+pairs from hash referenced by
+<tt>&quot;CREDENTIAL_HASHREF&quot;</tt> to
+<tt>&quot;FILEHANDLE&quot;</tt>. Keys and values cannot
+contain new-lines or <small>NUL</small> bytes characters,
+and key cannot contain equal signs nor be empty (if they do
+Error::Simple is thrown). Any white space is preserved. If
+value for a key is <tt>&quot;undef&quot;</tt>, it will be
+skipped.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If
+<tt>'url'</tt> key exists it will be written first. (All the
+other key-value pairs are written in sorted order but you
+should not depend on that). Once all lines are written, an
+empty line is printed.</p>
+
+<p style="margin-left:11%;">credential(
+<small>CREDENTIAL_HASHREF</small> [,
+<small>OPERATION</small> ] ) <br>
+credential( <small>CREDENTIAL_HASHREF, CODE</small> )</p>
+
+<p style="margin-left:17%;">Executes <tt>&quot;git
+credential&quot;</tt> for a given set of credentials and
+specified operation. In both forms
+<tt>&quot;CREDENTIAL_HASHREF&quot;</tt> needs to be a
+reference to a hash which stores credentials. Under certain
+conditions the hash can change.</p>
+
+<p style="margin-left:17%; margin-top: 1em">In the first
+form, <tt>&quot;OPERATION&quot;</tt> can be <tt>'fill'</tt>,
+<tt>'approve'</tt> or <tt>'reject'</tt>, and function will
+execute corresponding <tt>&quot;git credential&quot;</tt>
+sub-command. If it&rsquo;s omitted <tt>'fill'</tt> is
+assumed. In case of <tt>'fill'</tt> the values stored in
+<tt>&quot;CREDENTIAL_HASHREF&quot;</tt> will be changed to
+the ones returned by the <tt>&quot;git credential
+fill&quot;</tt> command. The usual usage would look
+something like:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        my %cred = (
+                'protocol' =&gt; 'https',
+                'host' =&gt; 'example.com',
+                'username' =&gt; 'bob'
+        );
+        Git::credential \%cred;
+        if (try_to_authenticate($cred{'username'}, $cred{'password'})) {
+                Git::credential \%cred, 'approve';
+                ... do more stuff ...
+        } else {
+                Git::credential \%cred, 'reject';
+        }</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">In the second
+form, <tt>&quot;CODE&quot;</tt> needs to be a reference to a
+subroutine. The function will execute <tt>&quot;git
+credential fill&quot;</tt> to fill the provided credential
+hash, then call <tt>&quot;CODE&quot;</tt> with
+<tt>&quot;CREDENTIAL_HASHREF&quot;</tt> as the sole
+argument. If <tt>&quot;CODE&quot;</tt>&rsquo;s return value
+is defined, the function will execute <tt>&quot;git
+credential approve&quot;</tt> (if return value yields true)
+or <tt>&quot;git credential reject&quot;</tt> (if return
+value is false). If the return value is undef, nothing at
+all is executed; this is useful, for example, if the
+credential could neither be verified nor rejected due to an
+unrelated network error. The return value is the same as
+what <tt>&quot;CODE&quot;</tt> returns. With this form, the
+usage might look as follows:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">        if (Git::credential {
+                'protocol' =&gt; 'https',
+                'host' =&gt; 'example.com',
+                'username' =&gt; 'bob'
+        }, sub {
+                my $cred = shift;
+                return !!try_to_authenticate($cred&minus;&gt;{'username'},
+                                             $cred&minus;&gt;{'password'});
+        }) {
+                ... do more stuff ...
+        }</pre>
+
+
+<p style="margin-left:11%;">temp_acquire (
+<small>NAME</small> )</p>
+
+<p style="margin-left:17%;">Attempts to retrieve the
+temporary file mapped to the string
+<tt>&quot;NAME&quot;</tt>. If an associated temp file has
+not been created this session or was closed, it is created,
+cached, and set for autoflush and binmode.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Internally
+locks the file mapped to <tt>&quot;NAME&quot;</tt>. This
+lock must be released with
+<tt>&quot;temp_release()&quot;</tt> when the temp file is no
+longer needed. Subsequent attempts to retrieve temporary
+files mapped to the same <tt>&quot;NAME&quot;</tt> while
+still locked will cause an error. This locking mechanism
+provides a weak guarantee and is not threadsafe. It does
+provide some error checking to help prevent temp file refs
+writing over one another.</p>
+
+<p style="margin-left:17%; margin-top: 1em">In general, the
+File::Handle returned should not be closed by consumers as
+it defeats the purpose of this caching mechanism. If you
+need to close the temp file handle, then you should use
+File::Temp or another temp file faculty directly. If a
+handle is closed and then requested again, then a warning
+will issue.</p>
+
+<p style="margin-left:11%;">temp_release (
+<small>NAME</small> ) <br>
+temp_release ( <small>FILEHANDLE</small> )</p>
+
+<p style="margin-left:17%;">Releases a lock acquired
+through <tt>&quot;temp_acquire()&quot;</tt>. Can be called
+either with the <tt>&quot;NAME&quot;</tt> mapping used when
+acquiring the temp file or with the
+<tt>&quot;FILEHANDLE&quot;</tt> referencing a locked temp
+file.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Warns if an
+attempt is made to release a file that is not locked.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The temp file
+will be truncated before being released. This can help to
+reduce disk I/O where the system is smart enough to detect
+the truncation while data is in the output buffers. Beware
+that after the temp file is released and truncated, any
+operations on that file may fail miserably until it is
+re-acquired. All contents are lost between each release and
+acquire mapped to the same string.</p>
+
+<p style="margin-left:11%;">temp_reset (
+<small>FILEHANDLE</small> )</p>
+
+<p style="margin-left:17%;">Truncates and resets the
+position of the <tt>&quot;FILEHANDLE&quot;</tt>.</p>
+
+<p style="margin-left:11%;">temp_path ( <small>NAME</small>
+) <br>
+temp_path ( <small>FILEHANDLE</small> )</p>
+
+<p style="margin-left:17%;">Returns the filename associated
+with the given tempfile.</p>
+
+<h2>ERROR HANDLING
+<a name="ERROR HANDLING"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">All functions
+are supposed to throw Perl exceptions in case of errors. See
+the Error module on how to catch those. Most exceptions are
+mere Error::Simple instances.</p>
+
+<p style="margin-left:11%; margin-top: 1em">However, the
+<tt>&quot;command()&quot;</tt>,
+<tt>&quot;command_oneline()&quot;</tt> and
+<tt>&quot;command_noisy()&quot;</tt> functions suite can
+throw <tt>&quot;Git::Error::Command&quot;</tt> exceptions as
+well: those are thrown when the external command returns an
+error code and contain the error code as well as access to
+the captured command&rsquo;s output. The exception class
+provides the usual <tt>&quot;stringify&quot;</tt> and
+<tt>&quot;value&quot;</tt> (command&rsquo;s exit code)
+methods and in addition also a
+<tt>&quot;cmd_output&quot;</tt> method that returns either
+an array or a string with the captured command output
+(depending on the original function call context;
+<tt>&quot;command_noisy()&quot;</tt> returns
+<tt>&quot;undef&quot;</tt>) and $&lt;cmdline&gt; which
+returns the command and its arguments (but without proper
+quoting).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that the
+<tt>&quot;command_*_pipe()&quot;</tt> functions cannot throw
+this exception since it has no idea whether the command
+failed or not. You will only find out at the time you
+<tt>&quot;close&quot;</tt> the pipe; if you want to have
+that automated, use
+<tt>&quot;command_close_pipe()&quot;</tt>, which can throw
+the exception. <br>
+git_cmd_try { <small>CODE</small> }
+<small>ERRMSG</small></p>
+
+<p style="margin-left:17%;">This magical statement will
+automatically catch any
+<tt>&quot;Git::Error::Command&quot;</tt> exceptions thrown
+by <tt>&quot;CODE&quot;</tt> and make your program die with
+<tt>&quot;ERRMSG&quot;</tt> on its lips; the message will
+have <tt>%s</tt> substituted for the command line and
+<tt>%d</tt> for the exit status. This statement is useful
+mostly for producing more user-friendly error messages.</p>
+
+<p style="margin-left:17%; margin-top: 1em">In case of no
+exception caught the statement returns
+<tt>&quot;CODE&quot;</tt>&rsquo;s return value.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Note that this
+is the only auto-exported function.</p>
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright 2006
+by Petr Baudis &lt;pasky@suse.cz&gt;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This module is
+free software; it may be used, copied, modified and
+distributed under the terms of the <small>GNU</small>
+General Public Licence, either version 2, or (at your
+option) any later version.</p>
+<hr>
+</body>
+</html>

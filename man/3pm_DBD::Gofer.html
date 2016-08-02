@@ -1,0 +1,823 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:32:07 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>DBD::Gofer</title>
+
+</head>
+<body>
+
+<h1 align="center">DBD::Gofer</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#CONSTRAINTS">CONSTRAINTS</a><br>
+<a href="#GENERAL CAVEATS">GENERAL CAVEATS</a><br>
+<a href="#CAVEATS FOR SPECIFIC METHODS">CAVEATS FOR SPECIFIC METHODS</a><br>
+<a href="#TRANSPORTS">TRANSPORTS</a><br>
+<a href="#CONNECTING">CONNECTING</a><br>
+<a href="#CONFIGURING BEHAVIOUR POLICY">CONFIGURING BEHAVIOUR POLICY</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#LICENCE AND COPYRIGHT">LICENCE AND COPYRIGHT</a><br>
+<a href="#ACKNOWLEDGEMENTS">ACKNOWLEDGEMENTS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#Caveats for specific drivers">Caveats for specific drivers</a><br>
+<a href="#TODO">TODO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">DBD::Gofer
+&minus; A stateless&minus;proxy driver for communicating
+with a remote DBI</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  use DBI;
+  $original_dsn = &quot;dbi:...&quot;; # your original DBI Data Source Name
+  $dbh = DBI&minus;&gt;connect(&quot;dbi:Gofer:transport=$transport;...;dsn=$original_dsn&quot;,
+                      $user, $passwd, \%attributes);
+  ... use $dbh as if it was connected to $original_dsn ...</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;transport=$transport&quot;</tt> part specifies the
+name of the module to use to transport the requests to the
+remote <small>DBI.</small> If <tt>$transport</tt>
+doesn&rsquo;t contain any double colons then it&rsquo;s
+prefixed with
+<tt>&quot;DBD::Gofer::Transport::&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;dsn=$original_dsn&quot;</tt> part <i>must be the
+last element</i> of the <small>DSN</small> because
+everything after <tt>&quot;dsn=&quot;</tt> is assumed to be
+the <small>DSN</small> that the remote <small>DBI</small>
+should use.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;...&quot;</tt> represents attributes that
+influence the operation of the Gofer driver or transport.
+These are described below or in the documentation of the
+transport module being used.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">DBD::Gofer is a
+<small>DBI</small> database driver that forwards requests to
+another <small>DBI</small> driver, usually in a separate
+process, often on a separate machine. It tries to be as
+transparent as possible so it appears that you are using the
+remote driver directly.</p>
+
+<p style="margin-left:11%; margin-top: 1em">DBD::Gofer is
+very similar to DBD::Proxy. The major difference is that
+with DBD::Gofer no state is maintained on the remote end.
+That means every request contains all the information needed
+to create the required state. (So, for example, every
+request includes the <small>DSN</small> to connect to.) Each
+request can be sent to any available server. The server
+executes the request and returns a single response that
+includes all the data.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is very
+similar to the way http works as a stateless protocol for
+the web. Each request from your web browser can be handled
+by a different web server process.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Use
+Cases</b> <br>
+This may seem like pointless overhead but there are
+situations where this is a very good thing. Let&rsquo;s
+consider a specific case.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Imagine using
+DBD::Gofer with an http transport. Your application calls
+<i>connect()</i>, prepare(&quot;select * from table where
+foo=?&quot;), <i>bind_param()</i>, and <i>execute()</i>. At
+this point DBD::Gofer builds a request containing all the
+information about the method calls. It then uses the httpd
+transport to send that request to an apache web server.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This &rsquo;dbi
+execute&rsquo; web server executes the request (using
+DBI::Gofer::Execute and related modules) and builds a
+response that contains all the rows of data, if the
+statement returned any, along with all the attributes that
+describe the results, such as <tt>$sth</tt>&minus;&gt;{
+<small>NAME</small> }. This response is sent back to
+DBD::Gofer which unpacks it and presents it to the
+application as if it had executed the statement itself.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Advantages</b>
+<br>
+Okay, but you still don&rsquo;t see the point? Well
+let&rsquo;s consider what we&rsquo;ve gained:</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Connection
+Pooling and Throttling</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">The &rsquo;dbi
+execute&rsquo; web server leverages all the functionality of
+web infrastructure in terms of load balancing,
+high-availability, firewalls, access management, proxying,
+caching.</p>
+
+<p style="margin-left:11%; margin-top: 1em">At its most
+basic level you get a configurable pool of persistent
+database connections.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Simple
+Scaling</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Got thousands
+of processes all trying to connect to the database? You can
+use DBD::Gofer to connect them to your smaller pool of
+&rsquo;dbi execute&rsquo; web servers instead.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>Caching</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Client-side
+caching is as simple as adding
+&quot;<tt>&quot;cache=1&quot;</tt>&quot; to the
+<small>DSN.</small> This feature alone can be worth using
+DBD::Gofer for.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Fewer
+Network Round-trips</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">DBD::Gofer
+sends as few requests as possible (dependent on the policy
+being used).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Thin Clients
+/ Unsupported Platforms</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">You no longer
+need drivers for your database on every system. DBD::Gofer
+is pure perl.</p>
+
+<h2>CONSTRAINTS
+<a name="CONSTRAINTS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">There are some
+natural constraints imposed by the DBD::Gofer
+&rsquo;stateless&rsquo; approach. But not many:</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>You
+can&rsquo;t change database handle attributes after</b>
+<i>connect()</i> <br>
+You can&rsquo;t change database handle attributes after
+you&rsquo;ve connected. Use the <i>connect()</i> call to
+specify all the attribute settings you want.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is because
+it&rsquo;s critical that when a request is complete the
+database handle is left in the same state it was when first
+connected.</p>
+
+<p style="margin-left:11%; margin-top: 1em">An exception is
+made for attributes with names starting
+&quot;<tt>&quot;private_&quot;</tt>&quot;: They can be set
+after <i>connect()</i> but the change is only applied
+locally.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>You
+can&rsquo;t change statement handle attributes after</b>
+<i>prepare()</i> <br>
+You can&rsquo;t change statement handle attributes after
+prepare.</p>
+
+<p style="margin-left:11%; margin-top: 1em">An exception is
+made for attributes with names starting
+&quot;<tt>&quot;private_&quot;</tt>&quot;: They can be set
+after <i>prepare()</i> but the change is only applied
+locally.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>You
+can&rsquo;t use transactions</b> <br>
+AutoCommit only. Transactions aren&rsquo;t supported.</p>
+
+<p style="margin-left:11%; margin-top: 1em">(In theory
+transactions could be supported when using a transport that
+maintains a connection, like <tt>&quot;stream&quot;</tt>
+does. If you&rsquo;re interested in this please get in touch
+via dbi&minus;dev@perl.org)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>You
+can&rsquo;t call driver-private sth methods</b> <br>
+But that&rsquo;s rarely needed anyway.</p>
+
+<h2>GENERAL CAVEATS
+<a name="GENERAL CAVEATS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">A few important
+things to keep in mind when using DBD::Gofer:</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Temporary
+tables, locks, and other per-connection persistent state</b>
+<br>
+You shouldn&rsquo;t expect any per-session state to persist
+between requests. This includes locks and temporary
+tables.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Because the
+server-side may execute your requests via a different
+database connections, you can&rsquo;t rely on any
+per-connection persistent state, such as temporary tables,
+being available from one request to the next.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is an easy
+trap to fall into. A good way to check for this is to test
+your code with a Gofer policy package that sets the
+<tt>&quot;connect_method&quot;</tt> policy to
+&rsquo;connect&rsquo; to force a new connection for each
+request. The <tt>&quot;pedantic&quot;</tt> policy does
+this.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Driver-private
+Database Handle Attributes</b> <br>
+Some driver-private dbh attributes may not be available if
+the driver has not implemented the
+<i>private_attribute_info()</i> method (added in <small>DBI
+1.54</small> ).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Driver-private
+Statement Handle Attributes</b> <br>
+Driver-private sth attributes can be set in the
+<i>prepare()</i> call. <small>TODO</small></p>
+
+<p style="margin-left:11%; margin-top: 1em">Some
+driver-private sth attributes may not be available if the
+driver has not implemented the
+<i>private_attribute_info()</i> method (added in <small>DBI
+1.54</small> ).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Multiple
+Resultsets</b> <br>
+Multiple resultsets are supported only if the driver
+supports the <i>more_results()</i> method (an exception is
+made for DBD::Sybase).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Statement
+activity that also updates dbh attributes</b> <br>
+Some drivers may update one or more dbh attributes after
+performing activity on a child sth. For example, DBD::mysql
+provides <tt>$dbh</tt>&minus;&gt;{mysql_insertid} in
+addition to <tt>$sth</tt>&minus;&gt;{mysql_insertid}.
+Currently mysql_insertid is supported via a hack but a more
+general mechanism is needed for other drivers to use.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Methods that
+report an error always return undef</b> <br>
+With DBD::Gofer, a method that sets an error always return
+an undef or empty list. That shouldn&rsquo;t be a problem in
+practice because the <small>DBI</small> doesn&rsquo;t define
+any methods that return meaningful values while also
+reporting an error.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Subclassing
+only applies to client-side</b> <br>
+The RootClass and DbTypeSubclass attributes are not passed
+to the Gofer server.</p>
+
+<h2>CAVEATS FOR SPECIFIC METHODS
+<a name="CAVEATS FOR SPECIFIC METHODS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>last_insert_id</b>
+<br>
+To enable use of last_insert_id you need to indicate to
+DBD::Gofer that you&rsquo;d like to use it. You do that my
+adding a <tt>&quot;go_last_insert_id_args&quot;</tt>
+attribute to the <i>do()</i> or <i>prepare()</i> method
+calls. For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $dbh&minus;&gt;do($sql, { go_last_insert_id_args =&gt; [...] });</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">or</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $sth = $dbh&minus;&gt;prepare($sql, { go_last_insert_id_args =&gt; [...] });</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The array
+reference should contains the args that you want passed to
+the <i>last_insert_id()</i> method.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>execute_for_fetch</b>
+<br>
+The array methods <i>bind_param_array()</i> and
+<i>execute_array()</i> are supported. When
+<i>execute_array()</i> is called the data is serialized and
+executed in a single round-trip to the Gofer server. This
+makes it very fast, but requires enough memory to store all
+the serialized data.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>execute_for_fetch()</i> method currently isn&rsquo;t
+optimised, it uses the <small>DBI</small> fallback behaviour
+of executing each tuple individually. (It could be
+implemented as a wrapper for <i>execute_array()</i> &minus;
+patches welcome.)</p>
+
+<h2>TRANSPORTS
+<a name="TRANSPORTS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">DBD::Gofer
+doesn&rsquo;t concern itself with transporting requests and
+responses to and fro. For that it uses special Gofer
+transport modules.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Gofer transport
+modules usually come in pairs: one for the
+&rsquo;client&rsquo; DBD::Gofer driver to use and one for
+the remote &rsquo;server&rsquo; end. They have very similar
+names:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    DBD::Gofer::Transport::&lt;foo&gt;
+    DBI::Gofer::Transport::&lt;foo&gt;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Sometimes the
+transports on the <small>DBD</small> and <small>DBI</small>
+sides may have different names. For example
+DBD::Gofer::Transport::http is typically used with
+DBI::Gofer::Transport::mod_perl (DBD::Gofer::Transport::http
+and DBI::Gofer::Transport::mod_perl modules are part of the
+GoferTransport-http distribution).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Bundled
+Transports</b> <br>
+Several transport modules are provided with DBD::Gofer:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>null</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">The null
+transport is the simplest of them all. It doesn&rsquo;t
+actually transport the request anywhere. It just serializes
+(freezes) the request into a string, then thaws it back into
+a data structure before passing it to DBI::Gofer::Execute to
+execute. The same freeze and thaw is applied to the
+results.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The null
+transport is the best way to test if your application will
+work with Gofer. Just set the <small>DBI_AUTOPROXY</small>
+environment variable to
+&quot;<tt>&quot;dbi:Gofer:transport=null;policy=pedantic&quot;</tt>&quot;
+(see &quot;Using <small>DBI_AUTOPROXY&quot;</small> below)
+and run your application, or ideally its test suite, as
+usual.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It
+doesn&rsquo;t take any parameters.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>pipeone</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">The pipeone
+transport launches a subprocess for each request. It passes
+in the request and reads the response.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The fact that a
+new subprocess is started for each request ensures that the
+server side is truly stateless. While this does make the
+transport <i>very</i> slow, it is useful as a way to test
+that your application doesn&rsquo;t depend on per-connection
+state, such as temporary tables, persisting between
+requests.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It&rsquo;s also
+useful both as a proof of concept and as a base class for
+the stream driver.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>stream</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">The stream
+driver also launches a subprocess and writes requests and
+reads responses, like the pipeone transport. In this case,
+however, the subprocess is expected to handle more that one
+request. (Though it will be automatically restarted if it
+exits.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is the
+first transport that is truly useful because it can launch
+the subprocess on a remote machine using
+<tt>&quot;ssh&quot;</tt>. This means you can now use
+DBD::Gofer to easily access any databases that&rsquo;s
+accessible from any system you can login to. You also get
+all the benefits of ssh, including encryption and optional
+compression.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See &quot;Using
+<small>DBI_AUTOPROXY&quot;</small> below for an example.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Other
+Transports</b> <br>
+Implementing a Gofer transport is <i>very</i> simple, and
+more transports are very welcome. Just take a look at any
+existing transports that are similar to your needs.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>http</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">See the
+GoferTransport-http distribution on <small>CPAN:</small>
+http://search.cpan.org/dist/GoferTransport&minus;http/</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>Gearman</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">I know Ask
+BjA~Xrn Hansen has implemented a transport for the
+<tt>&quot;gearman&quot;</tt> distributed job system, though
+it&rsquo;s not on <small>CPAN</small> at the time of writing
+this.</p>
+
+<h2>CONNECTING
+<a name="CONNECTING"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Simply prefix
+your existing <small>DSN</small> with
+&quot;<tt>&quot;dbi:Gofer:transport=$transport;dsn=&quot;</tt>&quot;
+where <tt>$transport</tt> is the name of the Gofer transport
+you want to use (see &quot; <small>TRANSPORTS&quot;</small>
+). The <tt>&quot;transport&quot;</tt> and
+<tt>&quot;dsn&quot;</tt> attributes must be specified and
+the <tt>&quot;dsn&quot;</tt> attributes must be last.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Other
+attributes can be specified in the <small>DSN</small> to
+configure DBD::Gofer and/or the Gofer transport module being
+used. The main attributes after
+<tt>&quot;transport&quot;</tt>, are <tt>&quot;url&quot;</tt>
+and <tt>&quot;policy&quot;</tt>. These and other attributes
+are described below.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Using
+<small>DBI_AUTOPROXY</small></b> <br>
+The simplest way to try out DBD::Gofer is to set the
+<small>DBI_AUTOPROXY</small> environment variable. In this
+case you don&rsquo;t include the <tt>&quot;dsn=&quot;</tt>
+part. For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    export DBI_AUTOPROXY=&quot;dbi:Gofer:transport=null&quot;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">or, for a more
+useful example, try:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    export DBI_AUTOPROXY=&quot;dbi:Gofer:transport=stream;url=ssh:user@example.com&quot;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Connection
+Attributes</b> <br>
+These attributes can be specified in the <small>DSN.</small>
+They can also be passed in the \%attr parameter of the
+<small>DBI</small> connect method by adding a
+&quot;<tt>&quot;go_&quot;</tt>&quot; prefix to the name.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>transport</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Specifies the
+Gofer transport class to use. Required. See &quot;
+<small>TRANSPORTS&quot;</small> above.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the value
+does not include <tt>&quot;::&quot;</tt> then
+&quot;<tt>&quot;DBD::Gofer::Transport::&quot;</tt>&quot; is
+prefixed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The transport
+object can be accessed via
+<tt>$h</tt>&minus;&gt;{go_transport}.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>dsn</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Specifies the
+<small>DSN</small> for the remote side to connect to.
+Required, and must be last.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>url</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Used to tell
+the transport where to connect to. The exact form of the
+value depends on the transport used.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>policy</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Specifies the
+policy to use. See &quot; <small>CONFIGURING BEHAVIOUR
+POLICY&quot;</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the value
+does not include <tt>&quot;::&quot;</tt> then
+&quot;<tt>&quot;DBD::Gofer::Policy&quot;</tt>&quot; is
+prefixed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The policy
+object can be accessed via
+<tt>$h</tt>&minus;&gt;{go_policy}.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>timeout</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Specifies a
+timeout, in seconds, to use when waiting for responses from
+the server side.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>retry_limit</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Specifies the
+number of times a failed request will be retried. Default is
+0.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>retry_hook</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Specifies a
+code reference to be called to decide if a failed request
+should be retried. The code reference is called like
+this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $transport = $h&minus;&gt;{go_transport};
+  $retry = $transport&minus;&gt;go_retry_hook&minus;&gt;($request, $response, $transport);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If it returns
+true then the request will be retried, upto the
+<tt>&quot;retry_limit&quot;</tt>. If it returns a false but
+defined value then the request will not be retried. If it
+returns undef then the default behaviour will be used, as if
+<tt>&quot;retry_hook&quot;</tt> had not been specified.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The default
+behaviour is to retry requests where
+<tt>$request</tt>&minus;&gt;is_idempotent is true, or the
+error message matches <tt>&quot;/induced by
+DBI_GOFER_RANDOM/&quot;</tt>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>cache</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Specifies that
+client-side caching should be performed. The value is the
+name of a cache class to use.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Any class
+implementing get($key) and set($key, <tt>$value</tt>)
+methods can be used. That includes a great many powerful
+caching classes on <small>CPAN,</small> including the Cache
+and Cache::Cache distributions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can use
+&quot;<tt>&quot;cache=1&quot;</tt>&quot; is a shortcut for
+&quot;<tt>&quot;cache=DBI::Util::CacheMemory&quot;</tt>&quot;.
+See DBI::Util::CacheMemory for a description of this simple
+fast default cache.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The cache
+object can be accessed via <tt>$h</tt>&minus;&gt;go_cache.
+For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $dbh&minus;&gt;go_cache&minus;&gt;clear; # free up memory being used by the cache</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The cache keys
+are the frozen (serialized) requests, and the values are the
+frozen responses.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The default
+behaviour is to only use the cache for requests where
+<tt>$request</tt>&minus;&gt;is_idempotent is true (i.e., the
+dbh has the ReadOnly attribute set or the <small>SQL</small>
+statement is obviously a <small>SELECT</small> without a
+<small>FOR UPDATE</small> clause.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">For even more
+control you can use the <tt>&quot;go_cache&quot;</tt>
+attribute to pass in an instantiated cache object.
+Individual methods, including <i>prepare()</i>, can also
+specify alternative caches via the
+<tt>&quot;go_cache&quot;</tt> attribute. For example, to
+specify no caching for a particular query, you could use</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $sth = $dbh&minus;&gt;prepare( $sql, { go_cache =&gt; 0 } );</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This can be
+used to implement different caching policies for different
+statements.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It&rsquo;s
+interesting to note that DBD::Gofer can be used to add
+client-side caching to any (gofer compatible) application,
+with no code changes and no need for a gofer server. Just
+set the <small>DBI_AUTOPROXY</small> environment variable
+like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    DBI_AUTOPROXY='dbi:Gofer:transport=null;cache=1'</pre>
+
+
+<h2>CONFIGURING BEHAVIOUR POLICY
+<a name="CONFIGURING BEHAVIOUR POLICY"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">DBD::Gofer
+supports a &rsquo;policy&rsquo; mechanism that allows you to
+fine-tune the number of round-trips to the Gofer server. The
+policies are grouped into classes (which may be subclassed)
+and referenced by the name of the class.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+DBD::Gofer::Policy::Base class is the base class for all the
+policy packages and describes all the available
+policies.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Three policy
+packages are supplied with DBD::Gofer:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">DBD::Gofer::Policy::pedantic
+is most &rsquo;transparent&rsquo; but slowest because it
+makes more round-trips to the Gofer server.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">DBD::Gofer::Policy::classic
+is a reasonable compromise &minus; it&rsquo;s the default
+policy.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">DBD::Gofer::Policy::rush
+is fastest, but may require code changes in your
+applications.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Generally the
+default <tt>&quot;classic&quot;</tt> policy is fine. When
+first testing an existing application with Gofer it is a
+good idea to start with the <tt>&quot;pedantic&quot;</tt>
+policy first and then switch to <tt>&quot;classic&quot;</tt>
+or a custom policy, for final testing.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Tim Bunce,
+&lt;http://www.tim.bunce.name&gt;</p>
+
+<h2>LICENCE AND COPYRIGHT
+<a name="LICENCE AND COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (c)
+2007, Tim Bunce, Ireland. All rights reserved.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This module is
+free software; you can redistribute it and/or modify it
+under the same terms as Perl itself. See perlartistic.</p>
+
+<h2>ACKNOWLEDGEMENTS
+<a name="ACKNOWLEDGEMENTS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The development
+of DBD::Gofer and related modules was sponsored by
+Shopzilla.com (&lt;http://Shopzilla.com&gt;), where I
+currently work.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">DBI::Gofer::Request,
+DBI::Gofer::Response, DBI::Gofer::Execute.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">DBI::Gofer::Transport::Base,
+DBD::Gofer::Policy::Base.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>DBI</small></p>
+
+<h2>Caveats for specific drivers
+<a name="Caveats for specific drivers"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This section
+aims to record issues to be aware of when using Gofer with
+specific drivers. It usually only documents issues that are
+not natural consequences of the limitations of the Gofer
+approach &minus; as documented above.</p>
+
+<h2>TODO
+<a name="TODO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is just a
+random brain dump... (There&rsquo;s more in the source of
+the Changes file, not the pod)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Document policy
+mechanism</p>
+
+<p style="margin-left:11%; margin-top: 1em">Add mechanism
+for transports to list config params and for Gofer to apply
+any that match (and warn if any left over?)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Driver-private
+sth attributes &minus; set via <i>prepare()</i> &minus;
+change <small>DBI</small> spec</p>
+
+<p style="margin-left:11%; margin-top: 1em">add hooks into
+transport base class for checking &amp; updating a result
+set cache <br>
+ie via a standard cache interface such as: <br>
+
+http://search.cpan.org/~robm/Cache&minus;FastMmap/FastMmap.pm
+<br>
+
+http://search.cpan.org/~bradfitz/Cache&minus;Memcached/lib/Cache/Memcached.pm
+<br>
+http://search.cpan.org/~dclinton/Cache&minus;Cache/ <br>
+http://search.cpan.org/~cleishman/Cache/ Also caching
+instructions could be passed through the httpd transport
+layer in such a way that appropriate http cache headers are
+added to the results so that web caches (squid etc) could be
+used to implement the caching. ( <small>MUST</small> require
+the use of <small>GET</small> rather than
+<small>POST</small> requests.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Rework handling
+of installed_methods to not piggyback on dbh_attributes?</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perhaps support
+transactions for transports where it&rsquo;s possible (ie
+null and stream)? Would make stream transport (ie ssh) more
+useful to more people.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Make
+sth_result_attr more like dbh_attributes (using
+&rsquo;*&rsquo; etc)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Add
+<tt>@val</tt> = FETCH_many(@names) to <small>DBI</small> in
+C and use in Gofer/Execute?</p>
+
+<p style="margin-left:11%; margin-top: 1em">Implement
+_new_sth in C.</p>
+<hr>
+</body>
+</html>

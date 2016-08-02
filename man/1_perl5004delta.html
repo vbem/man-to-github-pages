@@ -1,0 +1,2209 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:37:07 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERL5004DELTA</title>
+
+</head>
+<body>
+
+<h1 align="center">PERL5004DELTA</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#Supported Environments">Supported Environments</a><br>
+<a href="#Core Changes">Core Changes</a><br>
+<a href="#Support for More Operating Systems">Support for More Operating Systems</a><br>
+<a href="#Pragmata">Pragmata</a><br>
+<a href="#Modules">Modules</a><br>
+<a href="#Utility Changes">Utility Changes</a><br>
+<a href="#C Language API Changes">C Language API Changes</a><br>
+<a href="#Documentation Changes">Documentation Changes</a><br>
+<a href="#New Diagnostics">New Diagnostics</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#HISTORY">HISTORY</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perl5004delta
+&minus; what&rsquo;s new for perl5.004</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+describes differences between the 5.003 release (as
+documented in <i>Programming Perl</i>, second edition--the
+Camel Book) and this one.</p>
+
+<h2>Supported Environments
+<a name="Supported Environments"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Perl5.004
+builds out of the box on Unix, Plan 9, LynxOS,
+<small>VMS</small> , <small>OS/2</small> ,
+<small>QNX</small> , AmigaOS, and Windows <small>NT</small>
+. Perl runs on Windows 95 as well, but it cannot be built
+there, for lack of a reasonable command interpreter.</p>
+
+<h2>Core Changes
+<a name="Core Changes"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Most
+importantly, many bugs were fixed, including several
+security problems. See the <i>Changes</i> file in the
+distribution for details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>List
+assignment to %ENV works</b> <tt><br>
+&quot;%ENV = ()&quot;</tt> and <tt>&quot;%ENV =
+@list&quot;</tt> now work as expected (except on
+<small>VMS</small> where it generates a fatal error).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Change to
+&quot;Can&rsquo;t locate Foo.pm in @INC&quot; error</b> <br>
+The error &quot;Can&rsquo;t locate Foo.pm in
+<tt>@INC</tt>&quot; now lists the contents of <tt>@INC</tt>
+for easier debugging.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Compilation
+option: Binary compatibility with 5.003</b> <br>
+There is a new Configure question that asks if you want to
+maintain binary compatibility with Perl 5.003. If you choose
+binary compatibility, you do not have to recompile your
+extensions, but you might have symbol conflicts if you embed
+Perl in another application, just as in the 5.003 release.
+By default, binary compatibility is preserved at the expense
+of symbol table pollution.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>$PERL5OPT
+environment variable</b> <br>
+You may now put Perl options in the <tt>$PERL5OPT</tt>
+environment variable. Unless Perl is running with taint
+checks, it will interpret this variable as if its contents
+had appeared on a &quot;#!perl&quot; line at the beginning
+of your script, except that hyphens are optional.
+<small>PERL5OPT</small> may only be used to set the
+following switches: <b>&minus;[DIMUdmw]</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Limitations
+on &minus;M, &minus;m, and &minus;T options</b> <br>
+The <tt>&quot;&minus;M&quot;</tt> and
+<tt>&quot;&minus;m&quot;</tt> options are no longer allowed
+on the <tt>&quot;#!&quot;</tt> line of a script. If a script
+needs a module, it should invoke it with the
+<tt>&quot;use&quot;</tt> pragma.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>&minus;T</b> option is also forbidden on the
+<tt>&quot;#!&quot;</tt> line of a script, unless it was
+present on the Perl command line. Due to the way
+<tt>&quot;#!&quot;</tt> works, this usually means that
+<b>&minus;T</b> must be in the first argument. Thus:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    #!/usr/bin/perl &minus;T &minus;w</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">will probably
+work for an executable script invoked as
+<tt>&quot;scriptname&quot;</tt>, while:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    #!/usr/bin/perl &minus;w &minus;T</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">will probably
+fail under the same conditions. (Non-Unix systems will
+probably not follow this rule.) But <tt>&quot;perl
+scriptname&quot;</tt> is guaranteed to fail, since then
+there is no chance of <b>&minus;T</b> being found on the
+command line before it is found on the
+<tt>&quot;#!&quot;</tt> line.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>More precise
+warnings</b> <br>
+If you removed the <b>&minus;w</b> option from your Perl
+5.003 scripts because it made Perl too verbose, we recommend
+that you try putting it back when you upgrade to Perl 5.004.
+Each new perl version tends to remove some undesirable
+warnings, while adding new warnings that may catch bugs in
+your scripts.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Deprecated:
+Inherited &quot;AUTOLOAD&quot; for non-methods</b> <br>
+Before Perl 5.004, <tt>&quot;AUTOLOAD&quot;</tt> functions
+were looked up as methods (using the <tt>@ISA</tt>
+hierarchy), even when the function to be autoloaded was
+called as a plain function (e.g.
+<tt>&quot;Foo::bar()&quot;</tt>), not a method (e.g.
+<tt>&quot;Foo&minus;&gt;bar()&quot;</tt> or
+<tt>&quot;$obj&minus;&gt;bar()&quot;</tt>).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl 5.005 will
+use method lookup only for methods&rsquo;
+<tt>&quot;AUTOLOAD&quot;</tt>s. However, there is a
+significant base of existing code that may be using the old
+behavior. So, as an interim step, Perl 5.004 issues an
+optional warning when a non-method uses an inherited
+<tt>&quot;AUTOLOAD&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The simple rule
+is: Inheritance will not work when autoloading non-methods.
+The simple fix for old code is: In any module that used to
+depend on inheriting <tt>&quot;AUTOLOAD&quot;</tt> for
+non-methods from a base class named
+<tt>&quot;BaseClass&quot;</tt>, execute <tt>&quot;*AUTOLOAD
+= \&amp;BaseClass::AUTOLOAD&quot;</tt> during startup.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Previously
+deprecated %OVERLOAD is no longer usable</b> <br>
+Using <tt>%OVERLOAD</tt> to define overloading was
+deprecated in 5.003. Overloading is now defined using the
+overload pragma. <tt>%OVERLOAD</tt> is still used internally
+but should not be used by Perl scripts. See overload for
+more details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Subroutine
+arguments created only when they&rsquo;re modified</b> <br>
+In Perl 5.004, nonexistent array and hash elements used as
+subroutine parameters are brought into existence only if
+they are actually assigned to (via <tt>@_</tt>).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Earlier
+versions of Perl vary in their handling of such arguments.
+Perl versions 5.002 and 5.003 always brought them into
+existence. Perl versions 5.000 and 5.001 brought them into
+existence only if they were not the first argument (which
+was almost certainly a bug). Earlier versions of Perl never
+brought them into existence.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For example,
+given this code:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">     undef @a; undef %a;
+     sub show { print $_[0] };
+     sub change { $_[0]++ };
+     show($a[2]);
+     change($a{b});</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">After this code
+executes in Perl 5.004, <tt>$a</tt>{b} exists but
+<tt>$a</tt>[2] does not. In Perl 5.002 and 5.003, both
+<tt>$a</tt>{b} and <tt>$a</tt>[2] would have existed (but
+<tt>$a</tt>[2]&rsquo;s value would have been undefined).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Group vector
+changeable with $)</b> <br>
+The <tt>$)</tt> special variable has always (well, in Perl
+5, at least) reflected not only the current effective group,
+but also the group list as returned by the
+<tt>&quot;getgroups()&quot;</tt> C function (if there is
+one). However, until this release, there has not been a way
+to call the <tt>&quot;setgroups()&quot;</tt> C function from
+Perl.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In Perl 5.004,
+assigning to <tt>$)</tt> is exactly symmetrical with
+examining it: The first number in its string value is used
+as the effective gid; if there are any numbers after the
+first one, they are passed to the
+<tt>&quot;setgroups()&quot;</tt> C function (if there is
+one).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Fixed
+parsing of $$&lt;digit&gt;, &amp;$&lt;digit&gt;, etc.</b>
+<br>
+Perl versions before 5.004 misinterpreted any type marker
+followed by &quot;$&quot; and a digit. For example,
+&quot;$$0&quot; was incorrectly taken to mean
+&quot;${$}0&quot; instead of &quot;${$0}&quot;. This bug is
+(mostly) fixed in Perl 5.004.</p>
+
+<p style="margin-left:11%; margin-top: 1em">However, the
+developers of Perl 5.004 could not fix this bug completely,
+because at least two widely-used modules depend on the old
+meaning of &quot;$$0&quot; in a string. So Perl 5.004 still
+interprets &quot;$$&lt;digit&gt;&quot; in the old (broken)
+way inside strings; but it generates this message as a
+warning. And in Perl 5.005, this special treatment will
+cease.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Fixed
+localization of $&lt;digit&gt;, $&amp;, etc.</b> <br>
+Perl versions before 5.004 did not always properly localize
+the regex-related special variables. Perl 5.004 does
+localize them, as the documentation has always said it
+should. This may result in <tt>$1</tt>, <tt>$2</tt>, etc. no
+longer being set where existing programs use them.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>No resetting
+of $. on implicit close</b> <br>
+The documentation for Perl 5.0 has always stated that
+<tt>$.</tt> is <i>not</i> reset when an already-open file
+handle is reopened with no intervening call to
+<tt>&quot;close&quot;</tt>. Due to a bug, perl versions
+5.000 through 5.003 <i>did</i> reset <tt>$.</tt> under that
+circumstance; Perl 5.004 does not.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;wantarray&quot;
+may return undef</b> <br>
+The <tt>&quot;wantarray&quot;</tt> operator returns true if
+a subroutine is expected to return a list, and false
+otherwise. In Perl 5.004, <tt>&quot;wantarray&quot;</tt> can
+also return the undefined value if a subroutine&rsquo;s
+return value will not be used at all, which allows
+subroutines to avoid a time-consuming calculation of a
+return value if it isn&rsquo;t going to be used.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;eval
+EXPR&quot; determines value of <small>EXPR</small> in scalar
+context</b> <br>
+Perl (version 5) used to determine the value of
+<small>EXPR</small> inconsistently, sometimes incorrectly
+using the surrounding context for the determination. Now,
+the value of <small>EXPR</small> (before being parsed by
+eval) is always determined in a scalar context. Once parsed,
+it is executed as before, by providing the context that the
+scope surrounding the eval provided. This change makes the
+behavior Perl4 compatible, besides fixing bugs resulting
+from the inconsistent behavior. This program:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @a = qw(time now is time);
+    print eval @a;
+    print '|', scalar eval @a;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">used to print
+something like &quot;timenowis881399109|4&quot;, but now
+(and in perl4) prints &quot;4|4&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Changes to
+tainting checks</b> <br>
+A bug in previous versions may have failed to detect some
+insecure conditions when taint checks are turned on. (Taint
+checks are used in setuid or setgid scripts, or when
+explicitly turned on with the <tt>&quot;&minus;T&quot;</tt>
+invocation option.) Although it&rsquo;s unlikely, this may
+cause a previously-working script to now fail, which should
+be construed as a blessing since that indicates a
+potentially-serious security hole was just plugged.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The new
+restrictions when tainting include: <br>
+No <i>glob()</i> or &lt;*&gt;</p>
+
+<p style="margin-left:17%;">These operators may spawn the C
+shell (csh), which cannot be made safe. This restriction
+will be lifted in a future version of Perl when globbing is
+implemented without the use of an external program.</p>
+
+<p style="margin-left:11%;">No spawning if tainted $CDPATH,
+$ENV, $BASH_ENV</p>
+
+<p style="margin-left:17%;">These environment variables may
+alter the behavior of spawned programs (especially shells)
+in ways that subvert security. So now they are treated as
+dangerous, in the manner of <tt>$IFS</tt> and
+<tt>$PATH</tt>.</p>
+
+<p style="margin-left:11%;">No spawning if tainted $TERM
+doesn&rsquo;t look like a terminal name</p>
+
+<p style="margin-left:17%;">Some termcap libraries do
+unsafe things with <tt>$TERM</tt>. However, it would be
+unnecessarily harsh to treat all <tt>$TERM</tt> values as
+unsafe, since only shell metacharacters can cause trouble in
+<tt>$TERM</tt>. So a tainted <tt>$TERM</tt> is considered to
+be safe if it contains only alphanumerics, underscores,
+dashes, and colons, and unsafe if it contains other
+characters (including whitespace).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>New Opcode
+module and revised Safe module</b> <br>
+A new Opcode module supports the creation, manipulation and
+application of opcode masks. The revised Safe module has a
+new <small>API</small> and is implemented using the new
+Opcode module. Please read the new Opcode and Safe
+documentation.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Embedding
+improvements</b> <br>
+In older versions of Perl it was not possible to create more
+than one Perl interpreter instance inside a single process
+without leaking like a sieve and/or crashing. The bugs that
+caused this behavior have all been fixed. However, you still
+must take care when embedding Perl in a C program. See the
+updated perlembed manpage for tips on how to manage your
+interpreters.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Internal
+change: FileHandle class based on IO::* classes</b> <br>
+File handles are now stored internally as type IO::Handle.
+The FileHandle module is still supported for backwards
+compatibility, but it is now merely a front end to the IO::*
+modules, specifically IO::Handle, IO::Seekable, and
+IO::File. We suggest, but do not require, that you use the
+IO::* modules in new code.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In harmony with
+this change, <tt>*GLOB{FILEHANDLE}</tt> is now just a
+backward-compatible synonym for <tt>*GLOB{IO}</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Internal
+change: PerlIO abstraction interface</b> <br>
+It is now possible to build Perl with
+<small>AT&amp;T</small> &rsquo;s sfio <small>IO</small>
+package instead of stdio. See perlapio for more details, and
+the <i><small>INSTALL</small></i> file for how to use
+it.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>New and
+changed syntax</b> <br>
+$coderef&minus;&gt;( <small>PARAMS</small> )</p>
+
+<p style="margin-left:17%;">A subroutine reference may now
+be suffixed with an arrow and a (possibly empty) parameter
+list. This syntax denotes a call of the referenced
+subroutine, with the given parameters (if any).</p>
+
+<p style="margin-left:17%; margin-top: 1em">This new syntax
+follows the pattern of
+<tt>&quot;$hashref&minus;&gt;{FOO}&quot;</tt> and
+<tt>&quot;$aryref&minus;&gt;[$foo]&quot;</tt>: You may now
+write <tt>&quot;&amp;$subref($foo)&quot;</tt> as
+<tt>&quot;$subref&minus;&gt;($foo)&quot;</tt>. All these
+arrow terms may be chained; thus,
+<tt>&quot;&amp;{$table&minus;&gt;{FOO}}($bar)&quot;</tt> may
+now be written
+<tt>&quot;$table&minus;&gt;{FOO}&minus;&gt;($bar)&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>New and
+changed builtin constants</b> <br>
+__PACKAGE__</p>
+
+<p style="margin-left:17%;">The current package name at
+compile time, or the undefined value if there is no current
+package (due to a <tt>&quot;package;&quot;</tt> directive).
+Like <tt>&quot;__FILE__&quot;</tt> and
+<tt>&quot;__LINE__&quot;</tt>,
+<tt>&quot;__PACKAGE__&quot;</tt> does <i>not</i> interpolate
+into strings.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>New and
+changed builtin variables</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p>$^E</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p>Extended error message on some platforms. (Also known as
+<tt>$EXTENDED_OS_ERROR</tt> if you <tt>&quot;use
+English&quot;</tt>).</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p>$^H</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p>The current set of syntax checks enabled by
+<tt>&quot;use strict&quot;</tt>. See the documentation of
+<tt>&quot;strict&quot;</tt> for more details. Not actually
+new, but newly documented. Because it is intended for
+internal use by Perl core components, there is no
+<tt>&quot;use English&quot;</tt> long name for this
+variable.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p>$^M</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p>By default, running out of memory it is not trappable.
+However, if compiled for this, Perl may use the contents of
+<tt>$^M</tt> as an emergency pool after <i>die()</i>ing with
+this message. Suppose that your Perl were compiled with
+&minus;DPERL_EMERGENCY_SBRK and used Perl&rsquo;s malloc.
+Then</p> </td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    $^M = 'a' x (1&lt;&lt;16);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">would allocate
+a 64K buffer for use when in emergency. See the
+<i><small>INSTALL</small></i> file for information on how to
+enable this option. As a disincentive to casual use of this
+advanced feature, there is no <tt>&quot;use
+English&quot;</tt> long name for this variable.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>New and
+changed builtin functions</b> <br>
+delete on slices</p>
+
+<p style="margin-left:17%;">This now works. (e.g.
+<tt>&quot;delete @ENV{'PATH', 'MANPATH'}&quot;</tt>)</p>
+
+<p style="margin-left:11%;">flock</p>
+
+<p style="margin-left:17%;">is now supported on more
+platforms, prefers fcntl to lockf when emulating, and always
+flushes before (un)locking.</p>
+
+<p style="margin-left:11%;">printf and sprintf</p>
+
+<p style="margin-left:17%;">Perl now implements these
+functions itself; it doesn&rsquo;t use the C library
+function <i>sprintf()</i> any more, except for
+floating-point numbers, and even then only known flags are
+allowed. As a result, it is now possible to know which
+conversions and flags will work, and what they will do.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The new
+conversions in Perl&rsquo;s <i>sprintf()</i> are:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">   %i   a synonym for %d
+   %p   a pointer (the address of the Perl value, in hexadecimal)
+   %n   special: *stores* the number of characters output so far
+        into the next variable in the parameter list</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The new flags
+that go between the <tt>&quot;%&quot;</tt> and the
+conversion are:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">   #    prefix octal with &quot;0&quot;, hex with &quot;0x&quot;
+   h    interpret integer as C type &quot;short&quot; or &quot;unsigned short&quot;
+   V    interpret integer as Perl's standard integer type</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Also, where a
+number would appear in the flags, an asterisk
+(&quot;*&quot;) may be used instead, in which case Perl uses
+the next item in the parameter list as the given number
+(that is, as the field width or precision). If a field width
+obtained through &quot;*&quot; is negative, it has the same
+effect as the &rsquo;&minus;&rsquo; flag:
+left-justification.</p>
+
+<p style="margin-left:17%; margin-top: 1em">See
+&quot;sprintf&quot; in perlfunc for a complete list of
+conversion and flags.</p>
+
+<p style="margin-left:11%;">keys as an lvalue</p>
+
+<p style="margin-left:17%;">As an lvalue,
+<tt>&quot;keys&quot;</tt> allows you to increase the number
+of hash buckets allocated for the given hash. This can gain
+you a measure of efficiency if you know the hash is going to
+get big. (This is similar to pre-extending an array by
+assigning a larger number to $#array.) If you say</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    keys %hash = 200;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">then
+<tt>%hash</tt> will have at least 200 buckets allocated for
+it. These buckets will be retained even if you do
+<tt>&quot;%hash = ()&quot;</tt>; use <tt>&quot;undef
+%hash&quot;</tt> if you want to free the storage while
+<tt>%hash</tt> is still in scope. You can&rsquo;t shrink the
+number of buckets allocated for the hash using
+<tt>&quot;keys&quot;</tt> in this way (but you needn&rsquo;t
+worry about doing this by accident, as trying has no
+effect).</p>
+
+<p style="margin-left:11%;"><i>my()</i> in Control
+Structures</p>
+
+<p style="margin-left:17%;">You can now use <i>my()</i>
+(with or without the parentheses) in the control expressions
+of control structures such as:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    while (defined(my $line = &lt;&gt;)) {
+        $line = lc $line;
+    } continue {
+        print $line;
+    }
+    if ((my $answer = &lt;STDIN&gt;) =~ /^y(es)?$/i) {
+        user_agrees();
+    } elsif ($answer =~ /^n(o)?$/i) {
+        user_disagrees();
+    } else {
+        chomp $answer;
+        die &quot;`$answer' is neither `yes' nor `no'&quot;;
+    }</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Also, you can
+declare a foreach loop control variable as lexical by
+preceding it with the word &quot;my&quot;. For example,
+in:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    foreach my $i (1, 2, 3) {
+        some_function();
+    }</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">$i is a lexical
+variable, and the scope of <tt>$i</tt> extends to the end of
+the loop, but not beyond it.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Note that you
+still cannot use <i>my()</i> on global punctuation variables
+such as <tt>$_</tt> and the like.</p>
+
+<p style="margin-left:11%;"><i>pack()</i> and
+<i>unpack()</i></p>
+
+<p style="margin-left:17%;">A new format &rsquo;w&rsquo;
+represents a <small>BER</small> compressed integer (as
+defined in <small>ASN</small> .1). Its format is a sequence
+of one or more bytes, each of which provides seven bits of
+the total value, with the most significant first. Bit eight
+of each byte is set, except for the last byte, in which bit
+eight is clear.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If
+&rsquo;p&rsquo; or &rsquo;P&rsquo; are given undef as
+values, they now generate a <small>NULL</small> pointer.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Both
+<i>pack()</i> and <i>unpack()</i> now fail when their
+templates contain invalid types. (Invalid types used to be
+ignored.)</p>
+
+<p style="margin-left:11%;"><i>sysseek()</i></p>
+
+<p style="margin-left:17%;">The new <i>sysseek()</i>
+operator is a variant of <i>seek()</i> that sets and gets
+the file&rsquo;s system read/write position, using the
+<i>lseek</i>(2) system call. It is the only reliable way to
+seek before using <i>sysread()</i> or <i>syswrite()</i>. Its
+return value is the new position, or the undefined value on
+failure.</p>
+
+<p style="margin-left:11%;">use <small>VERSION</small></p>
+
+<p style="margin-left:17%;">If the first argument to
+<tt>&quot;use&quot;</tt> is a number, it is treated as a
+version number instead of a module name. If the version of
+the Perl interpreter is less than <small>VERSION</small> ,
+then an error message is printed and Perl exits immediately.
+Because <tt>&quot;use&quot;</tt> occurs at compile time,
+this check happens immediately during the compilation
+process, unlike <tt>&quot;require VERSION&quot;</tt>, which
+waits until runtime for the check. This is often useful if
+you need to check the current Perl version before
+<tt>&quot;use&quot;</tt>ing library modules which have
+changed in incompatible ways from older versions of Perl.
+(We try not to do this more than we have to.)</p>
+
+<p style="margin-left:11%;">use Module <small>VERSION
+LIST</small></p>
+
+<p style="margin-left:17%;">If the <small>VERSION</small>
+argument is present between Module and <small>LIST</small> ,
+then the <tt>&quot;use&quot;</tt> will call the
+<small>VERSION</small> method in class Module with the given
+version as an argument. The default <small>VERSION</small>
+method, inherited from the <small>UNIVERSAL</small> class,
+croaks if the given version is larger than the value of the
+variable <tt>$Module::VERSION</tt>. (Note that there is not
+a comma after <small>VERSION</small> !)</p>
+
+<p style="margin-left:17%; margin-top: 1em">This
+version-checking mechanism is similar to the one currently
+used in the Exporter module, but it is faster and can be
+used with modules that don&rsquo;t use the Exporter. It is
+the recommended method for new code.</p>
+
+<p style="margin-left:11%;">prototype(
+<small>FUNCTION</small> )</p>
+
+<p style="margin-left:17%;">Returns the prototype of a
+function as a string (or <tt>&quot;undef&quot;</tt> if the
+function has no prototype). <small>FUNCTION</small> is a
+reference to or the name of the function whose prototype you
+want to retrieve. (Not actually new; just never documented
+before.)</p>
+
+<p style="margin-left:11%;">srand</p>
+
+<p style="margin-left:17%;">The default seed for
+<tt>&quot;srand&quot;</tt>, which used to be
+<tt>&quot;time&quot;</tt>, has been changed. Now it&rsquo;s
+a heady mix of difficult-to-predict system-dependent values,
+which should be sufficient for most everyday purposes.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Previous to
+version 5.004, calling <tt>&quot;rand&quot;</tt> without
+first calling <tt>&quot;srand&quot;</tt> would yield the
+same sequence of random numbers on most or all machines.
+Now, when perl sees that you&rsquo;re calling
+<tt>&quot;rand&quot;</tt> and haven&rsquo;t yet called
+<tt>&quot;srand&quot;</tt>, it calls
+<tt>&quot;srand&quot;</tt> with the default seed. You should
+still call <tt>&quot;srand&quot;</tt> manually if your code
+might ever be run on a pre&minus;5.004 system, of course, or
+if you want a seed other than the default.</p>
+
+<p style="margin-left:11%;">$_ as Default</p>
+
+<p style="margin-left:17%;">Functions documented in the
+Camel to default to <tt>$_</tt> now in fact do, and all
+those that do are so documented in perlfunc.</p>
+
+<p style="margin-left:11%;">&quot;m//gc&quot; does not
+reset search position on failure</p>
+
+<p style="margin-left:17%;">The <tt>&quot;m//g&quot;</tt>
+match iteration construct has always reset its target
+string&rsquo;s search position (which is visible through the
+<tt>&quot;pos&quot;</tt> operator) when a match fails; as a
+result, the next <tt>&quot;m//g&quot;</tt> match after a
+failure starts again at the beginning of the string. With
+Perl 5.004, this reset may be disabled by adding the
+&quot;c&quot; (for &quot;continue&quot;) modifier, i.e.
+<tt>&quot;m//gc&quot;</tt>. This feature, in conjunction
+with the <tt>&quot;\G&quot;</tt> zero-width assertion, makes
+it possible to chain matches together. See perlop and
+perlre.</p>
+
+<p style="margin-left:11%;">&quot;m//x&quot; ignores
+whitespace before ?*+{}</p>
+
+<p style="margin-left:17%;">The <tt>&quot;m//x&quot;</tt>
+construct has always been intended to ignore all unescaped
+whitespace. However, before Perl 5.004, whitespace had the
+effect of escaping repeat modifiers like &quot;*&quot; or
+&quot;?&quot;; for example, <tt>&quot;/a *b/x&quot;</tt> was
+(mis)interpreted as <tt>&quot;/a\*b/x&quot;</tt>. This bug
+has been fixed in 5.004.</p>
+
+<p style="margin-left:11%;">nested &quot;sub{}&quot;
+closures work now</p>
+
+<p style="margin-left:17%;">Prior to the 5.004 release,
+nested anonymous functions didn&rsquo;t work right. They do
+now.</p>
+
+<p style="margin-left:11%;">formats work right on changing
+lexicals</p>
+
+<p style="margin-left:17%;">Just like anonymous functions
+that contain lexical variables that change (like a lexical
+index variable for a <tt>&quot;foreach&quot;</tt> loop),
+formats now work properly. For example, this silently failed
+before (printed only zeros), but is fine now:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    my $i;
+    foreach $i ( 1 .. 10 ) {
+        write;
+    }
+    format =
+        my i is @#
+        $i
+    .</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">However, it
+still fails (without a warning) if the foreach is within a
+subroutine:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    my $i;
+    sub foo {
+      foreach $i ( 1 .. 10 ) {
+        write;
+      }
+    }
+    foo;
+    format =
+        my i is @#
+        $i
+    .</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>New builtin
+methods</b> <br>
+The <tt>&quot;UNIVERSAL&quot;</tt> package automatically
+contains the following methods that are inherited by all
+other classes: <br>
+isa( <small>CLASS</small> )</p>
+
+<p style="margin-left:17%;"><tt>&quot;isa&quot;</tt>
+returns <i>true</i> if its object is blessed into a subclass
+of <tt>&quot;CLASS&quot;</tt></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;isa&quot;</tt>
+is also exportable and can be called as a sub with two
+arguments. This allows the ability to check what a reference
+points to. Example:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    use UNIVERSAL qw(isa);
+    if(isa($ref, 'ARRAY')) {
+       ...
+    }</pre>
+
+
+<p style="margin-left:11%;">can( <small>METHOD</small>
+)</p>
+
+<p style="margin-left:17%;"><tt>&quot;can&quot;</tt> checks
+to see if its object has a method called
+<tt>&quot;METHOD&quot;</tt>, if it does then a reference to
+the sub is returned; if it does not then <i>undef</i> is
+returned.</p>
+
+<p style="margin-left:11%;"><small>VERSION</small> ( [
+<small>NEED</small> ] )</p>
+
+<p style="margin-left:17%;"><tt>&quot;VERSION&quot;</tt>
+returns the version number of the class (package). If the
+<small>NEED</small> argument is given then it will check
+that the current version (as defined by the
+<tt>$VERSION</tt> variable in the given package) not less
+than <small>NEED</small> ; it will die if this is not the
+case. This method is normally called as a class method. This
+method is called automatically by the
+<tt>&quot;VERSION&quot;</tt> form of
+<tt>&quot;use&quot;</tt>.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    use A 1.2 qw(some imported subs);
+    # implies:
+    A&minus;&gt;VERSION(1.2);</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>NOTE:</small></b>
+<tt>&quot;can&quot;</tt> directly uses Perl&rsquo;s internal
+code for method lookup, and <tt>&quot;isa&quot;</tt> uses a
+very similar method and caching strategy. This may cause
+strange effects if the Perl code dynamically changes
+<tt>@ISA</tt> in any package.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You may add
+other methods to the <small>UNIVERSAL</small> class via Perl
+or <small>XS</small> code. You do not need to <tt>&quot;use
+UNIVERSAL&quot;</tt> in order to make these methods
+available to your program. This is necessary only if you
+wish to have <tt>&quot;isa&quot;</tt> available as a plain
+subroutine in the current package.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>TIEHANDLE</small>
+now supported</b> <br>
+See perltie for other kinds of <i>tie()</i>s. <small><br>
+TIEHANDLE</small> classname, <small>LIST</small></p>
+
+<p style="margin-left:17%;">This is the constructor for the
+class. That means it is expected to return an object of some
+sort. The reference can be used to hold some internal
+information.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    sub TIEHANDLE {
+        print &quot;&lt;shout&gt;\n&quot;;
+        my $i;
+        return bless \$i, shift;
+    }</pre>
+
+
+<p style="margin-left:11%;"><small>PRINT</small> this,
+<small>LIST</small></p>
+
+<p style="margin-left:17%;">This method will be triggered
+every time the tied handle is printed to. Beyond its self
+reference it also expects the list that was passed to the
+print function.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    sub PRINT {
+        $r = shift;
+        $$r++;
+        return print join( $, =&gt; map {uc} @_), $\;
+    }</pre>
+
+
+<p style="margin-left:11%;"><small>PRINTF</small> this,
+<small>LIST</small></p>
+
+<p style="margin-left:17%;">This method will be triggered
+every time the tied handle is printed to with the
+<tt>&quot;printf()&quot;</tt> function. Beyond its self
+reference it also expects the format and list that was
+passed to the printf function.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    sub PRINTF {
+        shift;
+          my $fmt = shift;
+        print sprintf($fmt, @_).&quot;\n&quot;;
+    }</pre>
+
+
+<p style="margin-left:11%;"><small>READ</small> this
+<small>LIST</small></p>
+
+<p style="margin-left:17%;">This method will be called when
+the handle is read from via the <tt>&quot;read&quot;</tt> or
+<tt>&quot;sysread&quot;</tt> functions.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    sub READ {
+        $r = shift;
+        my($buf,$len,$offset) = @_;
+        print &quot;READ called, \$buf=$buf, \$len=$len, \$offset=$offset&quot;;
+    }</pre>
+
+
+<p style="margin-left:11%;"><small>READLINE</small>
+this</p>
+
+<p style="margin-left:17%;">This method will be called when
+the handle is read from. The method should return undef when
+there is no more data.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    sub READLINE {
+        $r = shift;
+        return &quot;PRINT called $$r times\n&quot;
+    }</pre>
+
+
+<p style="margin-left:11%;"><small>GETC</small> this</p>
+
+<p style="margin-left:17%;">This method will be called when
+the <tt>&quot;getc&quot;</tt> function is called.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    sub GETC { print &quot;Don't GETC, Get Perl&quot;; return &quot;a&quot;; }</pre>
+
+
+<p style="margin-left:11%;"><small>DESTROY</small> this</p>
+
+<p style="margin-left:17%;">As with the other types of
+ties, this method will be called when the tied handle is
+about to be destroyed. This is useful for debugging and
+possibly for cleaning up.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    sub DESTROY {
+        print &quot;&lt;/shout&gt;\n&quot;;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Malloc
+enhancements</b> <br>
+If perl is compiled with the malloc included with the perl
+distribution (that is, if <tt>&quot;perl
+&minus;V:d_mymalloc&quot;</tt> is &rsquo;define&rsquo;) then
+you can print memory statistics at runtime by running Perl
+thusly:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  env PERL_DEBUG_MSTATS=2 perl your_script_here</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The value of 2
+means to print statistics after compilation and on exit;
+with a value of 1, the statistics are printed only on exit.
+(If you want the statistics at an arbitrary time,
+you&rsquo;ll need to install the optional module
+Devel::Peek.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Three new
+compilation flags are recognized by malloc.c. (They have no
+effect if perl is compiled with system <i>malloc()</i>.)
+<br>
+&minus;DPERL_EMERGENCY_SBRK</p>
+
+<p style="margin-left:17%;">If this macro is defined,
+running out of memory need not be a fatal error: a memory
+pool can allocated by assigning to the special variable
+<tt>$^M</tt>. See &quot;$^M&quot;.</p>
+
+<p style="margin-left:11%;">&minus;DPACK_MALLOC</p>
+
+<p style="margin-left:17%;">Perl memory allocation is by
+bucket with sizes close to powers of two. Because of these
+malloc overhead may be big, especially for data of size
+exactly a power of two. If <tt>&quot;PACK_MALLOC&quot;</tt>
+is defined, perl uses a slightly different algorithm for
+small allocations (up to 64 bytes long), which makes it
+possible to have overhead down to 1 byte for allocations
+which are powers of two (and appear quite often).</p>
+
+<p style="margin-left:17%; margin-top: 1em">Expected memory
+savings (with 8&minus;byte alignment in
+<tt>&quot;alignbytes&quot;</tt>) is about 20% for typical
+Perl usage. Expected slowdown due to additional malloc
+overhead is in fractions of a percent (hard to measure,
+because of the effect of saved memory on speed).</p>
+
+<p style="margin-left:11%;">&minus;DTWO_POT_OPTIMIZE</p>
+
+<p style="margin-left:17%;">Similarly to
+<tt>&quot;PACK_MALLOC&quot;</tt>, this macro improves
+allocations of data with size close to a power of two; but
+this works for big allocations (starting with 16K by
+default). Such allocations are typical for big hashes and
+special-purpose scripts, especially image processing.</p>
+
+<p style="margin-left:17%; margin-top: 1em">On recent
+systems, the fact that perl requires 2M from system for 1M
+allocation will not affect speed of execution, since the
+tail of such a chunk is not going to be touched (and thus
+will not require real memory). However, it may result in a
+premature out-of-memory error. So if you will be
+manipulating very large blocks with sizes close to powers of
+two, it would be wise to define this macro.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Expected saving
+of memory is 0&minus;100% (100% in applications which
+require most memory in such 2**n chunks); expected slowdown
+is negligible.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Miscellaneous
+efficiency enhancements</b> <br>
+Functions that have an empty prototype and that do nothing
+but return a fixed value are now inlined (e.g. <tt>&quot;sub
+PI () { 3.14159 }&quot;</tt>).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Each unique
+hash key is only allocated once, no matter how many hashes
+have an entry with that key. So even if you have 100 copies
+of the same hash, the hash keys never have to be
+reallocated.</p>
+
+<h2>Support for More Operating Systems
+<a name="Support for More Operating Systems"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Support for the
+following operating systems is new in Perl 5.004.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Win32</b>
+<br>
+Perl 5.004 now includes support for building a
+&quot;native&quot; perl under Windows <small>NT</small> ,
+using the Microsoft Visual C <small>++</small> compiler
+(versions 2.0 and above) or the Borland C <small>++</small>
+compiler (versions 5.02 and above). The resulting perl can
+be used under Windows 95 (if it is installed in the same
+directory locations as it got installed in Windows
+<small>NT</small> ). This port includes support for perl
+extension building tools like ExtUtils::MakeMaker and h2xs,
+so that many extensions available on the Comprehensive Perl
+Archive Network ( <small>CPAN</small> ) can now be readily
+built under Windows <small>NT</small> . See
+http://www.perl.com/ for more information on
+<small>CPAN</small> and <i><small>README</small> .win32</i>
+in the perl distribution for more details on how to get
+started with building this port.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is also
+support for building perl under the Cygwin32 environment.
+Cygwin32 is a set of <small>GNU</small> tools that make it
+possible to compile and run many Unix programs under Windows
+<small>NT</small> by providing a mostly Unix-like interface
+for compilation and execution. See <i><small>README</small>
+.cygwin32</i> in the perl distribution for more details on
+this port and how to obtain the Cygwin32 toolkit.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Plan 9</b>
+<br>
+See <i><small>README</small> .plan9</i> in the perl
+distribution.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>QNX</small></b>
+<br>
+See <i><small>README</small> .qnx</i> in the perl
+distribution.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>AmigaOS</b>
+<br>
+See <i><small>README</small> .amigaos</i> in the perl
+distribution.</p>
+
+<h2>Pragmata
+<a name="Pragmata"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Six new
+pragmatic modules exist: <br>
+use autouse <small>MODULE</small> =&gt; qw(sub1 sub2
+sub3)</p>
+
+<p style="margin-left:17%;">Defers <tt>&quot;require
+MODULE&quot;</tt> until someone calls one of the specified
+subroutines (which must be exported by <small>MODULE</small>
+). This pragma should be used with caution, and only when
+necessary.</p>
+
+<p style="margin-left:11%;">use blib <br>
+use blib &rsquo;dir&rsquo;</p>
+
+<p style="margin-left:17%;">Looks for MakeMaker-like
+<i>&rsquo;blib&rsquo;</i> directory structure starting in
+<i>dir</i> (or current directory) and working back up to
+five levels of parent directories.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Intended for
+use on command line with <b>&minus;M</b> option as a way of
+testing arbitrary scripts against an uninstalled version of
+a package.</p>
+
+<p style="margin-left:11%;">use constant
+<small>NAME</small> =&gt; <small>VALUE</small></p>
+
+<p style="margin-left:17%;">Provides a convenient interface
+for creating compile-time constants, See &quot;Constant
+Functions&quot; in perlsub.</p>
+
+<p style="margin-left:11%;">use locale</p>
+
+<p style="margin-left:17%;">Tells the compiler to enable
+(or disable) the use of <small>POSIX</small> locales for
+builtin operations.</p>
+
+<p style="margin-left:17%; margin-top: 1em">When
+<tt>&quot;use locale&quot;</tt> is in effect, the current
+<small>LC_CTYPE</small> locale is used for regular
+expressions and case mapping; <small>LC_COLLATE</small> for
+string ordering; and <small>LC_NUMERIC</small> for numeric
+formatting in printf and sprintf (but <b>not</b> in print).
+<small>LC_NUMERIC</small> is always used in write, since
+lexical scoping of formats is problematic at best.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Each
+<tt>&quot;use locale&quot;</tt> or <tt>&quot;no
+locale&quot;</tt> affects statements to the end of the
+enclosing <small>BLOCK</small> or, if not inside a
+<small>BLOCK</small> , to the end of the current file.
+Locales can be switched and queried with
+<i>POSIX::setlocale()</i>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">See perllocale
+for more information.</p>
+
+<p style="margin-left:11%;">use ops</p>
+
+<p style="margin-left:17%;">Disable unsafe opcodes, or any
+named opcodes, when compiling Perl code.</p>
+
+<p style="margin-left:11%;">use vmsish</p>
+
+<p style="margin-left:17%;">Enable VMS-specific language
+features. Currently, there are three VMS-specific features
+available: &rsquo;status&rsquo;, which makes <tt>$?</tt> and
+<tt>&quot;system&quot;</tt> return genuine
+<small>VMS</small> status values instead of emulating
+<small>POSIX</small> ; &rsquo;exit&rsquo;, which makes
+<tt>&quot;exit&quot;</tt> take a genuine <small>VMS</small>
+status value instead of assuming that <tt>&quot;exit
+1&quot;</tt> is an error; and &rsquo;time&rsquo;, which
+makes all times relative to the local time zone, in the
+<small>VMS</small> tradition.</p>
+
+<h2>Modules
+<a name="Modules"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Required
+Updates</b> <br>
+Though Perl 5.004 is compatible with almost all modules that
+work with Perl 5.003, there are a few exceptions:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Module   Required Version for Perl 5.004
+    &minus;&minus;&minus;&minus;&minus;&minus;   &minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;
+    Filter   Filter&minus;1.12
+    LWP      libwww&minus;perl&minus;5.08
+    Tk       Tk400.202 (&minus;w makes noise)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Also, the
+majordomo mailing list program, version 1.94.1,
+doesn&rsquo;t work with Perl 5.004 (nor with perl 4),
+because it executes an invalid regular expression. This bug
+is fixed in majordomo version 1.94.2.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Installation
+directories</b> <br>
+The <i>installperl</i> script now places the Perl source
+files for extensions in the architecture-specific library
+directory, which is where the shared libraries for
+extensions have always been. This change is intended to
+allow administrators to keep the Perl 5.004 library
+directory unchanged from a previous version, without running
+the risk of binary incompatibility between extensions&rsquo;
+Perl source and shared libraries.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Module
+information summary</b> <br>
+Brand new modules, arranged by topic rather than strictly
+alphabetically:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    CGI.pm               Web server interface (&quot;Common Gateway Interface&quot;)
+    CGI/Apache.pm        Support for Apache's Perl module
+    CGI/Carp.pm          Log server errors with helpful context
+    CGI/Fast.pm          Support for FastCGI (persistent server process)
+    CGI/Push.pm          Support for server push
+    CGI/Switch.pm        Simple interface for multiple server types
+    CPAN                 Interface to Comprehensive Perl Archive Network
+    CPAN::FirstTime      Utility for creating CPAN configuration file
+    CPAN::Nox            Runs CPAN while avoiding compiled extensions
+    IO.pm                Top&minus;level interface to IO::* classes
+    IO/File.pm           IO::File extension Perl module
+    IO/Handle.pm         IO::Handle extension Perl module
+    IO/Pipe.pm           IO::Pipe extension Perl module
+    IO/Seekable.pm       IO::Seekable extension Perl module
+    IO/Select.pm         IO::Select extension Perl module
+    IO/Socket.pm         IO::Socket extension Perl module
+    Opcode.pm            Disable named opcodes when compiling Perl code
+    ExtUtils/Embed.pm    Utilities for embedding Perl in C programs
+    ExtUtils/testlib.pm  Fixes up @INC to use just&minus;built extension
+    FindBin.pm           Find path of currently executing program
+    Class/Struct.pm      Declare struct&minus;like datatypes as Perl classes
+    File/stat.pm         By&minus;name interface to Perl's builtin stat
+    Net/hostent.pm       By&minus;name interface to Perl's builtin gethost*
+    Net/netent.pm        By&minus;name interface to Perl's builtin getnet*
+    Net/protoent.pm      By&minus;name interface to Perl's builtin getproto*
+    Net/servent.pm       By&minus;name interface to Perl's builtin getserv*
+    Time/gmtime.pm       By&minus;name interface to Perl's builtin gmtime
+    Time/localtime.pm    By&minus;name interface to Perl's builtin localtime
+    Time/tm.pm           Internal object for Time::{gm,local}time
+    User/grent.pm        By&minus;name interface to Perl's builtin getgr*
+    User/pwent.pm        By&minus;name interface to Perl's builtin getpw*
+    Tie/RefHash.pm       Base class for tied hashes with references as keys
+    UNIVERSAL.pm         Base class for *ALL* classes</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Fcntl</b>
+<br>
+New constants in the existing Fcntl modules are now
+supported, provided that your operating system happens to
+support them:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    F_GETOWN F_SETOWN
+    O_ASYNC O_DEFER O_DSYNC O_FSYNC O_SYNC
+    O_EXLOCK O_SHLOCK</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">These constants
+are intended for use with the Perl operators
+<i>sysopen()</i> and <i>fcntl()</i> and the basic database
+modules like SDBM_File. For the exact meaning of these and
+other Fcntl constants please refer to your operating
+system&rsquo;s documentation for <i>fcntl()</i> and
+<i>open()</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In addition,
+the Fcntl module now provides these constants for use with
+the Perl operator <i>flock()</i>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        LOCK_SH LOCK_EX LOCK_NB LOCK_UN</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">These constants
+are defined in all environments (because where there is no
+<i>flock()</i> system call, Perl emulates it). However, for
+historical reasons, these constants are not exported unless
+they are explicitly requested with the &quot;:flock&quot;
+tag (e.g. <tt>&quot;use Fcntl ':flock'&quot;</tt>).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>IO</small></b>
+<br>
+The <small>IO</small> module provides a simple mechanism to
+load all the <small>IO</small> modules at one go. Currently
+this includes:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">     IO::Handle
+     IO::Seekable
+     IO::File
+     IO::Pipe
+     IO::Socket</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">For more
+information on any of these modules, please see its
+respective documentation.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Math::Complex</b>
+<br>
+The Math::Complex module has been totally rewritten, and now
+supports more operations. These are overloaded:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">     + &minus; * / ** &lt;=&gt; neg ~ abs sqrt exp log sin cos atan2 &quot;&quot; (stringify)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">And these
+functions are now exported:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    pi i Re Im arg
+    log10 logn ln cbrt root
+    tan
+    csc sec cot
+    asin acos atan
+    acsc asec acot
+    sinh cosh tanh
+    csch sech coth
+    asinh acosh atanh
+    acsch asech acoth
+    cplx cplxe</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Math::Trig</b>
+<br>
+This new module provides a simpler interface to parts of
+Math::Complex for those who need trigonometric functions
+only for real numbers.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>DB_File</b>
+<br>
+There have been quite a few changes made to DB_File. Here
+are a few of the highlights:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Fixed a handful of bugs.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>By public demand, added support for the standard hash
+function <i>exists()</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Made it compatible with Berkeley <small>DB</small>
+1.86.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Made negative subscripts work with <small>RECNO</small>
+interface.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Changed the default flags from O_RDWR to O_CREAT|O_RDWR
+and the default mode from 0640 to 0666.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Made DB_File automatically import the <i>open()</i>
+constants (O_RDWR, O_CREAT etc.) from Fcntl, if
+available.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Updated documentation.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Refer to the
+<small>HISTORY</small> section in DB_File.pm for a complete
+list of changes. Everything after DB_File 1.01 has been
+added since 5.003.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Net::Ping</b>
+<br>
+Major rewrite &minus; support added for both udp echo and
+real icmp pings.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Object-oriented
+overrides for builtin operators</b> <br>
+Many of the Perl builtins returning lists now have
+object-oriented overrides. These are:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    File::stat
+    Net::hostent
+    Net::netent
+    Net::protoent
+    Net::servent
+    Time::gmtime
+    Time::localtime
+    User::grent
+    User::pwent</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">For example,
+you can now say</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use File::stat;
+    use User::pwent;
+    $his = (stat($filename)&minus;&gt;st_uid == pwent($whoever)&minus;&gt;pw_uid);</pre>
+
+
+<h2>Utility Changes
+<a name="Utility Changes"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>pod2html</b>
+<br>
+Sends converted <small>HTML</small> to standard output</p>
+
+<p style="margin-left:17%;">The <i>pod2html</i> utility
+included with Perl 5.004 is entirely new. By default, it
+sends the converted <small>HTML</small> to its standard
+output, instead of writing it to a file like Perl
+5.003&rsquo;s <i>pod2html</i> did. Use the
+<b>&minus;&minus;outfile=FILENAME</b> option to write to a
+file.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>xsubpp</b>
+<br>
+&quot;void&quot; XSUBs now default to returning nothing</p>
+
+<p style="margin-left:17%;">Due to a
+documentation/implementation bug in previous versions of
+Perl, XSUBs with a return type of <tt>&quot;void&quot;</tt>
+have actually been returning one value. Usually that value
+was the <small>GV</small> for the <small>XSUB</small> , but
+sometimes it was some already freed or reused value, which
+would sometimes lead to program failure.</p>
+
+<p style="margin-left:17%; margin-top: 1em">In Perl 5.004,
+if an <small>XSUB</small> is declared as returning
+<tt>&quot;void&quot;</tt>, it actually returns no value,
+i.e. an empty list (though there is a backward-compatibility
+exception; see below). If your <small>XSUB</small> really
+does return an <small>SV</small> , you should give it a
+return type of <tt>&quot;SV *&quot;</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">For backward
+compatibility, <i>xsubpp</i> tries to guess whether a
+<tt>&quot;void&quot;</tt> <small>XSUB</small> is really
+<tt>&quot;void&quot;</tt> or if it wants to return an
+<tt>&quot;SV *&quot;</tt>. It does so by examining the text
+of the <small>XSUB:</small> if <i>xsubpp</i> finds what
+looks like an assignment to <tt>ST(0)</tt>, it assumes that
+the <small>XSUB</small> &rsquo;s return type is really
+<tt>&quot;SV *&quot;</tt>.</p>
+
+<h2>C Language API Changes
+<a name="C Language API Changes"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">&quot;gv_fetchmethod&quot;
+and &quot;perl_call_sv&quot;</p>
+
+<p style="margin-left:17%;">The
+<tt>&quot;gv_fetchmethod&quot;</tt> function finds a method
+for an object, just like in Perl 5.003. The
+<small>GV</small> it returns may be a method cache entry.
+However, in Perl 5.004, method cache entries are not visible
+to users; therefore, they can no longer be passed directly
+to <tt>&quot;perl_call_sv&quot;</tt>. Instead, you should
+use the <tt>&quot;GvCV&quot;</tt> macro on the
+<small>GV</small> to extract its <small>CV</small> , and
+pass the <small>CV</small> to
+<tt>&quot;perl_call_sv&quot;</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The most likely
+symptom of passing the result of
+<tt>&quot;gv_fetchmethod&quot;</tt> to
+<tt>&quot;perl_call_sv&quot;</tt> is Perl&rsquo;s producing
+an &quot;Undefined subroutine called&quot; error on the
+<i>second</i> call to a given method (since there is no
+cache on the first call).</p>
+
+<p style="margin-left:11%;">&quot;perl_eval_pv&quot;</p>
+
+<p style="margin-left:17%;">A new function handy for
+eval&rsquo;ing strings of Perl code inside C code. This
+function returns the value from the eval statement, which
+can be used instead of fetching globals from the symbol
+table. See perlguts, perlembed and perlcall for details and
+examples.</p>
+
+<p style="margin-left:11%;">Extended <small>API</small> for
+manipulating hashes</p>
+
+<p style="margin-left:17%;">Internal handling of hash keys
+has changed. The old hashtable <small>API</small> is still
+fully supported, and will likely remain so. The additions to
+the <small>API</small> allow passing keys as
+<tt>&quot;SV*&quot;</tt>s, so that <tt>&quot;tied&quot;</tt>
+hashes can be given real scalars as keys rather than plain
+strings (nontied hashes still can only use strings as keys).
+New extensions must use the new hash access functions and
+macros if they wish to use <tt>&quot;SV*&quot;</tt> keys.
+These additions also make it feasible to manipulate
+<tt>&quot;HE*&quot;</tt>s (hash entries), which can be more
+efficient. See perlguts for details.</p>
+
+<h2>Documentation Changes
+<a name="Documentation Changes"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Many of the
+base and library pods were updated. These new pods are
+included in section 1: <br>
+perldelta</p>
+
+<p style="margin-left:17%;">This document.</p>
+
+<p style="margin-left:11%;">perlfaq</p>
+
+<p style="margin-left:17%;">Frequently asked questions.</p>
+
+<p style="margin-left:11%;">perllocale</p>
+
+<p style="margin-left:17%;">Locale support
+(internationalization and localization).</p>
+
+<p style="margin-left:11%;">perltoot</p>
+
+<p style="margin-left:17%;">Tutorial on Perl
+<small>OO</small> programming.</p>
+
+<p style="margin-left:11%;">perlapio</p>
+
+<p style="margin-left:17%;">Perl internal <small>IO</small>
+abstraction interface.</p>
+
+<p style="margin-left:11%;">perlmodlib</p>
+
+<p style="margin-left:17%;">Perl module library and
+recommended practice for module creation. Extracted from
+perlmod (which is much smaller as a result).</p>
+
+<p style="margin-left:11%;">perldebug</p>
+
+<p style="margin-left:17%;">Although not new, this has been
+massively updated.</p>
+
+<p style="margin-left:11%;">perlsec</p>
+
+<p style="margin-left:17%;">Although not new, this has been
+massively updated.</p>
+
+<h2>New Diagnostics
+<a name="New Diagnostics"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Several new
+conditions will trigger warnings that were silent before.
+Some only affect certain platforms. The following new
+warnings and errors outline these. These messages are
+classified as follows (listed in increasing order of
+desperation):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   (W) A warning (optional).
+   (D) A deprecation (optional).
+   (S) A severe warning (mandatory).
+   (F) A fatal error (trappable).
+   (P) An internal error you should never see (trappable).
+   (X) A very fatal error (nontrappable).
+   (A) An alien error message (not generated by Perl).</pre>
+
+
+<p style="margin-left:11%;">&quot;my&quot; variable %s
+masks earlier declaration in same scope</p>
+
+<p style="margin-left:17%;">(W) A lexical variable has been
+redeclared in the same scope, effectively eliminating all
+access to the previous instance. This is almost always a
+typographical error. Note that the earlier variable will
+still exist until the end of the scope or until all closure
+referents to it are destroyed.</p>
+
+<p style="margin-left:11%;">%s argument is not a
+<small>HASH</small> element or slice</p>
+
+<p style="margin-left:17%;">(F) The argument to
+<i>delete()</i> must be either a hash element, such as</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    $foo{$bar}
+    $ref&minus;&gt;[12]&minus;&gt;{&quot;susie&quot;}</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">or a hash
+slice, such as</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    @foo{$bar, $baz, $xyzzy}
+    @{$ref&minus;&gt;[12]}{&quot;susie&quot;, &quot;queue&quot;}</pre>
+
+
+<p style="margin-left:11%;">Allocation too large: %lx</p>
+
+<p style="margin-left:17%;">(X) You can&rsquo;t allocate
+more than 64K on an MS-DOS machine.</p>
+
+<p style="margin-left:11%;">Allocation too large</p>
+
+<p style="margin-left:17%;">(F) You can&rsquo;t allocate
+more than 2^31+&quot;small amount&quot; bytes.</p>
+
+<p style="margin-left:11%;">Applying %s to %s will act on
+scalar(%s)</p>
+
+<p style="margin-left:17%;">(W) The pattern match (//),
+substitution (s///), and transliteration (tr///) operators
+work on scalar values. If you apply one of them to an array
+or a hash, it will convert the array or hash to a scalar
+value (the length of an array or the population info of a
+hash) and then work on that scalar value. This is probably
+not what you meant to do. See &quot;grep&quot; in perlfunc
+and &quot;map&quot; in perlfunc for alternatives.</p>
+
+<p style="margin-left:11%;">Attempt to free nonexistent
+shared string</p>
+
+<p style="margin-left:17%;">(P) Perl maintains a reference
+counted internal table of strings to optimize the storage
+and access of hash keys and other strings. This indicates
+someone tried to decrement the reference count of a string
+that can no longer be found in the table.</p>
+
+<p style="margin-left:11%;">Attempt to use reference as
+lvalue in substr</p>
+
+<p style="margin-left:17%;">(W) You supplied a reference as
+the first argument to <i>substr()</i> used as an lvalue,
+which is pretty strange. Perhaps you forgot to dereference
+it first. See &quot;substr&quot; in perlfunc.</p>
+
+<p style="margin-left:11%;">Bareword &quot;%s&quot; refers
+to nonexistent package</p>
+
+<p style="margin-left:17%;">(W) You used a qualified
+bareword of the form <tt>&quot;Foo::&quot;</tt>, but the
+compiler saw no other uses of that namespace before that
+point. Perhaps you need to predeclare a package?</p>
+
+<p style="margin-left:11%;">Can&rsquo;t redefine active
+sort subroutine %s</p>
+
+<p style="margin-left:17%;">(F) Perl optimizes the internal
+handling of sort subroutines and keeps pointers into them.
+You tried to redefine one such sort subroutine when it was
+currently active, which is not allowed. If you really want
+to do this, you should write <tt>&quot;sort { &amp;func }
+@x&quot;</tt> instead of <tt>&quot;sort func
+@x&quot;</tt>.</p>
+
+<p style="margin-left:11%;">Can&rsquo;t use bareword
+(&quot;%s&quot;) as %s ref while &quot;strict refs&quot; in
+use</p>
+
+<p style="margin-left:17%;">(F) Only hard references are
+allowed by &quot;strict refs&quot;. Symbolic references are
+disallowed. See perlref.</p>
+
+<p style="margin-left:11%;">Cannot resolve method
+&lsquo;%s&rsquo; overloading &lsquo;%s&rsquo; in package
+&lsquo;%s&rsquo;</p>
+
+<p style="margin-left:17%;">(P) Internal error trying to
+resolve overloading specified by a method name (as opposed
+to a subroutine reference).</p>
+
+<p style="margin-left:11%;">Constant subroutine %s
+redefined</p>
+
+<p style="margin-left:17%;">(S) You redefined a subroutine
+which had previously been eligible for inlining. See
+&quot;Constant Functions&quot; in perlsub for commentary and
+workarounds.</p>
+
+<p style="margin-left:11%;">Constant subroutine %s
+undefined</p>
+
+<p style="margin-left:17%;">(S) You undefined a subroutine
+which had previously been eligible for inlining. See
+&quot;Constant Functions&quot; in perlsub for commentary and
+workarounds.</p>
+
+<p style="margin-left:11%;">Copy method did not return a
+reference</p>
+
+<p style="margin-left:17%;">(F) The method which overloads
+&quot;=&quot; is buggy. See &quot;Copy Constructor&quot; in
+overload.</p>
+
+<p style="margin-left:11%;">Died</p>
+
+<p style="margin-left:17%;">(F) You passed <i>die()</i> an
+empty string (the equivalent of <tt>&quot;die
+&quot;&quot;&quot;</tt>) or you called it with no args and
+both <tt>$@</tt> and <tt>$_</tt> were empty.</p>
+
+<p style="margin-left:11%;">Exiting pseudo-block via %s</p>
+
+<p style="margin-left:17%;">(W) You are exiting a rather
+special block construct (like a sort block or subroutine) by
+unconventional means, such as a goto, or a loop control
+statement. See &quot;sort&quot; in perlfunc.</p>
+
+<p style="margin-left:11%;">Identifier too long</p>
+
+<p style="margin-left:17%;">(F) Perl limits identifiers
+(names for variables, functions, etc.) to 252 characters for
+simple names, somewhat more for compound names (like
+<tt>$A::B</tt>). You&rsquo;ve exceeded Perl&rsquo;s limits.
+Future versions of Perl are likely to eliminate these
+arbitrary limitations.</p>
+
+<p style="margin-left:11%;">Illegal character %s (carriage
+return)</p>
+
+<p style="margin-left:17%;">(F) A carriage return character
+was found in the input. This is an error, and not a warning,
+because carriage return characters can break multi-line
+strings, including here documents (e.g., <tt>&quot;print
+&lt;&lt;EOF;&quot;</tt>).</p>
+
+<p style="margin-left:11%;">Illegal switch in
+<small>PERL5OPT:</small> %s</p>
+
+<p style="margin-left:17%;">(X) The <small>PERL5OPT</small>
+environment variable may only be used to set the following
+switches: <b>&minus;[DIMUdmw]</b>.</p>
+
+<p style="margin-left:11%;">Integer overflow in hex
+number</p>
+
+<p style="margin-left:17%;">(S) The literal hex number you
+have specified is too big for your architecture. On a
+32&minus;bit architecture the largest hex literal is
+0xFFFFFFFF.</p>
+
+<p style="margin-left:11%;">Integer overflow in octal
+number</p>
+
+<p style="margin-left:17%;">(S) The literal octal number
+you have specified is too big for your architecture. On a
+32&minus;bit architecture the largest octal literal is
+037777777777.</p>
+
+<p style="margin-left:11%;">internal error: glob failed</p>
+
+<p style="margin-left:17%;">(P) Something went wrong with
+the external program(s) used for <tt>&quot;glob&quot;</tt>
+and <tt>&quot;&lt;*.c&gt;&quot;</tt>. This may mean that
+your csh (C shell) is broken. If so, you should change all
+of the csh-related variables in config.sh: If you have tcsh,
+make the variables refer to it as if it were csh (e.g.
+<tt>&quot;full_csh='/usr/bin/tcsh'&quot;</tt>); otherwise,
+make them all empty (except that <tt>&quot;d_csh&quot;</tt>
+should be <tt>'undef'</tt>) so that Perl will think csh is
+missing. In either case, after editing config.sh, run
+<tt>&quot;./Configure &minus;S&quot;</tt> and rebuild
+Perl.</p>
+
+<p style="margin-left:11%;">Invalid conversion in %s:
+&quot;%s&quot;</p>
+
+<p style="margin-left:17%;">(W) Perl does not understand
+the given format conversion. See &quot;sprintf&quot; in
+perlfunc.</p>
+
+<p style="margin-left:11%;">Invalid type in pack:
+&rsquo;%s&rsquo;</p>
+
+<p style="margin-left:17%;">(F) The given character is not
+a valid pack type. See &quot;pack&quot; in perlfunc.</p>
+
+<p style="margin-left:11%;">Invalid type in unpack:
+&rsquo;%s&rsquo;</p>
+
+<p style="margin-left:17%;">(F) The given character is not
+a valid unpack type. See &quot;unpack&quot; in perlfunc.</p>
+
+<p style="margin-left:11%;">Name &quot;%s::%s&quot; used
+only once: possible typo</p>
+
+<p style="margin-left:17%;">(W) Typographical errors often
+show up as unique variable names. If you had a good reason
+for having a unique name, then just mention it again somehow
+to suppress the message (the <tt>&quot;use vars&quot;</tt>
+pragma is provided for just this purpose).</p>
+
+<p style="margin-left:11%;">Null picture in formline</p>
+
+<p style="margin-left:17%;">(F) The first argument to
+formline must be a valid format picture specification. It
+was found to be empty, which probably means you supplied it
+an uninitialized value. See perlform.</p>
+
+<p style="margin-left:11%;">Offset outside string</p>
+
+<p style="margin-left:17%;">(F) You tried to do a
+read/write/send/recv operation with an offset pointing
+outside the buffer. This is difficult to imagine. The sole
+exception to this is that <tt>&quot;sysread()&quot;</tt>ing
+past the buffer will extend the buffer and zero pad the new
+area.</p>
+
+<p style="margin-left:11%;">Out of memory!</p>
+
+<p style="margin-left:17%;">(X|F) The <i>malloc()</i>
+function returned 0, indicating there was insufficient
+remaining memory (or virtual memory) to satisfy the
+request.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The request was
+judged to be small, so the possibility to trap it depends on
+the way Perl was compiled. By default it is not trappable.
+However, if compiled for this, Perl may use the contents of
+<tt>$^M</tt> as an emergency pool after <i>die()</i>ing with
+this message. In this case the error is trappable
+<i>once</i>.</p>
+
+<p style="margin-left:11%;">Out of memory during request
+for %s</p>
+
+<p style="margin-left:17%;">(F) The <i>malloc()</i>
+function returned 0, indicating there was insufficient
+remaining memory (or virtual memory) to satisfy the request.
+However, the request was judged large enough (compile-time
+default is 64K), so a possibility to shut down by trapping
+this error is granted.</p>
+
+<p style="margin-left:11%;">panic: frexp</p>
+
+<p style="margin-left:17%;">(P) The library function
+<i>frexp()</i> failed, making printf(&quot;%f&quot;)
+impossible.</p>
+
+<p style="margin-left:11%;">Possible attempt to put
+comments in <i>qw()</i> list</p>
+
+<p style="margin-left:17%;">(W) <i>qw()</i> lists contain
+items separated by whitespace; as with literal strings,
+comment characters are not ignored, but are instead treated
+as literal data. (You may have used different delimiters
+than the parentheses shown here; braces are also frequently
+used.)</p>
+
+<p style="margin-left:17%; margin-top: 1em">You probably
+wrote something like this:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    @list = qw(
+        a # a comment
+        b # another comment
+    );</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">when you should
+have written this:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    @list = qw(
+        a
+        b
+    );</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">If you really
+want comments, build your list the old-fashioned way, with
+quotes and commas:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    @list = (
+        'a',    # a comment
+        'b',    # another comment
+    );</pre>
+
+
+<p style="margin-left:11%;">Possible attempt to separate
+words with commas</p>
+
+<p style="margin-left:17%;">(W) <i>qw()</i> lists contain
+items separated by whitespace; therefore commas aren&rsquo;t
+needed to separate the items. (You may have used different
+delimiters than the parentheses shown here; braces are also
+frequently used.)</p>
+
+<p style="margin-left:17%; margin-top: 1em">You probably
+wrote something like this:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    qw! a, b, c !;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">which puts
+literal commas into some of the list items. Write it without
+commas if you don&rsquo;t want them to appear in your
+data:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    qw! a b c !;</pre>
+
+
+<p style="margin-left:11%;">Scalar value @%s{%s} better
+written as $%s{%s}</p>
+
+<p style="margin-left:17%;">(W) You&rsquo;ve used a hash
+slice (indicated by @) to select a single element of a hash.
+Generally it&rsquo;s better to ask for a scalar value
+(indicated by $). The difference is that
+<tt>$foo{&amp;bar}</tt> always behaves like a scalar, both
+when assigning to it and when evaluating its argument, while
+<tt>@foo{&amp;bar}</tt> behaves like a list when you assign
+to it, and provides a list context to its subscript, which
+can do weird things if you&rsquo;re expecting only one
+subscript.</p>
+
+<p style="margin-left:11%;">Stub found while resolving
+method &lsquo;%s&rsquo; overloading &lsquo;%s&rsquo; in
+%s</p>
+
+<p style="margin-left:17%;">(P) Overloading resolution over
+<tt>@ISA</tt> tree may be broken by importing stubs. Stubs
+should never be implicitly created, but explicit calls to
+<tt>&quot;can&quot;</tt> may break this.</p>
+
+<p style="margin-left:11%;">Too late for
+&quot;<b>&minus;T</b>&quot; option</p>
+
+<p style="margin-left:17%;">(X) The #! line (or local
+equivalent) in a Perl script contains the <b>&minus;T</b>
+option, but Perl was not invoked with <b>&minus;T</b> in its
+argument list. This is an error because, by the time Perl
+discovers a <b>&minus;T</b> in a script, it&rsquo;s too late
+to properly taint everything from the environment. So Perl
+gives up.</p>
+
+<p style="margin-left:11%;">untie attempted while %d inner
+references still exist</p>
+
+<p style="margin-left:17%;">(W) A copy of the object
+returned from <tt>&quot;tie&quot;</tt> (or
+<tt>&quot;tied&quot;</tt>) was still valid when
+<tt>&quot;untie&quot;</tt> was called.</p>
+
+<p style="margin-left:11%;">Unrecognized character %s</p>
+
+<p style="margin-left:17%;">(F) The Perl parser has no idea
+what to do with the specified character in your Perl script
+(or eval). Perhaps you tried to run a compressed script, a
+binary program, or a directory as a Perl program.</p>
+
+<p style="margin-left:11%;">Unsupported function fork</p>
+
+<p style="margin-left:17%;">(F) Your version of executable
+does not support forking.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Note that under
+some systems, like <small>OS/2</small> , there may be
+different flavors of Perl executables, some of which may
+support fork, some not. Try changing the name you call Perl
+by to <tt>&quot;perl_&quot;</tt>,
+<tt>&quot;perl__&quot;</tt>, and so on.</p>
+
+<p style="margin-left:11%;">Use of
+&quot;$$&lt;digit&gt;&quot; to mean
+&quot;${$}&lt;digit&gt;&quot; is deprecated</p>
+
+<p style="margin-left:17%;">(D) Perl versions before 5.004
+misinterpreted any type marker followed by &quot;$&quot; and
+a digit. For example, &quot;$$0&quot; was incorrectly taken
+to mean &quot;${$}0&quot; instead of &quot;${$0}&quot;. This
+bug is (mostly) fixed in Perl 5.004.</p>
+
+<p style="margin-left:17%; margin-top: 1em">However, the
+developers of Perl 5.004 could not fix this bug completely,
+because at least two widely-used modules depend on the old
+meaning of &quot;$$0&quot; in a string. So Perl 5.004 still
+interprets &quot;$$&lt;digit&gt;&quot; in the old (broken)
+way inside strings; but it generates this message as a
+warning. And in Perl 5.005, this special treatment will
+cease.</p>
+
+<p style="margin-left:11%;">Value of %s can be
+&quot;0&quot;; test with <i>defined()</i></p>
+
+<p style="margin-left:17%;">(W) In a conditional
+expression, you used &lt; <small>HANDLE</small> &gt;,
+&lt;*&gt; (glob), <tt>&quot;each()&quot;</tt>, or
+<tt>&quot;readdir()&quot;</tt> as a boolean value. Each of
+these constructs can return a value of &quot;0&quot;; that
+would make the conditional expression false, which is
+probably not what you intended. When using these constructs
+in conditional expressions, test their values with the
+<tt>&quot;defined&quot;</tt> operator.</p>
+
+<p style="margin-left:11%;">Variable &quot;%s&quot; may be
+unavailable</p>
+
+<p style="margin-left:17%;">(W) An inner (nested)
+<i>anonymous</i> subroutine is inside a <i>named</i>
+subroutine, and outside that is another subroutine; and the
+anonymous (innermost) subroutine is referencing a lexical
+variable defined in the outermost subroutine. For
+example:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">   sub outermost { my $a; sub middle { sub { $a } } }</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">If the
+anonymous subroutine is called or referenced (directly or
+indirectly) from the outermost subroutine, it will share the
+variable as you would expect. But if the anonymous
+subroutine is called or referenced when the outermost
+subroutine is not active, it will see the value of the
+shared variable as it was before and during the *first* call
+to the outermost subroutine, which is probably not what you
+want.</p>
+
+<p style="margin-left:17%; margin-top: 1em">In these
+circumstances, it is usually best to make the middle
+subroutine anonymous, using the <tt>&quot;sub {}&quot;</tt>
+syntax. Perl has specific support for shared variables in
+nested anonymous subroutines; a named subroutine in between
+interferes with this feature.</p>
+
+<p style="margin-left:11%;">Variable &quot;%s&quot; will
+not stay shared</p>
+
+<p style="margin-left:17%;">(W) An inner (nested)
+<i>named</i> subroutine is referencing a lexical variable
+defined in an outer subroutine.</p>
+
+<p style="margin-left:17%; margin-top: 1em">When the inner
+subroutine is called, it will probably see the value of the
+outer subroutine&rsquo;s variable as it was before and
+during the *first* call to the outer subroutine; in this
+case, after the first call to the outer subroutine is
+complete, the inner and outer subroutines will no longer
+share a common value for the variable. In other words, the
+variable will no longer be shared.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Furthermore, if
+the outer subroutine is anonymous and references a lexical
+variable outside itself, then the outer and inner
+subroutines will <i>never</i> share the given variable.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This problem
+can usually be solved by making the inner subroutine
+anonymous, using the <tt>&quot;sub {}&quot;</tt> syntax.
+When inner anonymous subs that reference variables in outer
+subroutines are called or referenced, they are automatically
+rebound to the current values of such variables.</p>
+
+<p style="margin-left:11%;">Warning: something&rsquo;s
+wrong</p>
+
+<p style="margin-left:17%;">(W) You passed <i>warn()</i> an
+empty string (the equivalent of <tt>&quot;warn
+&quot;&quot;&quot;</tt>) or you called it with no args and
+<tt>$_</tt> was empty.</p>
+
+<p style="margin-left:11%;">Ill-formed logical name |%s| in
+prime_env_iter</p>
+
+<p style="margin-left:17%;">(W) A warning peculiar to
+<small>VMS</small> . A logical name was encountered when
+preparing to iterate over <tt>%ENV</tt> which violates the
+syntactic rules governing logical names. Since it cannot be
+translated normally, it is skipped, and will not appear in
+<tt>%ENV</tt>. This may be a benign occurrence, as some
+software packages might directly modify logical name tables
+and introduce nonstandard names, or it may indicate that a
+logical name table has been corrupted.</p>
+
+<p style="margin-left:11%;">Got an error from
+DosAllocMem</p>
+
+<p style="margin-left:17%;">(P) An error peculiar to
+<small>OS/2</small> . Most probably you&rsquo;re using an
+obsolete version of Perl, and this should not happen
+anyway.</p>
+
+<p style="margin-left:11%;">Malformed
+<small>PERLLIB_PREFIX</small></p>
+
+<p style="margin-left:17%;">(F) An error peculiar to
+<small>OS/2</small> . <small>PERLLIB_PREFIX</small> should
+be of the form</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    prefix1;prefix2</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">or</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    prefix1 prefix2</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">with nonempty
+prefix1 and prefix2. If <tt>&quot;prefix1&quot;</tt> is
+indeed a prefix of a builtin library search path, prefix2 is
+substituted. The error may appear if components are not
+found, or are too long. See &quot;
+<small>PERLLIB_PREFIX</small> &quot; in
+<i><small>README</small> .os2</i>.</p>
+
+<p style="margin-left:11%;"><small>PERL_SH_DIR</small> too
+long</p>
+
+<p style="margin-left:17%;">(F) An error peculiar to
+<small>OS/2</small> . <small>PERL_SH_DIR</small> is the
+directory to find the <tt>&quot;sh&quot;</tt>&minus;shell
+in. See &quot; <small>PERL_SH_DIR</small> &quot; in
+<i><small>README</small> .os2</i>.</p>
+
+<p style="margin-left:11%;">Process terminated by SIG%s</p>
+
+<p style="margin-left:17%;">(W) This is a standard message
+issued by <small>OS/2</small> applications, while *nix
+applications die in silence. It is considered a feature of
+the <small>OS/2</small> port. One can easily disable this by
+appropriate sighandlers, see &quot;Signals&quot; in perlipc.
+See also &quot;Process terminated by
+<small>SIGTERM/SIGINT</small> &quot; in
+<i><small>README</small> .os2</i>.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you find
+what you think is a bug, you might check the headers of
+recently posted articles in the comp.lang.perl.misc
+newsgroup. There may also be information at
+http://www.perl.com/perl/ , the Perl Home Page.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you believe
+you have an unreported bug, please run the <b>perlbug</b>
+program included with your release. Make sure you trim your
+bug down to a tiny but sufficient test case. Your bug
+report, along with the output of <tt>&quot;perl
+&minus;V&quot;</tt>, will be sent off to
+&lt;<i>perlbug@perl.com</i>&gt; to be analysed by the Perl
+porting team.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>Changes</i> file for exhaustive details on what
+changed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i><small>INSTALL</small></i> file for how to build Perl.
+This file has been significantly updated for 5.004, so even
+veteran users should look through it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i><small>README</small></i> file for general stuff.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>Copying</i> file for copyright information.</p>
+
+<h2>HISTORY
+<a name="HISTORY"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Constructed by
+Tom Christiansen, grabbing material with permission from
+innumerable contributors, with kibitzing by more than a few
+Perl porters.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Last update:
+Wed May 14 11:14:09 <small>EDT</small> 1997</p>
+<hr>
+</body>
+</html>

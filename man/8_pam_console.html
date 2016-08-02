@@ -1,0 +1,214 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:36:28 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>pam_console</title>
+
+</head>
+<body>
+
+<h1 align="center">pam_console</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#ARGUMENTS">ARGUMENTS</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#FILES">FILES</a><br>
+<a href="#SECURITY NOTES">SECURITY NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">pam_console
+&minus; determine user owning the system console</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>session
+optional pam_console.so <br>
+auth required pam_console.so</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">pam_console.so
+is designed to give users at the physical console (virtual
+terminals and local xdm-managed X sessions by default, but
+that is configurable) capabilities that they would not
+otherwise have, and to take those capabilities away when the
+are no longer logged in at the console. It provides two main
+kinds of capabilities: file permissions and
+authentication.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When a user
+logs in at the console and <b>no other user is currently
+logged in at the console</b>, pam_console.so will run
+handler programs specified in the file
+/etc/security/console.handlers such as pam_console_apply
+which changes permissions and ownership of files as
+described in the file /etc/security/console.perms. That user
+may then log in on other terminals that are considered part
+of the console, and as long as the user is still logged in
+at any one of those terminals, that user will own those
+devices. When the user logs out of the last terminal, the
+console may be taken by the next user to log in. Other users
+who have logged in at the console during the time that the
+first user was logged in will not be given ownership of the
+devices unless they log in on one of the terminals; having
+done so on any one terminal, the next user will own those
+devices until he or she has logged out of every terminal
+that is part of the physical console. Then the race can
+start for the next user. In practice, this is not a problem;
+the physical console is not generally in use by many people
+at the same time, and pam_console.so just tries to do the
+right thing in weird cases.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When an
+application attempts to authenticate the user <b>and this
+user is already logged in at the console</b>, pam_console.so
+checks whether there is a file in
+/etc/security/console.apps/ directory with the same name as
+the application servicename, and if such a file exists,
+authentication succeeds. This way pam_console may be
+utilized to run some system applications (reboots, config
+tools) without root password, or to enter user password on
+the first system login only.</p>
+
+<h2>ARGUMENTS
+<a name="ARGUMENTS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p style="margin-top: 1em">debug</p></td>
+<td width="4%"></td>
+<td width="27%">
+
+
+<p style="margin-top: 1em">turns on debugging</p></td>
+<td width="51%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">allow_nonroot_tty</p>
+
+<p style="margin-left:22%;">gain console locks and change
+permissions even if the TTY&rsquo;s owner is not root.</p>
+
+
+<p style="margin-left:11%;">handlersfile=<i>filename</i></p>
+
+<p style="margin-left:22%;">tells pam_console.so to get the
+list of the handlers from a different file than
+/etc/security/console.handlers</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>/etc/pam.d/some-system-tool</b>:
+<br>
+auth sufficient pam_rootok.so <br>
+auth required pam_console.so</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>/etc/pam.d/some-login-service</b>:
+<br>
+auth sufficient pam_console.so <br>
+auth required pam_unix.so <br>
+session required pam_unix.so <br>
+session optional pam_console.so</p>
+
+<h2>FILES
+<a name="FILES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>/var/run/console/
+<br>
+/var/run/console/console.lock <br>
+/etc/security/console.apps <br>
+/etc/security/console.handlers</i></p>
+
+<h2>SECURITY NOTES
+<a name="SECURITY NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">When
+pam_console &quot;auth&quot; is used for login services
+which provide possibility of remote login, it is necessary
+to make sure the application correctly sets PAM_RHOST
+variable, or to deny remote logins completely. Currently,
+/bin/login (invoked from telnetd) and gdm is OK, others may
+be not.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>console.perms</b>(5)
+<b><br>
+console.apps</b>(5) <b><br>
+console.handlers</b>(5) <b><br>
+pam_console_apply</b>(8) <i><br>
+/usr/share/doc/pam*/html/index.html</i></p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Let&rsquo;s
+hope not, but if you find any, please report them via the
+&quot;Bug Track&quot; link at
+http://bugzilla.redhat.com/bugzilla/</p>
+
+<h2>AUTHORS
+<a name="AUTHORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Michael K.
+Johnson &lt;johnsonm@redhat.com&gt; <br>
+Support of console.handlers and other improvements by Tomas
+Mraz &lt;tmraz@redhat.com&gt;</p>
+<hr>
+</body>
+</html>

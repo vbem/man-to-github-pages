@@ -48,7 +48,7 @@ function convertAll
 {
     declare sDirOutput=$1
     echo $INDEX_BEGIN > $PATH_INDEX
-    man -k ''|head| while read sLine; do
+    man -k '' | while read sLine; do
         declare sName=$(echo $sLine | cut -d' ' -f1)
         declare sSection=$(echo $sLine | cut -d')' -f1|cut -d'(' -f2)
         declare sDescription=$(echo $sLine | cut -d')' -f2|cut -d'-' -f2)

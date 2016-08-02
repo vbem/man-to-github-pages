@@ -1,0 +1,1016 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:34:21 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>GIT&minus;PUSH</title>
+
+</head>
+<body>
+
+<h1 align="center">GIT&minus;PUSH</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#GIT URLS">GIT URLS</a><br>
+<a href="#REMOTES">REMOTES</a><br>
+<a href="#OUTPUT">OUTPUT</a><br>
+<a href="#NOTE ABOUT FAST-FORWARDS">NOTE ABOUT FAST-FORWARDS</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
+<a href="#GIT">GIT</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">git-push
+&minus; Update remote refs along with associated objects</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>git push</i>
+[&minus;&minus;all | &minus;&minus;mirror |
+&minus;&minus;tags] [&minus;&minus;follow&minus;tags]
+[&minus;n | &minus;&minus;dry&minus;run]
+[&minus;&minus;receive&minus;pack=&lt;git&minus;receive&minus;pack&gt;]
+<br>
+[&minus;&minus;repo=&lt;repository&gt;] [&minus;f |
+&minus;&minus;force] [&minus;&minus;prune] [&minus;v |
+&minus;&minus;verbose] [&minus;u |
+&minus;&minus;set&minus;upstream] <br>
+[&lt;repository&gt; [&lt;refspec&gt;...]]</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Updates remote
+refs using local refs, while sending objects necessary to
+complete the given refs.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can make
+interesting things happen to a repository every time you
+push into it, by setting up <i>hooks</i> there. See
+documentation for <b>git-receive-pack</b>(1).</p>
+
+<p style="margin-left:11%; margin-top: 1em">When the
+command line does not specify where to push with the
+&lt;repository&gt; argument, branch.*.remote configuration
+for the current branch is consulted to determine where to
+push. If the configuration is missing, it defaults to
+<i>origin</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When the
+command line does not specify what to push with
+&lt;refspec&gt;... arguments or &minus;&minus;all,
+&minus;&minus;mirror, &minus;&minus;tags options, the
+command finds the default &lt;refspec&gt; by consulting
+remote.*.push configuration, and if it is not found, honors
+push.default configuration to decide what to push (See
+gitlink:git&minus;config[1] for the meaning of
+push.default).</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">&lt;repository&gt;</p>
+
+<p style="margin-left:17%;">The &quot;remote&quot;
+repository that is destination of a push operation. This
+parameter can be either a URL (see the section GIT URLS
+below) or the name of a remote (see the section REMOTES
+below).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&lt;refspec&gt;...</p>
+
+<p style="margin-left:17%;">Specify what destination ref to
+update with what source object. The format of a
+&lt;refspec&gt; parameter is an optional plus +, followed by
+the source object &lt;src&gt;, followed by a colon :,
+followed by the destination ref &lt;dst&gt;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The &lt;src&gt;
+is often the name of the branch you would want to push, but
+it can be any arbitrary &quot;SHA&minus;1 expression&quot;,
+such as master~4 or HEAD (see <b>gitrevisions</b>(7)).</p>
+
+<p style="margin-left:17%; margin-top: 1em">The &lt;dst&gt;
+tells which ref on the remote side is updated with this
+push. Arbitrary expressions cannot be used here, an actual
+ref must be named. If :&lt;dst&gt; is omitted, the same ref
+as &lt;src&gt; will be updated.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The object
+referenced by &lt;src&gt; is used to update the &lt;dst&gt;
+reference on the remote side. By default this is only
+allowed if &lt;dst&gt; is not a tag (annotated or
+lightweight), and then only if it can fast&minus;forward
+&lt;dst&gt;. By having the optional leading +, you can tell
+Git to update the &lt;dst&gt; ref even if it is not allowed
+by default (e.g., it is not a fast&minus;forward.) This does
+<b>not</b> attempt to merge &lt;src&gt; into &lt;dst&gt;.
+See EXAMPLES below for details.</p>
+
+<p style="margin-left:17%; margin-top: 1em">tag &lt;tag&gt;
+means the same as
+refs/tags/&lt;tag&gt;:refs/tags/&lt;tag&gt;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Pushing an
+empty &lt;src&gt; allows you to delete the &lt;dst&gt; ref
+from the remote repository.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The special
+refspec : (or +: to allow non&minus;fast&minus;forward
+updates) directs Git to push &quot;matching&quot; branches:
+for every branch that exists on the local side, the remote
+side is updated if a branch of the same name already exists
+on the remote side.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;all</p>
+
+<p style="margin-left:17%;">Instead of naming each ref to
+push, specifies that all refs under refs/heads/ be
+pushed.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;prune</p>
+
+<p style="margin-left:17%;">Remove remote branches that
+don&rsquo;t have a local counterpart. For example a remote
+branch tmp will be removed if a local branch with the same
+name doesn&rsquo;t exist any more. This also respects
+refspecs, e.g. git push &minus;&minus;prune remote
+refs/heads/*:refs/tmp/* would make sure that remote
+refs/tmp/foo will be removed if refs/heads/foo doesn&rsquo;t
+exist.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;mirror</p>
+
+<p style="margin-left:17%;">Instead of naming each ref to
+push, specifies that all refs under refs/ (which includes
+but is not limited to refs/heads/, refs/remotes/, and
+refs/tags/) be mirrored to the remote repository. Newly
+created local refs will be pushed to the remote end, locally
+updated refs will be force updated on the remote end, and
+deleted refs will be removed from the remote end. This is
+the default if the configuration option
+remote.&lt;remote&gt;.mirror is set.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;n,
+&minus;&minus;dry&minus;run</p>
+
+<p style="margin-left:17%;">Do everything except actually
+send the updates.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;porcelain</p>
+
+<p style="margin-left:17%;">Produce machine&minus;readable
+output. The output status line for each ref will be
+tab&minus;separated and sent to stdout instead of stderr.
+The full symbolic names of the refs will be given.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;delete</p>
+
+<p style="margin-left:17%;">All listed refs are deleted
+from the remote repository. This is the same as prefixing
+all refs with a colon.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;tags</p>
+
+<p style="margin-left:17%;">All refs under refs/tags are
+pushed, in addition to refspecs explicitly listed on the
+command line.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;follow&minus;tags</p>
+
+<p style="margin-left:17%;">Push all the refs that would be
+pushed without this option, and also push annotated tags in
+refs/tags that are missing from the remote but are pointing
+at committish that are reachable from the refs being
+pushed.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;receive&minus;pack=&lt;git&minus;receive&minus;pack&gt;,
+&minus;&minus;exec=&lt;git&minus;receive&minus;pack&gt;</p>
+
+<p style="margin-left:17%;">Path to the
+<i>git&minus;receive&minus;pack</i> program on the remote
+end. Sometimes useful when pushing to a remote repository
+over ssh, and you do not have the program in a directory on
+the default $PATH.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;f,
+&minus;&minus;force</p>
+
+<p style="margin-left:17%;">Usually, the command refuses to
+update a remote ref that is not an ancestor of the local ref
+used to overwrite it. This flag disables the check. This can
+cause the remote repository to lose commits; use it with
+care.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;repo=&lt;repository&gt;</p>
+
+<p style="margin-left:17%;">This option is only relevant if
+no &lt;repository&gt; argument is passed in the invocation.
+In this case, <i>git push</i> derives the remote name from
+the current branch: If it tracks a remote branch, then that
+remote repository is pushed to. Otherwise, the name
+&quot;origin&quot; is used. For this latter case, this
+option can be used to override the name &quot;origin&quot;.
+In other words, the difference between these two
+commands</p>
+
+<p style="margin-left:23%; margin-top: 1em">git push public
+#1 <br>
+git push &minus;&minus;repo=public #2</p>
+
+<p style="margin-left:17%; margin-top: 1em">is that #1
+always pushes to &quot;public&quot; whereas #2 pushes to
+&quot;public&quot; only if the current branch does not track
+a remote branch. This is useful if you write an alias or
+script around <i>git push</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;u,
+&minus;&minus;set&minus;upstream</p>
+
+<p style="margin-left:17%;">For every branch that is up to
+date or successfully pushed, add upstream (tracking)
+reference, used by argument&minus;less <b>git-pull</b>(1)
+and other commands. For more information, see
+<i>branch.&lt;name&gt;.merge</i> in
+<b>git-config</b>(1).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;[no&minus;]thin</p>
+
+<p style="margin-left:17%;">These options are passed to
+<b>git-send-pack</b>(1). A thin transfer significantly
+reduces the amount of sent data when the sender and receiver
+share many of the same objects in common. The default is
+&minus;&minus;thin.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;q,
+&minus;&minus;quiet</p>
+
+<p style="margin-left:17%;">Suppress all output, including
+the listing of updated refs, unless an error occurs.
+Progress is not reported to the standard error stream.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;v,
+&minus;&minus;verbose</p>
+
+<p style="margin-left:17%;">Run verbosely.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;progress</p>
+
+<p style="margin-left:17%;">Progress status is reported on
+the standard error stream by default when it is attached to
+a terminal, unless &minus;q is specified. This flag forces
+progress status even if the standard error stream is not
+directed to a terminal.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;recurse&minus;submodules=check|on&minus;demand</p>
+
+<p style="margin-left:17%;">Make sure all submodule commits
+used by the revisions to be pushed are available on a
+remote&minus;tracking branch. If <i>check</i> is used Git
+will verify that all submodule commits that changed in the
+revisions to be pushed are available on at least one remote
+of the submodule. If any commits are missing the push will
+be aborted and exit with non&minus;zero status. If
+<i>on&minus;demand</i> is used all submodules that changed
+in the revisions to be pushed will be pushed. If
+on&minus;demand was not able to push all necessary revisions
+it will also be aborted and exit with non&minus;zero
+status.</p>
+
+<h2>GIT URLS
+<a name="GIT URLS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In general,
+URLs contain information about the transport protocol, the
+address of the remote server, and the path to the
+repository. Depending on the transport protocol, some of
+this information may be absent.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Git supports
+ssh, git, http, and https protocols (in addition, ftp, and
+ftps can be used for fetching and rsync can be used for
+fetching and pushing, but these are inefficient and
+deprecated; do not use them).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+syntaxes may be used with them:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+ssh://[user@]host.xz[:port]/path/to/repo.git/</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+git://host.xz[:port]/path/to/repo.git/</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+http[s]://host.xz[:port]/path/to/repo.git/</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+ftp[s]://host.xz[:port]/path/to/repo.git/</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+rsync://host.xz/path/to/repo.git/</p>
+
+<p style="margin-left:11%; margin-top: 1em">An alternative
+scp&minus;like syntax may also be used with the ssh
+protocol:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+[user@]host.xz:path/to/repo.git/</p>
+
+<p style="margin-left:11%; margin-top: 1em">The ssh and git
+protocols additionally support ~username expansion:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+ssh://[user@]host.xz[:port]/~[user]/path/to/repo.git/</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+git://host.xz[:port]/~[user]/path/to/repo.git/</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+[user@]host.xz:/~[user]/path/to/repo.git/</p>
+
+<p style="margin-left:11%; margin-top: 1em">For local
+repositories, also supported by Git natively, the following
+syntaxes may be used:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+/path/to/repo.git/</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b><font color="#0000FF">file:///path/to/repo.git/</font></b></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">These
+two syntaxes are mostly equivalent, except when cloning,
+when the former implies &minus;&minus;local option. See
+<b>git-clone</b>(1) for details.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">When
+Git doesn&rsquo;t know how to handle a certain transport
+protocol, it attempts to use the
+<i>remote&minus;&lt;transport&gt;</i> remote helper, if one
+exists. To explicitly request a remote helper, the following
+syntax may be used:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+&lt;transport&gt;::&lt;address&gt;</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">where
+&lt;address&gt; may be a path, a server and path, or an
+arbitrary URL&minus;like string recognized by the specific
+remote helper being invoked. See <b>gitremote-helpers</b>(1)
+for details.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">If
+there are a large number of similarly&minus;named remote
+repositories and you want to use a different format for them
+(such that the URLs you use will be rewritten into URLs that
+work), you can create a configuration section of the
+form:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">[url
+&quot;&lt;actual url base&gt;&quot;] <br>
+insteadOf = &lt;other url base&gt;</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">For
+example, with this:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">[url
+&quot;git://git.host.xz/&quot;] <br>
+insteadOf = host.xz:/path/to/ <br>
+insteadOf = work:</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">a
+URL like &quot;work:repo.git&quot; or like
+&quot;host.xz:/path/to/repo.git&quot; will be rewritten in
+any context that takes a URL to be
+&quot;git://git.host.xz/repo.git&quot;.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">If
+you want to rewrite URLs for push only, you can create a
+configuration section of the form:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">[url
+&quot;&lt;actual url base&gt;&quot;] <br>
+pushInsteadOf = &lt;other url base&gt;</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">For
+example, with this:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">[url
+&quot;ssh://example.org/&quot;] <br>
+pushInsteadOf = git://example.org/</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">a
+URL like &quot;git://example.org/path/to/repo.git&quot; will
+be rewritten to
+&quot;ssh://example.org/path/to/repo.git&quot; for pushes,
+but pulls will still use the original URL.</font></p>
+
+<h2>REMOTES
+<a name="REMOTES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+name of one of the following can be used instead of a URL as
+&lt;repository&gt; argument:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+a remote in the Git configuration file:
+$GIT_DIR/config,</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+a file in the $GIT_DIR/remotes directory, or</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+a file in the $GIT_DIR/branches directory.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">All
+of these also allow you to omit the refspec from the command
+line because they each contain a refspec which git will use
+by default.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>Named
+remote in configuration file</b> <br>
+You can choose to provide the name of a remote which you had
+previously configured using <b>git-remote</b>(1),
+<b>git-config</b>(1) or even by a manual edit to the
+$GIT_DIR/config file. The URL of this remote will be used to
+access the repository. The refspec of this remote will be
+used by default when you do not provide a refspec on the
+command line. The entry in the config file would appear like
+this:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">[remote
+&quot;&lt;name&gt;&quot;] <br>
+url = &lt;url&gt; <br>
+pushurl = &lt;pushurl&gt; <br>
+push = &lt;refspec&gt; <br>
+fetch = &lt;refspec&gt;</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+&lt;pushurl&gt; is used for pushes only. It is optional and
+defaults to &lt;url&gt;.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>Named
+file in $GIT_DIR/remotes</b> <br>
+You can choose to provide the name of a file in
+$GIT_DIR/remotes. The URL in this file will be used to
+access the repository. The refspec in this file will be used
+as default when you do not provide a refspec on the command
+line. This file should have the following format:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">URL:
+one of the above URL format <br>
+Push: &lt;refspec&gt; <br>
+Pull: &lt;refspec&gt;</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Push:
+lines are used by <i>git push</i> and Pull: lines are used
+by <i>git pull</i> and <i>git fetch</i>. Multiple Push: and
+Pull: lines may be specified for additional branch
+mappings.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>Named
+file in $GIT_DIR/branches</b> <br>
+You can choose to provide the name of a file in
+$GIT_DIR/branches. The URL in this file will be used to
+access the repository. This file should have the following
+format:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&lt;url&gt;#&lt;head&gt;</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">&lt;url&gt;
+is required; #&lt;head&gt; is optional.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Depending
+on the operation, git will use one of the following
+refspecs, if you don&rsquo;t provide one on the command
+line. &lt;branch&gt; is the name of this file in
+$GIT_DIR/branches and &lt;head&gt; defaults to
+master.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">git
+fetch uses:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">refs/heads/&lt;head&gt;:refs/heads/&lt;branch&gt;</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">git
+push uses:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">HEAD:refs/heads/&lt;head&gt;</font></p>
+
+<h2>OUTPUT
+<a name="OUTPUT"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+output of &quot;git push&quot; depends on the transport
+method used; this section describes the output when pushing
+over the Git protocol (either locally or via
+ssh).</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+status of the push is output in tabular form, with each line
+representing the status of a single ref. Each line is of the
+form:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&lt;flag&gt;
+&lt;summary&gt; &lt;from&gt; &minus;&gt; &lt;to&gt;
+(&lt;reason&gt;)</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">If
+&minus;&minus;porcelain is used, then each line of the
+output is of the form:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&lt;flag&gt;
+\t &lt;from&gt;:&lt;to&gt; \t &lt;summary&gt;
+(&lt;reason&gt;)</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+status of up&minus;to&minus;date refs is shown only if
+&minus;&minus;porcelain or &minus;&minus;verbose option is
+used.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">flag</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">A single
+character indicating the status of the ref:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">(space)</font></p>
+
+<p style="margin-left:23%;"><font color="#000000">for a
+successfully pushed fast&minus;forward;</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">+</font></p>
+
+<p style="margin-left:23%;"><font color="#000000">for a
+successful forced update;</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&minus;</font></p>
+
+<p style="margin-left:23%;"><font color="#000000">for a
+successfully deleted ref;</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">*</font></p>
+
+<p style="margin-left:23%;"><font color="#000000">for a
+successfully pushed new ref;</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">!</font></p>
+
+<p style="margin-left:23%;"><font color="#000000">for a ref
+that was rejected or failed to push; and</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">=</font></p>
+
+<p style="margin-left:23%;"><font color="#000000">for a ref
+that was up to date and did not need pushing.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">summary</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">For a
+successfully pushed ref, the summary shows the old and new
+values of the ref in a form suitable for using as an
+argument to git log (this is &lt;old&gt;..&lt;new&gt; in
+most cases, and &lt;old&gt;...&lt;new&gt; for forced
+non&minus;fast&minus;forward updates).</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">For
+a failed update, more details are given:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">rejected</font></p>
+
+<p style="margin-left:23%;"><font color="#000000">Git did
+not try to send the ref at all, typically because it is not
+a fast&minus;forward and you did not force the
+update.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">remote
+rejected</font></p>
+
+<p style="margin-left:23%;"><font color="#000000">The
+remote end refused the update. Usually caused by a hook on
+the remote side, or because the remote repository has one of
+the following safety options in effect:
+receive.denyCurrentBranch (for pushes to the checked out
+branch), receive.denyNonFastForwards (for forced
+non&minus;fast&minus;forward updates), receive.denyDeletes
+or receive.denyDeleteCurrent. See
+<b>git-config</b>(1).</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">remote
+failure</font></p>
+
+<p style="margin-left:23%;"><font color="#000000">The
+remote end did not report the successful update of the ref,
+perhaps because of a temporary error on the remote side, a
+break in the network connection, or other transient
+error.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">from</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">The name
+of the local ref being pushed, minus its refs/&lt;type&gt;/
+prefix. In the case of deletion, the name of the local ref
+is omitted.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">to</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">The name
+of the remote ref being updated, minus its
+refs/&lt;type&gt;/ prefix.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">reason</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">A
+human&minus;readable explanation. In the case of
+successfully pushed refs, no explanation is needed. For a
+failed ref, the reason for failure is described.</font></p>
+
+<h2>NOTE ABOUT FAST-FORWARDS
+<a name="NOTE ABOUT FAST-FORWARDS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">When
+an update changes a branch (or more in general, a ref) that
+used to point at commit A to point at another commit B, it
+is called a fast&minus;forward update if and only if B is a
+descendant of A.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">In
+a fast&minus;forward update from A to B, the set of commits
+that the original commit A built on top of is a subset of
+the commits the new commit B builds on top of. Hence, it
+does not lose any history.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">In
+contrast, a non&minus;fast&minus;forward update will lose
+history. For example, suppose you and somebody else started
+at the same commit X, and you built a history leading to
+commit B while the other person built a history leading to
+commit A. The history looks like this:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">B
+<br>
+/ <br>
+&minus;&minus;&minus;X&minus;&minus;&minus;A</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Further
+suppose that the other person already pushed changes leading
+to A back to the original repository from which you two
+obtained the original commit X.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+push done by the other person updated the branch that used
+to point at commit X to point at commit A. It is a
+fast&minus;forward.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">But
+if you try to push, you will attempt to update the branch
+(that now points at A) with commit B. This does <i>not</i>
+fast&minus;forward. If you did so, the changes introduced by
+commit A will be lost, because everybody will now start
+building on top of B.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+command by default does not allow an update that is not a
+fast&minus;forward to prevent such loss of
+history.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">If
+you do not want to lose your work (history from X to B) nor
+the work by the other person (history from X to A), you
+would need to first fetch the history from the repository,
+create a history that contains changes done by both parties,
+and push the result back.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">You
+can perform &quot;git pull&quot;, resolve potential
+conflicts, and &quot;git push&quot; the result. A &quot;git
+pull&quot; will create a merge commit C between commits A
+and B.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">B&minus;&minus;&minus;C
+<br>
+/ / <br>
+&minus;&minus;&minus;X&minus;&minus;&minus;A</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Updating
+A with the resulting merge commit will fast&minus;forward
+and your push will be accepted.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Alternatively,
+you can rebase your change between X and B on top of A, with
+&quot;git pull &minus;&minus;rebase&quot;, and push the
+result back. The rebase will create a new commit D that
+builds the change between X and B on top of A.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">B
+D <br>
+/ / <br>
+&minus;&minus;&minus;X&minus;&minus;&minus;A</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Again,
+updating A with this commit will fast&minus;forward and your
+push will be accepted.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">There
+is another common situation where you may encounter
+non&minus;fast&minus;forward rejection when you try to push,
+and it is possible even when you are pushing into a
+repository nobody else pushes into. After you push commit A
+yourself (in the first picture in this section), replace it
+with &quot;git commit &minus;&minus;amend&quot; to produce
+commit B, and you try to push it out, because forgot that
+you have pushed A out already. In such a case, and only if
+you are certain that nobody in the meantime fetched your
+earlier commit A (and started building on top of it), you
+can run &quot;git push &minus;&minus;force&quot; to
+overwrite it. In other words, &quot;git push
+&minus;&minus;force&quot; is a method reserved for a case
+where you do mean to lose history.</font></p>
+
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">git
+push</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Works
+like git push &lt;remote&gt;, where &lt;remote&gt; is the
+current branch&rsquo;s remote (or origin, if no remote is
+configured for the current branch).</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">git
+push origin</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Without
+additional configuration, works like git push origin
+:.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">The
+default behavior of this command when no &lt;refspec&gt; is
+given can be configured by setting the push option of the
+remote, or the push.default configuration
+variable.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">For
+example, to default to pushing only the current branch to
+origin use git config remote.origin.push HEAD. Any valid
+&lt;refspec&gt; (like the ones in the examples below) can be
+configured as the default for git push origin.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">git
+push origin :</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Push
+&quot;matching&quot; branches to origin. See &lt;refspec&gt;
+in the OPTIONS section above for a description of
+&quot;matching&quot; branches.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">git
+push origin master</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Find a
+ref that matches master in the source repository (most
+likely, it would find refs/heads/master), and update the
+same ref (e.g. refs/heads/master) in origin repository with
+it. If master did not exist remotely, it would be
+created.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">git
+push origin HEAD</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">A handy
+way to push the current branch to the same name on the
+remote.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">git
+push mothership master:satellite/master
+dev:satellite/dev</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Use the
+source ref that matches master (e.g. refs/heads/master) to
+update the ref that matches satellite/master (most probably
+refs/remotes/satellite/master) in the mothership repository;
+do the same for dev and satellite/dev.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">This
+is to emulate git fetch run on the mothership using git push
+that is run in the opposite direction in order to integrate
+the work done on satellite, and is often necessary when you
+can only make connection in one way (i.e. satellite can ssh
+into mothership but mothership cannot initiate connection to
+satellite because the latter is behind a firewall or does
+not run sshd).</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">After
+running this git push on the satellite machine, you would
+ssh into the mothership and run git merge there to complete
+the emulation of git pull that were run on mothership to
+pull changes made on satellite.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">git
+push origin HEAD:master</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Push the
+current branch to the remote ref matching master in the
+origin repository. This form is convenient to push the
+current branch without thinking about its local
+name.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">git
+push origin master:refs/heads/experimental</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Create
+the branch experimental in the origin repository by copying
+the current master branch. This form is only needed to
+create a new branch or tag in the remote repository when the
+local name and the remote name are different; otherwise, the
+ref name on its own will work.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">git
+push origin :experimental</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Find a
+ref that matches experimental in the origin repository (e.g.
+refs/heads/experimental), and delete it.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">git
+push origin +dev:master</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Update
+the origin repository&rsquo;s master branch with the dev
+branch, allowing non&minus;fast&minus;forward updates.
+<b>This can leave unreferenced commits dangling in the
+origin repository.</b> Consider the following situation,
+where a fast&minus;forward is not possible:</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">o&minus;&minus;&minus;o&minus;&minus;&minus;o&minus;&minus;&minus;A&minus;&minus;&minus;B
+origin/master <br>
+\ <br>
+X&minus;&minus;&minus;Y&minus;&minus;&minus;Z dev</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">The
+above command would change the origin repository
+to</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">A&minus;&minus;&minus;B
+(unnamed branch) <br>
+/ <br>
+
+o&minus;&minus;&minus;o&minus;&minus;&minus;o&minus;&minus;&minus;X&minus;&minus;&minus;Y&minus;&minus;&minus;Z
+master</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Commits
+A and B would no longer belong to a branch with a symbolic
+name, and so would be unreachable. As such, these commits
+would be removed by a git gc command on the origin
+repository.</font></p>
+
+<h2>GIT
+<a name="GIT"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Part
+of the <b>git</b>(1) suite</font></p>
+<hr>
+</body>
+</html>

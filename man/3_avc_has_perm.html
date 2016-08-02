@@ -1,0 +1,241 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:30:32 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>avc_has_perm</title>
+
+</head>
+<body>
+
+<h1 align="center">avc_has_perm</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#ENTRY REFERENCES">ENTRY REFERENCES</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">avc_has_perm,
+avc_has_perm_noaudit, avc_audit, avc_entry_ref_init &minus;
+obtain and audit SELinux access decisions</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;selinux/selinux.h&gt; <br>
+#include &lt;selinux/avc.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>void
+avc_entry_ref_init(struct avc_entry_ref
+*</b><i>aeref</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+avc_has_perm(security_id_t</b> <i>ssid</i><b>,
+security_id_t</b> <i>tsid</i><b>,</b></p>
+
+<p style="margin-left:37%;"><b>security_class_t</b>
+<i>tclass</i><b>, access_vector_t</b> <i>requested</i><b>,
+<br>
+struct avc_entry_ref *</b><i>aeref</i><b>, void
+*</b><i>auditdata</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+avc_has_perm_noaudit(security_id_t</b> <i>ssid</i><b>,
+security_id_t</b> <i>tsid</i><b>,</b></p>
+
+<p style="margin-left:37%;"><b>security_class_t</b>
+<i>tclass</i><b>, access_vector_t</b> <i>requested</i><b>,
+<br>
+struct avc_entry_ref *</b><i>aeref</i><b>, struct
+av_decision *</b><i>avd</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>void
+avc_audit(security_id_t</b> <i>ssid</i><b>,
+security_id_t</b> <i>tsid</i><b>,</b></p>
+
+<p style="margin-left:34%;"><b>security_class_t</b>
+<i>tclass</i><b>, access_vector_t</b> <i>requested</i><b>,
+<br>
+struct av_decision *</b><i>avd</i><b>, int</b>
+<i>result</i><b>, void *</b><i>auditdata</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>avc_entry_ref_init</b>()
+initializes an <b>avc_entry_ref</b> structure; see <b>ENTRY
+REFERENCES</b> below. This function may be implemented as a
+macro.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>avc_has_perm</b>()
+checks whether the <i>requested</i> permissions are granted
+for subject SID <i>ssid</i> and target SID <i>tsid</i>,
+interpreting the permissions based on <i>tclass</i> and
+updating <i>aeref</i>, if non-NULL, to refer to a cache
+entry with the resulting decision. The granting or denial of
+permissions is audited in accordance with the policy. The
+<i>auditdata</i> parameter is for supplemental auditing; see
+<b>avc_audit</b>() below.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>avc_has_perm_noaudit</b>()
+behaves as <b>avc_has_perm</b>() without producing an audit
+message. The access decision is returned in <i>avd</i> and
+can be passed to <b>avc_audit</b>() explicitly.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>avc_audit</b>()
+produces an audit message for the access query represented
+by <i>ssid</i>, <i>tsid</i>, <i>tclass</i>, and
+<i>requested</i>, with a decision represented by <i>avd</i>.
+Pass the value returned by <b>avc_has_perm_noaudit</b>() as
+<i>result</i>. The <i>auditdata</i> parameter is passed to
+the user-supplied <b>func_audit</b> callback and can be used
+to add supplemental information to the audit message; see
+<b>avc_init</b>(3).</p>
+
+<h2>ENTRY REFERENCES
+<a name="ENTRY REFERENCES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Entry
+references can be used to speed cache performance for
+repeated queries on the same subject and target. The
+userspace AVC will check the <i>aeref</i> argument, if
+supplied, before searching the cache on a permission query.
+After a query is performed, <i>aeref</i> will be updated to
+reference the cache entry for that query. A subsequent query
+on the same subject and target will then have the decision
+at hand without having to walk the cache.</p>
+
+<p style="margin-left:11%; margin-top: 1em">After declaring
+an <b>avc_entry_ref</b> structure, use
+<b>avc_entry_ref_init</b>() to initialize it before passing
+it to <b>avc_has_perm</b>() or <b>avc_has_perm_noaudit</b>()
+for the first time. Using an uninitialized structure will
+produce undefined behavior.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If requested
+permissions are granted, zero is returned. If requested
+permissions are denied or an error occured, &minus;1 is
+returned and <i>errno</i> is set appropriately.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In permissive
+mode, zero will be returned and <i>errno</i> unchanged even
+if permissions were denied. <b>avc_has_perm</b>() will still
+produce an audit message in this case.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EACCES</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">A requested permission was
+denied.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The <i>tclass</i> and/or the security contexts
+referenced by <i>ssid</i> and <i>tsid</i> are not recognized
+by the currently loaded policy.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>An attempt to allocate memory failed.</p></td></tr>
+</table>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Internal errors
+encountered by the userspace AVC may cause certain values of
+<i>errno</i> to be returned unexpectedly. For example,
+netlink socket errors may produce <b>EACCES</b> or
+<b>EINVAL</b>. Make sure that userspace object managers are
+granted appropriate access to netlink by the policy.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Eamon Walsh
+&lt;ewalsh@tycho.nsa.gov&gt;</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>avc_init</b>(3),
+<b>avc_context_to_sid</b>(3), <b>avc_cache_stats</b>(3),
+<b>avc_add_callback</b>(3), <b>security_compute_av</b>(3),
+<b>selinux</b>(8)</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,532 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:36:16 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Net::Ping</title>
+
+</head>
+<body>
+
+<h1 align="center">Net::Ping</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#INSTALL">INSTALL</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Net::Ping
+&minus; check a remote host for reachability</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">    use Net::Ping;
+    $p = Net::Ping&minus;&gt;new();
+    print &quot;$host is alive.\n&quot; if $p&minus;&gt;ping($host);
+    $p&minus;&gt;close();
+    $p = Net::Ping&minus;&gt;new(&quot;icmp&quot;);
+    $p&minus;&gt;bind($my_addr); # Specify source interface of pings
+    foreach $host (@host_array)
+    {
+        print &quot;$host is &quot;;
+        print &quot;NOT &quot; unless $p&minus;&gt;ping($host, 2);
+        print &quot;reachable.\n&quot;;
+        sleep(1);
+    }
+    $p&minus;&gt;close();
+    $p = Net::Ping&minus;&gt;new(&quot;tcp&quot;, 2);
+    # Try connecting to the www port instead of the echo port
+    $p&minus;&gt;port_number(getservbyname(&quot;http&quot;, &quot;tcp&quot;));
+    while ($stop_time &gt; time())
+    {
+        print &quot;$host not reachable &quot;, scalar(localtime()), &quot;\n&quot;
+            unless $p&minus;&gt;ping($host);
+        sleep(300);
+    }
+    undef($p);
+    # Like tcp protocol, but with many hosts
+    $p = Net::Ping&minus;&gt;new(&quot;syn&quot;);
+    $p&minus;&gt;port_number(getservbyname(&quot;http&quot;, &quot;tcp&quot;));
+    foreach $host (@host_array) {
+      $p&minus;&gt;ping($host);
+    }
+    while (($host,$rtt,$ip) = $p&minus;&gt;ack) {
+      print &quot;HOST: $host [$ip] ACKed in $rtt seconds.\n&quot;;
+    }
+    # High precision syntax (requires Time::HiRes)
+    $p = Net::Ping&minus;&gt;new();
+    $p&minus;&gt;hires();
+    ($ret, $duration, $ip) = $p&minus;&gt;ping($host, 5.5);
+    printf(&quot;$host [ip: $ip] is alive (packet return time: %.2f ms)\n&quot;, 1000 * $duration)
+      if $ret;
+    $p&minus;&gt;close();
+    # For backward compatibility
+    print &quot;$host is alive.\n&quot; if pingecho($host);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This module
+contains methods to test the reachability of remote hosts on
+a network. A ping object is first created with optional
+parameters, a variable number of hosts may be pinged
+multiple times and then the connection is closed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You may choose
+one of six different protocols to use for the ping. The
+&quot;tcp&quot; protocol is the default. Note that a live
+remote host may still fail to be pingable by one or more of
+these protocols. For example, www.microsoft.com is generally
+alive but not &quot;icmp&quot; pingable.</p>
+
+<p style="margin-left:11%; margin-top: 1em">With the
+&quot;tcp&quot; protocol the <i>ping()</i> method attempts
+to establish a connection to the remote host&rsquo;s echo
+port. If the connection is successfully established, the
+remote host is considered reachable. No data is actually
+echoed. This protocol does not require any special
+privileges but has higher overhead than the &quot;udp&quot;
+and &quot;icmp&quot; protocols.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Specifying the
+&quot;udp&quot; protocol causes the <i>ping()</i> method to
+send a udp packet to the remote host&rsquo;s echo port. If
+the echoed packet is received from the remote host and the
+received packet contains the same data as the packet that
+was sent, the remote host is considered reachable. This
+protocol does not require any special privileges. It should
+be borne in mind that, for a udp ping, a host will be
+reported as unreachable if it is not running the appropriate
+echo service. For Unix-like systems see <i>inetd</i>(8) for
+more information.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+&quot;icmp&quot; protocol is specified, the <i>ping()</i>
+method sends an icmp echo message to the remote host, which
+is what the <small>UNIX</small> ping program does. If the
+echoed message is received from the remote host and the
+echoed information is correct, the remote host is considered
+reachable. Specifying the &quot;icmp&quot; protocol requires
+that the program be run as root or that the program be
+setuid to root.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+&quot;external&quot; protocol is specified, the
+<i>ping()</i> method attempts to use the
+<tt>&quot;Net::Ping::External&quot;</tt> module to ping the
+remote host. <tt>&quot;Net::Ping::External&quot;</tt>
+interfaces with your system&rsquo;s default
+<tt>&quot;ping&quot;</tt> utility to perform the ping, and
+generally produces relatively accurate results. If
+<tt>&quot;Net::Ping::External&quot;</tt> if not installed on
+your system, specifying the &quot;external&quot; protocol
+will result in an error.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+&quot;syn&quot; protocol is specified, the <i>ping()</i>
+method will only send a <small>TCP SYN</small> packet to the
+remote host then immediately return. If the syn packet was
+sent successfully, it will return a true value, otherwise it
+will return false. <small>NOTE:</small> Unlike the other
+protocols, the return value does <small>NOT</small>
+determine if the remote host is alive or not since the full
+<small>TCP</small> three-way handshake may not have
+completed yet. The remote host is only considered reachable
+if it receives a <small>TCP ACK</small> within the timeout
+specified. To begin waiting for the <small>ACK</small>
+packets, use the <i>ack()</i> method as explained below. Use
+the &quot;syn&quot; protocol instead the &quot;tcp&quot;
+protocol to determine reachability of multiple destinations
+simultaneously by sending parallel <small>TCP SYN</small>
+packets. It will not block while testing each remote host.
+demo/fping is provided in this distribution to demonstrate
+the &quot;syn&quot; protocol as an example. This protocol
+does not require any special privileges.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Functions</b>
+<br>
+Net::Ping&minus;&gt;new([$proto [, $def_timeout [, $bytes [,
+$device [, $tos <br>
+]]]]]);</p>
+
+<p style="margin-left:17%;">Create a new ping object. All
+of the parameters are optional. <tt>$proto</tt> specifies
+the protocol to use when doing a ping. The current choices
+are &quot;tcp&quot;, &quot;udp&quot;, &quot;icmp&quot;,
+&quot;stream&quot;, &quot;syn&quot;, or
+&quot;external&quot;. The default is &quot;tcp&quot;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If a default
+timeout ($def_timeout) in seconds is provided, it is used
+when a timeout is not given to the <i>ping()</i> method
+(below). The timeout must be greater than 0 and the default,
+if not specified, is 5 seconds.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If the number
+of data bytes ($bytes) is given, that many data bytes are
+included in the ping packet sent to the remote host. The
+number of data bytes is ignored if the protocol is
+&quot;tcp&quot;. The minimum (and default) number of data
+bytes is 1 if the protocol is &quot;udp&quot; and 0
+otherwise. The maximum number of data bytes that can be
+specified is 1024.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If
+<tt>$device</tt> is given, this device is used to bind the
+source endpoint before sending the ping packet. I believe
+this only works with superuser privileges and with udp and
+icmp protocols at this time.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If
+<tt>$tos</tt> is given, this ToS is configured into the
+socket.</p>
+
+<p style="margin-left:11%;">$p&minus;&gt;ping($host [,
+$timeout]);</p>
+
+<p style="margin-left:17%;">Ping the remote host and wait
+for a response. <tt>$host</tt> can be either the hostname or
+the <small>IP</small> number of the remote host. The
+optional timeout must be greater than 0 seconds and defaults
+to whatever was specified when the ping object was created.
+Returns a success flag. If the hostname cannot be found or
+there is a problem with the <small>IP</small> number, the
+success flag returned will be undef. Otherwise, the success
+flag will be 1 if the host is reachable and 0 if it is not.
+For most practical purposes, undef and 0 and can be treated
+as the same case. In array context, the elapsed time as well
+as the string form of the ip the host resolved to are also
+returned. The elapsed time value will be a float, as
+returned by the <i>Time::HiRes::time()</i> function, if
+<i>hires()</i> has been previously called, otherwise it is
+returned as an integer.</p>
+
+<p style="margin-left:11%;">$p&minus;&gt;source_verify( { 0
+| 1 } );</p>
+
+<p style="margin-left:17%;">Allows source endpoint
+verification to be enabled or disabled. This is useful for
+those remote destinations with multiples interfaces where
+the response may not originate from the same endpoint that
+the original destination endpoint was sent to. This only
+affects udp and icmp protocol pings.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This is enabled
+by default.</p>
+
+<p style="margin-left:11%;">$p&minus;&gt;service_check( { 0
+| 1 } );</p>
+
+<p style="margin-left:17%;">Set whether or not the connect
+behavior should enforce remote service availability as well
+as reachability. Normally, if the remote server reported
+<small>ECONNREFUSED</small> , it must have been reachable
+because of the status packet that it reported. With this
+option enabled, the full three-way tcp handshake must have
+been established successfully before it will claim it is
+reachable. <small>NOTE:</small> It still does nothing more
+than connect and disconnect. It does not speak any protocol
+(i.e., <small>HTTP</small> or <small>FTP</small> ) to ensure
+the remote server is sane in any way. The remote server
+<small>CPU</small> could be grinding to a halt and
+unresponsive to any clients connecting, but if the kernel
+throws the <small>ACK</small> packet, it is considered alive
+anyway. To really determine if the server is responding well
+would be application specific and is beyond the scope of
+Net::Ping. For udp protocol, enabling this option demands
+that the remote server replies with the same udp data that
+it was sent as defined by the udp echo service.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This affects
+the &quot;udp&quot;, &quot;tcp&quot;, and &quot;syn&quot;
+protocols.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This is
+disabled by default.</p>
+
+
+<p style="margin-left:11%;">$p&minus;&gt;tcp_service_check(
+{ 0 | 1 } );</p>
+
+<p style="margin-left:17%;">Deprecated method, but does the
+same as <i>service_check()</i> method.</p>
+
+<p style="margin-left:11%;">$p&minus;&gt;hires( { 0 | 1 }
+);</p>
+
+<p style="margin-left:17%;">Causes this module to use
+Time::HiRes module, allowing milliseconds to be returned by
+subsequent calls to <i>ping()</i>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This is
+disabled by default.</p>
+
+
+<p style="margin-left:11%;">$p&minus;&gt;bind($local_addr);</p>
+
+<p style="margin-left:17%;">Sets the source address from
+which pings will be sent. This must be the address of one of
+the interfaces on the local host. <tt>$local_addr</tt> may
+be specified as a hostname or as a text <small>IP</small>
+address such as &quot;192.168.1.1&quot;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If the protocol
+is set to &quot;tcp&quot;, this method may be called any
+number of times, and each call to the <i>ping()</i> method
+(below) will use the most recent <tt>$local_addr</tt>. If
+the protocol is &quot;icmp&quot; or &quot;udp&quot;, then
+<i>bind()</i> must be called at most once per object, and
+(if it is called at all) must be called before the first
+call to <i>ping()</i> for that object.</p>
+
+<p style="margin-left:11%;">$p&minus;&gt;open($host);</p>
+
+<p style="margin-left:17%;">When you are using the
+&quot;stream&quot; protocol, this call pre-opens the tcp
+socket. It&rsquo;s only necessary to do this if you want to
+provide a different timeout when creating the connection, or
+remove the overhead of establishing the connection from the
+first ping. If you don&rsquo;t call
+<tt>&quot;open()&quot;</tt>, the connection is automatically
+opened the first time <tt>&quot;ping()&quot;</tt> is called.
+This call simply does nothing if you are using any protocol
+other than stream.</p>
+
+<p style="margin-left:11%;">$p&minus;&gt;ack( [ $host ]
+);</p>
+
+<p style="margin-left:17%;">When using the &quot;syn&quot;
+protocol, use this method to determine the reachability of
+the remote host. This method is meant to be called up to as
+many times as <i>ping()</i> was called. Each call returns
+the host (as passed to <i>ping()</i>) that came back with
+the <small>TCP ACK</small> . The order in which the hosts
+are returned may not necessarily be the same order in which
+they were <small>SYN</small> queued using the <i>ping()</i>
+method. If the timeout is reached before the <small>TCP
+ACK</small> is received, or if the remote host is not
+listening on the port attempted, then the <small>TCP</small>
+connection will not be established and <i>ack()</i> will
+return undef. In list context, the host, the ack time, and
+the dotted ip string will be returned instead of just the
+host. If the optional <tt>$host</tt> argument is specified,
+the return value will be pertaining to that host only. This
+call simply does nothing if you are using any protocol other
+than syn.</p>
+
+<p style="margin-left:11%;">$p&minus;&gt;nack(
+$failed_ack_host );</p>
+
+<p style="margin-left:17%;">The reason that host
+<tt>$failed_ack_host</tt> did not receive a valid
+<small>ACK</small> . Useful to find out why when ack(
+<tt>$fail_ack_host</tt> ) returns a false value.</p>
+
+
+<p style="margin-left:11%;">$p&minus;&gt;<i>close()</i>;</p>
+
+<p style="margin-left:17%;">Close the network connection
+for this ping object. The network connection is also closed
+by &quot;undef <tt>$p</tt>&quot;. The network connection is
+automatically closed if the ping object goes out of scope
+(e.g. <tt>$p</tt> is local to a subroutine and you leave the
+subroutine).</p>
+
+
+<p style="margin-left:11%;">$p&minus;&gt;port_number([$port_number])</p>
+
+<p style="margin-left:17%;">When called with a port number,
+the port number used to ping is set to <tt>$port_number</tt>
+rather than using the echo port. It also has the effect of
+calling <tt>&quot;$p&minus;&gt;service_check(1)&quot;</tt>
+causing a ping to return a successful response only if that
+specific port is accessible. This function returns the value
+of the port that <tt>&quot;ping()&quot;</tt> will connect
+to.</p>
+
+<p style="margin-left:11%;">pingecho($host [,
+$timeout]);</p>
+
+<p style="margin-left:17%;">To provide backward
+compatibility with the previous version of Net::Ping, a
+<i>pingecho()</i> subroutine is available with the same
+functionality as before. <i>pingecho()</i> uses the tcp
+protocol. The return values and parameters are the same as
+described for the <i>ping()</i> method. This subroutine is
+obsolete and may be removed in a future version of
+Net::Ping.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">There will be
+less network overhead (and some efficiency in your program)
+if you specify either the udp or the icmp protocol. The tcp
+protocol will generate 2.5 times or more traffic for each
+ping than either udp or icmp. If many hosts are pinged
+frequently, you may wish to implement a small wait (e.g.
+25ms or more) between each ping to avoid flooding your
+network with packets.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The icmp
+protocol requires that the program be run as root or that it
+be setuid to root. The other protocols do not require
+special privileges, but not all network devices implement
+tcp or udp echo.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Local hosts
+should normally respond to pings within milliseconds.
+However, on a very congested network it may take up to 3
+seconds or longer to receive an echo packet from the remote
+host. If the timeout is set too low under these conditions,
+it will appear that the remote host is not reachable (which
+is almost the truth).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Reachability
+doesn&rsquo;t necessarily mean that the remote host is
+actually functioning beyond its ability to echo packets. tcp
+is slightly better at indicating the health of a system than
+icmp because it uses more of the networking stack to
+respond.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Because of a
+lack of anything better, this module uses its own routines
+to pack and unpack <small>ICMP</small> packets. It would be
+better for a separate module to be written which understands
+all of the different kinds of <small>ICMP</small>
+packets.</p>
+
+<h2>INSTALL
+<a name="INSTALL"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The latest
+source tree is available via cvs:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  cvs &minus;z3 &minus;q &minus;d :pserver:anonymous@cvs.roobik.com.:/usr/local/cvsroot/freeware checkout Net&minus;Ping
+  cd Net&minus;Ping</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The tarball can
+be created as follows:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  perl Makefile.PL ; make ; make dist</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The latest
+Net::Ping release can be found at <small>CPAN:</small></p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $CPAN/modules/by&minus;module/Net/</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">1) Extract the
+tarball</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  gtar &minus;zxvf Net&minus;Ping&minus;xxxx.tar.gz
+  cd Net&minus;Ping&minus;xxxx</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">2) Build:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  make realclean
+  perl Makefile.PL
+  make
+  make test</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">3) Install</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  make install</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Or install it
+<small>RPM</small> Style:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  rpm &minus;ta SOURCES/Net&minus;Ping&minus;xxxx.tar.gz
+  rpm &minus;ih RPMS/noarch/perl&minus;Net&minus;Ping&minus;xxxx.rpm</pre>
+
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">For a list of
+known issues, visit:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">https://rt.cpan.org/NoAuth/Bugs.html?Dist=Net&minus;Ping</p>
+
+<p style="margin-left:11%; margin-top: 1em">To report a new
+bug, visit:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">https://rt.cpan.org/NoAuth/ReportBug.html?Queue=Net&minus;Ping</p>
+
+<h2>AUTHORS
+<a name="AUTHORS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  Current maintainer:
+    bbb@cpan.org (Rob Brown)
+  External protocol:
+    colinm@cpan.org (Colin McMillen)
+  Stream protocol:
+    bronson@trestle.com (Scott Bronson)
+  Original pingecho():
+    karrer@bernina.ethz.ch (Andreas Karrer)
+    pmarquess@bfsec.bt.co.uk (Paul Marquess)
+  Original Net::Ping author:
+    mose@ns.ccsn.edu (Russell Mosemann)</pre>
+
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (c)
+2002&minus;2003, Rob Brown. All rights reserved.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (c)
+2001, Colin McMillen. All rights reserved.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This program is
+free software; you may redistribute it and/or modify it
+under the same terms as Perl itself.</p>
+<hr>
+</body>
+</html>

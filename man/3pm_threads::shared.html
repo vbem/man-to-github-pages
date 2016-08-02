@@ -1,0 +1,656 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:40:44 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>threads::shared</title>
+
+</head>
+<body>
+
+<h1 align="center">threads::shared</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#VERSION">VERSION</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#EXPORT">EXPORT</a><br>
+<a href="#FUNCTIONS">FUNCTIONS</a><br>
+<a href="#OBJECTS">OBJECTS</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS AND LIMITATIONS">BUGS AND LIMITATIONS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#LICENSE">LICENSE</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">threads::shared
+&minus; Perl extension for sharing data structures between
+threads</p>
+
+<h2>VERSION
+<a name="VERSION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+describes threads::shared version 1.43</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  use threads;
+  use threads::shared;
+  my $var :shared;
+  my %hsh :shared;
+  my @ary :shared;
+  my ($scalar, @array, %hash);
+  share($scalar);
+  share(@array);
+  share(%hash);
+  $var = $scalar_value;
+  $var = $shared_ref_value;
+  $var = shared_clone($non_shared_ref_value);
+  $var = shared_clone({'foo' =&gt; [qw/foo bar baz/]});
+  $hsh{'foo'} = $scalar_value;
+  $hsh{'bar'} = $shared_ref_value;
+  $hsh{'baz'} = shared_clone($non_shared_ref_value);
+  $hsh{'quz'} = shared_clone([1..3]);
+  $ary[0] = $scalar_value;
+  $ary[1] = $shared_ref_value;
+  $ary[2] = shared_clone($non_shared_ref_value);
+  $ary[3] = shared_clone([ {}, [] ]);
+  { lock(%hash); ...  }
+  cond_wait($scalar);
+  cond_timedwait($scalar, time() + 30);
+  cond_broadcast(@array);
+  cond_signal(%hash);
+  my $lockvar :shared;
+  # condition var != lock var
+  cond_wait($var, $lockvar);
+  cond_timedwait($var, time()+30, $lockvar);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">By default,
+variables are private to each thread, and each newly created
+thread gets a private copy of each existing variable. This
+module allows you to share variables across different
+threads (and pseudo-forks on Win32). It is used together
+with the threads module.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This module
+supports the sharing of the following data types only:
+scalars and scalar refs, arrays and array refs, and hashes
+and hash refs.</p>
+
+<h2>EXPORT
+<a name="EXPORT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+functions are exported by this module:
+<tt>&quot;share&quot;</tt>,
+<tt>&quot;shared_clone&quot;</tt>,
+<tt>&quot;is_shared&quot;</tt>,
+<tt>&quot;cond_wait&quot;</tt>,
+<tt>&quot;cond_timedwait&quot;</tt>,
+<tt>&quot;cond_signal&quot;</tt> and
+<tt>&quot;cond_broadcast&quot;</tt></p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that if
+this module is imported when threads has not yet been
+loaded, then these functions all become no-ops. This makes
+it possible to write modules that will work in both threaded
+and non-threaded environments.</p>
+
+<h2>FUNCTIONS
+<a name="FUNCTIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">share
+<small>VARIABLE</small></p>
+
+<p style="margin-left:17%;"><tt>&quot;share&quot;</tt>
+takes a variable and marks it as shared:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  my ($scalar, @array, %hash);
+  share($scalar);
+  share(@array);
+  share(%hash);</pre>
+
+
+
+<p style="margin-left:17%; margin-top: 1em">&quot;share&quot;
+will return the shared rvalue, but always as a
+reference.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Variables can
+also be marked as shared at compile time by using the
+<tt>&quot;:shared&quot;</tt> attribute:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  my ($var, %hash, @array) :shared;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Shared
+variables can only store scalars, refs of shared variables,
+or refs of shared data (discussed in next section):</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  my ($var, %hash, @array) :shared;
+  my $bork;
+  # Storing scalars
+  $var = 1;
+  $hash{'foo'} = 'bar';
+  $array[0] = 1.5;
+  # Storing shared refs
+  $var = \%hash;
+  $hash{'ary'} = \@array;
+  $array[1] = \$var;
+  # The following are errors:
+  #   $var = \$bork;                    # ref of non&minus;shared variable
+  #   $hash{'bork'} = [];               # non&minus;shared array ref
+  #   push(@array, { 'x' =&gt; 1 });       # non&minus;shared hash ref</pre>
+
+
+<p style="margin-left:11%;">shared_clone
+<small>REF</small></p>
+
+
+<p style="margin-left:17%;"><tt>&quot;shared_clone&quot;</tt>
+takes a reference, and returns a shared version of its
+argument, performing a deep copy on any non-shared elements.
+Any shared elements in the argument are used as is (i.e.,
+they are not cloned).</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  my $cpy = shared_clone({'foo' =&gt; [qw/foo bar baz/]});</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Object status
+(i.e., the class an object is blessed into) is also
+cloned.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  my $obj = {'foo' =&gt; [qw/foo bar baz/]};
+  bless($obj, 'Foo');
+  my $cpy = shared_clone($obj);
+  print(ref($cpy), &quot;\n&quot;);         # Outputs 'Foo'</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">For cloning
+empty array or hash refs, the following may also be
+used:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  $var = &amp;share([]);   # Same as $var = shared_clone([]);
+  $var = &amp;share({});   # Same as $var = shared_clone({});</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Not all Perl
+data types can be cloned (e.g., globs, code refs). By
+default, <tt>&quot;shared_clone&quot;</tt> will croak if it
+encounters such items. To change this behaviour to a
+warning, then set the following:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  $threads::shared::clone_warn = 1;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">In this case,
+<tt>&quot;undef&quot;</tt> will be substituted for the item
+to be cloned. If set to zero:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  $threads::shared::clone_warn = 0;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">then the
+<tt>&quot;undef&quot;</tt> substitution will be performed
+silently.</p>
+
+<p style="margin-left:11%;">is_shared
+<small>VARIABLE</small></p>
+
+<p style="margin-left:17%;"><tt>&quot;is_shared&quot;</tt>
+checks if the specified variable is shared or not. If
+shared, returns the variable&rsquo;s internal
+<small>ID</small> (similar to <i>refaddr()</i>). Otherwise,
+returns <tt>&quot;undef&quot;</tt>.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  if (is_shared($var)) {
+      print(&quot;\$var is shared\n&quot;);
+  } else {
+      print(&quot;\$var is not shared\n&quot;);
+  }</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">When used on an
+element of an array or hash, <tt>&quot;is_shared&quot;</tt>
+checks if the specified element belongs to a shared array or
+hash. (It does not check the contents of that element.)</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  my %hash :shared;
+  if (is_shared(%hash)) {
+      print(&quot;\%hash is shared\n&quot;);
+  }
+  $hash{'elem'} = 1;
+  if (is_shared($hash{'elem'})) {
+      print(&quot;\$hash{'elem'} is in a shared hash\n&quot;);
+  }</pre>
+
+
+<p style="margin-left:11%;">lock
+<small>VARIABLE</small></p>
+
+<p style="margin-left:17%;"><tt>&quot;lock&quot;</tt>
+places a <b>advisory</b> lock on a variable until the lock
+goes out of scope. If the variable is locked by another
+thread, the <tt>&quot;lock&quot;</tt> call will block until
+it&rsquo;s available. Multiple calls to
+<tt>&quot;lock&quot;</tt> by the same thread from within
+dynamically nested scopes are safe -- the variable will
+remain locked until the outermost lock on the variable goes
+out of scope.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;lock&quot;</tt>
+follows references exactly <i>one</i> level:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  my %hash :shared;
+  my $ref = \%hash;
+  lock($ref);           # This is equivalent to lock(%hash)</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Note that you
+cannot explicitly unlock a variable; you can only wait for
+the lock to go out of scope. This is most easily
+accomplished by locking the variable inside a block.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  my $var :shared;
+  {
+      lock($var);
+      # $var is locked from here to the end of the block
+      ...
+  }
+  # $var is now unlocked</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">As locks are
+advisory, they do not prevent data access or modification by
+another thread that does not itself attempt to obtain a lock
+on the variable.</p>
+
+<p style="margin-left:17%; margin-top: 1em">You cannot lock
+the individual elements of a container variable:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  my %hash :shared;
+  $hash{'foo'} = 'bar';
+  #lock($hash{'foo'});          # Error
+  lock(%hash);                  # Works</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">If you need
+more fine-grained control over shared variable access, see
+Thread::Semaphore.</p>
+
+<p style="margin-left:11%;">cond_wait
+<small>VARIABLE</small> <br>
+cond_wait <small>CONDVAR, LOCKVAR</small></p>
+
+<p style="margin-left:17%;">The
+<tt>&quot;cond_wait&quot;</tt> function takes a
+<b>locked</b> variable as a parameter, unlocks the variable,
+and blocks until another thread does a
+<tt>&quot;cond_signal&quot;</tt> or
+<tt>&quot;cond_broadcast&quot;</tt> for that same locked
+variable. The variable that <tt>&quot;cond_wait&quot;</tt>
+blocked on is re-locked after the
+<tt>&quot;cond_wait&quot;</tt> is satisfied. If there are
+multiple threads <tt>&quot;cond_wait&quot;</tt>ing on the
+same variable, all but one will re-block waiting to
+reacquire the lock on the variable. (So if you&rsquo;re only
+using <tt>&quot;cond_wait&quot;</tt> for synchronization,
+give up the lock as soon as possible). The two actions of
+unlocking the variable and entering the blocked wait state
+are atomic, the two actions of exiting from the blocked wait
+state and re-locking the variable are not.</p>
+
+<p style="margin-left:17%; margin-top: 1em">In its second
+form, <tt>&quot;cond_wait&quot;</tt> takes a shared,
+<b>unlocked</b> variable followed by a shared, <b>locked</b>
+variable. The second variable is unlocked and thread
+execution suspended until another thread signals the first
+variable.</p>
+
+<p style="margin-left:17%; margin-top: 1em">It is important
+to note that the variable can be notified even if no thread
+<tt>&quot;cond_signal&quot;</tt> or
+<tt>&quot;cond_broadcast&quot;</tt> on the variable. It is
+therefore important to check the value of the variable and
+go back to waiting if the requirement is not fulfilled. For
+example, to pause until a shared counter drops to zero:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  { lock($counter); cond_wait($counter) until $counter == 0; }</pre>
+
+
+<p style="margin-left:11%;">cond_timedwait <small>VARIABLE,
+ABS_TIMEOUT</small> <br>
+cond_timedwait <small>CONDVAR, ABS_TIMEOUT,
+LOCKVAR</small></p>
+
+<p style="margin-left:17%;">In its two-argument form,
+<tt>&quot;cond_timedwait&quot;</tt> takes a <b>locked</b>
+variable and an absolute timeout in <i>epoch</i> seconds
+(see <i>time()</i> in perlfunc for more) as parameters,
+unlocks the variable, and blocks until the timeout is
+reached or another thread signals the variable. A false
+value is returned if the timeout is reached, and a true
+value otherwise. In either case, the variable is re-locked
+upon return.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Like
+<tt>&quot;cond_wait&quot;</tt>, this function may take a
+shared, <b>locked</b> variable as an additional parameter;
+in this case the first parameter is an <b>unlocked</b>
+condition variable protected by a distinct lock
+variable.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Again like
+<tt>&quot;cond_wait&quot;</tt>, waking up and reacquiring
+the lock are not atomic, and you should always check your
+desired condition after this function returns. Since the
+timeout is an absolute value, however, it does not have to
+be recalculated with each pass:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  lock($var);
+  my $abs = time() + 15;
+  until ($ok = desired_condition($var)) {
+      last if !cond_timedwait($var, $abs);
+  }
+  # we got it if $ok, otherwise we timed out!</pre>
+
+
+<p style="margin-left:11%;">cond_signal
+<small>VARIABLE</small></p>
+
+<p style="margin-left:17%;">The
+<tt>&quot;cond_signal&quot;</tt> function takes a
+<b>locked</b> variable as a parameter and unblocks one
+thread that&rsquo;s <tt>&quot;cond_wait&quot;</tt>ing on
+that variable. If more than one thread is blocked in a
+<tt>&quot;cond_wait&quot;</tt> on that variable, only one
+(and which one is indeterminate) will be unblocked.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If there are no
+threads blocked in a <tt>&quot;cond_wait&quot;</tt> on the
+variable, the signal is discarded. By always locking before
+signaling, you can (with care), avoid signaling before
+another thread has entered <i>cond_wait()</i>.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;cond_signal&quot;</tt>
+will normally generate a warning if you attempt to use it on
+an unlocked variable. On the rare occasions where doing this
+may be sensible, you can suppress the warning with:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  { no warnings 'threads'; cond_signal($foo); }</pre>
+
+
+<p style="margin-left:11%;">cond_broadcast
+<small>VARIABLE</small></p>
+
+<p style="margin-left:17%;">The
+<tt>&quot;cond_broadcast&quot;</tt> function works similarly
+to <tt>&quot;cond_signal&quot;</tt>.
+<tt>&quot;cond_broadcast&quot;</tt>, though, will unblock
+<b>all</b> the threads that are blocked in a
+<tt>&quot;cond_wait&quot;</tt> on the locked variable,
+rather than only one.</p>
+
+<h2>OBJECTS
+<a name="OBJECTS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">threads::shared
+exports a version of <i>bless()</i> that works on shared
+objects such that <i>blessings</i> propagate across
+threads.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  # Create a shared 'Foo' object
+  my $foo :shared = shared_clone({});
+  bless($foo, 'Foo');
+  # Create a shared 'Bar' object
+  my $bar :shared = shared_clone({});
+  bless($bar, 'Bar');
+  # Put 'bar' inside 'foo'
+  $foo&minus;&gt;{'bar'} = $bar;
+  # Rebless the objects via a thread
+  threads&minus;&gt;create(sub {
+      # Rebless the outer object
+      bless($foo, 'Yin');
+      # Cannot directly rebless the inner object
+      #bless($foo&minus;&gt;{'bar'}, 'Yang');
+      # Retrieve and rebless the inner object
+      my $obj = $foo&minus;&gt;{'bar'};
+      bless($obj, 'Yang');
+      $foo&minus;&gt;{'bar'} = $obj;
+  })&minus;&gt;join();
+  print(ref($foo),          &quot;\n&quot;);    # Prints 'Yin'
+  print(ref($foo&minus;&gt;{'bar'}), &quot;\n&quot;);    # Prints 'Yang'
+  print(ref($bar),          &quot;\n&quot;);    # Also prints 'Yang'</pre>
+
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">threads::shared
+is designed to disable itself silently if threads are not
+available. This allows you to write modules and packages
+that can be used in both threaded and non-threaded
+applications.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you want
+access to threads, you must <tt>&quot;use threads&quot;</tt>
+before you <tt>&quot;use threads::shared&quot;</tt>. threads
+will emit a warning if you use it after threads::shared.</p>
+
+<h2>BUGS AND LIMITATIONS
+<a name="BUGS AND LIMITATIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">When
+<tt>&quot;share&quot;</tt> is used on arrays, hashes, array
+refs or hash refs, any data they contain will be lost.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  my @arr = qw(foo bar baz);
+  share(@arr);
+  # @arr is now empty (i.e., == ());
+  # Create a 'foo' object
+  my $foo = { 'data' =&gt; 99 };
+  bless($foo, 'foo');
+  # Share the object
+  share($foo);        # Contents are now wiped out
+  print(&quot;ERROR: \$foo is empty\n&quot;)
+      if (! exists($foo&minus;&gt;{'data'}));</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Therefore,
+populate such variables <b>after</b> declaring them as
+shared. (Scalar and scalar refs are not affected by this
+problem.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is often not
+wise to share an object unless the class itself has been
+written to support sharing. For example, an object&rsquo;s
+destructor may get called multiple times, once for each
+thread&rsquo;s scope exit. Another danger is that the
+contents of hash-based objects will be lost due to the above
+mentioned limitation. See <i>examples/class.pl</i> (in the
+<small>CPAN</small> distribution of this module) for how to
+create a class that supports object sharing.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Destructors may
+not be called on objects if those objects still exist at
+global destruction time. If the destructors must be called,
+make sure there are no circular references and that nothing
+is referencing the objects, before the program ends.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Does not
+support <tt>&quot;splice&quot;</tt> on arrays. Does not
+support explicitly changing array lengths via $#array -- use
+<tt>&quot;push&quot;</tt> and <tt>&quot;pop&quot;</tt>
+instead.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Taking
+references to the elements of shared arrays and hashes does
+not autovivify the elements, and neither does slicing a
+shared array/hash over non-existent indices/keys autovivify
+the elements.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;share()&quot;</tt>
+allows you to
+<tt>&quot;share($hashref&minus;&gt;{key})&quot;</tt> and
+<tt>&quot;share($arrayref&minus;&gt;[idx])&quot;</tt>
+without giving any error message. But the
+<tt>&quot;$hashref&minus;&gt;{key}&quot;</tt> or
+<tt>&quot;$arrayref&minus;&gt;[idx]&quot;</tt> is <b>not</b>
+shared, causing the error &quot;lock can only be used on
+shared values&quot; to occur when you attempt to
+<tt>&quot;lock($hashref&minus;&gt;{key})&quot;</tt> or
+<tt>&quot;lock($arrayref&minus;&gt;[idx])&quot;</tt> in
+another thread.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Using
+<i>refaddr()</i>) is unreliable for testing whether or not
+two shared references are equivalent (e.g., when testing for
+circular references). Use <i>is_shared()</i>, instead:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use threads;
+    use threads::shared;
+    use Scalar::Util qw(refaddr);
+    # If ref is shared, use threads::shared's internal ID.
+    # Otherwise, use refaddr().
+    my $addr1 = is_shared($ref1) || refaddr($ref1);
+    my $addr2 = is_shared($ref2) || refaddr($ref2);
+    if ($addr1 == $addr2) {
+        # The refs are equivalent
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>each()</i>
+does not work properly on shared references embedded in
+shared structures. For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my %foo :shared;
+    $foo{'bar'} = shared_clone({'a'=&gt;'x', 'b'=&gt;'y', 'c'=&gt;'z'});
+    while (my ($key, $val) = each(%{$foo{'bar'}})) {
+        ...
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Either of the
+following will work instead:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my $ref = $foo{'bar'};
+    while (my ($key, $val) = each(%{$ref})) {
+        ...
+    }
+    foreach my $key (keys(%{$foo{'bar'}})) {
+        my $val = $foo{'bar'}{$key};
+        ...
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This module
+supports dual-valued variables created using
+<i>dualvar()</i> from Scalar::Util). However, while
+<tt>$!</tt> acts like a dualvar, it is implemented as a tied
+<small>SV.</small> To propagate its value, use the follow
+construct, if needed:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my $errno :shared = dualvar($!,$!);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">View existing
+bug reports at, and submit any new bugs, problems, patches,
+etc. to:
+&lt;http://rt.cpan.org/Public/Dist/Display.html?Name=threads&minus;shared&gt;</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">threads::shared
+Discussion Forum on <small>CPAN:</small>
+&lt;http://www.cpanforum.com/dist/threads&minus;shared&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">threads,
+perlthrtut</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&lt;http://www.perl.com/pub/a/2002/06/11/threads.html&gt;
+and
+&lt;http://www.perl.com/pub/a/2002/09/04/threads.html&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl threads
+mailing list:
+&lt;http://lists.perl.org/list/ithreads.html&gt;</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Artur Bergman
+&lt;sky <small>AT</small> crucially <small>DOT</small>
+net&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">Documentation
+borrowed from the old Thread.pm.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>CPAN</small>
+version produced by Jerry D. Hedden &lt;jdhedden
+<small>AT</small> cpan <small>DOT</small> org&gt;.</p>
+
+<h2>LICENSE
+<a name="LICENSE"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">threads::shared
+is released under the same license as Perl.</p>
+<hr>
+</body>
+</html>

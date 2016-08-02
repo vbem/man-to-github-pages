@@ -1,0 +1,1140 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:40:07 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Storable</title>
+
+</head>
+<body>
+
+<h1 align="center">Storable</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#MEMORY STORE">MEMORY STORE</a><br>
+<a href="#ADVISORY LOCKING">ADVISORY LOCKING</a><br>
+<a href="#SPEED">SPEED</a><br>
+<a href="#CANONICAL REPRESENTATION">CANONICAL REPRESENTATION</a><br>
+<a href="#CODE REFERENCES">CODE REFERENCES</a><br>
+<a href="#FORWARD COMPATIBILITY">FORWARD COMPATIBILITY</a><br>
+<a href="#ERROR REPORTING">ERROR REPORTING</a><br>
+<a href="#WIZARDS ONLY">WIZARDS ONLY</a><br>
+<a href="#Storable magic">Storable magic</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
+<a href="#SECURITY WARNING">SECURITY WARNING</a><br>
+<a href="#WARNING">WARNING</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#CREDITS">CREDITS</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Storable
+&minus; persistence for Perl data structures</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> use Storable;
+ store \%table, 'file';
+ $hashref = retrieve('file');
+ use Storable qw(nstore store_fd nstore_fd freeze thaw dclone);
+ # Network order
+ nstore \%table, 'file';
+ $hashref = retrieve('file');   # There is NO nretrieve()
+ # Storing to and retrieving from an already opened file
+ store_fd \@array, \*STDOUT;
+ nstore_fd \%table, \*STDOUT;
+ $aryref = fd_retrieve(\*SOCKET);
+ $hashref = fd_retrieve(\*SOCKET);
+ # Serializing to memory
+ $serialized = freeze \%table;
+ %table_clone = %{ thaw($serialized) };
+ # Deep (recursive) cloning
+ $cloneref = dclone($ref);
+ # Advisory locking
+ use Storable qw(lock_store lock_nstore lock_retrieve)
+ lock_store \%table, 'file';
+ lock_nstore \%table, 'file';
+ $hashref = lock_retrieve('file');</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The Storable
+package brings persistence to your Perl data structures
+containing <small>SCALAR, ARRAY, HASH</small> or
+<small>REF</small> objects, i.e. anything that can be
+conveniently stored to disk and retrieved at a later
+time.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It can be used
+in the regular procedural way by calling
+<tt>&quot;store&quot;</tt> with a reference to the object to
+be stored, along with the file name where the image should
+be written.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The routine
+returns <tt>&quot;undef&quot;</tt> for I/O problems or other
+internal error, a true value otherwise. Serious errors are
+propagated as a <tt>&quot;die&quot;</tt> exception.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To retrieve
+data stored to disk, use <tt>&quot;retrieve&quot;</tt> with
+a file name. The objects stored into that file are recreated
+into memory for you, and a <i>reference</i> to the root
+object is returned. In case an I/O error occurs while
+reading, <tt>&quot;undef&quot;</tt> is returned instead.
+Other serious errors are propagated via
+<tt>&quot;die&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since storage
+is performed recursively, you might want to stuff references
+to objects that share a lot of common data into a single
+array or hash table, and then store that object. That way,
+when you retrieve back the whole thing, the objects will
+continue to share what they originally shared.</p>
+
+<p style="margin-left:11%; margin-top: 1em">At the cost of
+a slight header overhead, you may store to an already opened
+file descriptor using the <tt>&quot;store_fd&quot;</tt>
+routine, and retrieve from a file via
+<tt>&quot;fd_retrieve&quot;</tt>. Those names aren&rsquo;t
+imported by default, so you will have to do that explicitly
+if you need those routines. The file descriptor you supply
+must be already opened, for read if you&rsquo;re going to
+retrieve and for write if you wish to store.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        store_fd(\%table, *STDOUT) || die &quot;can't store to stdout\n&quot;;
+        $hashref = fd_retrieve(*STDIN);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can also
+store data in network order to allow easy sharing across
+multiple platforms, or when storing on a socket known to be
+remotely connected. The routines to call have an initial
+<tt>&quot;n&quot;</tt> prefix for <i>network</i>, as in
+<tt>&quot;nstore&quot;</tt> and
+<tt>&quot;nstore_fd&quot;</tt>. At retrieval time, your data
+will be correctly restored so you don&rsquo;t have to know
+whether you&rsquo;re restoring from native or network
+ordered data. Double values are stored stringified to ensure
+portability as well, at the slight risk of loosing some
+precision in the last decimals.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When using
+<tt>&quot;fd_retrieve&quot;</tt>, objects are retrieved in
+sequence, one object (i.e. one recursive tree) per
+associated <tt>&quot;store_fd&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you&rsquo;re
+more from the object-oriented camp, you can inherit from
+Storable and directly store your objects by invoking
+<tt>&quot;store&quot;</tt> as a method. The fact that the
+root of the to-be-stored tree is a blessed reference (i.e.
+an object) is special-cased so that the retrieve does not
+provide a reference to that object but rather the blessed
+object reference itself. (Otherwise, you&rsquo;d get a
+reference to that blessed object).</p>
+
+<h2>MEMORY STORE
+<a name="MEMORY STORE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The Storable
+engine can also store data into a Perl scalar instead, to
+later retrieve them. This is mainly used to freeze a complex
+structure in some safe compact memory place (where it can
+possibly be sent to another process via some
+<small>IPC,</small> since freezing the structure also
+serializes it in effect). Later on, and maybe somewhere
+else, you can thaw the Perl scalar out and recreate the
+original complex structure in memory.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Surprisingly,
+the routines to be called are named
+<tt>&quot;freeze&quot;</tt> and <tt>&quot;thaw&quot;</tt>.
+If you wish to send out the frozen scalar to another
+machine, use <tt>&quot;nfreeze&quot;</tt> instead to get a
+portable image.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+freezing an object structure and immediately thawing it
+actually achieves a deep cloning of that structure:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    dclone(.) = thaw(freeze(.))</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Storable
+provides you with a <tt>&quot;dclone&quot;</tt> interface
+which does not create that intermediary scalar but instead
+freezes the structure in some internal memory space and then
+immediately thaws it out.</p>
+
+<h2>ADVISORY LOCKING
+<a name="ADVISORY LOCKING"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;lock_store&quot;</tt> and
+<tt>&quot;lock_nstore&quot;</tt> routine are equivalent to
+<tt>&quot;store&quot;</tt> and <tt>&quot;nstore&quot;</tt>,
+except that they get an exclusive lock on the file before
+writing. Likewise, <tt>&quot;lock_retrieve&quot;</tt> does
+the same as <tt>&quot;retrieve&quot;</tt>, but also gets a
+shared lock on the file before reading.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As with any
+advisory locking scheme, the protection only works if you
+systematically use <tt>&quot;lock_store&quot;</tt> and
+<tt>&quot;lock_retrieve&quot;</tt>. If one side of your
+application uses <tt>&quot;store&quot;</tt> whilst the other
+uses <tt>&quot;lock_retrieve&quot;</tt>, you will get no
+protection at all.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The internal
+advisory locking is implemented using Perl&rsquo;s
+<i>flock()</i> routine. If your system does not support any
+form of <i>flock()</i>, or if you share your files across
+<small>NFS,</small> you might wish to use other forms of
+locking by using modules such as LockFile::Simple which lock
+a file using a filesystem entry, instead of locking the file
+descriptor.</p>
+
+<h2>SPEED
+<a name="SPEED"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The heart of
+Storable is written in C for decent speed. Extra low-level
+optimizations have been made when manipulating perl
+internals, to sacrifice encapsulation for the benefit of
+greater speed.</p>
+
+<h2>CANONICAL REPRESENTATION
+<a name="CANONICAL REPRESENTATION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Normally,
+Storable stores elements of hashes in the order they are
+stored internally by Perl, i.e. pseudo-randomly. If you set
+<tt>$Storable::canonical</tt> to some
+<tt>&quot;TRUE&quot;</tt> value, Storable will store hashes
+with the elements sorted by their key. This allows you to
+compare data structures by comparing their frozen
+representations (or even the compressed frozen
+representations), which can be useful for creating lookup
+tables for complicated queries.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Canonical order
+does not imply network order; those are two orthogonal
+settings.</p>
+
+<h2>CODE REFERENCES
+<a name="CODE REFERENCES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Since Storable
+version 2.05, <small>CODE</small> references may be
+serialized with the help of B::Deparse. To enable this
+feature, set <tt>$Storable::Deparse</tt> to a true value. To
+enable deserialization, <tt>$Storable::Eval</tt> should be
+set to a true value. Be aware that deserialization is done
+through <tt>&quot;eval&quot;</tt>, which is dangerous if the
+Storable file contains malicious data. You can set
+<tt>$Storable::Eval</tt> to a subroutine reference which
+would be used instead of <tt>&quot;eval&quot;</tt>. See
+below for an example using a Safe compartment for
+deserialization of <small>CODE</small> references.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<tt>$Storable::Deparse</tt> and/or <tt>$Storable::Eval</tt>
+are set to false values, then the value of
+<tt>$Storable::forgive_me</tt> (see below) is respected
+while serializing and deserializing.</p>
+
+<h2>FORWARD COMPATIBILITY
+<a name="FORWARD COMPATIBILITY"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This release of
+Storable can be used on a newer version of Perl to serialize
+data which is not supported by earlier Perls. By default,
+Storable will attempt to do the right thing, by
+<tt>&quot;croak()&quot;</tt>ing if it encounters data that
+it cannot deserialize. However, the defaults can be changed
+as follows: <br>
+utf8 data</p>
+
+<p style="margin-left:17%;">Perl 5.6 added support for
+Unicode characters with code points &gt; 255, and Perl 5.8
+has full support for Unicode characters in hash keys. Perl
+internally encodes strings with these characters using utf8,
+and Storable serializes them as utf8. By default, if an
+older version of Perl encounters a utf8 value it cannot
+represent, it will <tt>&quot;croak()&quot;</tt>. To change
+this behaviour so that Storable deserializes utf8 encoded
+values as the string of bytes (effectively dropping the
+<i>is_utf8</i> flag) set <tt>$Storable::drop_utf8</tt> to
+some <tt>&quot;TRUE&quot;</tt> value. This is a form of data
+loss, because with <tt>$drop_utf8</tt> true, it becomes
+impossible to tell whether the original data was the Unicode
+string, or a series of bytes that happen to be valid
+utf8.</p>
+
+<p style="margin-left:11%;">restricted hashes</p>
+
+<p style="margin-left:17%;">Perl 5.8 adds support for
+restricted hashes, which have keys restricted to a given
+set, and can have values locked to be read only. By default,
+when Storable encounters a restricted hash on a perl that
+doesn&rsquo;t support them, it will deserialize it as a
+normal hash, silently discarding any placeholder keys and
+leaving the keys and all values unlocked. To make Storable
+<tt>&quot;croak()&quot;</tt> instead, set
+<tt>$Storable::downgrade_restricted</tt> to a
+<tt>&quot;FALSE&quot;</tt> value. To restore the default set
+it back to some <tt>&quot;TRUE&quot;</tt> value.</p>
+
+<p style="margin-left:11%;">files from future versions of
+Storable</p>
+
+<p style="margin-left:17%;">Earlier versions of Storable
+would immediately croak if they encountered a file with a
+higher internal version number than the reading Storable
+knew about. Internal version numbers are increased each time
+new data types (such as restricted hashes) are added to the
+vocabulary of the file format. This meant that a newer
+Storable module had no way of writing a file readable by an
+older Storable, even if the writer didn&rsquo;t store newer
+data types.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This version of
+Storable will defer croaking until it encounters a data type
+in the file that it does not recognize. This means that it
+will continue to read files generated by newer Storable
+modules which are careful in what they write out, making it
+easier to upgrade Storable modules in a mixed
+environment.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The old
+behaviour of immediate croaking can be re-instated by
+setting <tt>$Storable::accept_future_minor</tt> to some
+<tt>&quot;FALSE&quot;</tt> value.</p>
+
+<p style="margin-left:11%; margin-top: 1em">All these
+variables have no effect on a newer Perl which supports the
+relevant feature.</p>
+
+<h2>ERROR REPORTING
+<a name="ERROR REPORTING"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Storable uses
+the &quot;exception&quot; paradigm, in that it does not try
+to workaround failures: if something bad happens, an
+exception is generated from the caller&rsquo;s perspective
+(see Carp and <tt>&quot;croak()&quot;</tt>). Use eval {} to
+trap those exceptions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When Storable
+croaks, it tries to report the error via the
+<tt>&quot;logcroak()&quot;</tt> routine from the
+<tt>&quot;Log::Agent&quot;</tt> package, if it is
+available.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Normal errors
+are reported by having <i>store()</i> or <i>retrieve()</i>
+return <tt>&quot;undef&quot;</tt>. Such errors are usually
+I/O errors (or truncated stream errors at retrieval).</p>
+
+<h2>WIZARDS ONLY
+<a name="WIZARDS ONLY"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Hooks</b>
+<br>
+Any class may define hooks that will be called during the
+serialization and deserialization process on objects that
+are instances of that class. Those hooks can redefine the
+way serialization is performed (and therefore, how the
+symmetrical deserialization should be conducted).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since we said
+earlier:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    dclone(.) = thaw(freeze(.))</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">everything we
+say about hooks should also hold for deep cloning. However,
+hooks get to know whether the operation is a mere
+serialization, or a cloning.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Therefore, when
+serializing hooks are involved,</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    dclone(.) &lt;&gt; thaw(freeze(.))</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Well, you could
+keep them in sync, but there&rsquo;s no guarantee it will
+always hold on classes somebody else wrote. Besides, there
+is little to gain in doing so: a serializing hook could keep
+only one attribute of an object, which is probably not what
+should happen during a deep cloning of that same object.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here is the
+hooking interface: <br>
+&quot;STORABLE_freeze&quot; <i>obj</i>, <i>cloning</i></p>
+
+<p style="margin-left:17%;">The serializing hook, called on
+the object during serialization. It can be inherited, or
+defined in the class itself, like any other method.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Arguments:
+<i>obj</i> is the object to serialize, <i>cloning</i> is a
+flag indicating whether we&rsquo;re in a <i>dclone()</i> or
+a regular serialization via <i>store()</i> or
+<i>freeze()</i>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Returned value:
+A <small>LIST</small> <tt>&quot;($serialized, $ref1, $ref2,
+...)&quot;</tt> where <tt>$serialized</tt> is the serialized
+form to be used, and the optional <tt>$ref1</tt>,
+<tt>$ref2</tt>, etc... are extra references that you wish to
+let the Storable engine serialize.</p>
+
+<p style="margin-left:17%; margin-top: 1em">At
+deserialization time, you will be given back the same
+<small>LIST,</small> but all the extra references will be
+pointing into the deserialized structure.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The <b>first
+time</b> the hook is hit in a serialization flow, you may
+have it return an empty list. That will signal the Storable
+engine to further discard that hook for this class and to
+therefore revert to the default serialization of the
+underlying Perl data. The hook will again be normally
+processed in the next serialization.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Unless you know
+better, serializing hook should always say:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    sub STORABLE_freeze {
+        my ($self, $cloning) = @_;
+        return if $cloning;         # Regular default serialization
+        ....
+    }</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">in order to
+keep reasonable <i>dclone()</i> semantics.</p>
+
+<p style="margin-left:11%;">&quot;STORABLE_thaw&quot;
+<i>obj</i>, <i>cloning</i>, <i>serialized</i>, ...</p>
+
+<p style="margin-left:17%;">The deserializing hook called
+on the object during deserialization. But wait: if
+we&rsquo;re deserializing, there&rsquo;s no object yet...
+right?</p>
+
+<p style="margin-left:17%; margin-top: 1em">Wrong: the
+Storable engine creates an empty one for you. If you know
+Eiffel, you can view <tt>&quot;STORABLE_thaw&quot;</tt> as
+an alternate creation routine.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This means the
+hook can be inherited like any other method, and that
+<i>obj</i> is your blessed reference for this particular
+instance.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The other
+arguments should look familiar if you know
+<tt>&quot;STORABLE_freeze&quot;</tt>: <i>cloning</i> is true
+when we&rsquo;re part of a deep clone operation,
+<i>serialized</i> is the serialized string you returned to
+the engine in <tt>&quot;STORABLE_freeze&quot;</tt>, and
+there may be an optional list of references, in the same
+order you gave them at serialization time, pointing to the
+deserialized objects (which have been processed courtesy of
+the Storable engine).</p>
+
+<p style="margin-left:17%; margin-top: 1em">When the
+Storable engine does not find any
+<tt>&quot;STORABLE_thaw&quot;</tt> hook routine, it tries to
+load the class by requiring the package dynamically (using
+the blessed package name), and then re-attempts the lookup.
+If at that time the hook cannot be located, the engine
+croaks. Note that this mechanism will fail if you define
+several classes in the same file, but perlmod warned
+you.</p>
+
+<p style="margin-left:17%; margin-top: 1em">It is up to you
+to use this information to populate <i>obj</i> the way you
+want.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Returned value:
+none.</p>
+
+<p style="margin-left:11%;">&quot;STORABLE_attach&quot;
+<i>class</i>, <i>cloning</i>, <i>serialized</i></p>
+
+<p style="margin-left:17%;">While
+<tt>&quot;STORABLE_freeze&quot;</tt> and
+<tt>&quot;STORABLE_thaw&quot;</tt> are useful for classes
+where each instance is independent, this mechanism has
+difficulty (or is incompatible) with objects that exist as
+common process-level or system-level resources, such as
+singleton objects, database pools, caches or memoized
+objects.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The alternative
+<tt>&quot;STORABLE_attach&quot;</tt> method provides a
+solution for these shared objects. Instead of
+<tt>&quot;STORABLE_freeze&quot;</tt> &minus;&minus;&gt;
+<tt>&quot;STORABLE_thaw&quot;</tt>, you implement
+<tt>&quot;STORABLE_freeze&quot;</tt> &minus;&minus;&gt;
+<tt>&quot;STORABLE_attach&quot;</tt> instead.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Arguments:
+<i>class</i> is the class we are attaching to,
+<i>cloning</i> is a flag indicating whether we&rsquo;re in a
+<i>dclone()</i> or a regular de-serialization via
+<i>thaw()</i>, and <i>serialized</i> is the stored string
+for the resource object.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Because these
+resource objects are considered to be owned by the entire
+process/system, and not the &quot;property&quot; of whatever
+is being serialized, no references underneath the object
+should be included in the serialized string. Thus, in any
+class that implements <tt>&quot;STORABLE_attach&quot;</tt>,
+the <tt>&quot;STORABLE_freeze&quot;</tt> method cannot
+return any references, and <tt>&quot;Storable&quot;</tt>
+will throw an error if <tt>&quot;STORABLE_freeze&quot;</tt>
+tries to return references.</p>
+
+<p style="margin-left:17%; margin-top: 1em">All information
+required to &quot;attach&quot; back to the shared resource
+object <b>must</b> be contained <b>only</b> in the
+<tt>&quot;STORABLE_freeze&quot;</tt> return string.
+Otherwise, <tt>&quot;STORABLE_freeze&quot;</tt> behaves as
+normal for <tt>&quot;STORABLE_attach&quot;</tt> classes.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Because
+<tt>&quot;STORABLE_attach&quot;</tt> is passed the class
+(rather than an object), it also returns the object
+directly, rather than modifying the passed object.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Returned value:
+object of type <tt>&quot;class&quot;</tt></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Predicates</b>
+<br>
+Predicates are not exportable. They must be called by
+explicitly prefixing them with the Storable package name.
+<br>
+&quot;Storable::last_op_in_netorder&quot;</p>
+
+<p style="margin-left:17%;">The
+<tt>&quot;Storable::last_op_in_netorder()&quot;</tt>
+predicate will tell you whether network order was used in
+the last store or retrieve operation. If you don&rsquo;t
+know how to use this, just forget about it.</p>
+
+
+<p style="margin-left:11%;">&quot;Storable::is_storing&quot;</p>
+
+<p style="margin-left:17%;">Returns true if within a store
+operation (via STORABLE_freeze hook).</p>
+
+
+<p style="margin-left:11%;">&quot;Storable::is_retrieving&quot;</p>
+
+<p style="margin-left:17%;">Returns true if within a
+retrieve operation (via STORABLE_thaw hook).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Recursion</b>
+<br>
+With hooks comes the ability to recurse back to the Storable
+engine. Indeed, hooks are regular Perl code, and Storable is
+convenient when it comes to serializing and deserializing
+things, so why not use it to handle the serialization
+string?</p>
+
+<p style="margin-left:11%; margin-top: 1em">There are a few
+things you need to know, however:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>You can create endless loops if the things you serialize
+via <i>freeze()</i> (for instance) point back to the object
+we&rsquo;re trying to serialize in the hook.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Shared references among objects will not stay shared: if
+we&rsquo;re serializing the list of object [A, C] where both
+object A and C refer to the <small>SAME</small> object B,
+and if there is a serializing hook in A that says freeze(B),
+then when deserializing, we&rsquo;ll get [A&rsquo;,
+C&rsquo;] where A&rsquo; refers to B&rsquo;, but C&rsquo;
+refers to D, a deep clone of B&rsquo;. The topology was not
+preserved.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">That&rsquo;s
+why <tt>&quot;STORABLE_freeze&quot;</tt> lets you provide a
+list of references to serialize. The engine guarantees that
+those will be serialized in the same context as the other
+objects, and therefore that shared objects will stay
+shared.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the above
+[A, C] example, the <tt>&quot;STORABLE_freeze&quot;</tt>
+hook could return:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        (&quot;something&quot;, $self&minus;&gt;{B})</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">and the B part
+would be serialized by the engine. In
+<tt>&quot;STORABLE_thaw&quot;</tt>, you would get back the
+reference to the B&rsquo; object, deserialized for you.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Therefore,
+recursion should normally be avoided, but is nonetheless
+supported.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Deep
+Cloning</b> <br>
+There is a Clone module available on <small>CPAN</small>
+which implements deep cloning natively, i.e. without
+freezing to memory and thawing the result. It is aimed to
+replace Storable&rsquo;s <i>dclone()</i> some day. However,
+it does not currently support Storable hooks to redefine the
+way deep cloning is performed.</p>
+
+<h2>Storable magic
+<a name="Storable magic"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Yes,
+there&rsquo;s a lot of that :&minus;) But more precisely, in
+<small>UNIX</small> systems there&rsquo;s a utility called
+<tt>&quot;file&quot;</tt>, which recognizes data files based
+on their contents (usually their first few bytes). For this
+to work, a certain file called <i>magic</i> needs to taught
+about the <i>signature</i> of the data. Where that
+configuration file lives depends on the <small>UNIX</small>
+flavour; often it&rsquo;s something like
+<i>/usr/share/misc/magic</i> or <i>/etc/magic</i>. Your
+system administrator needs to do the updating of the
+<i>magic</i> file. The necessary signature information is
+output to <small>STDOUT</small> by invoking
+<i>Storable::show_file_magic()</i>. Note that the
+<small>GNU</small> implementation of the
+<tt>&quot;file&quot;</tt> utility, version 3.38 or later, is
+expected to contain support for recognising Storable files
+out-of-the-box, in addition to other kinds of Perl
+files.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can also
+use the following functions to extract the file header
+information from Storable images: <br>
+$info = Storable::file_magic( $filename )</p>
+
+<p style="margin-left:17%;">If the given file is a Storable
+image return a hash describing it. If the file is readable,
+but not a Storable image return <tt>&quot;undef&quot;</tt>.
+If the file does not exist or is unreadable then croak.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The hash
+returned has the following elements: <br>
+&quot;version&quot;</p>
+
+<p style="margin-left:23%;">This returns the file format
+version. It is a string like &quot;2.7&quot;.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Note that this
+version number is not the same as the version number of the
+Storable module itself. For instance Storable v0.7 create
+files in format v2.0 and Storable v2.15 create files in
+format v2.7. The file format version number only increment
+when additional features that would confuse older versions
+of the module are added.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Files older
+than v2.0 will have the one of the version numbers
+&quot;&minus;1&quot;, &quot;0&quot; or &quot;1&quot;. No
+minor number was used at that time.</p>
+
+<p style="margin-left:17%;">&quot;version_nv&quot;</p>
+
+<p style="margin-left:23%;">This returns the file format
+version as number. It is a string like &quot;2.007&quot;.
+This value is suitable for numeric comparisons.</p>
+
+<p style="margin-left:23%; margin-top: 1em">The constant
+function <tt>&quot;Storable::BIN_VERSION_NV&quot;</tt>
+returns a comparable number that represents the highest file
+version number that this version of Storable fully supports
+(but see discussion of
+<tt>$Storable::accept_future_minor</tt> above). The constant
+<tt>&quot;Storable::BIN_WRITE_VERSION_NV&quot;</tt> function
+returns what file version is written and might be less than
+<tt>&quot;Storable::BIN_VERSION_NV&quot;</tt> in some
+configurations.</p>
+
+<p style="margin-left:17%;">&quot;major&quot;,
+&quot;minor&quot;</p>
+
+<p style="margin-left:23%;">This also returns the file
+format version. If the version is &quot;2.7&quot; then major
+would be 2 and minor would be 7. The minor element is
+missing for when major is less than 2.</p>
+
+<p style="margin-left:17%;">&quot;hdrsize&quot;</p>
+
+<p style="margin-left:23%;">The is the number of bytes that
+the Storable header occupies.</p>
+
+<p style="margin-left:17%;">&quot;netorder&quot;</p>
+
+<p style="margin-left:23%;">This is <small>TRUE</small> if
+the image store data in network order. This means that it
+was created with <i>nstore()</i> or similar.</p>
+
+<p style="margin-left:17%;">&quot;byteorder&quot;</p>
+
+<p style="margin-left:23%;">This is only present when
+<tt>&quot;netorder&quot;</tt> is <small>FALSE.</small> It is
+the <tt>$Config</tt>{byteorder} string of the perl that
+created this image. It is a string like &quot;1234&quot; (32
+bit little endian) or &quot;87654321&quot; (64 bit big
+endian). This must match the current perl for the image to
+be readable by Storable.</p>
+
+<p style="margin-left:17%;">&quot;intsize&quot;,
+&quot;longsize&quot;, &quot;ptrsize&quot;,
+&quot;nvsize&quot;</p>
+
+<p style="margin-left:23%;">These are only present when
+<tt>&quot;netorder&quot;</tt> is <small>FALSE.</small> These
+are the sizes of various C datatypes of the perl that
+created this image. These must match the current perl for
+the image to be readable by Storable.</p>
+
+<p style="margin-left:23%; margin-top: 1em">The
+<tt>&quot;nvsize&quot;</tt> element is only present for file
+format v2.2 and higher.</p>
+
+<p style="margin-left:17%;">&quot;file&quot;</p>
+
+<p style="margin-left:23%;">The name of the file.</p>
+
+<p style="margin-left:11%;">$info = Storable::read_magic(
+$buffer ) <br>
+$info = Storable::read_magic( $buffer, $must_be_file )</p>
+
+<p style="margin-left:17%;">The <tt>$buffer</tt> should be
+a Storable image or the first few bytes of it. If
+<tt>$buffer</tt> starts with a Storable header, then a hash
+describing the image is returned, otherwise
+<tt>&quot;undef&quot;</tt> is returned.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The hash has
+the same structure as the one returned by
+<i>Storable::file_magic()</i>. The <tt>&quot;file&quot;</tt>
+element is true if the image is a file image.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If the
+<tt>$must_be_file</tt> argument is provided and is
+<small>TRUE,</small> then return <tt>&quot;undef&quot;</tt>
+unless the image looks like it belongs to a file dump.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The maximum
+size of a Storable header is currently 21 bytes. If the
+provided <tt>$buffer</tt> is only the first part of a
+Storable image it should at least be this long to ensure
+that <i>read_magic()</i> will recognize it as such.</p>
+
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Here are some
+code samples showing a possible usage of Storable:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use Storable qw(store retrieve freeze thaw dclone);
+        %color = ('Blue' =&gt; 0.1, 'Red' =&gt; 0.8, 'Black' =&gt; 0, 'White' =&gt; 1);
+        store(\%color, 'mycolors') or die &quot;Can't store %a in mycolors!\n&quot;;
+        $colref = retrieve('mycolors');
+        die &quot;Unable to retrieve from mycolors!\n&quot; unless defined $colref;
+        printf &quot;Blue is still %lf\n&quot;, $colref&minus;&gt;{'Blue'};
+        $colref2 = dclone(\%color);
+        $str = freeze(\%color);
+        printf &quot;Serialization of %%color is %d bytes long.\n&quot;, length($str);
+        $colref3 = thaw($str);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">which prints
+(on my machine):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        Blue is still 0.100000
+        Serialization of %color is 102 bytes long.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Serialization
+of <small>CODE</small> references and deserialization in a
+safe compartment:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use Storable qw(freeze thaw);
+        use Safe;
+        use strict;
+        my $safe = new Safe;
+        # because of opcodes used in &quot;use strict&quot;:
+        $safe&minus;&gt;permit(qw(:default require));
+        local $Storable::Deparse = 1;
+        local $Storable::Eval = sub { $safe&minus;&gt;reval($_[0]) };
+        my $serialized = freeze(sub { 42 });
+        my $code = thaw($serialized);
+        $code&minus;&gt;() == 42;</pre>
+
+
+<h2>SECURITY WARNING
+<a name="SECURITY WARNING"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Do not
+accept Storable documents from untrusted sources!</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">Some features
+of Storable can lead to security vulnerabilities if you
+accept Storable documents from untrusted sources. Most
+obviously, the optional (off by default) <small>CODE</small>
+reference serialization feature allows transfer of code to
+the deserializing process. Furthermore, any serialized
+object will cause Storable to helpfully load the module
+corresponding to the class of the object in the
+deserializing module. For manipulated module names, this can
+load almost arbitrary code. Finally, the deserialized
+object&rsquo;s destructors will be invoked when the objects
+get destroyed in the deserializing process. Maliciously
+crafted Storable documents may put such objects in the value
+of a hash key that is overridden by another key/value pair
+in the same hash, thus causing immediate destructor
+execution.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In a future
+version of Storable, we intend to provide options to disable
+loading modules for classes and to disable deserializing
+objects altogether. <i>Nonetheless, Storable deserializing
+documents from untrusted sources is expected to have other,
+yet undiscovered, security concerns such as allowing an
+attacker to cause the deserializer to crash hard.</i></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Therefore,
+let me repeat: Do not accept Storable documents from
+untrusted sources!</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">If your
+application requires accepting data from untrusted sources,
+you are best off with a less powerful and more-likely safe
+serialization format and implementation. If your data is
+sufficiently simple, <small>JSON</small> is a good choice
+and offers maximum interoperability.</p>
+
+<h2>WARNING
+<a name="WARNING"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you&rsquo;re
+using references as keys within your hash tables,
+you&rsquo;re bound to be disappointed when retrieving your
+data. Indeed, Perl stringifies references used as hash table
+keys. If you later wish to access the items via another
+reference stringification (i.e. using the same reference
+that was used for the key originally to record the value
+into the hash table), it will work because both references
+stringify to the same string.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It won&rsquo;t
+work across a sequence of <tt>&quot;store&quot;</tt> and
+<tt>&quot;retrieve&quot;</tt> operations, however, because
+the addresses in the retrieved objects, which are part of
+the stringified references, will probably differ from the
+original addresses. The topology of your structure is
+preserved, but not hidden semantics like those.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On platforms
+where it matters, be sure to call
+<tt>&quot;binmode()&quot;</tt> on the descriptors that you
+pass to Storable functions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Storing data
+canonically that contains large hashes can be significantly
+slower than storing the same data normally, as temporary
+arrays to hold the keys for each hash have to be allocated,
+populated, sorted and freed. Some tests have shown a halving
+of the speed of storing -- the exact penalty will depend on
+the complexity of your data. There is no slowdown on
+retrieval.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can&rsquo;t
+store <small>GLOB, FORMLINE, REGEXP,</small> etc.... If you
+can define semantics for those operations, feel free to
+enhance Storable so that it can deal with them.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The store
+functions will <tt>&quot;croak&quot;</tt> if they run into
+such references unless you set
+<tt>$Storable::forgive_me</tt> to some
+<tt>&quot;TRUE&quot;</tt> value. In that case, the fatal
+message is turned in a warning and some meaningless string
+is stored instead.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Setting
+<tt>$Storable::canonical</tt> may not yield frozen strings
+that compare equal due to possible stringification of
+numbers. When the string version of a scalar exists, it is
+the form stored; therefore, if you happen to use your
+numbers as strings between two freezing operations on the
+same data structures, you will get different results.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When storing
+doubles in network order, their value is stored as text.
+However, you should also not expect non-numeric
+floating-point values such as infinity and &quot;not a
+number&quot; to pass successfully through a
+<i>nstore()</i>/<i>retrieve()</i> pair.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As Storable
+neither knows nor cares about character sets (although it
+does know that characters may be more than eight bits wide),
+any difference in the interpretation of character codes
+between a host and a target system is your problem. In
+particular, if host and target use different code points to
+represent the characters used in the text representation of
+floating-point numbers, you will not be able be able to
+exchange floating-point data, even with <i>nstore()</i>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;Storable::drop_utf8&quot;</tt>
+is a blunt tool. There is no facility either to return
+<b>all</b> strings as utf8 sequences, or to attempt to
+convert utf8 data back to 8 bit and
+<tt>&quot;croak()&quot;</tt> if the conversion fails.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Prior to
+Storable 2.01, no distinction was made between signed and
+unsigned integers on storing. By default Storable prefers to
+store a scalars string representation (if it has one) so
+this would only cause problems when storing large unsigned
+integers that had never been converted to string or floating
+point. In other words values that had been generated by
+integer operations such as logic ops and then not used in
+any string or arithmetic context before storing.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>64 bit data
+in perl 5.6.0 and 5.6.1</b> <br>
+This section only applies to you if you have existing data
+written out by Storable 2.02 or earlier on perl 5.6.0 or
+5.6.1 on Unix or Linux which has been configured with 64 bit
+integer support (not the default) If you got a precompiled
+perl, rather than running Configure to build your own perl
+from source, then it almost certainly does not affect you,
+and you can stop reading now (unless you&rsquo;re curious).
+If you&rsquo;re using perl on Windows it does not affect
+you.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Storable writes
+a file header which contains the sizes of various C language
+types for the C compiler that built Storable (when not
+writing in network order), and will refuse to load files
+written by a Storable not on the same (or compatible)
+architecture. This check and a check on machine byteorder is
+needed because the size of various fields in the file are
+given by the sizes of the C language types, and so files
+written on different architectures are incompatible. This is
+done for increased speed. (When writing in network order,
+all fields are written out as standard lengths, which allows
+full interworking, but takes longer to read and write)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl 5.6.x
+introduced the ability to optional configure the perl
+interpreter to use C&rsquo;s <tt>&quot;long long&quot;</tt>
+type to allow scalars to store 64 bit integers on 32 bit
+systems. However, due to the way the Perl configuration
+system generated the C configuration files on non-Windows
+platforms, and the way Storable generates its header,
+nothing in the Storable file header reflected whether the
+perl writing was using 32 or 64 bit integers, despite the
+fact that Storable was storing some data differently in the
+file. Hence Storable running on perl with 64 bit integers
+will read the header from a file written by a 32 bit perl,
+not realise that the data is actually in a subtly
+incompatible format, and then go horribly wrong (possibly
+crashing) if it encountered a stored integer. This is a
+design failure.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Storable has
+now been changed to write out and read in a file header with
+information about the size of integers. It&rsquo;s
+impossible to detect whether an old file being read in was
+written with 32 or 64 bit integers (they have the same
+header) so it&rsquo;s impossible to automatically switch to
+a correct backwards compatibility mode. Hence this Storable
+defaults to the new, correct behaviour.</p>
+
+<p style="margin-left:11%; margin-top: 1em">What this means
+is that if you have data written by Storable 1.x running on
+perl 5.6.0 or 5.6.1 configured with 64 bit integers on Unix
+or Linux then by default this Storable will refuse to read
+it, giving the error <i>Byte order is not compatible</i>. If
+you have such data then you should set
+<tt>$Storable::interwork_56_64bit</tt> to a true value to
+make this Storable read and write files with the old header.
+You should also migrate your data, or any older perl you are
+communicating with, to this current version of Storable.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you
+don&rsquo;t have data written with specific configuration of
+perl described above, then you do not and should not do
+anything. Don&rsquo;t set the flag &minus; not only will
+Storable on an identically configured perl refuse to load
+them, but Storable a differently configured perl will load
+them believing them to be correct for it, and then may well
+fail or crash part way through reading them.</p>
+
+<h2>CREDITS
+<a name="CREDITS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Thank you to
+(in chronological order):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        Jarkko Hietaniemi &lt;jhi@iki.fi&gt;
+        Ulrich Pfeifer &lt;pfeifer@charly.informatik.uni&minus;dortmund.de&gt;
+        Benjamin A. Holzman &lt;bholzman@earthlink.net&gt;
+        Andrew Ford &lt;A.Ford@ford&minus;mason.co.uk&gt;
+        Gisle Aas &lt;gisle@aas.no&gt;
+        Jeff Gresham &lt;gresham_jeffrey@jpmorgan.com&gt;
+        Murray Nesbitt &lt;murray@activestate.com&gt;
+        Marc Lehmann &lt;pcg@opengroup.org&gt;
+        Justin Banks &lt;justinb@wamnet.com&gt;
+        Jarkko Hietaniemi &lt;jhi@iki.fi&gt; (AGAIN, as perl 5.7.0 Pumpkin!)
+        Salvador Ortiz Garcia &lt;sog@msg.com.mx&gt;
+        Dominic Dunlop &lt;domo@computer.org&gt;
+        Erik Haugan &lt;erik@solbors.no&gt;
+        Benjamin A. Holzman &lt;ben.holzman@grantstreet.com&gt;
+        Reini Urban &lt;rurban@cpanel.net&gt;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">for their bug
+reports, suggestions and contributions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Benjamin
+Holzman contributed the tied variable support, Andrew Ford
+contributed the canonical order for hashes, and Gisle Aas
+fixed a few misunderstandings of mine regarding the perl
+internals, and optimized the emission of &quot;tags&quot; in
+the output streams by simply counting the objects instead of
+tagging them (leading to a binary incompatibility for the
+Storable image starting at version 0.6&minus;&minus;older
+images are, of course, still properly understood). Murray
+Nesbitt made Storable thread-safe. Marc Lehmann added
+overloading and references to tied items support. Benjamin
+Holzman added a performance improvement for overloaded
+classes; thanks to Grant Street Group for footing the
+bill.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Storable was
+written by Raphael Manfredi
+<i>&lt;Raphael_Manfredi@pobox.com&gt;</i> Maintenance is now
+done by the perl5&minus;porters
+<i>&lt;perl5&minus;porters@perl.org&gt;</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Please
+e&minus;mail us with problems, bug fixes, comments and
+complaints, although if you have compliments you should send
+them to Raphael. Please don&rsquo;t e&minus;mail Raphael
+with problems, as he no longer works on Storable, and your
+message will be delayed while he forwards it to us.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+ 
+<p style="margin-left:11%; margin-top: 1em">Clone.</p>
+<hr>
+</body>
+</html>

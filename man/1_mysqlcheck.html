@@ -1,0 +1,572 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:36:10 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>MYSQLCHECK</title>
+
+</head>
+<body>
+
+<h1 align="center">MYSQLCHECK</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mysqlcheck
+&minus; a table maintenance program</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="69%">
+
+
+<p style="margin-top: 1em"><b>mysqlcheck
+[</b><i>options</i><b>] [</b><i>db_name</i>
+<b>[</b><i>tbl_name</i> <b>...]]</b></p></td>
+<td width="20%">
+</td></tr>
+</table>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>mysqlcheck</b> client performs table maintenance: It
+checks, repairs, optimizes, or analyzes tables.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Each table is
+locked and therefore unavailable to other sessions while it
+is being processed, although for check operations, the table
+is locked with a READ lock only (see Section&nbsp;12.3.5,
+&ldquo;LOCK TABLES and UNLOCK TABLES Syntax&rdquo;, for more
+information about READ and WRITE locks). Table maintenance
+operations can be time&minus;consuming, particularly for
+large tables. If you use the <b>&minus;&minus;databases</b>
+or <b>&minus;&minus;all&minus;databases</b> option to
+process all tables in one or more databases, an invocation
+of <b>mysqlcheck</b> might take a long time. (This is also
+true for <b>mysql_upgrade</b> because that program invokes
+<b>mysqlcheck</b> to check all tables and repair them if
+necessary.)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mysqlcheck</b>
+is similar in function to <b>myisamchk</b>, but works
+differently. The main operational difference is that
+<b>mysqlcheck</b> must be used when the <b>mysqld</b> server
+is running, whereas <b>myisamchk</b> should be used when it
+is not. The benefit of using <b>mysqlcheck</b> is that you
+do not have to stop the server to perform table
+maintenance.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mysqlcheck</b>
+uses the SQL statements CHECK TABLE, REPAIR TABLE, ANALYZE
+TABLE, and OPTIMIZE TABLE in a convenient way for the user.
+It determines which statements to use for the operation you
+want to perform, and then sends the statements to the server
+to be executed. For details about which storage engines each
+statement works with, see the descriptions for those
+statements in Section&nbsp;12.4.2, &ldquo;Table Maintenance
+Statements&rdquo;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The MyISAM
+storage engine supports all four maintenance operations, so
+<b>mysqlcheck</b> can be used to perform any of them on
+MyISAM tables. Other storage engines do not necessarily
+support all operations. In such cases, an error message is
+displayed. For example, if test.t is a MEMORY table, an
+attempt to check it produces this result:</p>
+
+<p style="margin-left:17%; margin-top: 1em">shell&gt;
+<b>mysqlcheck test t</b> <br>
+test.t <br>
+note : The storage engine for the table doesn&acute;t
+support check</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b>mysqlcheck</b> is unable to repair a table, see
+Section&nbsp;2.4.4, &ldquo;Rebuilding or Repairing Tables or
+Indexes&rdquo; for manual table repair strategies. This will
+be the case, for example, for InnoDB tables, which can be
+checked with CHECK TABLE, but not repaired with REPAIR
+TABLE.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The use of
+<b>mysqlcheck</b> with partitioned tables is not supported
+before MySQL 5.1.27.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><b><big>Caution</big></b>
+<br>
+It is best to make a backup of a table before performing a
+table repair operation; under some circumstances the
+operation might cause data loss. Possible causes include but
+are not limited to file system errors.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There are three
+general ways to invoke <b>mysqlcheck</b>:</p>
+
+<p style="margin-left:17%; margin-top: 1em">shell&gt;
+<b>mysqlcheck [</b><i>options</i><b>]</b> <i>db_name</i>
+<b>[</b><i>tbl_name</i> <b>...]</b> <br>
+shell&gt; <b>mysqlcheck [</b><i>options</i><b>]
+&minus;&minus;databases</b> <i>db_name</i> <b>...</b> <br>
+shell&gt; <b>mysqlcheck [</b><i>options</i><b>]
+&minus;&minus;all&minus;databases</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">If you do not
+name any tables following <i>db_name</i> or if you use the
+<b>&minus;&minus;databases</b> or
+<b>&minus;&minus;all&minus;databases</b> option, entire
+databases are checked.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mysqlcheck</b>
+has a special feature compared to other client programs. The
+default behavior of checking tables
+(<b>&minus;&minus;check</b>) can be changed by renaming the
+binary. If you want to have a tool that repairs tables by
+default, you should just make a copy of <b>mysqlcheck</b>
+named <b>mysqlrepair</b>, or make a symbolic link to
+<b>mysqlcheck</b> named <b>mysqlrepair</b>. If you invoke
+<b>mysqlrepair</b>, it repairs tables.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+names can be used to change <b>mysqlcheck</b> default
+behavior.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mysqlcheck</b>
+supports the following options, which can be specified on
+the command line or in the [mysqlcheck] and [client] option
+file groups. <b>mysqlcheck</b> also supports the options for
+processing option files described at Section&nbsp;4.2.3.3.1,
+&ldquo;Command-Line Options that Affect Option-File
+Handling&rdquo;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;help</b>, <b>&minus;?</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Display a help
+message and exit.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;all&minus;databases</b>,
+<b>&minus;A</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Check all
+tables in all databases. This is the same as using the
+<b>&minus;&minus;databases</b> option and naming all the
+databases on the command line.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;all&minus;in&minus;1</b>,
+<b>&minus;1</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Instead of
+issuing a statement for each table, execute a single
+statement for each database that names all the tables from
+that database to be processed.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;analyze</b>, <b>&minus;a</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Analyze the
+tables.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;auto&minus;repair</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">If a checked
+table is corrupted, automatically fix it. Any necessary
+repairs are done after all tables have been checked.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;character&minus;sets&minus;dir=</b><i>path</i></p>
+
+<p style="margin-left:17%; margin-top: 1em">The directory
+where character sets are installed. See Section&nbsp;9.5,
+&ldquo;Character Set Configuration&rdquo;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;check</b>, <b>&minus;c</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Check the
+tables for errors. This is the default operation.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;check&minus;only&minus;changed</b>,
+<b>&minus;C</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Check only
+tables that have changed since the last check or that have
+not been closed properly.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;check&minus;upgrade</b>,
+<b>&minus;g</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Invoke CHECK
+TABLE with the FOR UPGRADE option to check tables for
+incompatibilities with the current version of the server.
+This option automatically enables the
+<b>&minus;&minus;fix&minus;db&minus;names</b> and
+<b>&minus;&minus;fix&minus;table&minus;names</b> options.
+<b>&minus;&minus;check&minus;upgrade</b> was added in MySQL
+5.1.7.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;compress</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Compress all
+information sent between the client and the server if both
+support compression.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;databases</b>, <b>&minus;B</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Process all
+tables in the named databases. Normally, <b>mysqlcheck</b>
+treats the first name argument on the command line as a
+database name and following names as table names. With this
+option, it treats all name arguments as database names.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;debug[=</b><i>debug_options</i><b>]</b>,
+<b>&minus;# [</b><i>debug_options</i><b>]</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Write a
+debugging log. A typical <i>debug_options</i> string is
+&acute;d:t:o,<i>file_name</i>&acute;. The default is
+&acute;d:t:o&acute;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;debug&minus;check</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Print some
+debugging information when the program exits. This option
+was added in MySQL 5.1.21.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;debug&minus;info</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Print debugging
+information and memory and CPU usage statistics when the
+program exits. This option was added in MySQL 5.1.14.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;default&minus;character&minus;set=</b><i>charset_name</i></p>
+
+<p style="margin-left:17%; margin-top: 1em">Use
+<i>charset_name</i> as the default character set. See
+Section&nbsp;9.5, &ldquo;Character Set
+Configuration&rdquo;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;defaults&minus;extra&minus;file=</b><i>filename</i></p>
+
+<p style="margin-left:17%; margin-top: 1em">Set
+<i>filename</i> as the file to read default options from
+after the global defaults files has been read. Must be given
+as first option.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;defaults&minus;file=</b><i>filename</i></p>
+
+<p style="margin-left:17%; margin-top: 1em">Set
+<i>filename</i> as the file to read default options from,
+override global defaults files. Must be given as first
+option.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;extended</b>, <b>&minus;e</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">If you are
+using this option to check tables, it ensures that they are
+100% consistent but takes a long time.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If you are
+using this option to repair tables, it runs an extended
+repair that may not only take a long time to execute, but
+may produce a lot of garbage rows also!</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;fast</b>, <b>&minus;F</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Check only
+tables that have not been closed properly.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;fix&minus;db&minus;names</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Convert
+database names to 5.1 format. Only database names that
+contain special characters are affected. This option was
+added in MySQL 5.1.7.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;fix&minus;table&minus;names</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Convert table
+names to 5.1 format. Only table names that contain special
+characters are affected. This option was added in MySQL
+5.1.7. As of MySQL 5.1.23, this option also applies to
+views.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;force</b>, <b>&minus;f</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Continue even
+if an SQL error occurs.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;host=</b><i>host_name</i>, <b>&minus;h</b>
+<i>host_name</i></p>
+
+<p style="margin-left:17%; margin-top: 1em">Connect to the
+MySQL server on the given host.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;medium&minus;check</b>, <b>&minus;m</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Do a check that
+is faster than an <b>&minus;&minus;extended</b> operation.
+This finds only 99.99% of all errors, which should be good
+enough in most cases.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;no&minus;defaults</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Do not read
+default options from any option file. This must be given as
+the first argument.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;optimize</b>, <b>&minus;o</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Optimize the
+tables.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;password[=</b><i>password</i><b>]</b>,
+<b>&minus;p[</b><i>password</i><b>]</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">The password to
+use when connecting to the server. If you use the short
+option form (<b>&minus;p</b>), you <i>cannot</i> have a
+space between the option and the password. If you omit the
+<i>password</i> value following the
+<b>&minus;&minus;password</b> or <b>&minus;p</b> option on
+the command line, <b>mysqlcheck</b> prompts for one.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Specifying a
+password on the command line should be considered insecure.
+See Section&nbsp;5.3.2.2, &ldquo;End-User Guidelines for
+Password Security&rdquo;. You can use an option file to
+avoid giving the password on the command line.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;pipe</b>, <b>&minus;W</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">On Windows,
+connect to the server via a named pipe. This option applies
+only if the server supports named&minus;pipe
+connections.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;port=</b><i>port_num</i>, <b>&minus;P</b>
+<i>port_num</i></p>
+
+<p style="margin-left:17%; margin-top: 1em">The TCP/IP port
+number to use for the connection.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;protocol={TCP|SOCKET|PIPE|MEMORY}</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">The connection
+protocol to use for connecting to the server. It is useful
+when the other connection parameters normally would cause a
+protocol to be used other than the one you want. For details
+on the allowable values, see Section&nbsp;4.2.2,
+&ldquo;Connecting to the MySQL Server&rdquo;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;print&minus;defaults</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Print the
+program argument list and exit. This must be given as the
+first argument.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;quick</b>, <b>&minus;q</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">If you are
+using this option to check tables, it prevents the check
+from scanning the rows to check for incorrect links. This is
+the fastest check method.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If you are
+using this option to repair tables, it tries to repair only
+the index tree. This is the fastest repair method.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;repair</b>, <b>&minus;r</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Perform a
+repair that can fix almost anything except unique keys that
+are not unique.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;silent</b>, <b>&minus;s</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Silent mode.
+Print only error messages.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;socket=</b><i>path</i>, <b>&minus;S</b>
+<i>path</i></p>
+
+<p style="margin-left:17%; margin-top: 1em">For connections
+to localhost, the Unix socket file to use, or, on Windows,
+the name of the named pipe to use.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;ssl*</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Options that
+begin with <b>&minus;&minus;ssl</b> specify whether to
+connect to the server via SSL and indicate where to find SSL
+keys and certificates. See Section&nbsp;5.5.6.3, &ldquo;SSL
+Command Options&rdquo;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;tables</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Override the
+<b>&minus;&minus;databases</b> or <b>&minus;B</b> option.
+All name arguments following the option are regarded as
+table names.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;use&minus;frm</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">For repair
+operations on MyISAM tables, get the table structure from
+the .frm file so that the table can be repaired even if the
+.MYI header is corrupted.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;user=</b><i>user_name</i>, <b>&minus;u</b>
+<i>user_name</i></p>
+
+<p style="margin-left:17%; margin-top: 1em">The MySQL user
+name to use when connecting to the server.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;verbose</b>, <b>&minus;v</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Verbose mode.
+Print information about the various stages of program
+operation.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;version</b>, <b>&minus;V</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">Display version
+information and exit.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>&minus;&minus;write&minus;binlog</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">This option is
+enabled by default, so that ANALYZE TABLE, OPTIMIZE TABLE,
+and REPAIR TABLE statements generated by <b>mysqlcheck</b>
+are written to the binary log. Use
+<b>&minus;&minus;skip&minus;write&minus;binlog</b> to cause
+NO_WRITE_TO_BINLOG to be added to the statements so that
+they are not logged. Use the
+<b>&minus;&minus;skip&minus;write&minus;binlog</b> when
+these statements should not be sent to replication slaves or
+run when using the binary logs for recovery from backup.
+This option was added in MySQL 5.1.18.</p>
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright
+2007-2008 MySQL AB, 2008-2010 Sun Microsystems, Inc.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This
+documentation is free software; you can redistribute it
+and/or modify it only under the terms of the GNU General
+Public License as published by the Free Software Foundation;
+version 2 of the License.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This
+documentation is distributed in the hope that it will be
+useful, but WITHOUT ANY WARRANTY; without even the implied
+warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE. See the GNU General Public License for more
+details.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You should have
+received a copy of the GNU General Public License along with
+the program; if not, write to the Free Software Foundation,
+Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301
+USA or see http://www.gnu.org/licenses/.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">For more
+information, please refer to the MySQL Reference Manual,
+which may already be installed locally and which is also
+available online at http://dev.mysql.com/doc/.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Sun
+Microsystems, Inc. (http://www.mysql.com/).</p>
+<hr>
+</body>
+</html>

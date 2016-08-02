@@ -1,0 +1,427 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:32:12 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>DBI::DBD::SqlEngine::HowTo</title>
+
+</head>
+<body>
+
+<h1 align="center">DBI::DBD::SqlEngine::HowTo</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#CREATING DRIVER CLASSES">CREATING DRIVER CLASSES</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#COPYRIGHT AND LICENSE">COPYRIGHT AND LICENSE</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">DBI::DBD::SqlEngine::HowTo
+&minus; Guide to create DBI::DBD::SqlEngine based driver</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  perldoc DBI::DBD::SqlEngine::HowTo
+  perldoc DBI
+  perldoc DBI::DBD
+  perldoc DBI::DBD::SqlEngine::Developers
+  perldoc SQL::Eval
+  perldoc DBI::DBD::SqlEngine
+  perldoc DBI::DBD::SqlEngine::HowTo
+  perldoc SQL::Statement::Embed</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+provides a step-by-step guide, how to create a new
+<tt>&quot;DBI::DBD::SqlEngine&quot;</tt> based
+<small>DBD.</small> It expects that you carefully read the
+<small>DBI</small> documentation and that you&rsquo;re
+familiar with <small>DBI::DBD</small> and had read and
+understood DBD::ExampleP.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This document
+addresses experienced developers who are really sure that
+they need to invest time when writing a new
+<small>DBI</small> Driver. Writing a <small>DBI</small>
+Driver is neither a weekend project nor an easy job for
+hobby coders after work. Expect one or two man-month of time
+for the first start.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Those who are
+still reading, should be able to sing the rules of &quot;
+<small>CREATING A NEW DRIVER&quot;</small> in
+<small>DBI::DBD</small> .</p>
+
+<h2>CREATING DRIVER CLASSES
+<a name="CREATING DRIVER CLASSES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Do you have an
+entry in <small>DBI</small> &rsquo;s <small>DBD</small>
+registry? For this guide, a prefix of
+<tt>&quot;foo_&quot;</tt> is assumed.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Sample
+Skeleton</b></p>
+
+<pre style="margin-left:11%;">    package DBD::Foo;
+    use strict;
+    use warnings;
+    use vars qw($VERSION);
+    use base qw(DBI::DBD::SqlEngine);
+    use DBI ();
+    $VERSION = &quot;0.001&quot;;
+    package DBD::Foo::dr;
+    use vars qw(@ISA $imp_data_size);
+    @ISA = qw(DBI::DBD::SqlEngine::dr);
+    $imp_data_size = 0;
+    package DBD::Foo::db;
+    use vars qw(@ISA $imp_data_size);
+    @ISA = qw(DBI::DBD::SqlEngine::db);
+    $imp_data_size = 0;
+    package DBD::Foo::st;
+    use vars qw(@ISA $imp_data_size);
+    @ISA = qw(DBI::DBD::SqlEngine::st);
+    $imp_data_size = 0;
+    package DBD::Foo::Statement;
+    use vars qw(@ISA);
+    @ISA = qw(DBI::DBD::SqlEngine::Statement);
+    package DBD::Foo::Table;
+    use vars qw(@ISA);
+    @ISA = qw(DBI::DBD::SqlEngine::Table);
+    1;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Tiny, eh? And
+all you have now is a <small>DBD</small> named foo which
+will is able to deal with temporary tables, as long as you
+use SQL::Statement. In DBI::SQL::Nano environments, this
+<small>DBD</small> can do nothing.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Deal with
+own attributes</b> <br>
+Before we start doing usable stuff with our
+<small>DBI</small> driver, we need to think about what we
+want to do and how we want to do it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Do we need
+tunable knobs accessible by users? Do we need status
+information? All this is handled in attributes of the
+database handles (be careful when your <small>DBD</small> is
+running &quot;behind&quot; a DBD::Gofer proxy).</p>
+
+<p style="margin-left:11%; margin-top: 1em">How come the
+attributes into the <small>DBD</small> and how are they
+fetchable by the user? Good question, but you should know
+because you&rsquo;ve read the <small>DBI</small>
+documentation.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;DBI::DBD::SqlEngine::db::FETCH&quot;</tt>
+and <tt>&quot;DBI::DBD::SqlEngine::db::STORE&quot;</tt>
+taking care for you &minus; all they need to know is which
+attribute names are valid and mutable or immutable. Tell
+them by adding <tt>&quot;init_valid_attributes&quot;</tt> to
+your db class:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sub init_valid_attributes
+    {
+        my $dbh = $_[0];
+        $dbh&minus;&gt;SUPER::init_valid_attributes ();
+        $dbh&minus;&gt;{foo_valid_attrs} = {
+            foo_version         =&gt; 1,   # contains version of this driver
+            foo_valid_attrs     =&gt; 1,   # contains the valid attributes of foo drivers
+            foo_readonly_attrs  =&gt; 1,   # contains immutable attributes of foo drivers
+            foo_bar             =&gt; 1,   # contains the bar attribute
+            foo_baz             =&gt; 1,   # contains the baz attribute
+            foo_manager         =&gt; 1,   # contains the manager of the driver instance
+            foo_manager_type    =&gt; 1,   # contains the manager class of the driver instance
+        };
+        $dbh&minus;&gt;{foo_readonly_attrs} = {
+            foo_version         =&gt; 1,   # ensure no&minus;one modifies the driver version
+            foo_valid_attrs     =&gt; 1,   # do not permit to add more valid attributes ...
+            foo_readonly_attrs  =&gt; 1,   # ... or make the immutable mutable
+            foo_manager         =&gt; 1,   # manager is set internally only
+        };
+        return $dbh;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Woooho &minus;
+but now the user cannot assign new managers? This is
+intended, overwrite <tt>&quot;STORE&quot;</tt> to handle
+it!</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sub STORE ($$$)
+    {
+        my ( $dbh, $attrib, $value ) = @_;
+        $dbh&minus;&gt;SUPER::STORE( $attrib, $value );
+        # we're still alive, so no exception is thrown ...
+        # by DBI::DBD::SqlEngine::db::STORE
+        if ( $attrib eq &quot;foo_manager_type&quot; )
+        {
+            $dbh&minus;&gt;{foo_manager} = $dbh&minus;&gt;{foo_manager_type}&minus;&gt;new();
+            # ... probably correct some states based on the new
+            # foo_manager_type &minus; see DBD::Sys for an example
+        }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">But ... my
+driver runs without a manager until someone first assignes a
+<tt>&quot;foo_manager_type&quot;</tt>. Well, no &minus;
+there&rsquo;re two places where you can initialize
+defaults:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sub init_default_attributes
+    {
+        my ($dbh, $phase) = @_;
+        $dbh&minus;&gt;SUPER::init_default_attributes($phase);
+        if( 0 == $phase )
+        {
+            # init all attributes which have no knowledge about
+            # user settings from DSN or the attribute hash
+            $dbh&minus;&gt;{foo_manager_type} = &quot;DBD::Foo::Manager&quot;;
+        }
+        elsif( 1 == $phase )
+        {
+            # init phase with more knowledge from DSN or attribute
+            # hash
+            $dbh&minus;&gt;{foo_manager} = $dbh&minus;&gt;{foo_manager_type}&minus;&gt;new();
+        }
+        return $dbh;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">So far we can
+prevent the users to use our database driver as data storage
+for anything and everything. We care only about the real
+important stuff for peace on earth and alike attributes. But
+in fact, the driver still can&rsquo;t do anything. It can do
+less than nothing &minus; meanwhile it&rsquo;s not a stupid
+storage area anymore.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>User
+comfort</b> <tt><br>
+&quot;DBI::DBD::SqlEngine&quot;</tt> since <tt>0.05</tt>
+consolidates all persistent meta data of a table into a
+single structure stored in
+<tt>&quot;$dbh&minus;&gt;{sql_meta}&quot;</tt>. While
+DBI::DBD::SqlEngine provides only readonly access to this
+structure, modifications are still allowed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Primarily
+DBI::DBD::SqlEngine provides access via the setters
+<tt>&quot;get_sql_engine_meta&quot;</tt>,
+<tt>&quot;get_single_table_meta&quot;</tt>,
+<tt>&quot;set_single_table_meta&quot;</tt>,
+<tt>&quot;set_sql_engine_meta&quot;</tt> and
+<tt>&quot;clear_sql_engine_meta&quot;</tt>. Those methods
+are easily accessible by the users via the
+<tt>&quot;$dbh&minus;&gt;func ()&quot;</tt> interface
+provided by <small>DBI.</small> Well, many users don&rsquo;t
+feel comfortize when calling</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    # don't require extension for tables cars
+    $dbh&minus;&gt;func (&quot;cars&quot;, &quot;f_ext&quot;, &quot;.csv&quot;, &quot;set_sql_engine_meta&quot;);</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">DBI::DBD::SqlEngine
+will inject a method into your driver to increase the user
+comfort to allow:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    # don't require extension for tables cars
+    $dbh&minus;&gt;foo_set_meta (&quot;cars&quot;, &quot;f_ext&quot;, &quot;.csv&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Better, but
+here and there users likes to do:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    # don't require extension for tables cars
+    $dbh&minus;&gt;{foo_tables}&minus;&gt;{cars}&minus;&gt;{f_ext} = &quot;.csv&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This interface
+is provided when derived <small>DBD</small> &rsquo;s define
+following in <tt>&quot;init_valid_attributes&quot;</tt>
+(re-capture &quot;Deal with own attributes&quot;):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sub init_valid_attributes
+    {
+        my $dbh = $_[0];
+        $dbh&minus;&gt;SUPER::init_valid_attributes ();
+        $dbh&minus;&gt;{foo_valid_attrs} = {
+            foo_version         =&gt; 1,   # contains version of this driver
+            foo_valid_attrs     =&gt; 1,   # contains the valid attributes of foo drivers
+            foo_readonly_attrs  =&gt; 1,   # contains immutable attributes of foo drivers
+            foo_bar             =&gt; 1,   # contains the bar attribute
+            foo_baz             =&gt; 1,   # contains the baz attribute
+            foo_manager         =&gt; 1,   # contains the manager of the driver instance
+            foo_manager_type    =&gt; 1,   # contains the manager class of the driver instance
+            foo_meta            =&gt; 1,   # contains the public interface to modify table meta attributes
+        };
+        $dbh&minus;&gt;{foo_readonly_attrs} = {
+            foo_version         =&gt; 1,   # ensure no&minus;one modifies the driver version
+            foo_valid_attrs     =&gt; 1,   # do not permit to add more valid attributes ...
+            foo_readonly_attrs  =&gt; 1,   # ... or make the immutable mutable
+            foo_manager         =&gt; 1,   # manager is set internally only
+            foo_meta            =&gt; 1,   # ensure public interface to modify table meta attributes are immutable
+        };
+        $dbh&minus;&gt;{foo_meta} = &quot;foo_tables&quot;;
+        return $dbh;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This provides a
+tied hash in
+<tt>&quot;$dbh&minus;&gt;{foo_tables}&quot;</tt> and a tied
+hash for each table&rsquo;s meta data in
+<tt>&quot;$dbh&minus;&gt;{foo_tables}&minus;&gt;{$table_name}&quot;</tt>.
+Modifications on the table meta attributes are done using
+the table methods:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sub get_table_meta_attr { ... }
+    sub set_table_meta_attr { ... }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Both methods
+can adjust the attribute name for compatibility reasons,
+e.g. when former versions of the <small>DBD</small> allowed
+different names to be used for the same flag:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my %compat_map = (
+                       abc =&gt; 'foo_abc',
+                       xyz =&gt; 'foo_xyz',
+                     );
+    __PACKAGE__&minus;&gt;register_compat_map( \%compat_map );</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If any user
+modification on a meta attribute needs reinitialization of
+the meta structure (in case of
+<tt>&quot;DBI::DBD::SqlEngine&quot;</tt> these are the
+attributes <tt>&quot;f_file&quot;</tt>,
+<tt>&quot;f_dir&quot;</tt>, <tt>&quot;f_ext&quot;</tt> and
+<tt>&quot;f_lockfile&quot;</tt>), inform DBI::DBD::SqlEngine
+by doing</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my %reset_on_modify = (
+                            foo_xyz =&gt; &quot;foo_bar&quot;,
+                            foo_abc =&gt; &quot;foo_bar&quot;,
+                          );
+    __PACKAGE__&minus;&gt;register_reset_on_modify( \%reset_on_modify );</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The next access
+to the table meta data will force DBI::DBD::SqlEngine to
+re-do the entire meta initialization process.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Any further
+action which needs to be taken can handled in
+<tt>&quot;table_meta_attr_changed&quot;</tt>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sub table_meta_attr_changed
+    {
+        my ($class, $meta, $attrib, $value) = @_;
+        ...
+        $class&minus;&gt;SUPER::table_meta_attr_changed ($meta, $attrib, $value);
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is done
+before the new value is set in <tt>$meta</tt>, so the
+attribute changed handler can act depending on the old
+value.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Dealing with
+Tables</b> <br>
+Let&rsquo;s put some life into it &minus; it&rsquo;s going
+to be time for it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is a good
+point where a quick side step to SQL::Statement::Embed will
+help to shorten the next paragraph. The documentation in
+SQL::Statement::Embed regarding embedding in own
+<small>DBD</small> &rsquo;s works pretty fine with
+SQL::Statement and DBI::SQL::Nano.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Second look
+should go to DBI::DBD::SqlEngine::Developers to get a
+picture over the driver part of the table
+<small>API.</small> Usually there isn&rsquo;t much to do for
+an easy driver.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Testing</b>
+<br>
+Now you should have your first own <small>DBD.</small> Was
+easy, wasn&rsquo;t it? But does it work well? Prove it by
+writing tests and remember to use dbd_edit_mm_attribs from
+<small>DBI::DBD</small> to ensure testing even rare
+cases.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This guide is
+written by Jens Rehsack. DBI::DBD::SqlEngine is written by
+Jens Rehsack using code from DBD::File originally written by
+Jochen Wiedmann and Jeff Zucker.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The module
+DBI::DBD::SqlEngine is currently maintained by</p>
+
+<p style="margin-left:11%; margin-top: 1em">H.Merijn Brand
+&lt; h.m.brand at xs4all.nl &gt; and Jens Rehsack &lt;
+rehsack at googlemail.com &gt;</p>
+
+<h2>COPYRIGHT AND LICENSE
+<a name="COPYRIGHT AND LICENSE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (C)
+2010 by H.Merijn Brand &amp; Jens Rehsack</p>
+
+<p style="margin-left:11%; margin-top: 1em">All rights
+reserved.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You may freely
+distribute and/or modify this module under the terms of
+either the <small>GNU</small> General Public License (
+<small>GPL</small> ) or the Artistic License, as specified
+in the Perl <small>README</small> file.</p>
+<hr>
+</body>
+</html>

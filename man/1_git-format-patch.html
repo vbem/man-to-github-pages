@@ -1,0 +1,1258 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:34:15 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>GIT&minus;FORMAT&minus;PATCH</title>
+
+</head>
+<body>
+
+<h1 align="center">GIT&minus;FORMAT&minus;PATCH</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#CONFIGURATION">CONFIGURATION</a><br>
+<a href="#DISCUSSION">DISCUSSION</a><br>
+<a href="#MUA-SPECIFIC HINTS">MUA-SPECIFIC HINTS</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#GIT">GIT</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">git-format-patch
+&minus; Prepare patches for e&minus;mail submission</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>git
+format&minus;patch</i> [&minus;k]
+[(&minus;o|&minus;&minus;output&minus;directory) &lt;dir&gt;
+| &minus;&minus;stdout] <br>
+[&minus;&minus;no&minus;thread |
+&minus;&minus;thread[=&lt;style&gt;]] <br>
+
+[(&minus;&minus;attach|&minus;&minus;inline)[=&lt;boundary&gt;]
+| &minus;&minus;no&minus;attach] <br>
+[&minus;s | &minus;&minus;signoff] <br>
+[&minus;&minus;signature=&lt;signature&gt; |
+&minus;&minus;no&minus;signature] <br>
+[&minus;n | &minus;&minus;numbered | &minus;N |
+&minus;&minus;no&minus;numbered] <br>
+[&minus;&minus;start&minus;number &lt;n&gt;]
+[&minus;&minus;numbered&minus;files] <br>
+[&minus;&minus;in&minus;reply&minus;to=Message&minus;Id]
+[&minus;&minus;suffix=.&lt;sfx&gt;] <br>
+[&minus;&minus;ignore&minus;if&minus;in&minus;upstream] <br>
+[&minus;&minus;subject&minus;prefix=Subject&minus;Prefix]
+[(&minus;&minus;reroll&minus;count|&minus;v) &lt;n&gt;] <br>
+[&minus;&minus;to=&lt;email&gt;]
+[&minus;&minus;cc=&lt;email&gt;] <br>
+[&minus;&minus;[no&minus;]cover&minus;letter]
+[&minus;&minus;quiet] [&minus;&minus;notes[=&lt;ref&gt;]]
+<br>
+[&lt;common diff options&gt;] <br>
+[ &lt;since&gt; | &lt;revision range&gt; ]</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Prepare each
+commit with its patch in one file per commit, formatted to
+resemble UNIX mailbox format. The output of this command is
+convenient for e&minus;mail submission or for use with
+<i>git am</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There are two
+ways to specify which commits to operate on.</p>
+
+<p style="margin-left:17%; margin-top: 1em">1. A single
+commit, &lt;since&gt;, specifies that the commits leading to
+the tip of the current branch that are not in the history
+that leads to the &lt;since&gt; to be output.</p>
+
+<p style="margin-left:17%; margin-top: 1em">2. Generic
+&lt;revision range&gt; expression (see &quot;SPECIFYING
+REVISIONS&quot; section in <b>gitrevisions</b>(7)) means the
+commits in the specified range.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The first rule
+takes precedence in the case of a single &lt;commit&gt;. To
+apply the second rule, i.e., format everything since the
+beginning of history up until &lt;commit&gt;, use the
+<i>&minus;&minus;root</i> option: git format&minus;patch
+&minus;&minus;root &lt;commit&gt;. If you want to format
+only &lt;commit&gt; itself, you can do this with git
+format&minus;patch &minus;1 &lt;commit&gt;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">By default,
+each output file is numbered sequentially from 1, and uses
+the first line of the commit message (massaged for pathname
+safety) as the filename. With the
+&minus;&minus;numbered&minus;files option, the output file
+names will only be numbers, without the first line of the
+commit appended. The names of the output files are printed
+to standard output, unless the &minus;&minus;stdout option
+is specified.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If &minus;o is
+specified, output files are created in &lt;dir&gt;.
+Otherwise they are created in the current working
+directory.</p>
+
+<p style="margin-left:11%; margin-top: 1em">By default, the
+subject of a single patch is &quot;[PATCH] &quot; followed
+by the concatenation of lines from the commit message up to
+the first blank line (see the DISCUSSION section of
+<b>git-commit</b>(1)).</p>
+
+<p style="margin-left:11%; margin-top: 1em">When multiple
+patches are output, the subject prefix will instead be
+&quot;[PATCH n/m] &quot;. To force 1/1 to be added for a
+single patch, use &minus;n. To omit patch numbers from the
+subject, use &minus;N.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If given
+&minus;&minus;thread, git&minus;format&minus;patch will
+generate In&minus;Reply&minus;To and References headers to
+make the second and subsequent patch mails appear as replies
+to the first mail; this also generates a Message&minus;Id
+header to reference.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;p,
+&minus;&minus;no&minus;stat</p>
+
+<p style="margin-left:17%;">Generate plain patches without
+any diffstats.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;U&lt;n&gt;,
+&minus;&minus;unified=&lt;n&gt;</p>
+
+<p style="margin-left:17%;">Generate diffs with &lt;n&gt;
+lines of context instead of the usual three.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;minimal</p>
+
+<p style="margin-left:17%;">Spend extra time to make sure
+the smallest possible diff is produced.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;patience</p>
+
+<p style="margin-left:17%;">Generate a diff using the
+&quot;patience diff&quot; algorithm.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;histogram</p>
+
+<p style="margin-left:17%;">Generate a diff using the
+&quot;histogram diff&quot; algorithm.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;diff&minus;algorithm={patience|minimal|histogram|myers}</p>
+
+<p style="margin-left:17%;">Choose a diff algorithm. The
+variants are as follows:</p>
+
+<p style="margin-left:17%; margin-top: 1em">default,
+myers</p>
+
+<p style="margin-left:23%;">The basic greedy diff
+algorithm. Currently, this is the default.</p>
+
+<p style="margin-left:17%; margin-top: 1em">minimal</p>
+
+<p style="margin-left:23%;">Spend extra time to make sure
+the smallest possible diff is produced.</p>
+
+<p style="margin-left:17%; margin-top: 1em">patience</p>
+
+<p style="margin-left:23%;">Use &quot;patience diff&quot;
+algorithm when generating patches.</p>
+
+<p style="margin-left:17%; margin-top: 1em">histogram</p>
+
+<p style="margin-left:23%;">This algorithm extends the
+patience algorithm to &quot;support low&minus;occurrence
+common elements&quot;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">For instance,
+if you configured diff.algorithm variable to a
+non&minus;default value and want to use the default one,
+then you have to use
+&minus;&minus;diff&minus;algorithm=default option.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;stat[=&lt;width&gt;[,&lt;name&minus;width&gt;[,&lt;count&gt;]]]</p>
+
+<p style="margin-left:17%;">Generate a diffstat. By
+default, as much space as necessary will be used for the
+filename part, and the rest for the graph part. Maximum
+width defaults to terminal width, or 80 columns if not
+connected to a terminal, and can be overridden by
+&lt;width&gt;. The width of the filename part can be limited
+by giving another width &lt;name&minus;width&gt; after a
+comma. The width of the graph part can be limited by using
+&minus;&minus;stat&minus;graph&minus;width=&lt;width&gt;
+(affects all commands generating a stat graph) or by setting
+diff.statGraphWidth=&lt;width&gt; (does not affect git
+format&minus;patch). By giving a third parameter
+&lt;count&gt;, you can limit the output to the first
+&lt;count&gt; lines, followed by ... if there are more.</p>
+
+<p style="margin-left:17%; margin-top: 1em">These
+parameters can also be set individually with
+&minus;&minus;stat&minus;width=&lt;width&gt;,
+&minus;&minus;stat&minus;name&minus;width=&lt;name&minus;width&gt;
+and &minus;&minus;stat&minus;count=&lt;count&gt;.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;numstat</p>
+
+<p style="margin-left:17%;">Similar to &minus;&minus;stat,
+but shows number of added and deleted lines in decimal
+notation and pathname without abbreviation, to make it more
+machine friendly. For binary files, outputs two &minus;
+instead of saying 0 0.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;shortstat</p>
+
+<p style="margin-left:17%;">Output only the last line of
+the &minus;&minus;stat format containing total number of
+modified files, as well as number of added and deleted
+lines.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;dirstat[=&lt;param1,param2,...&gt;]</p>
+
+<p style="margin-left:17%;">Output the distribution of
+relative amount of changes for each sub&minus;directory. The
+behavior of &minus;&minus;dirstat can be customized by
+passing it a comma separated list of parameters. The
+defaults are controlled by the diff.dirstat configuration
+variable (see <b>git-config</b>(1)). The following
+parameters are available:</p>
+
+<p style="margin-left:17%; margin-top: 1em">changes</p>
+
+<p style="margin-left:23%;">Compute the dirstat numbers by
+counting the lines that have been removed from the source,
+or added to the destination. This ignores the amount of pure
+code movements within a file. In other words, rearranging
+lines in a file is not counted as much as other changes.
+This is the default behavior when no parameter is given.</p>
+
+<p style="margin-left:17%; margin-top: 1em">lines</p>
+
+<p style="margin-left:23%;">Compute the dirstat numbers by
+doing the regular line&minus;based diff analysis, and
+summing the removed/added line counts. (For binary files,
+count 64&minus;byte chunks instead, since binary files have
+no natural concept of lines). This is a more expensive
+&minus;&minus;dirstat behavior than the changes behavior,
+but it does count rearranged lines within a file as much as
+other changes. The resulting output is consistent with what
+you get from the other &minus;&minus;*stat options.</p>
+
+<p style="margin-left:17%; margin-top: 1em">files</p>
+
+<p style="margin-left:23%;">Compute the dirstat numbers by
+counting the number of files changed. Each changed file
+counts equally in the dirstat analysis. This is the
+computationally cheapest &minus;&minus;dirstat behavior,
+since it does not have to look at the file contents at
+all.</p>
+
+<p style="margin-left:17%; margin-top: 1em">cumulative</p>
+
+<p style="margin-left:23%;">Count changes in a child
+directory for the parent directory as well. Note that when
+using cumulative, the sum of the percentages reported may
+exceed 100%. The default (non&minus;cumulative) behavior can
+be specified with the noncumulative parameter.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em">&lt;limit&gt;</p>
+
+<p style="margin-left:23%;">An integer parameter specifies
+a cut&minus;off percent (3% by default). Directories
+contributing less than this percentage of the changes are
+not shown in the output.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Example: The
+following will count changed files, while ignoring
+directories with less than 10% of the total amount of
+changed files, and accumulating child directory counts in
+the parent directories:
+&minus;&minus;dirstat=files,10,cumulative.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;summary</p>
+
+<p style="margin-left:17%;">Output a condensed summary of
+extended header information such as creations, renames and
+mode changes.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;no&minus;renames</p>
+
+<p style="margin-left:17%;">Turn off rename detection, even
+when the configuration file gives the default to do so.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;full&minus;index</p>
+
+<p style="margin-left:17%;">Instead of the first handful of
+characters, show the full pre&minus; and post&minus;image
+blob object names on the &quot;index&quot; line when
+generating patch format output.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;binary</p>
+
+<p style="margin-left:17%;">In addition to
+&minus;&minus;full&minus;index, output a binary diff that
+can be applied with git&minus;apply.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;abbrev[=&lt;n&gt;]</p>
+
+<p style="margin-left:17%;">Instead of showing the full
+40&minus;byte hexadecimal object name in diff&minus;raw
+format output and diff&minus;tree header lines, show only a
+partial prefix. This is independent of the
+&minus;&minus;full&minus;index option above, which controls
+the diff&minus;patch output format. Non default number of
+digits can be specified with
+&minus;&minus;abbrev=&lt;n&gt;.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;B[&lt;n&gt;][/&lt;m&gt;],
+&minus;&minus;break&minus;rewrites[=[&lt;n&gt;][/&lt;m&gt;]]</p>
+
+<p style="margin-left:17%;">Break complete rewrite changes
+into pairs of delete and create. This serves two
+purposes:</p>
+
+<p style="margin-left:17%; margin-top: 1em">It affects the
+way a change that amounts to a total rewrite of a file not
+as a series of deletion and insertion mixed together with a
+very few lines that happen to match textually as the
+context, but as a single deletion of everything old followed
+by a single insertion of everything new, and the number m
+controls this aspect of the &minus;B option (defaults to
+60%). &minus;B/70% specifies that less than 30% of the
+original should remain in the result for Git to consider it
+a total rewrite (i.e. otherwise the resulting patch will be
+a series of deletion and insertion mixed together with
+context lines).</p>
+
+<p style="margin-left:17%; margin-top: 1em">When used with
+&minus;M, a totally&minus;rewritten file is also considered
+as the source of a rename (usually &minus;M only considers a
+file that disappeared as the source of a rename), and the
+number n controls this aspect of the &minus;B option
+(defaults to 50%). &minus;B20% specifies that a change with
+addition and deletion compared to 20% or more of the
+file&rsquo;s size are eligible for being picked up as a
+possible source of a rename to another file.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;M[&lt;n&gt;],
+&minus;&minus;find&minus;renames[=&lt;n&gt;]</p>
+
+<p style="margin-left:17%;">Detect renames. If n is
+specified, it is a threshold on the similarity index (i.e.
+amount of addition/deletions compared to the file&rsquo;s
+size). For example, &minus;M90% means Git should consider a
+delete/add pair to be a rename if more than 90% of the file
+hasn&rsquo;t changed. Without a % sign, the number is to be
+read as a fraction, with a decimal point before it. I.e.,
+&minus;M5 becomes 0.5, and is thus the same as &minus;M50%.
+Similarly, &minus;M05 is the same as &minus;M5%. To limit
+detection to exact renames, use &minus;M100%.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;C[&lt;n&gt;],
+&minus;&minus;find&minus;copies[=&lt;n&gt;]</p>
+
+<p style="margin-left:17%;">Detect copies as well as
+renames. See also
+&minus;&minus;find&minus;copies&minus;harder. If n is
+specified, it has the same meaning as for
+&minus;M&lt;n&gt;.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;find&minus;copies&minus;harder</p>
+
+<p style="margin-left:17%;">For performance reasons, by
+default, &minus;C option finds copies only if the original
+file of the copy was modified in the same changeset. This
+flag makes the command inspect unmodified files as
+candidates for the source of copy. This is a very expensive
+operation for large projects, so use it with caution. Giving
+more than one &minus;C option has the same effect.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;D,
+&minus;&minus;irreversible&minus;delete</p>
+
+<p style="margin-left:17%;">Omit the preimage for deletes,
+i.e. print only the header but not the diff between the
+preimage and /dev/null. The resulting patch is not meant to
+be applied with patch nor git apply; this is solely for
+people who want to just concentrate on reviewing the text
+after the change. In addition, the output obviously lack
+enough information to apply such a patch in reverse, even
+manually, hence the name of the option.</p>
+
+<p style="margin-left:17%; margin-top: 1em">When used
+together with &minus;B, omit also the preimage in the
+deletion part of a delete/create pair.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;l&lt;num&gt;</p>
+
+<p style="margin-left:17%;">The &minus;M and &minus;C
+options require O(n^2) processing time where n is the number
+of potential rename/copy targets. This option prevents
+rename/copy detection from running if the number of
+rename/copy targets exceeds the specified number.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;O&lt;orderfile&gt;</p>
+
+<p style="margin-left:17%;">Output the patch in the order
+specified in the &lt;orderfile&gt;, which has one shell glob
+pattern per line.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;a,
+&minus;&minus;text</p>
+
+<p style="margin-left:17%;">Treat all files as text.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;ignore&minus;space&minus;at&minus;eol</p>
+
+<p style="margin-left:17%;">Ignore changes in whitespace at
+EOL.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;b,
+&minus;&minus;ignore&minus;space&minus;change</p>
+
+<p style="margin-left:17%;">Ignore changes in amount of
+whitespace. This ignores whitespace at line end, and
+considers all other sequences of one or more whitespace
+characters to be equivalent.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;w,
+&minus;&minus;ignore&minus;all&minus;space</p>
+
+<p style="margin-left:17%;">Ignore whitespace when
+comparing lines. This ignores differences even if one line
+has whitespace where the other line has none.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;inter&minus;hunk&minus;context=&lt;lines&gt;</p>
+
+<p style="margin-left:17%;">Show the context between diff
+hunks, up to the specified number of lines, thereby fusing
+hunks that are close to each other.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;W,
+&minus;&minus;function&minus;context</p>
+
+<p style="margin-left:17%;">Show whole surrounding
+functions of changes.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;ext&minus;diff</p>
+
+<p style="margin-left:17%;">Allow an external diff helper
+to be executed. If you set an external diff driver with
+<b>gitattributes</b>(5), you need to use this option with
+<b>git-log</b>(1) and friends.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;no&minus;ext&minus;diff</p>
+
+<p style="margin-left:17%;">Disallow external diff
+drivers.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;textconv,
+&minus;&minus;no&minus;textconv</p>
+
+<p style="margin-left:17%;">Allow (or disallow) external
+text conversion filters to be run when comparing binary
+files. See <b>gitattributes</b>(5) for details. Because
+textconv filters are typically a one&minus;way conversion,
+the resulting diff is suitable for human consumption, but
+cannot be applied. For this reason, textconv filters are
+enabled by default only for <b>git-diff</b>(1) and
+<b>git-log</b>(1), but not for <b>git-format-patch</b>(1) or
+diff plumbing commands.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;ignore&minus;submodules[=&lt;when&gt;]</p>
+
+<p style="margin-left:17%;">Ignore changes to submodules in
+the diff generation. &lt;when&gt; can be either
+&quot;none&quot;, &quot;untracked&quot;, &quot;dirty&quot;
+or &quot;all&quot;, which is the default. Using
+&quot;none&quot; will consider the submodule modified when
+it either contains untracked or modified files or its HEAD
+differs from the commit recorded in the superproject and can
+be used to override any settings of the <i>ignore</i> option
+in <b>git-config</b>(1) or <b>gitmodules</b>(5). When
+&quot;untracked&quot; is used submodules are not considered
+dirty when they only contain untracked content (but they are
+still scanned for modified content). Using &quot;dirty&quot;
+ignores all changes to the work tree of submodules, only
+changes to the commits stored in the superproject are shown
+(this was the behavior until 1.7.0). Using &quot;all&quot;
+hides all changes to submodules.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;src&minus;prefix=&lt;prefix&gt;</p>
+
+<p style="margin-left:17%;">Show the given source prefix
+instead of &quot;a/&quot;.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;dst&minus;prefix=&lt;prefix&gt;</p>
+
+<p style="margin-left:17%;">Show the given destination
+prefix instead of &quot;b/&quot;.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;no&minus;prefix</p>
+
+<p style="margin-left:17%;">Do not show any source or
+destination prefix.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For more
+detailed explanation on these common options, see also
+<b>gitdiffcore</b>(7).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&lt;n&gt;</p>
+
+<p style="margin-left:17%;">Prepare patches from the
+topmost &lt;n&gt; commits.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;o
+&lt;dir&gt;, &minus;&minus;output&minus;directory
+&lt;dir&gt;</p>
+
+<p style="margin-left:17%;">Use &lt;dir&gt; to store the
+resulting files, instead of the current working
+directory.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;n,
+&minus;&minus;numbered</p>
+
+<p style="margin-left:17%;">Name output in <i>[PATCH
+n/m]</i> format, even with a single patch.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;N,
+&minus;&minus;no&minus;numbered</p>
+
+<p style="margin-left:17%;">Name output in <i>[PATCH]</i>
+format.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;start&minus;number
+&lt;n&gt;</p>
+
+<p style="margin-left:17%;">Start numbering the patches at
+&lt;n&gt; instead of 1.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;numbered&minus;files</p>
+
+<p style="margin-left:17%;">Output file names will be a
+simple number sequence without the default first line of the
+commit appended.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;k,
+&minus;&minus;keep&minus;subject</p>
+
+<p style="margin-left:17%;">Do not strip/add <i>[PATCH]</i>
+from the first line of the commit log message.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;s,
+&minus;&minus;signoff</p>
+
+<p style="margin-left:17%;">Add Signed&minus;off&minus;by:
+line to the commit message, using the committer identity of
+yourself.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;stdout</p>
+
+<p style="margin-left:17%;">Print all commits to the
+standard output in mbox format, instead of creating a file
+for each one.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;attach[=&lt;boundary&gt;]</p>
+
+<p style="margin-left:17%;">Create multipart/mixed
+attachment, the first part of which is the commit message
+and the patch itself in the second part, with
+Content&minus;Disposition: attachment.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;no&minus;attach</p>
+
+<p style="margin-left:17%;">Disable the creation of an
+attachment, overriding the configuration setting.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;inline[=&lt;boundary&gt;]</p>
+
+<p style="margin-left:17%;">Create multipart/mixed
+attachment, the first part of which is the commit message
+and the patch itself in the second part, with
+Content&minus;Disposition: inline.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;thread[=&lt;style&gt;],
+&minus;&minus;no&minus;thread</p>
+
+<p style="margin-left:17%;">Controls addition of
+In&minus;Reply&minus;To and References headers to make the
+second and subsequent mails appear as replies to the first.
+Also controls generation of the Message&minus;Id header to
+reference.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The optional
+&lt;style&gt; argument can be either shallow or deep.
+<i>shallow</i> threading makes every mail a reply to the
+head of the series, where the head is chosen from the cover
+letter, the &minus;&minus;in&minus;reply&minus;to, and the
+first patch mail, in this order. <i>deep</i> threading makes
+every mail a reply to the previous one.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The default is
+&minus;&minus;no&minus;thread, unless the
+<i>format.thread</i> configuration is set. If
+&minus;&minus;thread is specified without a style, it
+defaults to the style specified by <i>format.thread</i> if
+any, or else shallow.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Beware that the
+default for <i>git send&minus;email</i> is to thread emails
+itself. If you want git format&minus;patch to take care of
+threading, you will want to ensure that threading is
+disabled for git send&minus;email.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;in&minus;reply&minus;to=Message&minus;Id</p>
+
+<p style="margin-left:17%;">Make the first mail (or all the
+mails with &minus;&minus;no&minus;thread) appear as a reply
+to the given Message&minus;Id, which avoids breaking threads
+to provide a new patch series.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;ignore&minus;if&minus;in&minus;upstream</p>
+
+<p style="margin-left:17%;">Do not include a patch that
+matches a commit in &lt;until&gt;..&lt;since&gt;. This will
+examine all patches reachable from &lt;since&gt; but not
+from &lt;until&gt; and compare them with the patches being
+generated, and any patch that matches is ignored.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;subject&minus;prefix=&lt;Subject&minus;Prefix&gt;</p>
+
+<p style="margin-left:17%;">Instead of the standard
+<i>[PATCH]</i> prefix in the subject line, instead use
+<i>[&lt;Subject&minus;Prefix&gt;]</i>. This allows for
+useful naming of a patch series, and can be combined with
+the &minus;&minus;numbered option.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;v
+&lt;n&gt;, &minus;&minus;reroll&minus;count=&lt;n&gt;</p>
+
+<p style="margin-left:17%;">Mark the series as the
+&lt;n&gt;&minus;th iteration of the topic. The output
+filenames have v&lt;n&gt; pretended to them, and the subject
+prefix (&quot;PATCH&quot; by default, but configurable via
+the &minus;&minus;subject&minus;prefix option) has &lsquo;
+v&lt;n&gt;&lsquo; appended to it. E.g.
+&minus;&minus;reroll&minus;count=4 may produce
+v4&minus;0001&minus;add&minus;makefile.patch file that has
+&quot;Subject: [PATCH v4 1/20] Add makefile&quot; in it.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;to=&lt;email&gt;</p>
+
+<p style="margin-left:17%;">Add a To: header to the email
+headers. This is in addition to any configured headers, and
+may be used multiple times. The negated form
+&minus;&minus;no&minus;to discards all To: headers added so
+far (from config or command line).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;cc=&lt;email&gt;</p>
+
+<p style="margin-left:17%;">Add a Cc: header to the email
+headers. This is in addition to any configured headers, and
+may be used multiple times. The negated form
+&minus;&minus;no&minus;cc discards all Cc: headers added so
+far (from config or command line).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;add&minus;header=&lt;header&gt;</p>
+
+<p style="margin-left:17%;">Add an arbitrary header to the
+email headers. This is in addition to any configured
+headers, and may be used multiple times. For example,
+&minus;&minus;add&minus;header=&quot;Organization:
+git&minus;foo&quot;. The negated form
+&minus;&minus;no&minus;add&minus;header discards <b>all</b>
+(To:, Cc:, and custom) headers added so far from config or
+command line.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;[no&minus;]cover&minus;letter</p>
+
+<p style="margin-left:17%;">In addition to the patches,
+generate a cover letter file containing the shortlog and the
+overall diffstat. You can fill in a description in the file
+before sending it out.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;notes[=&lt;ref&gt;]</p>
+
+<p style="margin-left:17%;">Append the notes (see
+<b>git-notes</b>(1)) for the commit after the
+three&minus;dash line.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The expected
+use case of this is to write supporting explanation for the
+commit that does not belong to the commit log message
+proper, and include it with the patch submission. While one
+can simply write these explanations after format&minus;patch
+has run but before sending, keeping them as Git notes allows
+them to be maintained between versions of the patch series
+(but see the discussion of the notes.rewrite configuration
+options in <b>git-notes</b>(1) to use this workflow).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;[no]&minus;signature=&lt;signature&gt;</p>
+
+<p style="margin-left:17%;">Add a signature to each message
+produced. Per RFC 3676 the signature is separated from the
+body by a line with '&minus;&minus; ' on it. If the
+signature option is omitted the signature defaults to the
+Git version number.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;suffix=.&lt;sfx&gt;</p>
+
+<p style="margin-left:17%;">Instead of using .patch as the
+suffix for generated filenames, use specified suffix. A
+common alternative is &minus;&minus;suffix=.txt. Leaving
+this empty will remove the .patch suffix.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Note that the
+leading character does not have to be a dot; for example,
+you can use &minus;&minus;suffix=&minus;patch to get
+0001&minus;description&minus;of&minus;my&minus;change&minus;patch.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;quiet</p>
+
+<p style="margin-left:17%;">Do not print the names of the
+generated files to standard output.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;no&minus;binary</p>
+
+<p style="margin-left:17%;">Do not output contents of
+changes in binary files, instead display a notice that those
+files changed. Patches generated using this option cannot be
+applied properly, but they are still useful for code
+review.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;root</p>
+
+<p style="margin-left:17%;">Treat the revision argument as
+a &lt;revision range&gt;, even if it is just a single commit
+(that would normally be treated as a &lt;since&gt;). Note
+that root commits included in the specified range are always
+formatted as creation patches, independently of this
+flag.</p>
+
+<h2>CONFIGURATION
+<a name="CONFIGURATION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can specify
+extra mail header lines to be added to each message,
+defaults for the subject prefix and file suffix, number
+patches when outputting more than one patch, add
+&quot;To&quot; or &quot;Cc:&quot; headers, configure
+attachments, and sign off patches with configuration
+variables.</p>
+
+<p style="margin-left:17%; margin-top: 1em">[format] <br>
+headers = &quot;Organization: git&minus;foo\n&quot; <br>
+subjectprefix = CHANGE <br>
+suffix = .txt <br>
+numbered = auto <br>
+to = &lt;email&gt; <br>
+cc = &lt;email&gt; <br>
+attach [ = mime&minus;boundary&minus;string ] <br>
+signoff = true <br>
+coverletter = auto</p>
+
+<h2>DISCUSSION
+<a name="DISCUSSION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The patch
+produced by <i>git format&minus;patch</i> is in UNIX mailbox
+format, with a fixed &quot;magic&quot; time stamp to
+indicate that the file is output from format&minus;patch
+rather than a real mailbox, like so:</p>
+
+<p style="margin-left:17%; margin-top: 1em">From
+8f72bad1baf19a53459661343e21d6491c3908d3 Mon Sep 17 00:00:00
+2001 <br>
+From: Tony Luck &lt;tony.luck@intel.com&gt; <br>
+Date: Tue, 13 Jul 2010 11:42:54 &minus;0700 <br>
+Subject: [PATCH]
+=?UTF&minus;8?q?[IA64]=20Put=20ia64=20config=20files=20on=20the=20?=
+<br>
+=?UTF&minus;8?q?Uwe=20Kleine&minus;K=C3=B6nig=20diet?= <br>
+MIME&minus;Version: 1.0 <br>
+Content&minus;Type: text/plain; charset=UTF&minus;8 <br>
+Content&minus;Transfer&minus;Encoding: 8bit</p>
+
+<p style="margin-left:17%; margin-top: 1em">arch/arm config
+files were slimmed down using a python script <br>
+(See commit c2330e286f68f1c408b4aa6515ba49d57f05beae
+comment)</p>
+
+<p style="margin-left:17%; margin-top: 1em">Do the same for
+ia64 so we can have sleek &amp; trim looking <br>
+...</p>
+
+<p style="margin-left:11%; margin-top: 1em">Typically it
+will be placed in a MUA&rsquo;s drafts folder, edited to add
+timely commentary that should not go in the changelog after
+the three dashes, and then sent as a message whose body, in
+our example, starts with &quot;arch/arm config files
+were...&quot;. On the receiving end, readers can save
+interesting patches in a UNIX mailbox and apply them with
+<b>git-am</b>(1).</p>
+
+<p style="margin-left:11%; margin-top: 1em">When a patch is
+part of an ongoing discussion, the patch generated by <i>git
+format&minus;patch</i> can be tweaked to take advantage of
+the <i>git am &minus;&minus;scissors</i> feature. After your
+response to the discussion comes a line that consists solely
+of &quot;&minus;&minus; &gt;8 &minus;&minus;&quot; (scissors
+and perforation), followed by the patch with unnecessary
+header fields removed:</p>
+
+<p style="margin-left:17%; margin-top: 1em">... <br>
+&gt; So we should do such&minus;and&minus;such.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Makes sense to
+me. How about this patch?</p>
+
+<p style="margin-left:17%; margin-top: 1em">&minus;&minus;
+&gt;8 &minus;&minus; <br>
+Subject: [IA64] Put ia64 config files on the Uwe
+Kleine&minus;K&ouml;nig diet</p>
+
+<p style="margin-left:17%; margin-top: 1em">arch/arm config
+files were slimmed down using a python script <br>
+...</p>
+
+<p style="margin-left:11%; margin-top: 1em">When sending a
+patch this way, most often you are sending your own patch,
+so in addition to the &quot;From $SHA1
+$magic_timestamp&quot; marker you should omit From: and
+Date: lines from the patch file. The patch title is likely
+to be different from the subject of the discussion the patch
+is in response to, so it is likely that you would want to
+keep the Subject: line, like the example above.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Checking for
+patch corruption</b> <br>
+Many mailers if not set up properly will corrupt whitespace.
+Here are two common types of corruption:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; Empty
+context lines that do not have <i>any</i> whitespace.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+Non&minus;empty context lines that have one extra whitespace
+at the beginning.</p>
+
+<p style="margin-left:11%; margin-top: 1em">One way to test
+if your MUA is set up correctly is:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; Send the
+patch to yourself, exactly the way you would, except with
+To: and Cc: lines that do not contain the list and
+maintainer address.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; Save
+that patch to a file in UNIX mailbox format. Call it
+a.patch, say.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; Apply
+it:</p>
+
+<p style="margin-left:23%; margin-top: 1em">$ git fetch
+&lt;project&gt; master:test&minus;apply <br>
+$ git checkout test&minus;apply <br>
+$ git reset &minus;&minus;hard <br>
+$ git am a.patch</p>
+
+<p style="margin-left:11%; margin-top: 1em">If it does not
+apply correctly, there can be various reasons.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; The
+patch itself does not apply cleanly. That is <i>bad</i> but
+does not have much to do with your MUA. You might want to
+rebase the patch with <b>git-rebase</b>(1) before
+regenerating it in this case.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; The MUA
+corrupted your patch; &quot;am&quot; would complain that the
+patch does not apply. Look in the .git/rebase&minus;apply/
+subdirectory and see what <i>patch</i> file contains and
+check for the common corruption patterns mentioned
+above.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; While at
+it, check the <i>info</i> and <i>final&minus;commit</i>
+files as well. If what is in <i>final&minus;commit</i> is
+not exactly what you would want to see in the commit log
+message, it is very likely that the receiver would end up
+hand editing the log message when applying your patch.
+Things like &quot;Hi, this is my first patch.\n&quot; in the
+patch e&minus;mail should come after the three&minus;dash
+line that signals the end of the commit message.</p>
+
+<h2>MUA-SPECIFIC HINTS
+<a name="MUA-SPECIFIC HINTS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Here are some
+hints on how to successfully submit patches inline using
+various mailers.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>GMail</b>
+<br>
+GMail does not have any way to turn off line wrapping in the
+web interface, so it will mangle any emails that you send.
+You can however use &quot;git send&minus;email&quot; and
+send your patches through the GMail SMTP server, or use any
+IMAP email client to connect to the google IMAP server and
+forward the emails through that.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For hints on
+using <i>git send&minus;email</i> to send your patches
+through the GMail SMTP server, see the EXAMPLE section of
+<b>git-send-email</b>(1).</p>
+
+<p style="margin-left:11%; margin-top: 1em">For hints on
+submission using the IMAP interface, see the EXAMPLE section
+of <b>git-imap-send</b>(1).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Thunderbird</b>
+<br>
+By default, Thunderbird will both wrap emails as well as
+flag them as being <i>format=flowed</i>, both of which will
+make the resulting email unusable by Git.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There are three
+different approaches: use an add&minus;on to turn off line
+wraps, configure Thunderbird to not mangle patches, or use
+an external editor to keep Thunderbird from mangling the
+patches.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><big>Approach
+#1 (add-on)</big></b></p>
+
+<p style="margin-left:17%;">Install the Toggle Word Wrap
+add&minus;on that is available from
+<b><font color="#0000FF">https://addons.mozilla.org/thunderbird/addon/toggle&minus;word&minus;wrap/</font></b>
+<font color="#000000">It adds a menu entry &quot;Enable Word
+Wrap&quot; in the composer&rsquo;s &quot;Options&quot; menu
+that you can tick off. Now you can compose the message as
+you otherwise do (cut + paste, <i>git format&minus;patch</i>
+| <i>git imap&minus;send</i>, etc), but you have to insert
+line breaks manually in any text that you type.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b><big>Approach
+#2 (configuration)</big></b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Three
+steps:</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">1.
+Configure your mail server composition as plain text:
+Edit...Account Settings...Composition &amp; Addressing,
+uncheck &quot;Compose Messages in HTML&quot;.</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">2.
+Configure your general composition window to not
+wrap.</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">In
+Thunderbird 2: Edit..Preferences..Composition, wrap plain
+text messages at 0</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">In
+Thunderbird 3: Edit..Preferences..Advanced..Config Editor.
+Search for &quot;mail.wrap_long_lines&quot;. Toggle it to
+make sure it is set to false.</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">3.
+Disable the use of format=flowed:
+Edit..Preferences..Advanced..Config Editor. Search for
+&quot;mailnews.send_plaintext_flowed&quot;. Toggle it to
+make sure it is set to false.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">After
+that is done, you should be able to compose email as you
+otherwise would (cut + paste, <i>git format&minus;patch</i>
+| <i>git imap&minus;send</i>, etc), and the patches will not
+be mangled.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b><big>Approach
+#3 (external editor)</big></b></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">The
+following Thunderbird extensions are needed: AboutConfig
+from</font>
+<b><font color="#0000FF">http://aboutconfig.mozdev.org/</font></b>
+<font color="#000000">and External Editor from</font>
+<b><font color="#0000FF">http://globs.org/articles.php?lng=en&amp;pg=8</font></b></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">1.
+Prepare the patch as a text file using your method of
+choice.</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">2.
+Before opening a compose window, use Edit&rarr;Account
+Settings to uncheck the &quot;Compose messages in HTML
+format&quot; setting in the &quot;Composition &amp;
+Addressing&quot; panel of the account to be used to send the
+patch.</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">3.
+In the main Thunderbird window, <i>before</i> you open the
+compose window for the patch, use Tools&rarr;about:config to
+set the following to the indicated values:</font></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><font color="#000000">mailnews.send_plaintext_flowed
+=&gt; false <br>
+mailnews.wraplength =&gt; 0</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">4.
+Open a compose window and click the external editor
+icon.</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">5.
+In the external editor window, read in the patch file and
+exit the editor normally.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Side
+note: it may be possible to do step 2 with about:config and
+the following settings but no one&rsquo;s tried
+yet.</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">mail.html_compose
+=&gt; false <br>
+mail.identity.default.compose_html =&gt; false <br>
+mail.identity.id?.compose_html =&gt; false</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">There
+is a script in contrib/thunderbird&minus;patch&minus;inline
+which can help you include patches with Thunderbird in an
+easy way. To use it, do the steps above and then use the
+script as the external editor.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>KMail</b>
+<br>
+This should help you to submit patches inline using
+KMail.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">1.
+Prepare the patch as a text file.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">2.
+Click on New Mail.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">3.
+Go under &quot;Options&quot; in the Composer window and be
+sure that &quot;Word wrap&quot; is not set.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">4.
+Use Message &rarr; Insert file... and insert the
+patch.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">5.
+Back in the compose window: add whatever other text you wish
+to the message, complete the addressing and subject fields,
+and press send.</font></p>
+
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+Extract commits between revisions R1 and R2, and apply them
+on top of the current branch using <i>git am</i> to
+cherry&minus;pick them:</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">$
+git format&minus;patch &minus;k &minus;&minus;stdout R1..R2
+| git am &minus;3 &minus;k</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+Extract all commits which are in the current branch but not
+in the origin branch:</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">$
+git format&minus;patch origin</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">For
+each commit a separate file is created in the current
+directory.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+Extract all commits that lead to <i>origin</i> since the
+inception of the project:</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">$
+git format&minus;patch &minus;&minus;root origin</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+The same as the previous one:</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">$
+git format&minus;patch &minus;M &minus;B origin</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Additionally,
+it detects and handles renames and complete rewrites
+intelligently to produce a renaming patch. A renaming patch
+reduces the amount of text output, and generally makes it
+easier to review. Note that non&minus;Git &quot;patch&quot;
+programs won&rsquo;t understand renaming patches, so use it
+only when you know the recipient uses Git to apply your
+patch.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+Extract three topmost commits from the current branch and
+format them as e&minus;mailable patches:</font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">$
+git format&minus;patch &minus;3</font></p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>git-am</b>(1),
+<b>git-send-email</b>(1)</font></p>
+
+<h2>GIT
+<a name="GIT"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Part
+of the <b>git</b>(1) suite</font></p>
+<hr>
+</body>
+</html>

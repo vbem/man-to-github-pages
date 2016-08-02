@@ -1,0 +1,6296 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:37:10 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERL5120DELTA</title>
+
+</head>
+<body>
+
+<h1 align="center">PERL5120DELTA</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#Core Enhancements">Core Enhancements</a><br>
+<a href="#Potentially Incompatible Changes">Potentially Incompatible Changes</a><br>
+<a href="#Deprecations">Deprecations</a><br>
+<a href="#Unicode overhaul">Unicode overhaul</a><br>
+<a href="#Modules and Pragmata">Modules and Pragmata</a><br>
+<a href="#Documentation">Documentation</a><br>
+<a href="#Selected Performance Enhancements">Selected Performance Enhancements</a><br>
+<a href="#Installation and Configuration Improvements">Installation and Configuration Improvements</a><br>
+<a href="#Internal Changes">Internal Changes</a><br>
+<a href="#Testing">Testing</a><br>
+<a href="#New or Changed Diagnostics">New or Changed Diagnostics</a><br>
+<a href="#Utility Changes">Utility Changes</a><br>
+<a href="#Selected Bug Fixes">Selected Bug Fixes</a><br>
+<a href="#Platform Specific Changes">Platform Specific Changes</a><br>
+<a href="#Known Problems">Known Problems</a><br>
+<a href="#Errata">Errata</a><br>
+<a href="#Acknowledgements">Acknowledgements</a><br>
+<a href="#Reporting Bugs">Reporting Bugs</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perl5120delta
+&minus; what is new for perl v5.12.0</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+describes differences between the 5.10.0 release and the
+5.12.0 release.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Many of the bug
+fixes in 5.12.0 are already included in the 5.10.1
+maintenance release.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can see the
+list of those changes in the 5.10.1 release notes
+(perl5101delta).</p>
+
+<h2>Core Enhancements
+<a name="Core Enhancements"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>New
+&quot;package NAME VERSION&quot; syntax</b> <br>
+This new syntax allows a module author to set the
+<tt>$VERSION</tt> of a namespace when the namespace is
+declared with &rsquo;package&rsquo;. It eliminates the need
+for <tt>&quot;our $VERSION = ...&quot;</tt> and similar
+constructs. E.g.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">      package Foo::Bar 1.23;
+      # $Foo::Bar::VERSION == 1.23</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">There are
+several advantages to this:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>$VERSION</tt> is parsed in exactly the same way as
+<tt>&quot;use NAME VERSION&quot;</tt></p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>$VERSION</tt> is set at compile time</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>$VERSION</tt> is a version object that provides
+proper overloading of comparison operators so comparing
+<tt>$VERSION</tt> to decimal (1.23) or dotted-decimal
+(v1.2.3) version numbers works correctly.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Eliminates <tt>&quot;$VERSION = ...&quot;</tt> and
+<tt>&quot;eval $VERSION&quot;</tt> clutter</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>As it requires <small>VERSION</small> to be a numeric
+literal or v&minus;string literal, it can be statically
+parsed by toolchain modules without
+<tt>&quot;eval&quot;</tt> the way <small>MM&minus;</small>
+&gt;parse_version does for <tt>&quot;$VERSION =
+...&quot;</tt></p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">It does not
+break old code with only <tt>&quot;package NAME&quot;</tt>,
+but code that uses <tt>&quot;package NAME VERSION&quot;</tt>
+will need to be restricted to perl 5.12.0 or newer This is
+analogous to the change to <tt>&quot;open&quot;</tt> from
+two-args to three-args. Users requiring the latest Perl will
+benefit, and perhaps after several years, it will become a
+standard practice.</p>
+
+<p style="margin-left:11%; margin-top: 1em">However,
+<tt>&quot;package NAME VERSION&quot;</tt> requires a new,
+&rsquo;strict&rsquo; version number format. See
+&quot;Version number formats&quot; for details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>The
+&quot;...&quot; operator</b> <br>
+A new operator, <tt>&quot;...&quot;</tt>, nicknamed the Yada
+Yada operator, has been added. It is intended to mark
+placeholder code that is not yet implemented. See &quot;Yada
+Yada Operator&quot; in perlop.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Implicit
+strictures</b> <br>
+Using the <tt>&quot;use VERSION&quot;</tt> syntax with a
+version number greater or equal to 5.11.0 will lexically
+enable strictures just like <tt>&quot;use strict&quot;</tt>
+would do (in addition to enabling features.) The
+following:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use 5.12.0;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">means:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use strict;
+    use feature ':5.12';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Unicode
+improvements</b> <br>
+Perl 5.12 comes with Unicode 5.2, the latest version
+available to us at the time of release. This version of
+Unicode was released in October 2009. See
+&lt;http://www.unicode.org/versions/Unicode5.2.0&gt; for
+further details about what&rsquo;s changed in this version
+of the standard. See perlunicode for instructions on
+installing and using other versions of Unicode.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Additionally,
+Perl&rsquo;s developers have significantly improved
+Perl&rsquo;s Unicode implementation. For full details, see
+&quot;Unicode overhaul&quot; below.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Y2038
+compliance</b> <br>
+Perl&rsquo;s core time-related functions are now Y2038
+compliant. (It may not mean much to you, but your kids will
+love it!)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>qr
+overloading</b> <br>
+It is now possible to overload the <tt>&quot;qr//&quot;</tt>
+operator, that is, conversion to regexp, like it was already
+possible to overload conversion to boolean, string or number
+of objects. It is invoked when an object appears on the
+right hand side of the <tt>&quot;=~&quot;</tt> operator or
+when it is interpolated into a regexp. See overload.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Pluggable
+keywords</b> <br>
+Extension modules can now cleanly hook into the Perl parser
+to define new kinds of keyword-headed expression and
+compound statement. The syntax following the keyword is
+defined entirely by the extension. This allow a completely
+non-Perl sublanguage to be parsed inline, with the correct
+ops cleanly generated.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See
+&quot;PL_keyword_plugin&quot; in perlapi for the mechanism.
+The Perl core source distribution also includes a new module
+XS::APItest::KeywordRPN, which implements reverse Polish
+notation arithmetic via pluggable keywords. This module is
+mainly used for test purposes, and is not normally
+installed, but also serves as an example of how to use the
+new mechanism.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl&rsquo;s
+developers consider this feature to be experimental. We may
+remove it or change it in a backwards-incompatible way in
+Perl 5.14.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>APIs for
+more internals</b> <br>
+The lowest layers of the lexer and parts of the pad system
+now have C APIs available to <small>XS</small> extensions.
+These are necessary to support proper use of pluggable
+keywords, but have other uses too. The new APIs are
+experimental, and only cover a small proportion of what
+would be necessary to take full advantage of the
+core&rsquo;s facilities in these areas. It is intended that
+the Perl 5.13 development cycle will see the addition of a
+full range of clean, supported interfaces.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl&rsquo;s
+developers consider this feature to be experimental. We may
+remove it or change it in a backwards-incompatible way in
+Perl 5.14.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Overridable
+function lookup</b> <br>
+Where an extension module hooks the creation of rv2cv ops to
+modify the subroutine lookup process, this now works
+correctly for bareword subroutine calls. This means that
+prototypes on subroutines referenced this way will be
+processed correctly. (Previously bareword subroutine names
+were initially looked up, for parsing purposes, by an
+unhookable mechanism, so extensions could only properly
+influence subroutine names that appeared with an
+<tt>&quot;&amp;&quot;</tt> sigil.)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>A proper
+interface for pluggable Method Resolution Orders</b> <br>
+As of Perl 5.12.0 there is a new interface for plugging and
+using method resolution orders other than the default linear
+depth first search. The C3 method resolution order added in
+5.10.0 has been re-implemented as a plugin, without changing
+its Perl-space interface. See perlmroapi for more
+information.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;\N&quot;
+experimental regex escape</b> <br>
+Perl now supports <tt>&quot;\N&quot;</tt>, a new regex
+escape which you can think of as the inverse of
+<tt>&quot;\n&quot;</tt>. It will match any character that is
+not a newline, independently from the presence or absence of
+the single line match modifier <tt>&quot;/s&quot;</tt>. It
+is not usable within a character class.
+<tt>&quot;\N{3}&quot;</tt> means to match 3 non-newlines;
+<tt>&quot;\N{5,}&quot;</tt> means to match at least 5.
+<tt>&quot;\N{NAME}&quot;</tt> still means the character or
+sequence named <tt>&quot;NAME&quot;</tt>, but
+<tt>&quot;NAME&quot;</tt> no longer can be things like
+<tt>3</tt>, or <tt>&quot;5,&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This will break
+a custom charnames translator which allows numbers for
+character names, as <tt>&quot;\N{3}&quot;</tt> will now mean
+to match 3 non-newline characters, and not the character
+whose name is <tt>3</tt>. (No name defined by the Unicode
+standard is a number, so only custom translators might be
+affected.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl&rsquo;s
+developers are somewhat concerned about possible user
+confusion with the existing <tt>&quot;\N{...}&quot;</tt>
+construct which matches characters by their Unicode name.
+Consequently, this feature is experimental. We may remove it
+or change it in a backwards-incompatible way in Perl
+5.14.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>DTrace
+support</b> <br>
+Perl now has some support for DTrace. See &quot;DTrace
+support&quot; in <i><small>INSTALL</small></i> .</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Support for
+&quot;configure_requires&quot; in <small>CPAN</small> module
+metadata</b> <br>
+Both <tt>&quot;CPAN&quot;</tt> and
+<tt>&quot;CPANPLUS&quot;</tt> now support the
+<tt>&quot;configure_requires&quot;</tt> keyword in the
+<i><small>META</small> .yml</i> metadata file included in
+most recent <small>CPAN</small> distributions. This allows
+distribution authors to specify configuration prerequisites
+that must be installed before running <i>Makefile.PL</i> or
+<i>Build.PL</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See the
+documentation for <tt>&quot;ExtUtils::MakeMaker&quot;</tt>
+or <tt>&quot;Module::Build&quot;</tt> for more on how to
+specify <tt>&quot;configure_requires&quot;</tt> when
+creating a distribution for <small>CPAN</small> .</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;each&quot;,
+&quot;keys&quot;, &quot;values&quot; are now more
+flexible</b> <br>
+The <tt>&quot;each&quot;</tt>, <tt>&quot;keys&quot;</tt>,
+<tt>&quot;values&quot;</tt> function can now operate on
+arrays.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;when&quot;
+as a statement modifier</b> <tt><br>
+&quot;when&quot;</tt> is now allowed to be used as a
+statement modifier.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>$,
+flexibility</b> <br>
+The variable <tt>$,</tt> may now be tied.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>// in when
+clauses</b> <br>
+// now behaves like || in when clauses</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Enabling
+warnings from your shell environment</b> <br>
+You can now set <tt>&quot;&minus;W&quot;</tt> from the
+<tt>&quot;PERL5OPT&quot;</tt> environment variable</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;delete
+local&quot;</b> <tt><br>
+&quot;delete local&quot;</tt> now allows you to locally
+delete a hash entry.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>New support
+for Abstract namespace sockets</b> <br>
+Abstract namespace sockets are Linux-specific socket type
+that live in <small>AF_UNIX</small> family, slightly abusing
+it to be able to use arbitrary character arrays as
+addresses: They start with nul byte and are not terminated
+by nul byte, but with the length passed to the
+<i>socket()</i> system call.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>32&minus;bit
+limit on substr arguments removed</b> <br>
+The 32&minus;bit limit on <tt>&quot;substr&quot;</tt>
+arguments has now been removed. The full range of the
+system&rsquo;s signed and unsigned integers is now available
+for the <tt>&quot;pos&quot;</tt> and
+<tt>&quot;len&quot;</tt> arguments.</p>
+
+<h2>Potentially Incompatible Changes
+<a name="Potentially Incompatible Changes"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Deprecations
+warn by default</b> <br>
+Over the years, Perl&rsquo;s developers have deprecated a
+number of language features for a variety of reasons. Perl
+now defaults to issuing a warning if a deprecated language
+feature is used. Many of the deprecations Perl now warns you
+about have been deprecated for many years. You can find a
+list of what was deprecated in a given release of Perl in
+the <tt>&quot;perl5xxdelta.pod&quot;</tt> file for that
+release.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To disable this
+feature in a given lexical scope, you should use
+<tt>&quot;no warnings 'deprecated';&quot;</tt> For
+information about which language features are deprecated and
+explanations of various deprecation warnings, please see
+perldiag. See &quot;Deprecations&quot; below for the list of
+features and modules Perl&rsquo;s developers have deprecated
+as part of this release.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Version
+number formats</b> <br>
+Acceptable version number formats have been formalized into
+&quot;strict&quot; and &quot;lax&quot; rules.
+<tt>&quot;package NAME VERSION&quot;</tt> takes a strict
+version number. <tt>&quot;UNIVERSAL::VERSION&quot;</tt> and
+the version object constructors take lax version numbers.
+Providing an invalid version will result in a fatal error.
+The version argument in <tt>&quot;use NAME
+VERSION&quot;</tt> is first parsed as a numeric literal or
+v&minus;string and then passed to
+<tt>&quot;UNIVERSAL::VERSION&quot;</tt> (and must then pass
+the &quot;lax&quot; format test).</p>
+
+<p style="margin-left:11%; margin-top: 1em">These formats
+are documented fully in the version module. To a first
+approximation, a &quot;strict&quot; version number is a
+positive decimal number (integer or decimal-fraction)
+without exponentiation or else a dotted-decimal
+v&minus;string with a leading &rsquo;v&rsquo; character and
+at least three components. A &quot;lax&quot; version number
+allows v&minus;strings with fewer than three components or
+without a leading &rsquo;v&rsquo;. Under &quot;lax&quot;
+rules, both decimal and dotted-decimal versions may have a
+trailing &quot;alpha&quot; component separated by an
+underscore character after a fractional or dotted-decimal
+component.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The version
+module adds <tt>&quot;version::is_strict&quot;</tt> and
+<tt>&quot;version::is_lax&quot;</tt> functions to check a
+scalar against these rules.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>@INC
+reorganization</b> <br>
+In <tt>@INC</tt>, <tt>&quot;ARCHLIB&quot;</tt> and
+<tt>&quot;PRIVLIB&quot;</tt> now occur after after the
+current version&rsquo;s <tt>&quot;site_perl&quot;</tt> and
+<tt>&quot;vendor_perl&quot;</tt>. Modules installed into
+<tt>&quot;site_perl&quot;</tt> and
+<tt>&quot;vendor_perl&quot;</tt> will now be loaded in
+preference to those installed in
+<tt>&quot;ARCHLIB&quot;</tt> and
+<tt>&quot;PRIVLIB&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>REGEXPs are
+now first class</b> <br>
+Internally, Perl now treats compiled regular expressions
+(such as those created with <tt>&quot;qr//&quot;</tt>) as
+first class entities. Perl modules which serialize,
+deserialize or otherwise have deep interaction with
+Perl&rsquo;s internal data structures need to be updated for
+this change. Most affected <small>CPAN</small> modules have
+already been updated as of this writing.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Switch
+statement changes</b> <br>
+The <tt>&quot;given&quot;</tt>/<tt>&quot;when&quot;</tt>
+switch statement handles complex statements better than Perl
+5.10.0 did (These enhancements are also available in 5.10.1
+and subsequent 5.10 releases.) There are two new cases where
+<tt>&quot;when&quot;</tt> now interprets its argument as a
+boolean, instead of an expression to be used in a smart
+match: <br>
+flip-flop operators</p>
+
+<p style="margin-left:17%;">The <tt>&quot;..&quot;</tt> and
+<tt>&quot;...&quot;</tt> flip-flop operators are now
+evaluated in boolean context, following their usual
+semantics; see &quot;Range Operators&quot; in perlop.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Note that, as
+in perl 5.10.0, <tt>&quot;when (1..10)&quot;</tt> will not
+work to test whether a given value is an integer between 1
+and 10; you should use <tt>&quot;when ([1..10])&quot;</tt>
+instead (note the array reference).</p>
+
+<p style="margin-left:17%; margin-top: 1em">However,
+contrary to 5.10.0, evaluating the flip-flop operators in
+boolean context ensures it can now be useful in a
+<tt>&quot;when()&quot;</tt>, notably for implementing
+bistable conditions, like in:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    when (/^=begin/ .. /^=end/) {
+      # do something
+    }</pre>
+
+
+<p style="margin-left:11%;">defined-or operator</p>
+
+<p style="margin-left:17%;">A compound expression involving
+the defined-or operator, as in <tt>&quot;when (expr1 //
+expr2)&quot;</tt>, will be treated as boolean if the first
+expression is boolean. (This just extends the existing rule
+that applies to the regular or operator, as in
+<tt>&quot;when (expr1 || expr2)&quot;</tt>.)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Smart match
+changes</b> <br>
+Since Perl 5.10.0, Perl&rsquo;s developers have made a
+number of changes to the smart match operator. These, of
+course, also alter the behaviour of the switch statements
+where smart matching is implicitly used. These changes were
+also made for the 5.10.1 release, and will remain in
+subsequent 5.10 releases.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Changes to
+type-based dispatch</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">The smart match
+operator <tt>&quot;~~&quot;</tt> is no longer commutative.
+The behaviour of a smart match now depends primarily on the
+type of its right hand argument. Moreover, its semantics
+have been adjusted for greater consistency or usefulness in
+several cases. While the general backwards compatibility is
+maintained, several changes must be noted:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Code references with an empty prototype are no longer
+treated specially. They are passed an argument like the
+other code references (even if they choose to ignore
+it).</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;%hash ~~ sub {}&quot;</tt> and
+<tt>&quot;@array ~~ sub {}&quot;</tt> now test that the
+subroutine returns a true value for each key of the hash (or
+element of the array), instead of passing the whole hash or
+array as a reference to the subroutine.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Due to the commutativity breakage, code references are
+no longer treated specially when appearing on the left of
+the <tt>&quot;~~&quot;</tt> operator, but like any vulgar
+scalar.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;undef ~~ %hash&quot;</tt> is always false
+(since <tt>&quot;undef&quot;</tt> can&rsquo;t be a key in a
+hash). No implicit conversion to <tt>&quot;&quot;</tt> is
+done (as was the case in perl 5.10.0).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;$scalar ~~ @array&quot;</tt> now always
+distributes the smart match across the elements of the
+array. It&rsquo;s true if one element in <tt>@array</tt>
+verifies <tt>&quot;$scalar ~~ $element&quot;</tt>. This is a
+generalization of the old behaviour that tested whether the
+array contained the scalar.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The full
+dispatch table for the smart match operator is given in
+&quot;Smart matching in detail&quot; in perlsyn.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Smart match
+and overloading</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">According to
+the rule of dispatch based on the rightmost argument type,
+when an object overloading <tt>&quot;~~&quot;</tt> appears
+on the right side of the operator, the overload routine will
+always be called (with a 3rd argument set to a true value,
+see overload.) However, when the object will appear on the
+left, the overload routine will be called only when the
+rightmost argument is a simple scalar. This way,
+distributivity of smart match across arrays is not broken,
+as well as the other behaviours with complex types
+(coderefs, hashes, regexes). Thus, writers of overloading
+routines for smart match mostly need to worry only with
+comparing against a scalar, and possibly with
+stringification overloading; the other common cases will be
+automatically handled consistently.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;~~&quot;</tt>
+will now refuse to work on objects that do not overload it
+(in order to avoid relying on the object&rsquo;s underlying
+structure). (However, if the object overloads the
+stringification or the numification operators, and if
+overload fallback is active, it will be used instead, as
+usual.)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Other
+potentially incompatible changes</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The definitions of a number of
+Unicode properties have changed to match those of the
+current Unicode standard. These are listed above under
+&quot;Unicode overhaul&quot;. This change may break code
+that expects the old definitions.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The boolkeys op has moved to the group of hash ops. This
+breaks binary compatibility.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Filehandles are now always blessed into
+<tt>&quot;IO::File&quot;</tt>.</p> </td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">The previous
+behaviour was to bless Filehandles into FileHandle (an empty
+proxy class) if it was loaded into memory and otherwise to
+bless them into <tt>&quot;IO::Handle&quot;</tt>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The semantics of <tt>&quot;use
+feature :5.10*&quot;</tt> have changed slightly. See
+&quot;Modules and Pragmata&quot; for more information.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Perl&rsquo;s developers now use git, rather than
+Perforce. This should be a purely internal change only
+relevant to people actively working on the core. However,
+you may see minor difference in perl as a consequence of the
+change. For example in some of details of the output of
+<tt>&quot;perl &minus;V&quot;</tt>. See perlrepository for
+more information.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>As part of the <tt>&quot;Test::Harness&quot;</tt> 2.x to
+3.x upgrade, the experimental
+<tt>&quot;Test::Harness::Straps&quot;</tt> module has been
+removed. See &quot;Modules and Pragmata&quot; for more
+details.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>As part of the <tt>&quot;ExtUtils::MakeMaker&quot;</tt>
+upgrade, the <tt>&quot;ExtUtils::MakeMaker::bytes&quot;</tt>
+and <tt>&quot;ExtUtils::MakeMaker::vmsish&quot;</tt> modules
+have been removed from this distribution.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Module::CoreList&quot;</tt> no longer contains
+the <tt>%:patchlevel</tt> hash.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;length undef&quot;</tt> now returns undef.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Unsupported private C <small>API</small> functions are
+now declared &quot;static&quot; to prevent leakage to
+Perl&rsquo;s public <small>API</small> .</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>To support the bootstrapping process, <i>miniperl</i> no
+longer builds with <small>UTF&minus;8</small> support in the
+regexp engine.</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">This allows a
+build to complete with <small>PERL_UNICODE</small> set and a
+<small>UTF&minus;8</small> locale. Without this
+there&rsquo;s a bootstrapping problem, as miniperl
+can&rsquo;t load the <small>UTF&minus;8</small> components
+of the regexp engine, because they&rsquo;re not yet
+built.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em"><i>miniperl</i>&rsquo;s
+<tt>@INC</tt> is now restricted to just
+<tt>&quot;&minus;I...&quot;</tt>, the split of
+<tt>$ENV{PERL5LIB}</tt>, and
+&quot;<tt>&quot;.&quot;</tt>&quot;</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>A space or a newline is now required after a
+<tt>&quot;#line XXX&quot;</tt> directive.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Tied filehandles now have an additional method
+<small>EOF</small> which provides the <small>EOF</small>
+type.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>To better match all other flow control statements,
+<tt>&quot;foreach&quot;</tt> may no longer be used as an
+attribute.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Perl&rsquo;s command-line switch &quot;&minus;P&quot;,
+which was deprecated in version 5.10.0, has now been
+removed. The <small>CPAN</small> module
+<tt>&quot;Filter::cpp&quot;</tt> can be used as an
+alternative.</p> </td></tr>
+</table>
+
+<h2>Deprecations
+<a name="Deprecations"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">From time to
+time, Perl&rsquo;s developers find it necessary to deprecate
+features or modules we&rsquo;ve previously shipped as part
+of the core distribution. We are well aware of the pain and
+frustration that a backwards-incompatible change to Perl can
+cause for developers building or maintaining software in
+Perl. You can be sure that when we deprecate a functionality
+or syntax, it isn&rsquo;t a choice we make lightly.
+Sometimes, we choose to deprecate functionality or syntax
+because it was found to be poorly designed or implemented.
+Sometimes, this is because they&rsquo;re holding back other
+features or causing performance problems. Sometimes, the
+reasons are more complex. Wherever possible, we try to keep
+deprecated functionality available to developers in its
+previous form for at least one major release. So long as a
+deprecated feature isn&rsquo;t actively disrupting our
+ability to maintain and extend Perl, we&rsquo;ll try to
+leave it in place as long as possible.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+items are now deprecated: <br>
+suidperl</p>
+
+<p style="margin-left:17%;"><tt>&quot;suidperl&quot;</tt>
+is no longer part of Perl. It used to provide a mechanism to
+emulate setuid permission bits on systems that don&rsquo;t
+support it properly.</p>
+
+<p style="margin-left:11%;">Use of &quot;:=&quot; to mean
+an empty attribute list</p>
+
+<p style="margin-left:17%;">An accident of Perl&rsquo;s
+parser meant that these constructions were all
+equivalent:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    my $pi := 4;
+    my $pi : = 4;
+    my $pi :  = 4;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">with the
+<tt>&quot;:&quot;</tt> being treated as the start of an
+attribute list, which ends before the
+<tt>&quot;=&quot;</tt>. As whitespace is not significant
+here, all are parsed as an empty attribute list, hence all
+the above are equivalent to, and better written as</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    my $pi = 4;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">because no
+attribute processing is done for an empty list.</p>
+
+<p style="margin-left:17%; margin-top: 1em">As is, this
+meant that <tt>&quot;:=&quot;</tt> cannot be used as a new
+token, without silently changing the meaning of existing
+code. Hence that particular form is now deprecated, and will
+become a syntax error. If it is absolutely necessary to have
+empty attribute lists (for example, because of a code
+generator) then avoid the warning by adding a space before
+the <tt>&quot;=&quot;</tt>.</p>
+
+
+<p style="margin-left:11%;">&quot;UNIVERSAL&minus;&gt;import()&quot;</p>
+
+<p style="margin-left:17%;">The method
+<tt>&quot;UNIVERSAL&minus;&gt;import()&quot;</tt> is now
+deprecated. Attempting to pass import arguments to a
+<tt>&quot;use UNIVERSAL&quot;</tt> statement will result in
+a deprecation warning.</p>
+
+<p style="margin-left:11%;">Use of &quot;goto&quot; to jump
+into a construct</p>
+
+<p style="margin-left:17%;">Using <tt>&quot;goto&quot;</tt>
+to jump from an outer scope into an inner scope is now
+deprecated. This rare use case was causing problems in the
+implementation of scopes.</p>
+
+<p style="margin-left:11%;">Custom character names in
+\N{name} that don&rsquo;t look like names</p>
+
+<p style="margin-left:17%;">In
+<tt>&quot;\N{</tt><i>name</i><tt>}&quot;</tt>, <i>name</i>
+can be just about anything. The standard Unicode names have
+a very limited domain, but a custom name translator could
+create names that are, for example, made up entirely of
+punctuation symbols. It is now deprecated to make names that
+don&rsquo;t begin with an alphabetic character, and
+aren&rsquo;t alphanumeric or contain other than a very few
+other characters, namely spaces, dashes, parentheses and
+colons. Because of the added meaning of
+<tt>&quot;\N&quot;</tt> (See &quot;<tt>&quot;\N&quot;</tt>
+experimental regex escape&quot;), names that look like curly
+brace &minus;enclosed quantifiers won&rsquo;t work. For
+example, <tt>&quot;\N{3,4}&quot;</tt> now means to match 3
+to 4 non-newlines; before a custom name
+<tt>&quot;3,4&quot;</tt> could have been created.</p>
+
+<p style="margin-left:11%;">Deprecated Modules</p>
+
+<p style="margin-left:17%;">The following modules will be
+removed from the core distribution in a future release, and
+should be installed from <small>CPAN</small> instead.
+Distributions on <small>CPAN</small> which require these
+should add them to their prerequisites. The core versions of
+these modules warnings will issue a deprecation warning.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If you ship a
+packaged version of Perl, either alone or as part of a
+larger system, then you should carefully consider the
+repercussions of core module deprecations. You may want to
+consider shipping your default build of Perl with packages
+for some or all deprecated modules which install into
+<tt>&quot;vendor&quot;</tt> or <tt>&quot;site&quot;</tt>
+perl library directories. This will inhibit the deprecation
+warnings.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Alternatively,
+you may want to consider patching <i>lib/deprecate.pm</i> to
+provide deprecation warnings specific to your packaging
+system or distribution of Perl, consistent with how your
+packaging system or distribution manages a staged transition
+from a release where the installation of a single package
+provides the given functionality, to a later release where
+the system administrator needs to know to install multiple
+packages to get that same functionality.</p>
+
+<p style="margin-left:17%; margin-top: 1em">You can silence
+these deprecation warnings by installing the modules in
+question from <small>CPAN</small> . To install the latest
+version of all of them, just install
+<tt>&quot;Task::Deprecations::5_12&quot;</tt>. <br>
+Class::ISA <br>
+Pod::Plainer <br>
+Shell <br>
+Switch</p>
+
+<p style="margin-left:23%;">Switch is buggy and should be
+avoided. You may find Perl&rsquo;s new
+<tt>&quot;given&quot;</tt>/<tt>&quot;when&quot;</tt> feature
+a suitable replacement. See &quot;Switch statements&quot; in
+perlsyn for more information.</p>
+
+<p style="margin-left:11%;">Assignment to $[ <br>
+Use of the attribute :locked on subroutines <br>
+Use of &quot;locked&quot; with the attributes pragma <br>
+Use of &quot;unique&quot; with the attributes pragma <br>
+Perl_pmflag</p>
+
+
+<p style="margin-left:17%;"><tt>&quot;Perl_pmflag&quot;</tt>
+is no longer part of Perl&rsquo;s public <small>API</small>
+. Calling it now generates a deprecation warning, and it
+will be removed in a future release. Although listed as part
+of the <small>API</small> , it was never documented, and
+only ever used in <i>toke.c</i>, and prior to 5.10,
+<i>regcomp.c</i>. In core, it has been replaced by a static
+function.</p>
+
+<p style="margin-left:11%;">Numerous Perl 4&minus;era
+libraries</p>
+
+<p style="margin-left:17%;"><i>termcap.pl</i>,
+<i>tainted.pl</i>, <i>stat.pl</i>, <i>shellwords.pl</i>,
+<i>pwd.pl</i>, <i>open3.pl</i>, <i>open2.pl</i>,
+<i>newgetopt.pl</i>, <i>look.pl</i>, <i>find.pl</i>,
+<i>finddepth.pl</i>, <i>importenv.pl</i>,
+<i>hostname.pl</i>, <i>getopts.pl</i>, <i>getopt.pl</i>,
+<i>getcwd.pl</i>, <i>flush.pl</i>, <i>fastcwd.pl</i>,
+<i>exceptions.pl</i>, <i>ctime.pl</i>, <i>complete.pl</i>,
+<i>cacheout.pl</i>, <i>bigrat.pl</i>, <i>bigint.pl</i>,
+<i>bigfloat.pl</i>, <i>assert.pl</i>, <i>abbrev.pl</i>,
+<i>dotsh.pl</i>, and <i>timelocal.pl</i> are all now
+deprecated. Earlier, Perl&rsquo;s developers intended to
+remove these libraries from Perl&rsquo;s core for the 5.14.0
+release.</p>
+
+<p style="margin-left:17%; margin-top: 1em">During final
+testing before the release of 5.12.0, several developers
+discovered current production code using these ancient
+libraries, some inside the Perl core itself. Accordingly,
+the pumpking granted them a stay of execution. They will
+begin to warn about their deprecation in the 5.14.0 release
+and will be removed in the 5.16.0 release.</p>
+
+<h2>Unicode overhaul
+<a name="Unicode overhaul"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Perl&rsquo;s
+developers have made a concerted effort to update Perl to be
+in sync with the latest Unicode standard. Changes for this
+include:</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl can now
+handle every Unicode character property. New documentation,
+perluniprops, lists all available non-Unihan character
+properties. By default, perl does not expose Unihan,
+deprecated or Unicode-internal properties. See below for
+more details on these; there is also a section in the pod
+listing them, and explaining why they are not exposed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl now fully
+supports the Unicode compound-style of using
+<tt>&quot;=&quot;</tt> and <tt>&quot;:&quot;</tt> in writing
+regular expressions: <tt>&quot;\p{property=value}&quot;</tt>
+and <tt>&quot;\p{property:value}&quot;</tt> (both of which
+mean the same thing).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl now fully
+supports the Unicode loose matching rules for text between
+the braces in <tt>&quot;\p{...}&quot;</tt> constructs. In
+addition, Perl allows underscores between digits of
+numbers.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl now
+accepts all the Unicode-defined synonyms for properties and
+property values.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;qr/\X/&quot;</tt>,
+which matches a Unicode logical character, has been expanded
+to work better with various Asian languages. It now is
+defined as an <i>extended grapheme cluster</i>. (See
+&lt;http://www.unicode.org/reports/tr29/&gt;). Anything
+matched previously and that made sense will continue to be
+accepted. Additionally:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;\X&quot;</tt> will not break apart a
+<tt>&quot;CR&nbsp;LF&quot;</tt> sequence.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;\X&quot;</tt> will now match a sequence which
+includes the <tt>&quot;ZWJ&quot;</tt> and
+<tt>&quot;ZWNJ&quot;</tt> characters.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;\X&quot;</tt> will now always match at least
+one character, including an initial mark. Marks generally
+come after a base character, but it is possible in Unicode
+to have them in isolation, and <tt>&quot;\X&quot;</tt> will
+now handle that case, for example at the beginning of a
+line, or after a <tt>&quot;ZWSP&quot;</tt>. And this is the
+part where <tt>&quot;\X&quot;</tt> doesn&rsquo;t match the
+things that it used to that don&rsquo;t make sense.
+Formerly, for example, you could have the nonsensical case
+of an accented <small>LF</small> .</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;\X&quot;</tt> will now match a (Korean) Hangul
+syllable sequence, and the Thai and Lao exception cases.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Otherwise, this
+change should be transparent for the non-affected
+languages.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;\p{...}&quot;</tt>
+matches using the Canonical_Combining_Class property were
+completely broken in previous releases of Perl. They should
+now work correctly.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Before Perl
+5.12, the Unicode
+<tt>&quot;Decomposition_Type=Compat&quot;</tt> property and
+a Perl extension had the same name, which led to neither
+matching all the correct values (with more than 100 mistakes
+in one, and several thousand in the other). The Perl
+extension has now been renamed to be
+<tt>&quot;Decomposition_Type=Noncanonical&quot;</tt> (short:
+<tt>&quot;dt=noncanon&quot;</tt>). It has the same meaning
+as was previously intended, namely the union of all the
+non-canonical Decomposition types, with Unicode
+<tt>&quot;Compat&quot;</tt> being just one of those.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;\p{Decomposition_Type=Canonical}&quot;</tt>
+now includes the Hangul syllables.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;\p{Uppercase}&quot;</tt>
+and <tt>&quot;\p{Lowercase}&quot;</tt> now work as the
+Unicode standard says they should. This means they each
+match a few more characters than they used to.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;\p{Cntrl}&quot;</tt>
+now matches the same characters as
+<tt>&quot;\p{Control}&quot;</tt>. This means it no longer
+will match Private Use (gc=co), Surrogates (gc=cs), nor
+Format (gc=cf) code points. The Format code points represent
+the biggest possible problem. All but 36 of them are either
+officially deprecated or strongly discouraged from being
+used. Of those 36, likely the most widely used are the soft
+hyphen (U+00AD), and <small>BOM</small> ,
+<small>ZWSP</small> , <small>ZWNJ</small> ,
+<small>WJ</small> , and similar characters, plus
+bidirectional controls.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;\p{Alpha}&quot;</tt>
+now matches the same characters as
+<tt>&quot;\p{Alphabetic}&quot;</tt>. Before 5.12,
+Perl&rsquo;s definition definition included a number of
+things that aren&rsquo;t really alpha (all marks) while
+omitting many that were. The definitions of
+<tt>&quot;\p{Alnum}&quot;</tt> and
+<tt>&quot;\p{Word}&quot;</tt> depend on Alpha&rsquo;s
+definition and have changed accordingly.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;\p{Word}&quot;</tt>
+no longer incorrectly matches non-word characters such as
+fractions.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;\p{Print}&quot;</tt>
+no longer matches the line control characters: Tab,
+<small>LF</small> , <small>CR</small> , <small>FF</small> ,
+<small>VT</small> , and <small>NEL</small> . This brings it
+in line with standards and the documentation.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;\p{XDigit}&quot;</tt>
+now matches the same characters as
+<tt>&quot;\p{Hex_Digit}&quot;</tt>. This means that in
+addition to the characters it currently matches,
+<tt>&quot;[A&minus;Fa&minus;f0&minus;9]&quot;</tt>, it will
+also match the 22 fullwidth equivalents, for example U+FF10:
+<small>FULLWIDTH DIGIT ZERO</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">The Numeric
+type property has been extended to include the Unihan
+characters.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is a new
+Perl extension, the &rsquo;Present_In&rsquo;, or simply
+&rsquo;In&rsquo;, property. This is an extension of the
+Unicode Age property, but <tt>&quot;\p{In=5.0}&quot;</tt>
+matches any code point whose usage has been determined <i>as
+of</i> Unicode version 5.0. The
+<tt>&quot;\p{Age=5.0}&quot;</tt> only matches code points
+added in <i>precisely</i> version 5.0.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A number of
+properties now have the correct values for unassigned code
+points. The affected properties are Bidi_Class,
+East_Asian_Width, Joining_Type, Decomposition_Type,
+Hangul_Syllable_Type, Numeric_Type, and Line_Break.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+Default_Ignorable_Code_Point, ID_Continue, and ID_Start
+properties are now up to date with current Unicode
+definitions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Earlier
+versions of Perl erroneously exposed certain properties that
+are supposed to be Unicode internal-only. Use of these in
+regular expressions will now generate, if enabled, a
+deprecation warning message. The properties are:
+Other_Alphabetic, Other_Default_Ignorable_Code_Point,
+Other_Grapheme_Extend, Other_ID_Continue, Other_ID_Start,
+Other_Lowercase, Other_Math, and Other_Uppercase.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is now
+possible to change which Unicode properties Perl understands
+on a per-installation basis. As mentioned above, certain
+properties are turned off by default. These include all the
+Unihan properties (which should be accessible via the
+<small>CPAN</small> module Unicode::Unihan) and any
+deprecated or Unicode internal-only property that Perl has
+never exposed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The generated
+files in the <tt>&quot;lib/unicore/To&quot;</tt> directory
+are now more clearly marked as being stable, directly usable
+by applications. New hash entries in them give the format of
+the normal entries, which allows for easier machine parsing.
+Perl can generate files in this directory for any property,
+though most are suppressed. You can find instructions for
+changing which are written in perluniprops.</p>
+
+<h2>Modules and Pragmata
+<a name="Modules and Pragmata"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>New Modules
+and Pragmata</b> <br>
+&quot;autodie&quot;</p>
+
+<p style="margin-left:17%;"><tt>&quot;autodie&quot;</tt> is
+a new lexically-scoped alternative for the
+<tt>&quot;Fatal&quot;</tt> module. The bundled version is
+2.06_01. Note that in this release, using a string eval when
+<tt>&quot;autodie&quot;</tt> is in effect can cause the
+autodie behaviour to leak into the surrounding scope. See
+&quot; <small>BUGS</small> &quot; in autodie for more
+details.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Version 2.06_01
+has been added to the Perl core.</p>
+
+
+<p style="margin-left:11%;">&quot;Compress::Raw::Bzip2&quot;</p>
+
+<p style="margin-left:17%;">Version 2.024 has been added to
+the Perl core.</p>
+
+<p style="margin-left:11%;">&quot;overloading&quot;</p>
+
+
+<p style="margin-left:17%;"><tt>&quot;overloading&quot;</tt>
+allows you to lexically disable or enable overloading for
+some or all operations.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Version 0.001
+has been added to the Perl core.</p>
+
+<p style="margin-left:11%;">&quot;parent&quot;</p>
+
+<p style="margin-left:17%;"><tt>&quot;parent&quot;</tt>
+establishes an <small>ISA</small> relationship with base
+classes at compile time. It provides the key feature of
+<tt>&quot;base&quot;</tt> without further unwanted
+behaviors.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Version 0.223
+has been added to the Perl core.</p>
+
+
+<p style="margin-left:11%;">&quot;Parse::CPAN::Meta&quot;</p>
+
+<p style="margin-left:17%;">Version 1.40 has been added to
+the Perl core.</p>
+
+<p style="margin-left:11%;">&quot;VMS::DCLsym&quot;</p>
+
+<p style="margin-left:17%;">Version 1.03 has been added to
+the Perl core.</p>
+
+<p style="margin-left:11%;">&quot;VMS::Stdio&quot;</p>
+
+<p style="margin-left:17%;">Version 2.4 has been added to
+the Perl core.</p>
+
+
+<p style="margin-left:11%;">&quot;XS::APItest::KeywordRPN&quot;</p>
+
+<p style="margin-left:17%;">Version 0.003 has been added to
+the Perl core.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Updated
+Pragmata</b> <br>
+&quot;base&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 2.13 to
+2.15.</p>
+
+<p style="margin-left:11%;">&quot;bignum&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.22 to
+0.23.</p>
+
+<p style="margin-left:11%;">&quot;charnames&quot;</p>
+
+<p style="margin-left:17%;"><tt>&quot;charnames&quot;</tt>
+now contains the Unicode <i>NameAliases.txt</i> database
+file. This has the effect of adding some extra
+<tt>&quot;\N&quot;</tt> character names that formerly
+wouldn&rsquo;t have been recognised; for example,
+<tt>&quot;\N{LATIN CAPITAL LETTER GHA}&quot;</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Upgraded from
+version 1.06 to 1.07.</p>
+
+<p style="margin-left:11%;">&quot;constant&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.13 to
+1.20.</p>
+
+<p style="margin-left:11%;">&quot;diagnostics&quot;</p>
+
+
+<p style="margin-left:17%;"><tt>&quot;diagnostics&quot;</tt>
+now supports %.0f formatting internally.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;diagnostics&quot;</tt>
+no longer suppresses <tt>&quot;Use of uninitialized value in
+range (or flip)&quot;</tt> warnings. [perl #71204]</p>
+
+<p style="margin-left:17%; margin-top: 1em">Upgraded from
+version 1.17 to 1.19.</p>
+
+<p style="margin-left:11%;">&quot;feature&quot;</p>
+
+<p style="margin-left:17%;">In
+<tt>&quot;feature&quot;</tt>, the meaning of the
+<tt>&quot;:5.10&quot;</tt> and <tt>&quot;:5.10.X&quot;</tt>
+feature bundles has changed slightly. The last component, if
+any (i.e. <tt>&quot;X&quot;</tt>) is simply ignored. This is
+predicated on the assumption that new features will not, in
+general, be added to maintenance releases. So
+<tt>&quot;:5.10&quot;</tt> and <tt>&quot;:5.10.X&quot;</tt>
+have identical effect. This is a change to the behaviour
+documented for 5.10.0.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;feature&quot;</tt>
+now includes the <tt>&quot;unicode_strings&quot;</tt>
+feature:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    use feature &quot;unicode_strings&quot;;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">This pragma
+turns on Unicode semantics for the case-changing operations
+(<tt>&quot;uc&quot;</tt>, <tt>&quot;lc&quot;</tt>,
+<tt>&quot;ucfirst&quot;</tt>, <tt>&quot;lcfirst&quot;</tt>)
+on strings that don&rsquo;t have the internal
+<small>UTF&minus;8</small> flag set, but that contain
+single-byte characters between 128 and 255.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Upgraded from
+version 1.11 to 1.16.</p>
+
+<p style="margin-left:11%;">&quot;less&quot;</p>
+
+<p style="margin-left:17%;"><tt>&quot;less&quot;</tt> now
+includes the <tt>&quot;stash_name&quot;</tt> method to allow
+subclasses of <tt>&quot;less&quot;</tt> to pick where in %^H
+to store their stash.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Upgraded from
+version 0.02 to 0.03.</p>
+
+<p style="margin-left:11%;">&quot;lib&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.5565 to
+0.62.</p>
+
+<p style="margin-left:11%;">&quot;mro&quot;</p>
+
+<p style="margin-left:17%;"><tt>&quot;mro&quot;</tt> is now
+implemented as an <small>XS</small> extension. The
+documented interface has not changed. Code relying on the
+implementation detail that some <tt>&quot;mro::&quot;</tt>
+methods happened to be available at all times gets to
+&quot;keep both pieces&quot;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Upgraded from
+version 1.00 to 1.02.</p>
+
+<p style="margin-left:11%;">&quot;overload&quot;</p>
+
+<p style="margin-left:17%;"><tt>&quot;overload&quot;</tt>
+now allow overloading of &rsquo;qr&rsquo;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Upgraded from
+version 1.06 to 1.10.</p>
+
+<p style="margin-left:11%;">&quot;threads&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.67 to
+1.75.</p>
+
+
+<p style="margin-left:11%;">&quot;threads::shared&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.14 to
+1.32.</p>
+
+<p style="margin-left:11%;">&quot;version&quot;</p>
+
+<p style="margin-left:17%;"><tt>&quot;version&quot;</tt>
+now has support for &quot;Version number formats&quot; as
+described earlier in this document and in its own
+documentation.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Upgraded from
+version 0.74 to 0.82.</p>
+
+<p style="margin-left:11%;">&quot;warnings&quot;</p>
+
+<p style="margin-left:17%;"><tt>&quot;warnings&quot;</tt>
+has a new <tt>&quot;warnings::fatal_enabled()&quot;</tt>
+function. It also includes a new
+<tt>&quot;illegalproto&quot;</tt> warning category. See also
+&quot;New or Changed Diagnostics&quot; for this change.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Upgraded from
+version 1.06 to 1.09.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Updated
+Modules</b> <br>
+&quot;Archive::Extract&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.24 to
+0.38.</p>
+
+<p style="margin-left:11%;">&quot;Archive::Tar&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.38 to
+1.54.</p>
+
+
+<p style="margin-left:11%;">&quot;Attribute::Handlers&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.79 to
+0.87.</p>
+
+<p style="margin-left:11%;">&quot;AutoLoader&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 5.63 to
+5.70.</p>
+
+<p style="margin-left:11%;">&quot;B::Concise&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.74 to
+0.78.</p>
+
+<p style="margin-left:11%;">&quot;B::Debug&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.05 to
+1.12.</p>
+
+<p style="margin-left:11%;">&quot;B::Deparse&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.83 to
+0.96.</p>
+
+<p style="margin-left:11%;">&quot;B::Lint&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.09 to
+1.11_01.</p>
+
+<p style="margin-left:11%;">&quot;CGI&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 3.29 to
+3.48.</p>
+
+<p style="margin-left:11%;">&quot;Class::ISA&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.33 to
+0.36.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><small>NOTE:</small>
+<tt>&quot;Class::ISA&quot;</tt> is deprecated and may be
+removed from a future version of Perl.</p>
+
+
+<p style="margin-left:11%;">&quot;Compress::Raw::Zlib&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 2.008 to
+2.024.</p>
+
+<p style="margin-left:11%;">&quot;CPAN&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.9205 to
+1.94_56.</p>
+
+<p style="margin-left:11%;">&quot;CPANPLUS&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.84 to
+0.90.</p>
+
+
+<p style="margin-left:11%;">&quot;CPANPLUS::Dist::Build&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.06_02
+to 0.46.</p>
+
+<p style="margin-left:11%;">&quot;Data::Dumper&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 2.121_14
+to 2.125.</p>
+
+<p style="margin-left:11%;">&quot;DB_File&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.816_1
+to 1.820.</p>
+
+<p style="margin-left:11%;">&quot;Devel::PPPort&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 3.13 to
+3.19.</p>
+
+<p style="margin-left:11%;">&quot;Digest&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.15 to
+1.16.</p>
+
+<p style="margin-left:11%;">&quot;Digest::MD5&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 2.36_01
+to 2.39.</p>
+
+<p style="margin-left:11%;">&quot;Digest::SHA&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 5.45 to
+5.47.</p>
+
+<p style="margin-left:11%;">&quot;Encode&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 2.23 to
+2.39.</p>
+
+<p style="margin-left:11%;">&quot;Exporter&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 5.62 to
+5.64_01.</p>
+
+
+<p style="margin-left:11%;">&quot;ExtUtils::CBuilder&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.21 to
+0.27.</p>
+
+
+<p style="margin-left:11%;">&quot;ExtUtils::Command&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.13 to
+1.16.</p>
+
+
+<p style="margin-left:11%;">&quot;ExtUtils::Constant&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.2 to
+0.22.</p>
+
+
+<p style="margin-left:11%;">&quot;ExtUtils::Install&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.44 to
+1.55.</p>
+
+
+<p style="margin-left:11%;">&quot;ExtUtils::MakeMaker&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 6.42 to
+6.56.</p>
+
+
+<p style="margin-left:11%;">&quot;ExtUtils::Manifest&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.51_01
+to 1.57.</p>
+
+
+<p style="margin-left:11%;">&quot;ExtUtils::ParseXS&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 2.18_02
+to 2.21.</p>
+
+<p style="margin-left:11%;">&quot;File::Fetch&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.14 to
+0.24.</p>
+
+<p style="margin-left:11%;">&quot;File::Path&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 2.04 to
+2.08_01.</p>
+
+<p style="margin-left:11%;">&quot;File::Temp&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.18 to
+0.22.</p>
+
+<p style="margin-left:11%;">&quot;Filter::Simple&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.82 to
+0.84.</p>
+
+
+<p style="margin-left:11%;">&quot;Filter::Util::Call&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.07 to
+1.08.</p>
+
+<p style="margin-left:11%;">&quot;Getopt::Long&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 2.37 to
+2.38.</p>
+
+<p style="margin-left:11%;">&quot;IO&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.23_01
+to 1.25_02.</p>
+
+<p style="margin-left:11%;">&quot;IO::Zlib&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.07 to
+1.10.</p>
+
+<p style="margin-left:11%;">&quot;IPC::Cmd&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.40_1 to
+0.54.</p>
+
+<p style="margin-left:11%;">&quot;IPC::SysV&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.05 to
+2.01.</p>
+
+
+<p style="margin-left:11%;">&quot;Locale::Maketext&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.12 to
+1.14.</p>
+
+
+<p style="margin-left:11%;">&quot;Locale::Maketext::Simple&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.18 to
+0.21.</p>
+
+<p style="margin-left:11%;">&quot;Log::Message&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.01 to
+0.02.</p>
+
+
+<p style="margin-left:11%;">&quot;Log::Message::Simple&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.04 to
+0.06.</p>
+
+<p style="margin-left:11%;">&quot;Math::BigInt&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.88 to
+1.89_01.</p>
+
+
+<p style="margin-left:11%;">&quot;Math::BigInt::FastCalc&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.16 to
+0.19.</p>
+
+<p style="margin-left:11%;">&quot;Math::BigRat&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.21 to
+0.24.</p>
+
+<p style="margin-left:11%;">&quot;Math::Complex&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.37 to
+1.56.</p>
+
+<p style="margin-left:11%;">&quot;Memoize&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.01_02
+to 1.01_03.</p>
+
+<p style="margin-left:11%;">&quot;MIME::Base64&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 3.07_01
+to 3.08.</p>
+
+<p style="margin-left:11%;">&quot;Module::Build&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.2808_01
+to 0.3603.</p>
+
+
+<p style="margin-left:11%;">&quot;Module::CoreList&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 2.12 to
+2.29.</p>
+
+<p style="margin-left:11%;">&quot;Module::Load&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.12 to
+0.16.</p>
+
+
+<p style="margin-left:11%;">&quot;Module::Load::Conditional&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.22 to
+0.34.</p>
+
+<p style="margin-left:11%;">&quot;Module::Loaded&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.01 to
+0.06.</p>
+
+
+<p style="margin-left:11%;">&quot;Module::Pluggable&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 3.6 to
+3.9.</p>
+
+<p style="margin-left:11%;">&quot;Net::Ping&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 2.33 to
+2.36.</p>
+
+<p style="margin-left:11%;">&quot;NEXT&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.60_01
+to 0.64.</p>
+
+
+<p style="margin-left:11%;">&quot;Object::Accessor&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.32 to
+0.36.</p>
+
+
+<p style="margin-left:11%;">&quot;Package::Constants&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.01 to
+0.02.</p>
+
+<p style="margin-left:11%;">&quot;PerlIO&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.04 to
+1.06.</p>
+
+<p style="margin-left:11%;">&quot;Pod::Parser&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.35 to
+1.37.</p>
+
+<p style="margin-left:11%;">&quot;Pod::Perldoc&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 3.14_02
+to 3.15_02.</p>
+
+<p style="margin-left:11%;">&quot;Pod::Plainer&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.01 to
+1.02.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><small>NOTE:</small>
+<tt>&quot;Pod::Plainer&quot;</tt> is deprecated and may be
+removed from a future version of Perl.</p>
+
+<p style="margin-left:11%;">&quot;Pod::Simple&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 3.05 to
+3.13.</p>
+
+<p style="margin-left:11%;">&quot;Safe&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 2.12 to
+2.22.</p>
+
+<p style="margin-left:11%;">&quot;SelfLoader&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.11 to
+1.17.</p>
+
+<p style="margin-left:11%;">&quot;Storable&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 2.18 to
+2.22.</p>
+
+<p style="margin-left:11%;">&quot;Switch&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 2.13 to
+2.16.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><small>NOTE:</small>
+<tt>&quot;Switch&quot;</tt> is deprecated and may be removed
+from a future version of Perl.</p>
+
+<p style="margin-left:11%;">&quot;Sys::Syslog&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.22 to
+0.27.</p>
+
+
+<p style="margin-left:11%;">&quot;Term::ANSIColor&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.12 to
+2.02.</p>
+
+<p style="margin-left:11%;">&quot;Term::UI&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.18 to
+0.20.</p>
+
+<p style="margin-left:11%;">&quot;Test&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.25 to
+1.25_02.</p>
+
+<p style="margin-left:11%;">&quot;Test::Harness&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 2.64 to
+3.17.</p>
+
+<p style="margin-left:11%;">&quot;Test::Simple&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.72 to
+0.94.</p>
+
+<p style="margin-left:11%;">&quot;Text::Balanced&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 2.0.0 to
+2.02.</p>
+
+
+<p style="margin-left:11%;">&quot;Text::ParseWords&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 3.26 to
+3.27.</p>
+
+<p style="margin-left:11%;">&quot;Text::Soundex&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 3.03 to
+3.03_01.</p>
+
+<p style="margin-left:11%;">&quot;Thread::Queue&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 2.00 to
+2.11.</p>
+
+
+<p style="margin-left:11%;">&quot;Thread::Semaphore&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 2.01 to
+2.09.</p>
+
+<p style="margin-left:11%;">&quot;Tie::RefHash&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.37 to
+1.38.</p>
+
+<p style="margin-left:11%;">&quot;Time::HiRes&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.9711 to
+1.9719.</p>
+
+<p style="margin-left:11%;">&quot;Time::Local&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.18 to
+1.1901_01.</p>
+
+<p style="margin-left:11%;">&quot;Time::Piece&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.12 to
+1.15.</p>
+
+
+<p style="margin-left:11%;">&quot;Unicode::Collate&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.52 to
+0.52_01.</p>
+
+
+<p style="margin-left:11%;">&quot;Unicode::Normalize&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 1.02 to
+1.03.</p>
+
+<p style="margin-left:11%;">&quot;Win32&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.34 to
+0.39.</p>
+
+<p style="margin-left:11%;">&quot;Win32API::File&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.1001_01
+to 0.1101.</p>
+
+<p style="margin-left:11%;">&quot;XSLoader&quot;</p>
+
+<p style="margin-left:17%;">Upgraded from version 0.08 to
+0.10.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Removed
+Modules and Pragmata</b> <br>
+&quot;attrs&quot;</p>
+
+<p style="margin-left:17%;">Removed from the Perl core.
+Prior version was 1.02.</p>
+
+
+<p style="margin-left:11%;">&quot;CPAN::API::HOWTO&quot;</p>
+
+<p style="margin-left:17%;">Removed from the Perl core.
+Prior version was &rsquo;undef&rsquo;.</p>
+
+
+<p style="margin-left:11%;">&quot;CPAN::DeferedCode&quot;</p>
+
+<p style="margin-left:17%;">Removed from the Perl core.
+Prior version was 5.50.</p>
+
+<p style="margin-left:11%;">&quot;CPANPLUS::inc&quot;</p>
+
+<p style="margin-left:17%;">Removed from the Perl core.
+Prior version was &rsquo;undef&rsquo;.</p>
+
+<p style="margin-left:11%;">&quot;DCLsym&quot;</p>
+
+<p style="margin-left:17%;">Removed from the Perl core.
+Prior version was 1.03.</p>
+
+
+<p style="margin-left:11%;">&quot;ExtUtils::MakeMaker::bytes&quot;</p>
+
+<p style="margin-left:17%;">Removed from the Perl core.
+Prior version was 6.42.</p>
+
+
+<p style="margin-left:11%;">&quot;ExtUtils::MakeMaker::vmsish&quot;</p>
+
+<p style="margin-left:17%;">Removed from the Perl core.
+Prior version was 6.42.</p>
+
+<p style="margin-left:11%;">&quot;Stdio&quot;</p>
+
+<p style="margin-left:17%;">Removed from the Perl core.
+Prior version was 2.3.</p>
+
+
+<p style="margin-left:11%;">&quot;Test::Harness::Assert&quot;</p>
+
+<p style="margin-left:17%;">Removed from the Perl core.
+Prior version was 0.02.</p>
+
+
+<p style="margin-left:11%;">&quot;Test::Harness::Iterator&quot;</p>
+
+<p style="margin-left:17%;">Removed from the Perl core.
+Prior version was 0.02.</p>
+
+
+<p style="margin-left:11%;">&quot;Test::Harness::Point&quot;</p>
+
+<p style="margin-left:17%;">Removed from the Perl core.
+Prior version was 0.01.</p>
+
+
+<p style="margin-left:11%;">&quot;Test::Harness::Results&quot;</p>
+
+<p style="margin-left:17%;">Removed from the Perl core.
+Prior version was 0.01.</p>
+
+
+<p style="margin-left:11%;">&quot;Test::Harness::Straps&quot;</p>
+
+<p style="margin-left:17%;">Removed from the Perl core.
+Prior version was 0.26_01.</p>
+
+
+<p style="margin-left:11%;">&quot;Test::Harness::Util&quot;</p>
+
+<p style="margin-left:17%;">Removed from the Perl core.
+Prior version was 0.01.</p>
+
+<p style="margin-left:11%;">&quot;XSSymSet&quot;</p>
+
+<p style="margin-left:17%;">Removed from the Perl core.
+Prior version was 1.1.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Deprecated
+Modules and Pragmata</b> <br>
+See &quot;Deprecated Modules&quot; above.</p>
+
+<h2>Documentation
+<a name="Documentation"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>New
+Documentation</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>perlhaiku contains instructions on how to build perl for
+the Haiku platform.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>perlmroapi describes the new interface for pluggable
+Method Resolution Orders.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>perlperf, by Richard Foley, provides an introduction to
+the use of performance and optimization techniques which can
+be used with particular reference to perl programs.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>perlrepository describes how to access the perl source
+using the <i>git</i> version control system.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>perlpolicy extends the &quot;Social contract about
+contributed modules&quot; into the beginnings of a document
+on Perl porting policies.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Changes to
+Existing Documentation</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The various large
+<i>Changes*</i> files (which listed every change made to
+perl over the last 18 years) have been removed, and replaced
+by a small file, also called <i>Changes</i>, which just
+explains how that same information may be extracted from the
+git version control system.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>Porting/patching.pod</i> has been deleted, as it
+mainly described interacting with the old Perforce-based
+repository, which is now obsolete. Information still
+relevant has been moved to perlrepository.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The syntax <tt>&quot;unless (EXPR) BLOCK else
+BLOCK&quot;</tt> is now documented as valid, as is the
+syntax <tt>&quot;unless (EXPR) BLOCK elsif (EXPR) BLOCK ...
+else BLOCK&quot;</tt>, although actually using the latter
+may not be the best idea for the readability of your source
+code.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Documented &minus;X overloading.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Documented that <tt>&quot;when()&quot;</tt> treats
+specially most of the filetest operators</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Documented <tt>&quot;when&quot;</tt> as a syntax
+modifier.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Eliminated &quot;Old Perl threads tutorial&quot;, which
+described 5005 threads.</p></td></tr>
+</table>
+
+
+<p style="margin-left:17%; margin-top: 1em"><i>pod/perlthrtut.pod</i>
+is the same material reworked for ithreads.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Correct previous documentation:
+v&minus;strings are not deprecated</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">With version
+objects, we need them to use <small>MODULE VERSION</small>
+syntax. This patch removes the deprecation notice.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Security contact information is
+now part of perlsec.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>A significant fraction of the core documentation has
+been updated to clarify the behavior of Perl&rsquo;s Unicode
+handling.</p> </td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Much of the
+remaining core documentation has been reviewed and edited
+for clarity, consistent use of language, and to fix the
+spelling of Tom Christiansen&rsquo;s name.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The Pod specification
+(perlpodspec) has been updated to bring the specification in
+line with modern usage already supported by most Pod
+systems. A parameter string may now follow the format name
+in a &quot;begin/end&quot; region. Links to URIs with a text
+description are now allowed. The usage of
+<tt>&quot;L&lt;&quot;section&quot;&gt;&quot;</tt> has been
+marked as deprecated.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>if.pm has been documented in &quot;use&quot; in perlfunc
+as a means to get conditional loading of modules despite the
+implicit <small>BEGIN</small> block around
+<tt>&quot;use&quot;</tt>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The documentation for <tt>$1</tt> in perlvar.pod has
+been clarified.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;\N{U+</tt><i>code point</i><tt>}&quot;</tt> is
+now documented.</p></td></tr>
+</table>
+
+<h2>Selected Performance Enhancements
+<a name="Selected Performance Enhancements"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">A new internal cache means that
+<tt>&quot;isa()&quot;</tt> will often be faster.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The implementation of <tt>&quot;C3&quot;</tt> Method
+Resolution Order has been optimised &minus; linearisation
+for classes with single inheritance is 40% faster.
+Performance for multiple inheritance is unchanged.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Under <tt>&quot;use locale&quot;</tt>, the
+locale-relevant information is now cached on read-only
+values, such as the list returned by <tt>&quot;keys
+%hash&quot;</tt>. This makes operations such as
+<tt>&quot;sort keys %hash&quot;</tt> in the scope of
+<tt>&quot;use locale&quot;</tt> much faster.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Empty <tt>&quot;DESTROY&quot;</tt> methods are no longer
+called.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Perl_sv_utf8_upgrade()&quot;</tt> is now
+faster.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;keys&quot;</tt> on empty hash is now
+faster.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;if (%foo)&quot;</tt> has been optimized to be
+faster than <tt>&quot;if (keys %foo)&quot;</tt>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The string repetition operator (<tt>&quot;$str x
+$num&quot;</tt>) is now several times faster when
+<tt>$str</tt> has length one or <tt>$num</tt> is large.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Reversing an array to itself (as in <tt>&quot;@a =
+reverse @a&quot;</tt>) in void context now happens in-place
+and is several orders of magnitude faster than it used to
+be. It will also preserve non-existent elements whenever
+possible, i.e. for non magical arrays or tied arrays with
+<tt>&quot;EXISTS&quot;</tt> and <tt>&quot;DELETE&quot;</tt>
+methods.</p> </td></tr>
+</table>
+
+<h2>Installation and Configuration Improvements
+<a name="Installation and Configuration Improvements"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">perlapi, perlintern, perlmodlib
+and perltoc are now all generated at build time, rather than
+being shipped as part of the release.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>If <tt>&quot;vendorlib&quot;</tt> and
+<tt>&quot;vendorarch&quot;</tt> are the same, then they are
+only added to <tt>@INC</tt> once.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>$Config{usedevel}</tt> and the C&minus;level
+<tt>&quot;PERL_USE_DEVEL&quot;</tt> are now defined if perl
+is built with <tt>&quot;&minus;Dusedevel&quot;</tt>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>Configure</i> will enable use of
+<tt>&quot;&minus;fstack&minus;protector&quot;</tt>, to
+provide protection against stack-smashing attacks, if the
+compiler supports it.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>Configure</i> will now determine the correct
+prototypes for re-entrant functions and for
+<tt>&quot;gconvert&quot;</tt> if you are using a C
+<small>++</small> compiler rather than a C compiler.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>On Unix, if you build from a tree containing a git
+repository, the configuration process will note the commit
+hash you have checked out, for display in the output of
+<tt>&quot;perl &minus;v&quot;</tt> and <tt>&quot;perl
+&minus;V&quot;</tt>. Unpushed local commits are
+automatically added to the list of local patches displayed
+by <tt>&quot;perl &minus;V&quot;</tt>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Perl now supports SystemTap&rsquo;s
+<tt>&quot;dtrace&quot;</tt> compatibility layer and an issue
+with linking <tt>&quot;miniperl&quot;</tt> has been fixed in
+the process.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>perldoc now uses <tt>&quot;less &minus;R&quot;</tt>
+instead of <tt>&quot;less&quot;</tt> for improved behaviour
+in the face of <tt>&quot;groff&quot;</tt>&rsquo;s new usage
+of <small>ANSI</small> escape codes.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;perl &minus;V&quot;</tt> now reports use of
+the compile-time options <tt>&quot;USE_PERL_ATOF&quot;</tt>
+and <tt>&quot;USE_ATTRIBUTES_FOR_PERLIO&quot;</tt>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>As part of the flattening of <i>ext</i>, all extensions
+on all platforms are built by <i>make_ext.pl</i>. This
+replaces the Unix-specific <i>ext/util/make_ext</i>,
+VMS-specific <i>make_ext.com</i> and Win32&minus;specific
+<i>win32/buildext.pl</i>.</p> </td></tr>
+</table>
+
+<h2>Internal Changes
+<a name="Internal Changes"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Each release of
+Perl sees numerous internal changes which shouldn&rsquo;t
+affect day to day usage but may still be notable for
+developers working with Perl&rsquo;s source code.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The J.R.R. Tolkien quotes at the
+head of C source file have been checked and proper citations
+added, thanks to a patch from Tom Christiansen.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The internal structure of the dual-life modules
+traditionally found in the <i>lib/</i> and <i>ext/</i>
+directories in the perl source has changed significantly.
+Where possible, dual-lifed modules have been extracted from
+<i>lib/</i> and <i>ext/</i>.</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Dual-lifed
+modules maintained by Perl&rsquo;s developers as part of the
+Perl core now live in <i>dist/</i>. Dual-lifed modules
+maintained primarily on <small>CPAN</small> now live in
+<i>cpan/</i>. When reporting a bug in a module located under
+<i>cpan/</i>, please send your bug report directly to the
+module&rsquo;s bug tracker or author, rather than
+Perl&rsquo;s bug tracker.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em"><tt>&quot;\N{...}&quot;</tt> now
+compiles better, always forces <small>UTF&minus;8</small>
+internal representation</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Perl&rsquo;s
+developers have fixed several problems with the recognition
+of <tt>&quot;\N{...}&quot;</tt> constructs. As part of this,
+perl will store any scalar or regex containing
+<tt>&quot;\N{</tt><i>name</i><tt>}&quot;</tt> or
+<tt>&quot;\N{U+</tt><i>code point</i><tt>}&quot;</tt> in its
+definition in <small>UTF&minus;8</small> format. (This was
+true previously for all occurrences of
+<tt>&quot;\N{</tt><i>name</i><tt>}&quot;</tt> that did not
+use a custom translator, but now it&rsquo;s always
+true.)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Perl_magic_setmglob now knows
+about globs, fixing <small>RT</small> #71254.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;SVt_RV&quot;</tt> no longer exists. RVs are
+now stored in IVs.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Perl_vcroak()&quot;</tt> now accepts a null
+first argument. In addition, a full audit was made of the
+&quot;not <small>NULL</small> &quot; compiler annotations,
+and those for several other internal functions were
+corrected.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>New macros <tt>&quot;dSAVEDERRNO&quot;</tt>,
+<tt>&quot;dSAVE_ERRNO&quot;</tt>,
+<tt>&quot;SAVE_ERRNO&quot;</tt>,
+<tt>&quot;RESTORE_ERRNO&quot;</tt> have been added to
+formalise the temporary saving of the
+<tt>&quot;errno&quot;</tt> variable.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The function <tt>&quot;Perl_sv_insert_flags&quot;</tt>
+has been added to augment
+<tt>&quot;Perl_sv_insert&quot;</tt>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The function <tt>&quot;Perl_newSV_type(type)&quot;</tt>
+has been added, equivalent to
+<tt>&quot;Perl_newSV()&quot;</tt> followed by
+<tt>&quot;Perl_sv_upgrade(type)&quot;</tt>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The function <tt>&quot;Perl_newSVpvn_flags()&quot;</tt>
+has been added, equivalent to
+<tt>&quot;Perl_newSVpvn()&quot;</tt> and then performing the
+action relevant to the flag.</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Two flag bits
+are currently supported.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em"><tt>&quot;SVf_UTF8&quot;</tt>
+will call <tt>&quot;SvUTF8_on()&quot;</tt> for you. (Note
+that this does not convert an sequence of <small>ISO</small>
+8859&minus;1 characters to <small>UTF&minus;8</small> ). A
+wrapper, <tt>&quot;newSVpvn_utf8()&quot;</tt> is available
+for this.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><tt>&quot;SVs_TEMP&quot;</tt> now calls
+<tt>&quot;Perl_sv_2mortal()&quot;</tt> on the new
+<small>SV</small> .</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">There is also a
+wrapper that takes constant strings,
+<tt>&quot;newSVpvs_flags()&quot;</tt>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The function
+<tt>&quot;Perl_croak_xs_usage&quot;</tt> has been added as a
+wrapper to <tt>&quot;Perl_croak&quot;</tt>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Perl now exports the functions
+<tt>&quot;PerlIO_find_layer&quot;</tt> and
+<tt>&quot;PerlIO_list_alloc&quot;</tt>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;PL_na&quot;</tt> has been exterminated from
+the core code, replaced by local <small>STRLEN</small>
+temporaries, or <tt>&quot;*_nolen()&quot;</tt> calls. Either
+approach is faster than <tt>&quot;PL_na&quot;</tt>, which is
+a pointer dereference into the interpreter structure under
+ithreads, and a global variable otherwise.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Perl_mg_free()&quot;</tt> used to leave freed
+memory accessible via <tt>&quot;SvMAGIC()&quot;</tt> on the
+scalar. It now updates the linked list to remove each piece
+of magic as it is freed.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Under ithreads, the regex in
+<tt>&quot;PL_reg_curpm&quot;</tt> is now reference counted.
+This eliminates a lot of hackish workarounds to cope with it
+not being reference counted.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Perl_mg_magical()&quot;</tt> would sometimes
+incorrectly turn on <tt>&quot;SvRMAGICAL()&quot;</tt>. This
+has been fixed.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The <i>public</i> <small>IV</small> and
+<small>NV</small> flags are now not set if the string value
+has trailing &quot;garbage&quot;. This behaviour is
+consistent with not setting the public <small>IV</small> or
+<small>NV</small> flags if the value is out of range for the
+type.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Uses of <tt>&quot;Nullav&quot;</tt>,
+<tt>&quot;Nullcv&quot;</tt>, <tt>&quot;Nullhv&quot;</tt>,
+<tt>&quot;Nullop&quot;</tt>, <tt>&quot;Nullsv&quot;</tt> etc
+have been replaced by <tt>&quot;NULL&quot;</tt> in the core
+code, and non-dual-life modules, as
+<tt>&quot;NULL&quot;</tt> is clearer to those unfamiliar
+with the core code.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>A macro <tt>MUTABLE_PTR(p)</tt> has been added, which on
+(non-pedantic) gcc will not cast away
+<tt>&quot;const&quot;</tt>, returning a <tt>&quot;void
+*&quot;</tt>. Macros <tt>&quot;MUTABLE_SV(av)&quot;</tt>,
+<tt>&quot;MUTABLE_SV(cv)&quot;</tt> etc build on this,
+casting to <tt>&quot;AV *&quot;</tt> etc without casting
+away <tt>&quot;const&quot;</tt>. This allows proper
+compile-time auditing of <tt>&quot;const&quot;</tt>
+correctness in the core, and helped picked up some errors
+(now fixed).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Macros <tt>&quot;mPUSHs()&quot;</tt> and
+<tt>&quot;mXPUSHs()&quot;</tt> have been added, for pushing
+SVs on the stack and mortalizing them.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Use of the private structure
+<tt>&quot;mro_meta&quot;</tt> has changed slightly. Nothing
+outside the core should be accessing this directly
+anyway.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>A new tool, <i>Porting/expand&minus;macro.pl</i> has
+been added, that allows you to view how a C preprocessor
+macro would be expanded when compiled. This is handy when
+trying to decode the macro hell that is the perl guts.</p></td></tr>
+</table>
+
+<h2>Testing
+<a name="Testing"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Testing
+improvements</b> <br>
+Parallel tests</p>
+
+<p style="margin-left:17%;">The core distribution can now
+run its regression tests in parallel on Unix-like platforms.
+Instead of running <tt>&quot;make test&quot;</tt>, set
+<tt>&quot;TEST_JOBS&quot;</tt> in your environment to the
+number of tests to run in parallel, and run <tt>&quot;make
+test_harness&quot;</tt>. On a Bourne-like shell, this can be
+done as</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    TEST_JOBS=3 make test_harness  # Run 3 tests in parallel</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">An environment
+variable is used, rather than parallel make itself, because
+TAP::Harness needs to be able to schedule individual
+non-conflicting test scripts itself, and there is no
+standard interface to <tt>&quot;make&quot;</tt> utilities to
+interact with their job schedulers.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Note that
+currently some test scripts may fail when run in parallel
+(most notably <tt>&quot;ext/IO/t/io_dir.t&quot;</tt>). If
+necessary run just the failing scripts again sequentially
+and see if the failures go away.</p>
+
+<p style="margin-left:11%;">Test harness flexibility</p>
+
+<p style="margin-left:17%;">It&rsquo;s now possible to
+override <tt>&quot;PERL5OPT&quot;</tt> and friends in
+<i>t/TEST</i></p>
+
+<p style="margin-left:11%;">Test watchdog</p>
+
+<p style="margin-left:17%;">Several tests that have the
+potential to hang forever if they fail now incorporate a
+&quot;watchdog&quot; functionality that will kill them after
+a timeout, which helps ensure that <tt>&quot;make
+test&quot;</tt> and <tt>&quot;make test_harness&quot;</tt>
+run to completion automatically.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>New
+Tests</b> <br>
+Perl&rsquo;s developers have added a number of new tests to
+the core. In addition to the items listed below, many
+modules updated from <small>CPAN</small> incorporate new
+tests.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Significant cleanups to core tests to ensure that
+language and interpreter features are not used before
+they&rsquo;re tested.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;make test_porting&quot;</tt> now runs a number
+of important pre-commit checks which might be of use to
+anyone working on the Perl core.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/porting/podcheck.t</i> automatically checks the
+well-formedness of <small>POD</small> found in all .pl, .pm
+and .pod files in the <i><small>MANIFEST</small></i> , other
+than in dual-lifed modules which are primarily maintained
+outside the Perl core.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/porting/manifest.t</i> now tests that all files
+listed in <small>MANIFEST</small> are present.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/while_readdir.t</i> tests that a bare readdir in
+while loop sets <tt>$_</tt>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/comp/retainedlines.t</i> checks that the debugger
+can retain source lines from <tt>&quot;eval&quot;</tt>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/io/perlio_fail.t</i> checks that bad layers
+fail.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/io/perlio_leaks.t</i> checks that PerlIO layers are
+not leaking.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/io/perlio_open.t</i> checks that certain special
+forms of open work.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/io/perlio.t</i> includes general PerlIO tests.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/io/pvbm.t</i> checks that there is no unexpected
+interaction between the internal types
+<tt>&quot;PVBM&quot;</tt> and <tt>&quot;PVGV&quot;</tt>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/mro/package_aliases.t</i> checks that mro works
+properly in the presence of aliased packages.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/dbm.t</i> tests <tt>&quot;dbmopen&quot;</tt> and
+<tt>&quot;dbmclose&quot;</tt>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/index_thr.t</i> tests the interaction of
+<tt>&quot;index&quot;</tt> and threads.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/pat_thr.t</i> tests the interaction of esoteric
+patterns and threads.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/qr_gc.t</i> tests that <tt>&quot;qr&quot;</tt>
+doesn&rsquo;t leak.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/reg_email_thr.t</i> tests the interaction of
+regex recursion and threads.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/regexp_qr_embed_thr.t</i> tests the interaction
+of patterns with embedded <tt>&quot;qr//&quot;</tt> and
+threads.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/regexp_unicode_prop.t</i> tests Unicode
+properties in regular expressions.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/regexp_unicode_prop_thr.t</i> tests the
+interaction of Unicode properties and threads.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/reg_nc_tie.t</i> tests the tied methods of
+<tt>&quot;Tie::Hash::NamedCapture&quot;</tt>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/reg_posixcc.t</i> checks that
+<small>POSIX</small> character classes behave
+consistently.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/re.t</i> checks that exportable
+<tt>&quot;re&quot;</tt> functions in <i>universal.c</i>
+work.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/setpgrpstack.t</i> checks that
+<tt>&quot;setpgrp&quot;</tt> works.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/substr_thr.t</i> tests the interaction of
+<tt>&quot;substr&quot;</tt> and threads.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/upgrade.t</i> checks that upgrading and
+assigning scalars works.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/uni/lex_utf8.t</i> checks that Unicode in the lexer
+works.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/uni/tie.t</i> checks that Unicode and
+<tt>&quot;tie&quot;</tt> work.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/comp/final_line_num.t</i> tests whether line
+numbers are correct at <small>EOF</small></p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/comp/form_scope.t</i> tests format scoping.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/comp/line_debug.t</i> tests whether
+<tt>&quot;@{&quot;_&lt;$file&quot;}&quot;</tt> works.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/filetest_t.t</i> tests if &minus;t file test
+works.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/qr.t</i> tests <tt>&quot;qr&quot;</tt>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/utf8cache.t</i> tests malfunctions of the utf8
+cache.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/re/uniprops.t</i> test unicodes
+<tt>&quot;\p{}&quot;</tt> regex constructs.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/filehandle.t</i> tests some suitably portable
+filetest operators to check that they work as expected,
+particularly in the light of some internal changes made in
+how filehandles are blessed.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>t/op/time_loop.t</i> tests that unix times greater
+than <tt>&quot;2**63&quot;</tt>, which can now be handed to
+<tt>&quot;gmtime&quot;</tt> and
+<tt>&quot;localtime&quot;</tt>, do not cause an internal
+overflow or an excessively long loop.</p></td></tr>
+</table>
+
+<h2>New or Changed Diagnostics
+<a name="New or Changed Diagnostics"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>New
+Diagnostics</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em"><small>SV</small> allocation
+tracing has been added to the diagnostics enabled by
+<tt>&quot;&minus;Dm&quot;</tt>. The tracing can
+alternatively output via the
+<tt>&quot;PERL_MEM_LOG&quot;</tt> mechanism, if that was
+enabled when the <i>perl</i> binary was compiled.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Smartmatch resolution tracing has been added as a new
+diagnostic. Use <tt>&quot;&minus;DM&quot;</tt> to enable
+it.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>A new debugging flag <tt>&quot;&minus;DB&quot;</tt> now
+dumps subroutine definitions, leaving
+<tt>&quot;&minus;Dx&quot;</tt> for its original purpose of
+dumping syntax trees.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Perl 5.12 provides a number of new diagnostic messages
+to help you write better code. See perldiag for details of
+these new messages.</p></td></tr>
+</table>
+
+<p style="margin-left:17%;">&bull;</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%"></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em"><tt>&quot;Bad plugin affecting
+keyword '%s'&quot;</tt></p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><tt>&quot;gmtime(%.0f) too large&quot;</tt></p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><tt>&quot;Lexing code attempted to stuff
+non&minus;Latin&minus;1 character into Latin&minus;1
+input&quot;</tt></p> </td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><tt>&quot;Lexing code internal error (%s)&quot;</tt></p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><tt>&quot;localtime(%.0f) too large&quot;</tt></p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><tt>&quot;Overloaded dereference did not return a
+reference&quot;</tt></p> </td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><tt>&quot;Overloaded qr did not return a
+REGEXP&quot;</tt></p> </td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><tt>&quot;Perl_pmflag() is deprecated, and will be
+removed from the XS API&quot;</tt></p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><tt>&quot;lvalue attribute ignored after the subroutine
+has been defined&quot;</tt></p></td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">This new
+warning is issued when one attempts to mark a subroutine as
+lvalue after it has been defined.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">Perl now warns you if
+<tt>&quot;++&quot;</tt> or
+<tt>&quot;&minus;&minus;&quot;</tt> are unable to change the
+value because it&rsquo;s beyond the limit of
+representation.</p> </td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">This uses a new
+warnings category: &quot;imprecision&quot;.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em"><tt>&quot;lc&quot;</tt>,
+<tt>&quot;uc&quot;</tt>, <tt>&quot;lcfirst&quot;</tt>, and
+<tt>&quot;ucfirst&quot;</tt> warn when passed undef.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><tt>&quot;Show constant in &quot;Useless use of a
+constant in void context&quot;&quot;</tt></p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><tt>&quot;Prototype after '%s'&quot;</tt></p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><tt>&quot;panic: sv_chop %s&quot;</tt></p></td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">This new fatal
+error occurs when the C routine
+<tt>&quot;Perl_sv_chop()&quot;</tt> was passed a position
+that is not within the scalar&rsquo;s string buffer. This
+could be caused by buggy <small>XS</small> code, and at this
+point recovery is not possible.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">The fatal error
+<tt>&quot;Malformed UTF&minus;8 returned by \N&quot;</tt> is
+now produced if the <tt>&quot;charnames&quot;</tt> handler
+returns malformed <small>UTF&minus;8</small> .</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>If an unresolved named character or sequence was
+encountered when compiling a regex pattern then the fatal
+error <tt>&quot;\N{NAME} must be resolved by the
+lexer&quot;</tt> is now produced. This can happen, for
+example, when using a single-quotish context like
+<tt>&quot;$re = '\N{SPACE}'; /$re/;&quot;</tt>. See perldiag
+for more examples of how the lexer can get bypassed.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><tt>&quot;Invalid hexadecimal number in
+\N{U+...}&quot;</tt> is a new fatal error triggered when the
+character constant represented by <tt>&quot;...&quot;</tt>
+is not a valid hexadecimal number.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>The new meaning of <tt>&quot;\N&quot;</tt> as
+<tt>&quot;[^\n]&quot;</tt> is not valid in a bracketed
+character class, just like <tt>&quot;.&quot;</tt> in a
+character class loses its special meaning, and will cause
+the fatal error <tt>&quot;\N in a character class must be a
+named character: \N{...}&quot;</tt>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>The rules on what is legal for the
+<tt>&quot;...&quot;</tt> in <tt>&quot;\N{...}&quot;</tt>
+have been tightened up so that unless the
+<tt>&quot;...&quot;</tt> begins with an alphabetic character
+and continues with a combination of alphanumerics, dashes,
+spaces, parentheses or colons then the warning
+<tt>&quot;Deprecated character(s) in \N{...} starting at
+'%s'&quot;</tt> is now issued.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>The warning <tt>&quot;Using just the first characters
+returned by \N{}&quot;</tt> will be issued if the
+<tt>&quot;charnames&quot;</tt> handler returns a sequence of
+characters which exceeds the limit of the number of
+characters that can be used. The message will indicate which
+characters were used and which were discarded.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Changed
+Diagnostics</b> <br>
+A number of existing diagnostic messages have been improved
+or corrected:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">A new warning category
+<tt>&quot;illegalproto&quot;</tt> allows finer-grained
+control of warnings around function prototypes.</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">The two
+warnings: <br>
+&quot;Illegal character in prototype for %s : %s&quot; <br>
+&quot;Prototype after '%c' for %s : %s&quot;</p>
+
+<p style="margin-left:17%; margin-top: 1em">have been moved
+from the <tt>&quot;syntax&quot;</tt> top-level warnings
+category into a new first-level category,
+<tt>&quot;illegalproto&quot;</tt>. These two warnings are
+currently the only ones emitted during parsing of an
+invalid/illegal prototype, so one can now use</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  no warnings 'illegalproto';</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">to suppress
+only those, but not other syntax-related warnings. Warnings
+where prototypes are changed, ignored, or not met are still
+in the <tt>&quot;prototype&quot;</tt> category as
+before.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="54%">
+
+
+<p><tt>&quot;Deep recursion on subroutine
+&quot;%s&quot;&quot;</tt></p> </td>
+<td width="29%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">It is now
+possible to change the depth threshold for this warning from
+the default of 100, by recompiling the <i>perl</i> binary,
+setting the C pre-processor macro
+<tt>&quot;PERL_SUB_DEPTH_WARN&quot;</tt> to the desired
+value.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em"><tt>&quot;Illegal character in
+prototype&quot;</tt> warning is now more precise when
+reporting illegal characters after _</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>mro merging error messages are now very similar to those
+produced by Algorithm::C3.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Amelioration of the error message &quot;Unrecognized
+character <tt>%s</tt> in column <tt>%d</tt>&quot;</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Changes the
+error message to &quot;Unrecognized character <tt>%s</tt>;
+marked by &lt;&minus;&minus; <small>HERE</small> after
+<tt>%s</tt>&lt;&minus;&minus; <small>HERE</small> near
+column <tt>%d</tt>&quot;. This should make it a little
+simpler to spot and correct the suspicious character.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Perl now explicitly points to
+<tt>$.</tt> when it causes an uninitialized warning for
+ranges in scalar context.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;split&quot;</tt> now warns when called in void
+context.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;printf&quot;</tt>&minus;style functions called
+with too few arguments will now issue the warning
+<tt>&quot;Missing argument in %s&quot;</tt> [perl
+#71000]</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Perl now properly returns a syntax error instead of
+segfaulting if <tt>&quot;each&quot;</tt>,
+<tt>&quot;keys&quot;</tt>, or <tt>&quot;values&quot;</tt> is
+used without an argument.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;tell()&quot;</tt> now fails properly if called
+without an argument and when no previous file was read.</p></td></tr>
+</table>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;tell()&quot;</tt>
+now returns <tt>&quot;&minus;1&quot;</tt>, and sets errno to
+<tt>&quot;EBADF&quot;</tt>, thus restoring the 5.8.x
+behaviour.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em"><tt>&quot;overload&quot;</tt> no
+longer implicitly unsets fallback on repeated &rsquo;use
+overload&rsquo; lines.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>POSIX::strftime()</i> can now handle Unicode
+characters in the format string.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The <tt>&quot;syntax&quot;</tt> category was removed
+from 5 warnings that should only be in
+<tt>&quot;deprecated&quot;</tt>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Three fatal
+<tt>&quot;pack&quot;</tt>/<tt>&quot;unpack&quot;</tt> error
+messages have been normalized to <tt>&quot;panic:
+%s&quot;</tt></p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;Unicode character is illegal&quot;</tt> has
+been rephrased to be more accurate</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">It now reads
+<tt>&quot;Unicode non&minus;character is illegal in
+interchange&quot;</tt> and the perldiag documentation has
+been expanded a bit.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Currently, all but the first of
+the several characters that the
+<tt>&quot;charnames&quot;</tt> handler may return are
+discarded when used in a regular expression pattern
+bracketed character class. If this happens then the warning
+<tt>&quot;Using just the first character returned by \N{} in
+character class&quot;</tt> will be issued.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The warning <tt>&quot;Missing right brace on \N{} or
+unescaped left brace after \N. Assuming the
+latter&quot;</tt> will be issued if Perl encounters a
+<tt>&quot;\N{&quot;</tt> but doesn&rsquo;t find a matching
+<tt>&quot;}&quot;</tt>. In this case Perl doesn&rsquo;t know
+if it was mistakenly omitted, or if &quot;match
+non-newline&quot; followed by &quot;match a
+<tt>&quot;{&quot;</tt>&quot; was desired. It assumes the
+latter because that is actually a valid interpretation as
+written, unlike the other case. If you meant the former, you
+need to add the matching right brace. If you did mean the
+latter, you can silence this warning by writing instead
+<tt>&quot;\N\{&quot;</tt>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;gmtime&quot;</tt> and
+<tt>&quot;localtime&quot;</tt> called with numbers smaller
+than they can reliably handle will now issue the warnings
+<tt>&quot;gmtime(%.0f) too small&quot;</tt> and
+<tt>&quot;localtime(%.0f) too small&quot;</tt>.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+diagnostic messages have been removed:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="72%">
+
+
+<p style="margin-top: 1em"><tt>&quot;Runaway
+format&quot;</tt></p> </td>
+<td width="11%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="72%">
+
+
+<p><tt>&quot;Can't locate package %s for the parents of
+%s&quot;</tt></p> </td>
+<td width="11%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">In general this
+warning it only got produced in conjunction with other
+warnings, and removing it allowed an <small>ISA</small>
+lookup optimisation to be added.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="63%">
+
+
+<p style="margin-top: 1em"><tt>&quot;v&minus;string in
+use/require is non&minus;portable&quot;</tt></p></td>
+<td width="20%">
+</td></tr>
+</table>
+
+<h2>Utility Changes
+<a name="Utility Changes"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em"><i>h2ph</i> now looks in
+<tt>&quot;include&minus;fixed&quot;</tt> too, which is a
+recent addition to gcc&rsquo;s search path.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>h2xs</i> no longer incorrectly treats enum values
+like macros. It also now handles C <small>++</small> style
+comments (<tt>&quot;//&quot;</tt>) properly in enums.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>perl5db.pl</i> now supports
+<tt>&quot;LVALUE&quot;</tt> subroutines. Additionally, the
+debugger now correctly handles proxy constant subroutines,
+and subroutine stubs.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>perlbug</i> now uses
+<tt>%Module::CoreList::bug_tracker</tt> to print out
+upstream bug tracker URLs. If a user identifies a particular
+module as the topic of their bug report and we&rsquo;re able
+to divine the <small>URL</small> for its upstream bug
+tracker, perlbug now provide a message to the user
+explaining that the core copies the <small>CPAN</small>
+version directly, and provide the <small>URL</small> for
+reporting the bug directly to the upstream author.</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em"><i>perlbug</i>
+no longer reports &quot;Message sent&quot; when it
+hasn&rsquo;t actually sent the message</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em"><i>perlthanks</i> is a new
+utility for sending non-bug-reports to the authors and
+maintainers of Perl. Getting nothing but bug reports can
+become a bit demoralising. If Perl 5.12 works well for you,
+please try out <i>perlthanks</i>. It will make the
+developers smile.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Perl&rsquo;s developers have fixed bugs in <i>a2p</i>
+having to do with the <tt>&quot;match()&quot;</tt> operator
+in list context. Additionally, <i>a2p</i> no longer
+generates code that uses the <tt>$[</tt> variable.</p></td></tr>
+</table>
+
+<h2>Selected Bug Fixes
+<a name="Selected Bug Fixes"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">U+0FFFF is now a legal character
+in regular expressions.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>pp_qr now always returns a new regexp <small>SV</small>
+. Resolves <small>RT</small> #69852.</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Instead of
+returning a(nother) reference to the (pre-compiled) regexp
+in the optree, use <i>reg_temp_copy()</i> to create a copy
+of it, and return a reference to that. This resolves issues
+about Regexp::DESTROY not being called in a timely fashion
+(the original bug tracked by <small>RT</small> #69852), as
+well as bugs related to blessing regexps, and of assigning
+to regexps, as described in correspondence added to the
+ticket.</p>
+
+<p style="margin-left:17%; margin-top: 1em">It transpires
+that we also need to undo the <i>SvPVX()</i> sharing when
+ithreads cloning a Regexp <small>SV</small> , because
+mother_re is set to <small>NULL</small> , instead of a
+cloned copy of the mother_re. This change might fix bugs
+with regexps and threads in certain other situations, but as
+yet neither tests nor bug reports have indicated any
+problems, so it might not actually be an edge case that
+it&rsquo;s possible to reach.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Several compilation errors and
+segfaults when perl was built with
+<tt>&quot;&minus;Dmad&quot;</tt> were fixed.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Fixes for lexer <small>API</small> changes in 5.11.2
+which broke NYTProf&rsquo;s savesrc option.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;&minus;t&quot;</tt> should only return
+<small>TRUE</small> for file handles connected to a
+<small>TTY</small></p> </td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">The Microsoft C
+version of <tt>&quot;isatty()&quot;</tt> returns
+<small>TRUE</small> for all character mode devices,
+including the <i>/dev/null</i>&minus;style &quot;nul&quot;
+device and printers like &quot;lpt1&quot;.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Fixed a regression caused by
+commit fafafbaf which caused a panic during parameter
+passing [perl #70171]</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>On systems which in-place edits without backup files,
+&minus;i&rsquo;*&rsquo; now works as the documentation says
+it does [perl #70802]</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Saving and restoring magic flags no longer loses
+readonly flag.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The malformed syntax <tt>&quot;grep EXPR LIST&quot;</tt>
+(note the missing comma) no longer causes abrupt and total
+failure.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Regular expressions compiled with
+<tt>&quot;qr{}&quot;</tt> literals properly set
+<tt>&quot;$'&quot;</tt> when matching again.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Using named subroutines with <tt>&quot;sort&quot;</tt>
+should no longer lead to bus errors [perl #71076]</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Numerous bugfixes catch small issues caused by the
+recently-added Lexer <small>API</small> .</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Smart match against <tt>@_</tt> sometimes gave false
+negatives. [perl #71078]</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>$@</tt> may now be assigned a read-only value
+(without error or busting the stack).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;sort&quot;</tt> called recursively from within
+an active comparison subroutine no longer causes a bus error
+if run multiple times. [perl #71076]</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Tie::Hash::NamedCapture::* will not abort if passed bad
+input ( <small>RT</small> #71828)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>@_</tt> and <tt>$_</tt> no longer leak under threads
+( <small>RT</small> #34342 and #41138, also #70602,
+#70974)</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;&minus;I&quot;</tt> on shebang line now adds
+directories in front of <tt>@INC</tt> as documented, and as
+does <tt>&quot;&minus;I&quot;</tt> when specified on the
+command-line.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;kill&quot;</tt> is now fatal when called on
+non-numeric process identifiers. Previously, an
+<tt>&quot;undef&quot;</tt> process identifier would be
+interpreted as a request to kill process 0, which would
+terminate the current process group on <small>POSIX</small>
+systems. Since process identifiers are always integers,
+killing a non-numeric process is now fatal.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>5.10.0 inadvertently disabled an optimisation, which
+caused a measurable performance drop in list assignment,
+such as is often used to assign function parameters from
+<tt>@_</tt>. The optimisation has been re-instated, and the
+performance regression fixed. (This fix is also present in
+5.10.1)</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Fixed memory leak on <tt>&quot;while (1) { map 1, 1
+}&quot;</tt> [ <small>RT</small> #53038].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Some potential coredumps in PerlIO fixed [
+<small>RT</small> #57322,54828].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The debugger now works with lvalue subroutines.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The debugger&rsquo;s <tt>&quot;m&quot;</tt> command was
+broken on modules that defined constants [ <small>RT</small>
+#61222].</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;crypt&quot;</tt> and string complement could
+return tainted values for untainted arguments [
+<small>RT</small> #59998].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The <tt>&quot;&minus;i&quot;</tt><i>.suffix</i>
+command-line switch now recreates the file using restricted
+permissions, before changing its mode to match the original
+file. This eliminates a potential race condition [
+<small>RT</small> #60904].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>On some Unix systems, the value in <tt>$?</tt> would not
+have the top bit set (<tt>&quot;$? &amp; 128&quot;</tt>)
+even if the child core dumped.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Under some circumstances, <tt>$^R</tt> could incorrectly
+become undefined [ <small>RT</small> #57042].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>In the <small>XS API</small> , various hash functions,
+when passed a pre-computed hash where the key is
+<small>UTF&minus;8</small> , might result in an incorrect
+lookup.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><small>XS</small> code including <i><small>XSUB</small>
+.h</i> before <i>perl.h</i> gave a compile-time error [
+<small>RT</small> #57176].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;$object&minus;&gt;isa('Foo')&quot;</tt> would
+report false if the package <tt>&quot;Foo&quot;</tt>
+didn&rsquo;t exist, even if the object&rsquo;s <tt>@ISA</tt>
+contained <tt>&quot;Foo&quot;</tt>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Various bugs in the new-to 5.10.0 mro code, triggered by
+manipulating <tt>@ISA</tt>, have been found and fixed.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Bitwise operations on references could crash the
+interpreter, e.g. <tt>&quot;$x=\$y; $x |=
+&quot;foo&quot;&quot;</tt> [ <small>RT</small> #54956].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Patterns including alternation might be sensitive to the
+internal <small>UTF&minus;8</small> representation, e.g.</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    my $byte = chr(192);
+    my $utf8 = chr(192); utf8::upgrade($utf8);
+    $utf8 =~ /$byte|X}/i;       # failed in 5.10.0</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Within UTF8&minus;encoded Perl
+source files (i.e. where <tt>&quot;use utf8&quot;</tt> is in
+effect), double-quoted literal strings could be corrupted
+where a <tt>&quot;\xNN&quot;</tt>,
+<tt>&quot;\0NNN&quot;</tt> or <tt>&quot;\N{}&quot;</tt> is
+followed by a literal character with ordinal value greater
+than 255 [ <small>RT</small> #59908].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;B::Deparse&quot;</tt> failed to correctly
+deparse various constructs: <tt>&quot;readpipe
+STRING&quot;</tt> [ <small>RT</small> #62428],
+<tt>&quot;CORE::require(STRING)&quot;</tt> [
+<small>RT</small> #62488], <tt>&quot;sub foo(_)&quot;</tt> [
+<small>RT</small> #62484].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Using <tt>&quot;setpgrp&quot;</tt> with no arguments
+could corrupt the perl stack.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The block form of <tt>&quot;eval&quot;</tt> is now
+specifically trappable by <tt>&quot;Safe&quot;</tt> and
+<tt>&quot;ops&quot;</tt>. Previously it was erroneously
+treated like string <tt>&quot;eval&quot;</tt>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>In 5.10.0, the two characters <tt>&quot;[~&quot;</tt>
+were sometimes parsed as the smart match operator
+(<tt>&quot;~~&quot;</tt>) [ <small>RT</small> #63854].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>In 5.10.0, the <tt>&quot;*&quot;</tt> quantifier in
+patterns was sometimes treated as
+<tt>&quot;{0,32767}&quot;</tt> [ <small>RT</small> #60034,
+#60464]. For example, this match would fail:</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    (&quot;ab&quot; x 32768) =~ /^(ab)*$/</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em"><tt>&quot;shmget&quot;</tt> was
+limited to a 32 bit segment size on a 64 bit
+<small>OS</small> [ <small>RT</small> #63924].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Using <tt>&quot;next&quot;</tt> or
+<tt>&quot;last&quot;</tt> to exit a
+<tt>&quot;given&quot;</tt> block no longer produces a
+spurious warning like the following:</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    Exiting given via last at foo.pl line 123</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Assigning a format to a glob
+could corrupt the format; e.g.:</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">     *bar=*foo{FORMAT}; # foo format now bad</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Attempting to coerce a typeglob
+to a string or number could cause an assertion failure. The
+correct error message is now generated, <tt>&quot;Can't
+coerce GLOB to</tt> <i>$type</i><tt>&quot;</tt>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Under <tt>&quot;use filetest 'access'&quot;</tt>,
+<tt>&quot;&minus;x&quot;</tt> was using the wrong access
+mode. This has been fixed [ <small>RT</small> #49003].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;length&quot;</tt> on a tied scalar that
+returned a Unicode value would not be correct the first
+time. This has been fixed.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Using an array <tt>&quot;tie&quot;</tt> inside in array
+<tt>&quot;tie&quot;</tt> could <small>SEGV</small> . This
+has been fixed. [ <small>RT</small> #51636]</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>A race condition inside
+<tt>&quot;PerlIOStdio_close()&quot;</tt> has been identified
+and fixed. This used to cause various threading issues,
+including SEGVs.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>In <tt>&quot;unpack&quot;</tt>, the use of
+<tt>&quot;()&quot;</tt> groups in scalar context was
+internally placing a list on the interpreter&rsquo;s stack,
+which manifested in various ways, including SEGVs. This is
+now fixed [ <small>RT</small> #50256].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Magic was called twice in <tt>&quot;substr&quot;</tt>,
+<tt>&quot;\&amp;$x&quot;</tt>, <tt>&quot;tie $x,
+$m&quot;</tt> and <tt>&quot;chop&quot;</tt>. These have all
+been fixed.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>A 5.10.0 optimisation to clear the temporary stack
+within the implicit loop of <tt>&quot;s///ge&quot;</tt> has
+been reverted, as it turned out to be the cause of obscure
+bugs in seemingly unrelated parts of the interpreter [commit
+ef0d4e17921ee3de].</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The line numbers for warnings inside
+<tt>&quot;elsif&quot;</tt> are now correct.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>The <tt>&quot;..&quot;</tt> operator now works correctly
+with ranges whose ends are at or close to the values of the
+smallest and largest integers.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;binmode STDIN, ':raw'&quot;</tt> could lead to
+segmentation faults on some platforms. This has been fixed [
+<small>RT</small> #54828].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>An off-by-one error meant that <tt>&quot;index $str,
+...&quot;</tt> was effectively being executed as
+<tt>&quot;index &quot;$str\0&quot;, ...&quot;</tt>. This has
+been fixed [ <small>RT</small> #53746].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Various leaks associated with named captures in regexes
+have been fixed [ <small>RT</small> #57024].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>A weak reference to a hash would leak. This was
+affecting <tt>&quot;DBI&quot;</tt> [ <small>RT</small>
+#56908].</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Using (?|) in a regex could cause a segfault [
+<small>RT</small> #59734].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Use of a <small>UTF&minus;8</small>
+<tt>&quot;tr//&quot;</tt> within a closure could cause a
+segfault [ <small>RT</small> #61520].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Calling <tt>&quot;Perl_sv_chop()&quot;</tt> or otherwise
+upgrading an <small>SV</small> could result in an unaligned
+64&minus;bit access on the <small>SPARC</small> architecture
+[ <small>RT</small> #60574].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>In the 5.10.0 release,
+<tt>&quot;inc_version_list&quot;</tt> would incorrectly list
+<tt>&quot;5.10.*&quot;</tt> after
+<tt>&quot;5.8.*&quot;</tt>; this affected the <tt>@INC</tt>
+search order [ <small>RT</small> #67628].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>In 5.10.0, <tt>&quot;pack &quot;a*&quot;,
+$tainted_value&quot;</tt> returned a non-tainted value [
+<small>RT</small> #52552].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>In 5.10.0, <tt>&quot;printf&quot;</tt> and
+<tt>&quot;sprintf&quot;</tt> could produce the fatal error
+<tt>&quot;panic: utf8_mg_pos_cache_update&quot;</tt> when
+printing <small>UTF&minus;8</small> strings [
+<small>RT</small> #62666].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>In the 5.10.0 release, a dynamically created
+<tt>&quot;AUTOLOAD&quot;</tt> method might be missed (method
+cache issue) [ <small>RT</small> #60220,60232].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>In the 5.10.0 release, a combination of <tt>&quot;use
+feature&quot;</tt> and <tt>&quot;//ee&quot;</tt> could cause
+a memory leak [ <small>RT</small> #63110].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;&minus;C&quot;</tt> on the shebang
+(<tt>&quot;#!&quot;</tt>) line is once more permitted if it
+is also specified on the command line.
+<tt>&quot;&minus;C&quot;</tt> on the shebang line used to be
+a silent no-op <i>if</i> it was not also on the command
+line, so perl 5.10.0 disallowed it, which broke some
+scripts. Now perl checks whether it is also on the command
+line and only dies if it is not [ <small>RT</small>
+#67880].</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>In 5.10.0, certain types of re-entrant regular
+expression could crash, or cause the following assertion
+failure [ <small>RT</small> #60508]:</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    Assertion rx&minus;&gt;sublen &gt;= (s &minus; rx&minus;&gt;subbeg) + i failed</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Perl now includes previously
+missing files from the Unicode Character Database.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Perl now honors <tt>&quot;TMPDIR&quot;</tt> when opening
+an anonymous temporary file.</p></td></tr>
+</table>
+
+<h2>Platform Specific Changes
+<a name="Platform Specific Changes"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Perl is
+incredibly portable. In general, if a platform has a C
+compiler, someone has ported Perl to it (or will soon).
+We&rsquo;re happy to announce that Perl 5.12 includes
+support for several new platforms. At the same time,
+it&rsquo;s time to bid farewell to some (very) old
+friends.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>New
+Platforms</b> <br>
+Haiku</p>
+
+<p style="margin-left:17%;">Perl&rsquo;s developers have
+merged patches from Haiku&rsquo;s maintainers. Perl should
+now build on Haiku.</p>
+
+<p style="margin-left:11%;">MirOS <small>BSD</small></p>
+
+<p style="margin-left:17%;">Perl should now build on MirOS
+<small>BSD</small> .</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Discontinued
+Platforms</b> <br>
+Domain/OS <br>
+MiNT <br>
+Tenon MachTen</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Updated
+Platforms</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><small>AIX</small></p></td>
+<td width="5%"></td>
+<td width="77%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>Removed <i>libbsd</i> for <small>AIX</small> 5L and 6.1.
+Only <tt>&quot;flock()&quot;</tt> was used from
+<i>libbsd</i>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>Removed <i>libgdbm</i> for <small>AIX</small> 5L and 6.1
+if <i>libgdbm</i> &lt; 1.8.3&minus;5 is installed. The
+<i>libgdbm</i> is delivered as an optional package with the
+<small>AIX</small> Toolbox. Unfortunately the versions below
+1.8.3&minus;5 are broken.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>Hints changes mean that <small>AIX</small> 4.2 should
+work again.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">Cygwin</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>Perl now supports IPv6 on Cygwin 1.7 and newer.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>On Cygwin we now strip the last number from the
+<small>DLL</small> . This has been the behaviour in the
+cygwin.com build for years. The hints files have been
+updated.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%;">Darwin (Mac <small>OS</small>
+X)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>Skip testing the be_BY.CP1131 locale on Darwin 10 (Mac
+<small>OS</small> X 10.6), as it&rsquo;s still buggy.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>Correct infelicities in the regexp used to identify
+buggy locales on Darwin 8 and 9 (Mac <small>OS</small> X
+10.4 and 10.5, respectively).</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">DragonFly
+<small>BSD</small></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="65%">
+
+
+<p>Fix thread library selection [perl #69686]</p></td>
+<td width="12%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">FreeBSD</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>The hints files now identify the correct threading
+libraries on FreeBSD 7 and later.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">Irix</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>We now work around a bizarre preprocessor bug in the
+Irix 6.5 compiler: <tt>&quot;cc &minus;E &minus;&quot;</tt>
+unfortunately goes into K&amp;R mode, but <tt>&quot;cc
+&minus;E file.c&quot;</tt> doesn&rsquo;t.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">NetBSD</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="49%">
+
+
+<p>Hints now supports versions 5.*.</p></td>
+<td width="28%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">OpenVMS</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="62%">
+
+
+<p><tt>&quot;&minus;UDEBUGGING&quot;</tt> is now the
+default on <small>VMS</small> .</p></td>
+<td width="15%">
+</td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">Like it has
+been everywhere else for ages and ages. Also make
+command-line selection of &minus;UDEBUGGING and
+&minus;DDEBUGGING work in configure.com; before the only way
+to turn it off was by saying no in answer to the interactive
+question.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">The default pipe buffer size on
+<small>VMS</small> has been updated to 8192 on 64&minus;bit
+systems.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>Reads from the in-memory temporary files of
+<tt>&quot;PerlIO::scalar&quot;</tt> used to fail if
+<tt>$/</tt> was set to a numeric reference (to indicate
+record-style reads). This is now fixed.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><small>VMS</small> now supports
+<tt>&quot;getgrgid&quot;</tt>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>Many improvements and cleanups have been made to the
+<small>VMS</small> file name handling and conversion
+code.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>Enabling the <tt>&quot;PERL_VMS_POSIX_EXIT&quot;</tt>
+logical name now encodes a <small>POSIX</small> exit status
+in a <small>VMS</small> condition value for better
+interaction with <small>GNV</small> &rsquo;s bash shell and
+other utilities that depend on <small>POSIX</small> exit
+values. See &quot;$?&quot; in perlvms for details.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><tt>&quot;File::Copy&quot;</tt> now detects Unix
+compatibility mode on <small>VMS</small> .</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">Stratus <small>VOS</small></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="75%">
+
+
+<p>Various changes from Stratus have been merged in.</p></td>
+<td width="2%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">Symbian</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>There is now support for Symbian S60 3.2
+<small>SDK</small> and S60 5.0 <small>SDK</small> .</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">Windows</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>Perl 5.12 supports Windows 2000 and later. The
+supporting code for legacy versions of Windows is still
+included, but will be removed during the next development
+cycle.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>Initial support for building Perl with MinGW&minus;w64
+is now available.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><i>perl.exe</i> now includes a manifest resource to
+specify the <tt>&quot;trustInfo&quot;</tt> settings for
+Windows Vista and later. Without this setting Windows would
+treat <i>perl.exe</i> as a legacy application and apply
+various heuristics like redirecting access to protected file
+system areas (like the &quot;Program Files&quot; folder) to
+the users &quot;VirtualStore&quot; instead of generating a
+proper &quot;permission denied&quot; error.</p></td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">The manifest
+resource also requests the Microsoft Common-Controls version
+6.0 (themed controls introduced in Windows <small>XP</small>
+). Check out the Win32::VisualStyles module on
+<small>CPAN</small> to switch back to old style unthemed
+controls for legacy applications.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">The
+<tt>&quot;&minus;t&quot;</tt> filetest operator now only
+returns true if the filehandle is connected to a console
+window. In previous versions of Perl it would return true
+for all character mode devices, including
+<i><small>NUL</small></i> and <i><small>LPT1</small></i>
+.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>The <tt>&quot;&minus;p&quot;</tt> filetest operator now
+works correctly, and the Fcntl::S_IFIFO constant is defined
+when Perl is compiled with Microsoft Visual C. In previous
+Perl versions <tt>&quot;&minus;p&quot;</tt> always returned
+a false value, and the Fcntl::S_IFIFO constant was not
+defined.</p> </td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">This bug is
+specific to Microsoft Visual C and never affected Perl
+binaries built with MinGW.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">The socket error codes are now
+more widely supported: The <small>POSIX</small> module will
+define the symbolic names, like
+<small>POSIX::EWOULDBLOCK</small> , and stringification of
+socket error codes in $! works as well now;</p></td></tr>
+</table>
+
+<pre style="margin-left:23%; margin-top: 1em">  C:\&gt;perl &minus;MPOSIX &minus;E &quot;$!=POSIX::EWOULDBLOCK; say $!&quot;
+  A non&minus;blocking socket operation could not be completed immediately.</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em"><i>flock()</i> will now set
+sensible error codes in $!. Previous Perl versions copied
+the value of $^E into $!, which caused much confusion.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><i>select()</i> now supports all empty
+<tt>&quot;fd_set&quot;</tt>s more correctly.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><tt>'.\foo'</tt> and <tt>'..\foo'</tt> were treated
+differently than <tt>'./foo'</tt> and <tt>'../foo'</tt> by
+<tt>&quot;do&quot;</tt> and <tt>&quot;require&quot;</tt> [
+<small>RT</small> #63492].</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>Improved message window handling means that
+<tt>&quot;alarm&quot;</tt> and <tt>&quot;kill&quot;</tt>
+messages will no longer be dropped under race
+conditions.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p>Various bits of Perl&rsquo;s build infrastructure are no
+longer converted to win32 line endings at release time. If
+this hurts you, please report the problem with the perlbug
+program included with perl.</p></td></tr>
+</table>
+
+<h2>Known Problems
+<a name="Known Problems"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is a list
+of some significant unfixed bugs, which are regressions from
+either 5.10.x or 5.8.x.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Some <small>CPANPLUS</small>
+tests may fail if there is a functioning file
+<i>../../cpanp&minus;run&minus;perl</i> outside your build
+directory. The failure shouldn&rsquo;t imply there&rsquo;s a
+problem with the actual functional software. The bug is
+already fixed in [ <small>RT</small> #74188] and is
+scheduled for inclusion in perl&minus;v5.12.1.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;List::Util::first&quot;</tt> misbehaves in the
+presence of a lexical <tt>$_</tt> (typically introduced by
+<tt>&quot;my $_&quot;</tt> or implicitly by
+<tt>&quot;given&quot;</tt>). The variable which gets set for
+each iteration is the package variable <tt>$_</tt>, not the
+lexical <tt>$_</tt> [ <small>RT</small> #67694].</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">A similar issue
+may occur in other modules that provide functions which take
+a block as their first argument, like</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    foo { ... $_ ...} list</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Some regexes may run much more
+slowly when run in a child thread compared with the thread
+the pattern was compiled into [ <small>RT</small>
+#55600].</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Things like <tt>&quot;&quot;\N{LATIN SMALL LIGATURE
+FF}&quot; =~ /\N{LATIN SMALL LETTER F}+/&quot;</tt> will
+appear to hang as they get into a very long running loop [
+<small>RT</small> #72998].</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Several porters have reported mysterious crashes when
+Perl&rsquo;s entire test suite is run after a build on
+certain Windows 2000 systems. When run by hand, the
+individual tests reportedly work fine.</p></td></tr>
+</table>
+
+<h2>Errata
+<a name="Errata"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">This one is actually a change
+introduced in 5.10.0, but it was missed from that
+release&rsquo;s perldelta, so it is mentioned here
+instead.</p> </td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">A bugfix
+related to the handling of the <tt>&quot;/m&quot;</tt>
+modifier and <tt>&quot;qr&quot;</tt> resulted in a change of
+behaviour between 5.8.x and 5.10.0:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    # matches in 5.8.x, doesn't match in 5.10.0
+    $re = qr/^bar/; &quot;foo\nbar&quot; =~ /$re/m;</pre>
+
+
+<h2>Acknowledgements
+<a name="Acknowledgements"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Perl 5.12.0
+represents approximately two years of development since Perl
+5.10.0 and contains over 750,000 lines of changes across
+over 3,000 files from over 200 authors and committers.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl continues
+to flourish into its third decade thanks to a vibrant
+community of users and developers. The following people are
+known to have contributed the improvements that became Perl
+5.12.0:</p>
+
+<p style="margin-left:11%; margin-top: 1em">Aaron Crane,
+Abe Timmerman, Abhijit Menon-Sen, Abigail, Adam Russell,
+Adriano Ferreira, var Arnfjoer` Bjarmason, Alan Grover,
+Alexandr Ciornii, Alex Davies, Alex Vandiver, Andreas
+Koenig, Andrew Rodland, andrew@sundale.net, Andy Armstrong,
+Andy Dougherty, Jose AUGUSTE-ETIENNE, Benjamin Smith, Ben
+Morrow, bharanee rathna, Bo Borgerson, Bo Lindbergh, Brad
+Gilbert, Bram, Brendan O&rsquo;Dea, brian d foy, Charles
+Bailey, Chip Salzenberg, Chris &rsquo;BinGOs&rsquo;
+Williams, Christoph Lamprecht, Chris Williams, chromatic,
+Claes Jakobsson, Craig A. Berry, Dan Dascalescu, Daniel
+Frederick Crisman, Daniel M. Quinlan, Dan Jacobson, Dan
+Kogai, Dave Mitchell, Dave Rolsky, David Cantrell, David
+Dick, David Golden, David Mitchell, David M. Syzdek, David
+Nicol, David Wheeler, Dennis Kaarsemaker, Dintelmann, Peter,
+Dominic Dunlop, Dr.Ruud, Duke Leto, Enrico Sorcinelli, Eric
+Brine, Father Chrysostomos, Florian Ragwitz, Frank Wiegand,
+Gabor Szabo, Gene Sullivan, Geoffrey T. Dairiki, George
+Greer, Gerard Goossen, Gisle Aas, Goro Fuji, Graham Barr,
+Green, Paul, Hans Dieter Pearcey, Harmen, H. Merijn Brand,
+Hugo van der Sanden, Ian Goodacre, Igor Sutton, Ingo
+Weinhold, James Bence, James Mastros, Jan Dubois, Jari
+Aalto, Jarkko Hietaniemi, Jay Hannah, Jerry Hedden, Jesse
+Vincent, Jim Cromie, Jody Belka, John E. Malmberg, John
+Malmberg, John Peacock, John Peacock via <small>RT</small> ,
+John P. Linderman, John Wright, Josh ben Jore, Jos I.
+Boumans, Karl Williamson, Kenichi Ishigaki, Ken Williams,
+Kevin Brintnall, Kevin Ryde, Kurt Starsinic, Leon Brocard,
+Lubomir Rintel, Luke Ross, Marcel Gruenauer, Marcus
+Holland-Moritz, Mark Jason Dominus, Marko Asplund, Martin
+Hasch, Mashrab Kuvatov, Matt Kraai, Matt S Trout, Max
+Maischein, Michael Breen, Michael Cartmell, Michael G
+Schwern, Michael Witten, Mike Giroux, Milosz Tanski, Moritz
+Lenz, Nicholas Clark, Nick Cleaton, Niko Tyni, Offer Kaye,
+Osvaldo Villalon, Paul Fenwick, Paul Gaborit, Paul Green,
+Paul Johnson, Paul Marquess, Philip Hazel, Philippe Bruhat,
+Rafael Garcia-Suarez, Rainer Tammer, Rajesh Mandalemula,
+Reini Urban, Renee Baecker, Ricardo Signes, Ricardo
+<small>SIGNES</small> , Richard Foley, Rich Rauenzahn, Rick
+Delaney, Risto Kankkunen, Robert May, Roberto C. Sanchez,
+Robin Barker, <small>SADAHIRO</small> Tomoyuki, Salvador
+Ortiz Garcia, Sam Vilain, Scott Lanning, Sebastien
+Aperghis-Tramoni, Sergio Durigan Junior, Shlomi Fish, Simon
+&rsquo;corecode&rsquo; Schubert, Sisyphus, Slaven Rezic,
+Smylers, Steffen Mueller, Steffen Ullrich, Stepan Kasal,
+Steve Hay, Steven Schubiger, Steve Peters, Tels, The Doctor,
+Tim Bunce, Tim Jenness, Todd Rinaldo, Tom Christiansen, Tom
+Hukins, Tom Wyant, Tony Cook, Torsten Schoenfeld, Tye
+McQueen, Vadim Konovalov, Vincent Pit, Hio
+<small>YAMASHINA</small> , Yasuhiro Matsumoto, Yitzchak
+Scott-Thoennes, Yuval Kogman, Yves Orton, Zefram, Zsban
+Ambrus</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is
+woefully incomplete as it&rsquo;s automatically generated
+from version control history. In particular, it
+doesn&rsquo;t include the names of the (very much
+appreciated) contributors who reported issues in previous
+versions of Perl that helped make Perl 5.12.0 better. For a
+more complete list of all of Perl&rsquo;s historical
+contributors, please see the <tt>&quot;AUTHORS&quot;</tt>
+file in the Perl 5.12.0 distribution.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Our
+&quot;retired&quot; pumpkings Nicholas Clark and Rafael
+Garcia-Suarez deserve special thanks for their brilliant and
+substantive ongoing contributions. Nicholas personally
+authored over 30% of the patches since 5.10.0. Rafael comes
+in second in patch authorship with 11%, but is first by a
+long shot in committing patches authored by others, pushing
+44% of the commits since 5.10.0 in this category, often
+after providing considerable coaching to the patch authors.
+These statistics in no way comprise all of their
+contributions, but express in shorthand that we
+couldn&rsquo;t have done it without them.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Many of the
+changes included in this version originated in the
+<small>CPAN</small> modules included in Perl&rsquo;s core.
+We&rsquo;re grateful to the entire <small>CPAN</small>
+community for helping Perl to flourish.</p>
+
+<h2>Reporting Bugs
+<a name="Reporting Bugs"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you find
+what you think is a bug, you might check the articles
+recently posted to the comp.lang.perl.misc newsgroup and the
+perl bug database at &lt;http://rt.perl.org/perlbug/&gt;.
+There may also be information at
+&lt;http://www.perl.org/&gt;, the Perl Home Page.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you believe
+you have an unreported bug, please run the <b>perlbug</b>
+program included with your release. Be sure to trim your bug
+down to a tiny but sufficient test case. Your bug report,
+along with the output of <tt>&quot;perl &minus;V&quot;</tt>,
+will be sent off to perlbug@perl.org to be analyzed by the
+Perl porting team.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the bug you
+are reporting has security implications, which make it
+inappropriate to send to a publicly archived mailing list,
+then please send it to
+perl5&minus;security&minus;report@perl.org. This points to a
+closed subscription unarchived mailing list, which includes
+all the core committers, who will be able to help assess the
+impact of issues, figure out a resolution, and help
+co-ordinate the release of patches to mitigate or fix the
+problem across all platforms on which Perl is supported.
+Please only use this address for security issues in the Perl
+core, not for modules independently distributed on
+<small>CPAN</small> .</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>Changes</i> file for an explanation of how to view
+exhaustive details on what changed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i><small>INSTALL</small></i> file for how to build
+Perl.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i><small>README</small></i> file for general stuff.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>Artistic</i> and <i>Copying</i> files for copyright
+information.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&lt;http://dev.perl.org/perl5/errata.html&gt;
+for a list of issues found after this release, as well as a
+list of <small>CPAN</small> modules known to be incompatible
+with this release.</p>
+<hr>
+</body>
+</html>

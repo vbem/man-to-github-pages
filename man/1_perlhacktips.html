@@ -1,0 +1,2854 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:37:41 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERLHACKTIPS</title>
+
+</head>
+<body>
+
+<h1 align="center">PERLHACKTIPS</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#COMMON PROBLEMS">COMMON PROBLEMS</a><br>
+<a href="#DEBUGGING">DEBUGGING</a><br>
+<a href="#SOURCE CODE STATIC ANALYSIS">SOURCE CODE STATIC ANALYSIS</a><br>
+<a href="#MEMORY DEBUGGERS">MEMORY DEBUGGERS</a><br>
+<a href="#PROFILING">PROFILING</a><br>
+<a href="#MISCELLANEOUS TRICKS">MISCELLANEOUS TRICKS</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlhacktips
+&minus; Tips for Perl core C code hacking</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+will help you learn the best way to go about hacking on the
+Perl core C code. It covers common problems, debugging,
+profiling, and more.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you
+haven&rsquo;t read perlhack and perlhacktut yet, you might
+want to do that first.</p>
+
+<h2>COMMON PROBLEMS
+<a name="COMMON PROBLEMS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Perl source
+plays by <small>ANSI</small> C89 rules: no C99 (or C
+<small>++</small> ) extensions. In some cases we have to
+take pre-ANSI requirements into consideration. You
+don&rsquo;t care about some particular platform having
+broken Perl? I hear there is still a strong demand for J2EE
+programmers.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Perl
+environment problems</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="43%">
+
+
+<p>Not compiling with threading</p></td>
+<td width="40%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Compiling with
+threading (&minus;Duseithreads) completely rewrites the
+function prototypes of Perl. You better try your changes
+with that. Related to this is the difference between
+&quot;Perl_&minus;less&quot; and &quot;Perl_&minus;ly&quot;
+APIs, for example:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  Perl_sv_setiv(aTHX_ ...);
+  sv_setiv(...);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The first one
+explicitly passes in the context, which is needed for e.g.
+threaded builds. The second one does that implicitly; do not
+get them mixed. If you are not passing in a aTHX_, you will
+need to do a dTHX (or a dVAR) as the first thing in the
+function.</p>
+
+<p style="margin-left:17%; margin-top: 1em">See &quot;How
+multiple interpreters and concurrency are supported&quot; in
+perlguts for further discussion about context.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="46%">
+
+
+<p style="margin-top: 1em">Not compiling with
+&minus;DDEBUGGING</p> </td>
+<td width="37%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">The
+<small>DEBUGGING</small> define exposes more code to the
+compiler, therefore more ways for things to go wrong. You
+should try it.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="54%">
+
+
+<p style="margin-top: 1em">Introducing (non-read-only)
+globals</p> </td>
+<td width="29%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Do not
+introduce any modifiable globals, truly global or file
+static. They are bad form and complicate multithreading and
+other forms of concurrency. The right way is to introduce
+them as new interpreter variables, see <i>intrpvar.h</i> (at
+the very end for binary compatibility).</p>
+
+<p style="margin-left:17%; margin-top: 1em">Introducing
+read-only (const) globals is okay, as long as you verify
+with e.g. <tt>&quot;nm libperl.a|egrep &minus;v ' [TURtr]
+'&quot;</tt> (if your <tt>&quot;nm&quot;</tt> has BSD-style
+output) that the data you added really is read-only. (If it
+is, it shouldn&rsquo;t show up in the output of that
+command.)</p>
+
+<p style="margin-left:17%; margin-top: 1em">If you want to
+have static strings, make them constant:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  static const char etc[] = &quot;...&quot;;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">If you want to
+have arrays of constant strings, note carefully the right
+combination of <tt>&quot;const&quot;</tt>s:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    static const char * const yippee[] =
+        {&quot;hi&quot;, &quot;ho&quot;, &quot;silver&quot;};</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">There is a way
+to completely hide any modifiable globals (they are all
+moved to heap), the compilation setting
+<tt>&quot;&minus;DPERL_GLOBAL_STRUCT_PRIVATE&quot;</tt>. It
+is not normally used, but can be used for testing, read more
+about it in &quot;Background and
+<small>PERL_IMPLICIT_CONTEXT</small> &quot; in perlguts.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="48%">
+
+
+<p style="margin-top: 1em">Not exporting your new
+function</p> </td>
+<td width="35%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Some platforms
+(Win32, <small>AIX</small> , <small>VMS</small> ,
+<small>OS/2</small> , to name a few) require any function
+that is part of the public <small>API</small> (the shared
+Perl library) to be explicitly marked as exported. See the
+discussion about <i>embed.pl</i> in perlguts.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="41%">
+
+
+<p style="margin-top: 1em">Exporting your new function</p></td>
+<td width="42%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">The new shiny
+result of either genuine new functionality or your arduous
+refactoring is now ready and correctly exported. So what
+could possibly go wrong?</p>
+
+<p style="margin-left:17%; margin-top: 1em">Maybe simply
+that your function did not need to be exported in the first
+place. Perl has a long and not so glorious history of
+exporting functions that it should not have.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If the function
+is used only inside one source code file, make it static.
+See the discussion about <i>embed.pl</i> in perlguts.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If the function
+is used across several files, but intended only for
+Perl&rsquo;s internal use (and this should be the common
+case), do not export it to the public <small>API</small> .
+See the discussion about <i>embed.pl</i> in perlguts.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Portability
+problems</b> <br>
+The following are common causes of compilation and/or
+execution failures, not common to Perl as such. The C
+<small>FAQ</small> is good bedtime reading. Please test your
+changes with as many C compilers and platforms as possible;
+we will, anyway, and it&rsquo;s nice to save oneself from
+public embarrassment.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If using gcc,
+you can add the <tt>&quot;&minus;std=c89&quot;</tt> option
+which will hopefully catch most of these unportabilities.
+(However it might also catch incompatibilities in your
+system&rsquo;s header files.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Use the
+Configure <tt>&quot;&minus;Dgccansipedantic&quot;</tt> flag
+to enable the gcc <tt>&quot;&minus;ansi
+&minus;pedantic&quot;</tt> flags which enforce stricter
+<small>ANSI</small> rules.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If using the
+<tt>&quot;gcc &minus;Wall&quot;</tt> note that not all the
+possible warnings (like
+<tt>&quot;&minus;Wunitialized&quot;</tt>) are given unless
+you also compile with <tt>&quot;&minus;O&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that if
+using gcc, starting from Perl 5.9.5 the Perl core source
+code files (the ones at the top level of the source code
+distribution, but not e.g. the extensions under ext/) are
+automatically compiled with as many as possible of the
+<tt>&quot;&minus;std=c89&quot;</tt>,
+<tt>&quot;&minus;ansi&quot;</tt>,
+<tt>&quot;&minus;pedantic&quot;</tt>, and a selection of
+<tt>&quot;&minus;W&quot;</tt> flags (see cflags.SH).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also study
+perlport carefully to avoid any bad assumptions about the
+operating system, filesystems, and so forth.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You may once in
+a while try a &quot;make microperl&quot; to see whether we
+can still compile Perl with just the bare minimum of
+interfaces. (See <small>README</small> .micro.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Do not assume
+an operating system indicates a certain compiler.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Casting pointers to integers or
+casting integers to pointers</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    void castaway(U8* p)
+    {
+      IV i = p;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">or</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    void castaway(U8* p)
+    {
+      IV i = (IV)p;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Both are bad,
+and broken, and unportable. Use the <i><small>PTR2IV</small>
+()</i> macro that does it right. (Likewise, there are
+<i><small>PTR2UV</small> ()</i>, <i><small>PTR2NV</small>
+()</i>, <i><small>INT2PTR</small> ()</i>, and
+<i><small>NUM2PTR</small> ()</i>.)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Casting between data function
+pointers and data pointers</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Technically
+speaking casting between function pointers and data pointers
+is unportable and undefined, but practically speaking it
+seems to work, but you should use the
+<i><small>FPTR2DPTR</small> ()</i> and
+<i><small>DPTR2FPTR</small> ()</i> macros. Sometimes you can
+also play games with unions.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="55%">
+
+
+<p style="margin-top: 1em">Assuming sizeof(int) ==
+sizeof(long)</p> </td>
+<td width="28%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">There are
+platforms where longs are 64 bits, and platforms where ints
+are 64 bits, and while we are out to shock you, even
+platforms where shorts are 64 bits. This is all legal
+according to the C standard. (In other words, &quot;long
+long&quot; is not a portable way to specify 64 bits, and
+&quot;long long&quot; is not even guaranteed to be any wider
+than &quot;long&quot;.)</p>
+
+<p style="margin-left:17%; margin-top: 1em">Instead, use
+the definitions <small>IV</small> , <small>UV</small> ,
+<small>IVSIZE</small> , I32SIZE, and so forth. Avoid things
+like I32 because they are <b>not</b> guaranteed to be
+<i>exactly</i> 32 bits, they are <i>at least</i> 32 bits,
+nor are they guaranteed to be <b>int</b> or <b>long</b>. If
+you really explicitly need 64&minus;bit variables, use I64
+and U64, but only if guarded by <small>HAS_QUAD</small>
+.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Assuming one can dereference any
+type of pointer for any type of data</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  char *p = ...;
+  long pony = *p;    /* BAD */</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Many platforms,
+quite rightly so, will give you a core dump instead of a
+pony if the p happens not to be correctly aligned.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="18%">
+
+
+<p style="margin-top: 1em">Lvalue casts</p></td>
+<td width="65%">
+</td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  (int)*p = ...;    /* BAD */</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Simply not
+portable. Get your lvalue to be of the right type, or maybe
+use temporary variables, or dirty tricks with unions.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Assume <b>anything</b> about
+structs (especially the ones you don&rsquo;t control, like
+the ones coming from the system headers)</p></td></tr>
+</table>
+
+<p style="margin-left:17%;">&bull;</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%"></td>
+<td width="11%"></td>
+<td width="71%">
+
+
+<p style="margin-top: 1em">That a certain field exists in a
+struct</p> </td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="11%"></td>
+<td width="71%">
+
+
+<p>That no other fields exist besides the ones you know
+of</p> </td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="11%"></td>
+<td width="71%">
+
+
+<p>That a field is of certain signedness, sizeof, or
+type</p> </td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="11%"></td>
+<td width="71%">
+
+
+<p>That the fields are in a certain order</p></td></tr>
+</table>
+
+<p style="margin-left:29%;">&bull;</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%"></td>
+<td width="11%"></td>
+<td width="71%">
+
+
+<p style="margin-top: 1em">While C guarantees the ordering
+specified in the struct definition, between different
+platforms the definitions might differ</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="11%"></td>
+<td width="71%">
+
+
+<p>That the sizeof(struct) or the alignments are the same
+everywhere</p> </td></tr>
+</table>
+
+<p style="margin-left:29%;">&bull;</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="20%"></td>
+<td width="11%"></td>
+<td width="58%">
+
+
+<p style="margin-top: 1em">There might be padding bytes
+between the fields to align the fields &minus; the bytes can
+be anything</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="20%">
+
+
+<p>&bull;</p></td>
+<td width="11%"></td>
+<td width="58%">
+
+
+<p>Structs are required to be aligned to the maximum
+alignment required by the fields &minus; which for native
+types is for usually equivalent to <i>sizeof()</i> of the
+field</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="20%">
+
+
+<p>&bull;</p></td>
+<td width="11%"></td>
+<td width="58%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Assuming the
+character set is ASCIIish</p>
+
+<p style="margin-left:17%; margin-top: 1em">Perl can
+compile and run under <small>EBCDIC</small> platforms. See
+perlebcdic. This is transparent for the most part, but
+because the character sets differ, you shouldn&rsquo;t use
+numeric (decimal, octal, nor hex) constants to refer to
+characters. You can safely say &rsquo;A&rsquo;, but not
+0x41. You can safely say &rsquo;\n&rsquo;, but not \012. If
+a character doesn&rsquo;t have a trivial input form, you can
+create a #define for it in both
+<tt>&quot;utfebcdic.h&quot;</tt> and
+<tt>&quot;utf8.h&quot;</tt>, so that it resolves to
+different values depending on the character set being used.
+(There are three different <small>EBCDIC</small> character
+sets defined in <tt>&quot;utfebcdic.h&quot;</tt>, so it
+might be best to insert the #define three times in that
+file.)</p>
+
+<p style="margin-left:17%; margin-top: 1em">Also, the range
+&rsquo;A&rsquo; &minus; &rsquo;Z&rsquo; in
+<small>ASCII</small> is an unbroken sequence of 26 upper
+case alphabetic characters. That is not true in
+<small>EBCDIC</small> . Nor for &rsquo;a&rsquo; to
+&rsquo;z&rsquo;. But &rsquo;0&rsquo; &minus; &rsquo;9&rsquo;
+is an unbroken range in both systems. Don&rsquo;t assume
+anything about other ranges.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Many of the
+comments in the existing code ignore the possibility of
+<small>EBCDIC</small> , and may be wrong therefore, even if
+the code works. This is actually a tribute to the successful
+transparent insertion of being able to handle
+<small>EBCDIC</small> without having to change pre-existing
+code.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><small>UTF&minus;8</small>
+and UTF-EBCDIC are two different encodings used to represent
+Unicode code points as sequences of bytes. Macros with the
+same names (but different definitions) in
+<tt>&quot;utf8.h&quot;</tt> and
+<tt>&quot;utfebcdic.h&quot;</tt> are used to allow the
+calling code to think that there is only one such encoding.
+This is almost always referred to as
+<tt>&quot;utf8&quot;</tt>, but it means the
+<small>EBCDIC</small> version as well. Again, comments in
+the code may well be wrong even if the code itself is right.
+For example, the concept of <tt>&quot;invariant
+characters&quot;</tt> differs between <small>ASCII</small>
+and <small>EBCDIC</small> . On <small>ASCII</small>
+platforms, only characters that do not have the high-order
+bit set (i.e. whose ordinals are strict <small>ASCII</small>
+, 0 &minus; 127) are invariant, and the documentation and
+comments in the code may assume that, often referring to
+something like, say, <tt>&quot;hibit&quot;</tt>. The
+situation differs and is not so simple on
+<small>EBCDIC</small> machines, but as long as the code
+itself uses the <tt>&quot;NATIVE_IS_INVARIANT()&quot;</tt>
+macro appropriately, it works, even if the comments are
+wrong.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="61%">
+
+
+<p style="margin-top: 1em">Assuming the character set is
+just <small>ASCII</small></p></td>
+<td width="22%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%; margin-top: 1em"><small>ASCII</small>
+is a 7 bit encoding, but bytes have 8 bits in them. The 128
+extra characters have different meanings depending on the
+locale. Absent a locale, currently these extra characters
+are generally considered to be unassigned, and this has
+presented some problems. This is being changed starting in
+5.12 so that these characters will be considered to be
+Latin&minus;1 ( <small>ISO&minus;8859&minus;1</small> ).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="38%">
+
+
+<p style="margin-top: 1em">Mixing #define and #ifdef</p></td>
+<td width="45%">
+</td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  #define BURGLE(x) ... \
+  #ifdef BURGLE_OLD_STYLE        /* BAD */
+  ... do it the old way ... \
+  #else
+  ... do it the new way ... \
+  #endif</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">You cannot
+portably &quot;stack&quot; cpp directives. For example in
+the above you need two separate <i><small>BURGLE</small>
+()</i> #defines, one for each #ifdef branch.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="71%">
+
+
+<p style="margin-top: 1em">Adding non-comment stuff after
+#endif or #else</p></td>
+<td width="12%">
+</td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  #ifdef SNOSH
+  ...
+  #else !SNOSH    /* BAD */
+  ...
+  #endif SNOSH    /* BAD */</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The #endif and
+#else cannot portably have anything non-comment after them.
+If you want to document what is going (which is a good idea
+especially if the branches are long), use (C) comments:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  #ifdef SNOSH
+  ...
+  #else /* !SNOSH */
+  ...
+  #endif /* SNOSH */</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The gcc option
+<tt>&quot;&minus;Wendif&minus;labels&quot;</tt> warns about
+the bad variant (by default on starting from Perl
+5.9.4).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="81%">
+
+
+<p style="margin-top: 1em">Having a comma after the last
+element of an enum list</p></td>
+<td width="2%">
+</td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  enum color {
+    CERULEAN,
+    CHARTREUSE,
+    CINNABAR,     /* BAD */
+  };</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">is not
+portable. Leave out the last comma.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Also note that
+whether enums are implicitly morphable to ints varies
+between compilers, you might need to (int).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="26%">
+
+
+<p style="margin-top: 1em">Using //&minus;comments</p></td>
+<td width="57%">
+</td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  // This function bamfoodles the zorklator.   /* BAD */</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">That is C99 or
+C <small>++</small> . Perl is C89. Using the
+//&minus;comments is silently allowed by many C compilers
+but cranking up the <small>ANSI</small> C89 strictness
+(which we like to do) causes the compilation to fail.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="43%">
+
+
+<p style="margin-top: 1em">Mixing declarations and code</p></td>
+<td width="40%">
+</td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  void zorklator()
+  {
+    int n = 3;
+    set_zorkmids(n);    /* BAD */
+    int q = 4;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">That is C99 or
+C <small>++</small> . Some C compilers allow that, but you
+shouldn&rsquo;t.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The gcc option
+<tt>&quot;&minus;Wdeclaration&minus;after&minus;statements&quot;</tt>
+scans for such problems (by default on starting from Perl
+5.9.4).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="52%">
+
+
+<p style="margin-top: 1em">Introducing variables inside
+<i>for()</i></p> </td>
+<td width="31%">
+</td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  for(int i = ...; ...; ...) {    /* BAD */</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">That is C99 or
+C <small>++</small> . While it would indeed be awfully nice
+to have that also in C89, to limit the scope of the loop
+variable, alas, we cannot.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Mixing signed char pointers with
+unsigned char pointers</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  int foo(char *s) { ... }
+  ...
+  unsigned char *t = ...; /* Or U8* t = ... */
+  foo(t);   /* BAD */</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">While this is
+legal practice, it is certainly dubious, and downright fatal
+in at least one platform: for example <small>VMS</small> cc
+considers this a fatal error. One cause for people often
+making this mistake is that a &quot;naked char&quot; and
+therefore dereferencing a &quot;naked char pointer&quot;
+have an undefined signedness: it depends on the compiler and
+the flags of the compiler and the underlying platform
+whether the result is signed or unsigned. For this very same
+reason using a &rsquo;char&rsquo; as an array index is
+bad.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Macros that have string
+constants and their arguments as substrings of the string
+constants</p> </td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  #define FOO(n) printf(&quot;number = %d\n&quot;, n)    /* BAD */
+  FOO(10);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Pre-ANSI
+semantics for that was equivalent to</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  printf(&quot;10umber = %d\10&quot;);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">which is
+probably not what you were expecting. Unfortunately at least
+one reasonably common and modern C compiler does &quot;real
+backward compatibility&quot; here, in <small>AIX</small>
+that is what still happens even though the rest of the
+<small>AIX</small> compiler is very happily C89.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="65%">
+
+
+<p style="margin-top: 1em">Using printf formats for
+non-basic C types</p></td>
+<td width="18%">
+</td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">   IV i = ...;
+   printf(&quot;i = %d\n&quot;, i);    /* BAD */</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">While this
+might by accident work in some platform (where
+<small>IV</small> happens to be an
+<tt>&quot;int&quot;</tt>), in general it cannot.
+<small>IV</small> might be something larger. Even worse the
+situation is with more specific types (defined by
+Perl&rsquo;s configuration step in <i>config.h</i>):</p>
+
+<pre style="margin-left:17%; margin-top: 1em">   Uid_t who = ...;
+   printf(&quot;who = %d\n&quot;, who);    /* BAD */</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The problem
+here is that Uid_t might be not only not
+<tt>&quot;int&quot;</tt>&minus;wide but it might also be
+unsigned, in which case large uids would be printed as
+negative values.</p>
+
+<p style="margin-left:17%; margin-top: 1em">There is no
+simple solution to this because of <i>printf()</i>&rsquo;s
+limited intelligence, but for many types the right format is
+available as with either &rsquo;f&rsquo; or &rsquo;_f&rsquo;
+suffix, for example:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">   IVdf /* IV in decimal */
+   UVxf /* UV is hexadecimal */
+   printf(&quot;i = %&quot;IVdf&quot;\n&quot;, i); /* The IVdf is a string constant. */
+   Uid_t_f /* Uid_t in decimal */
+   printf(&quot;who = %&quot;Uid_t_f&quot;\n&quot;, who);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Or you can try
+casting to a &quot;wide enough&quot; type:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">   printf(&quot;i = %&quot;IVdf&quot;\n&quot;, (IV)something_very_small_and_signed);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Also remember
+that the <tt>%p</tt> format really does require a void
+pointer:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">   U8* p = ...;
+   printf(&quot;p = %p\n&quot;, (void*)p);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The gcc option
+<tt>&quot;&minus;Wformat&quot;</tt> scans for such
+problems.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="45%">
+
+
+<p style="margin-top: 1em">Blindly using variadic
+macros</p> </td>
+<td width="38%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">gcc has had
+them for a while with its own syntax, and C99 brought them
+with a standardized syntax. Don&rsquo;t use the former, and
+use the latter only if the
+<small>HAS_C99_VARIADIC_MACROS</small> is defined.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="35%">
+
+
+<p style="margin-top: 1em">Blindly passing va_list</p></td>
+<td width="48%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Not all
+platforms support passing va_list to further varargs
+(stdarg) functions. The right thing to do is to copy the
+va_list using the <i>Perl_va_copy()</i> if the
+<small>NEED_VA_COPY</small> is defined.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="48%">
+
+
+<p style="margin-top: 1em">Using gcc statement
+expressions</p> </td>
+<td width="35%">
+</td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">   val = ({...;...;...});    /* BAD */</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">While a nice
+extension, it&rsquo;s not portable. The Perl code does
+admittedly use them if available to gain some extra speed
+(essentially as a funky form of inlining), but you
+shouldn&rsquo;t.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="71%">
+
+
+<p style="margin-top: 1em">Binding together several
+statements in a macro</p></td>
+<td width="12%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Use the macros
+<small>STMT_START</small> and <small>STMT_END</small> .</p>
+
+<pre style="margin-left:17%; margin-top: 1em">   STMT_START {
+      ...
+   } STMT_END</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Testing for operating systems or
+versions when should be testing for features</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">  #ifdef __FOONIX__    /* BAD */
+  foo = quux();
+  #endif</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Unless you know
+with 100% certainty that <i>quux()</i> is only ever
+available for the &quot;Foonix&quot; operating system
+<b>and</b> that is available <b>and</b> correctly working
+for <b>all</b> past, present, <b>and</b> future versions of
+&quot;Foonix&quot;, the above is very wrong. This is more
+correct (though still not perfect, because the below is a
+compile-time check):</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  #ifdef HAS_QUUX
+  foo = quux();
+  #endif</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">How does the
+<small>HAS_QUUX</small> become defined where it needs to be?
+Well, if Foonix happens to be Unixy enough to be able to run
+the Configure script, and Configure has been taught about
+detecting and testing <i>quux()</i>, the
+<small>HAS_QUUX</small> will be correctly defined. In other
+platforms, the corresponding configuration step will
+hopefully do the same.</p>
+
+<p style="margin-left:17%; margin-top: 1em">In a pinch, if
+you cannot wait for Configure to be educated, or if you have
+a good hunch of where <i>quux()</i> might be available, you
+can temporarily try the following:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  #if (defined(__FOONIX__) || defined(__BARNIX__))
+  # define HAS_QUUX
+  #endif
+  ...
+  #ifdef HAS_QUUX
+  foo = quux();
+  #endif</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">But in any
+case, try to keep the features and operating systems
+separate.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Problematic
+System Interfaces</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em"><i>malloc</i>(0),
+<i>realloc</i>(0), calloc(0, 0) are non-portable. To be
+portable allocate at least one byte. (In general you should
+rarely need to work at this low level, but instead use the
+various malloc wrappers.)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>snprintf()</i> &minus; the return type is unportable.
+Use <i>my_snprintf()</i> instead.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Security
+problems</b> <br>
+Last but not least, here are various tips for safer
+coding.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="26%">
+
+
+<p style="margin-top: 1em">Do not use <i>gets()</i></p></td>
+<td width="57%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Or we will
+publicly ridicule you. Seriously.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Do not use <i>strcpy()</i> or
+<i>strcat()</i> or <i>strncpy()</i> or <i>strncat()</i></p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Use
+<i>my_strlcpy()</i> and <i>my_strlcat()</i> instead: they
+either use the native implementation, or Perl&rsquo;s own
+implementation (borrowed from the public domain
+implementation of <small>INN</small> ).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="52%">
+
+
+<p style="margin-top: 1em">Do not use <i>sprintf()</i> or
+<i>vsprintf()</i></p> </td>
+<td width="31%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">If you really
+want just plain byte strings, use <i>my_snprintf()</i> and
+<i>my_vsnprintf()</i> instead, which will try to use
+<i>snprintf()</i> and <i>vsnprintf()</i> if those safer APIs
+are available. If you want something fancier than a plain
+byte string, use SVs and <i>Perl_sv_catpvf()</i>.</p>
+
+<h2>DEBUGGING
+<a name="DEBUGGING"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can compile
+a special debugging version of Perl, which allows you to use
+the <tt>&quot;&minus;D&quot;</tt> option of Perl to tell
+more about what Perl is doing. But sometimes there is no
+alternative than to dive in with a debugger, either to see
+the stack trace of a core dump (very useful in a bug
+report), or trying to figure out what went wrong before the
+core dump happened, or how did we end up having wrong or
+unexpected results.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Poking at
+Perl</b> <br>
+To really poke around with Perl, you&rsquo;ll probably want
+to build Perl for debugging, like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    ./Configure &minus;d &minus;D optimize=&minus;g
+    make</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">&quot;&minus;g&quot;
+is a flag to the C compiler to have it produce debugging
+information which will allow us to step through a running
+program, and to see in which C function we are at (without
+the debugging information we might see only the numerical
+addresses of the functions, which is not very helpful).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>Configure</i>
+will also turn on the <tt>&quot;DEBUGGING&quot;</tt>
+compilation symbol which enables all the internal debugging
+code in Perl. There are a whole bunch of things you can
+debug with this: perlrun lists them all, and the best way to
+find out about them is to play about with them. The most
+useful options are probably</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    l  Context (loop) stack processing
+    t  Trace execution
+    o  Method and overloading resolution
+    c  String/numeric conversions</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Some of the
+functionality of the debugging code can be achieved using
+<small>XS</small> modules.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    &minus;Dr =&gt; use re 'debug'
+    &minus;Dx =&gt; use O 'Debug'</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Using a
+source-level debugger</b> <br>
+If the debugging output of <tt>&quot;&minus;D&quot;</tt>
+doesn&rsquo;t help you, it&rsquo;s time to step through
+perl&rsquo;s execution with a source-level debugger.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p style="margin-top: 1em">We&rsquo;ll use
+<tt>&quot;gdb&quot;</tt> for our examples here; the
+principles will apply to any debugger (many vendors call
+their debugger <tt>&quot;dbx&quot;</tt>), but check the
+manual of the one you&rsquo;re using.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">To fire up the
+debugger, type</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    gdb ./perl</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Or if you have
+a core dump:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    gdb ./perl core</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You&rsquo;ll
+want to do that in your Perl source tree so the debugger can
+read the source code. You should see the copyright message,
+followed by the prompt.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    (gdb)</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">&quot;help&quot;
+will get you into the documentation, but here are the most
+useful commands:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="3%"></td>
+<td width="16%">
+
+
+<p style="margin-top: 1em">run [args]</p></td>
+<td width="69%">
+</td></tr>
+</table>
+
+<p style="margin-left:15%; margin-top: 1em">Run the program
+with the given arguments.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="3%"></td>
+<td width="30%">
+
+
+<p style="margin-top: 1em">break function_name</p></td>
+<td width="55%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="3%"></td>
+<td width="30%">
+
+
+<p>break source.c:xxx</p></td>
+<td width="55%">
+</td></tr>
+</table>
+
+<p style="margin-left:15%; margin-top: 1em">Tells the
+debugger that we&rsquo;ll want to pause execution when we
+reach either the named function (but see &quot;Internal
+Functions&quot; in perlguts!) or the given line in the named
+source file.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="3%"></td>
+<td width="7%">
+
+
+<p style="margin-top: 1em">step</p></td>
+<td width="78%">
+</td></tr>
+</table>
+
+<p style="margin-left:15%; margin-top: 1em">Steps through
+the program a line at a time.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="3%"></td>
+<td width="7%">
+
+
+<p style="margin-top: 1em">next</p></td>
+<td width="78%">
+</td></tr>
+</table>
+
+<p style="margin-left:15%; margin-top: 1em">Steps through
+the program a line at a time, without descending into
+functions.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="3%"></td>
+<td width="13%">
+
+
+<p style="margin-top: 1em">continue</p></td>
+<td width="72%">
+</td></tr>
+</table>
+
+<p style="margin-left:15%; margin-top: 1em">Run until the
+next breakpoint.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="3%"></td>
+<td width="10%">
+
+
+<p style="margin-top: 1em">finish</p></td>
+<td width="75%">
+</td></tr>
+</table>
+
+<p style="margin-left:15%; margin-top: 1em">Run until the
+end of the current function, then stop again.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="3%"></td>
+<td width="11%">
+
+
+<p style="margin-top: 1em">&rsquo;enter&rsquo;</p></td>
+<td width="74%">
+</td></tr>
+</table>
+
+<p style="margin-left:15%; margin-top: 1em">Just pressing
+Enter will do the most recent operation again &minus;
+it&rsquo;s a blessing when stepping through miles of source
+code.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="3%"></td>
+<td width="8%">
+
+
+<p style="margin-top: 1em">print</p></td>
+<td width="77%">
+</td></tr>
+</table>
+
+<p style="margin-left:15%; margin-top: 1em">Execute the
+given C code and print its results.
+<b><small>WARNING</small></b> : Perl makes heavy use of
+macros, and <i>gdb</i> does not necessarily support macros
+(see later &quot;gdb macro support&quot;). You&rsquo;ll have
+to substitute them yourself, or to invoke cpp on the source
+code files (see &quot;The .i Targets&quot;) So, for
+instance, you can&rsquo;t say</p>
+
+<pre style="margin-left:15%; margin-top: 1em">    print SvPV_nolen(sv)</pre>
+
+
+<p style="margin-left:15%; margin-top: 1em">but you have to
+say</p>
+
+<pre style="margin-left:15%; margin-top: 1em">    print Perl_sv_2pv_nolen(sv)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You may find it
+helpful to have a &quot;macro dictionary&quot;, which you
+can produce by saying <tt>&quot;cpp &minus;dM perl.c |
+sort&quot;</tt>. Even then, <i>cpp</i> won&rsquo;t
+recursively apply those macros for you.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>gdb macro
+support</b> <br>
+Recent versions of <i>gdb</i> have fairly good macro
+support, but in order to use it you&rsquo;ll need to compile
+perl with macro definitions included in the debugging
+information. Using <i>gcc</i> version 3.1, this means
+configuring with
+<tt>&quot;&minus;Doptimize=&minus;g3&quot;</tt>. Other
+compilers might use a different switch (if they support
+debugging macros at all).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Dumping Perl
+Data Structures</b> <br>
+One way to get around this macro hell is to use the dumping
+functions in <i>dump.c</i>; these work a little like an
+internal Devel::Peek, but they also cover OPs and other
+structures that you can&rsquo;t get at from Perl.
+Let&rsquo;s take an example. We&rsquo;ll use the
+<tt>&quot;$a = $b + $c&quot;</tt> we used before, but give
+it a bit of context: <tt>&quot;$b = &quot;6XXXX&quot;; $c =
+2.3;&quot;</tt>. Where&rsquo;s a good place to stop and poke
+around?</p>
+
+<p style="margin-left:11%; margin-top: 1em">What about
+<tt>&quot;pp_add&quot;</tt>, the function we examined
+earlier to implement the <tt>&quot;+&quot;</tt>
+operator:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    (gdb) break Perl_pp_add
+    Breakpoint 1 at 0x46249f: file pp_hot.c, line 309.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Notice we use
+<tt>&quot;Perl_pp_add&quot;</tt> and not
+<tt>&quot;pp_add&quot;</tt> &minus; see &quot;Internal
+Functions&quot; in perlguts. With the breakpoint in place,
+we can run our program:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    (gdb) run &minus;e '$b = &quot;6XXXX&quot;; $c = 2.3; $a = $b + $c'</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Lots of junk
+will go past as gdb reads in the relevant source files and
+libraries, and then:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Breakpoint 1, Perl_pp_add () at pp_hot.c:309
+    309         dSP; dATARGET; tryAMAGICbin(add,opASSIGN);
+    (gdb) step
+    311           dPOPTOPnnrl_ul;
+    (gdb)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">We looked at
+this bit of code before, and we said that
+<tt>&quot;dPOPTOPnnrl_ul&quot;</tt> arranges for two
+<tt>&quot;NV&quot;</tt>s to be placed into
+<tt>&quot;left&quot;</tt> and <tt>&quot;right&quot;</tt>
+&minus; let&rsquo;s slightly expand it:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> #define dPOPTOPnnrl_ul  NV right = POPn; \
+                         SV *leftsv = TOPs; \
+                         NV left = USE_LEFT(leftsv) ? SvNV(leftsv) : 0.0</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">&quot;POPn&quot;
+takes the <small>SV</small> from the top of the stack and
+obtains its <small>NV</small> either directly (if
+<tt>&quot;SvNOK&quot;</tt> is set) or by calling the
+<tt>&quot;sv_2nv&quot;</tt> function.
+<tt>&quot;TOPs&quot;</tt> takes the next <small>SV</small>
+from the top of the stack &minus; yes,
+<tt>&quot;POPn&quot;</tt> uses <tt>&quot;TOPs&quot;</tt>
+&minus; but doesn&rsquo;t remove it. We then use
+<tt>&quot;SvNV&quot;</tt> to get the <small>NV</small> from
+<tt>&quot;leftsv&quot;</tt> in the same way as before
+&minus; yes, <tt>&quot;POPn&quot;</tt> uses
+<tt>&quot;SvNV&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since we
+don&rsquo;t have an <small>NV</small> for <tt>$b</tt>,
+we&rsquo;ll have to use <tt>&quot;sv_2nv&quot;</tt> to
+convert it. If we step again, we&rsquo;ll find ourselves
+there:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Perl_sv_2nv (sv=0xa0675d0) at sv.c:1669
+    1669        if (!sv)
+    (gdb)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">We can now use
+<tt>&quot;Perl_sv_dump&quot;</tt> to investigate the
+<small>SV:</small></p>
+
+<pre style="margin-left:11%; margin-top: 1em">    SV = PV(0xa057cc0) at 0xa0675d0
+    REFCNT = 1
+    FLAGS = (POK,pPOK)
+    PV = 0xa06a510 &quot;6XXXX&quot;\0
+    CUR = 5
+    LEN = 6
+    $1 = void</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">We know
+we&rsquo;re going to get <tt>6</tt> from this, so
+let&rsquo;s finish the subroutine:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    (gdb) finish
+    Run till exit from #0  Perl_sv_2nv (sv=0xa0675d0) at sv.c:1671
+    0x462669 in Perl_pp_add () at pp_hot.c:311
+    311           dPOPTOPnnrl_ul;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">We can also
+dump out this op: the current op is always stored in
+<tt>&quot;PL_op&quot;</tt>, and we can dump it with
+<tt>&quot;Perl_op_dump&quot;</tt>. This&rsquo;ll give us
+similar output to B::Debug.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    {
+    13  TYPE = add  ===&gt; 14
+        TARG = 1
+        FLAGS = (SCALAR,KIDS)
+        {
+            TYPE = null  ===&gt; (12)
+              (was rv2sv)
+            FLAGS = (SCALAR,KIDS)
+            {
+    11          TYPE = gvsv  ===&gt; 12
+                FLAGS = (SCALAR)
+                GV = main::b
+            }
+        }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"># finish this
+later #</p>
+
+<h2>SOURCE CODE STATIC ANALYSIS
+<a name="SOURCE CODE STATIC ANALYSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Various tools
+exist for analysing C source code <b>statically</b>, as
+opposed to <b>dynamically</b>, that is, without executing
+the code. It is possible to detect resource leaks, undefined
+behaviour, type mismatches, portability problems, code paths
+that would cause illegal memory accesses, and other similar
+problems by just parsing the C code and looking at the
+resulting graph, what does it tell about the execution and
+data flows. As a matter of fact, this is exactly how C
+compilers know to give warnings about dubious code.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>lint,
+splint</b> <br>
+The good old C code quality inspector,
+<tt>&quot;lint&quot;</tt>, is available in several
+platforms, but please be aware that there are several
+different implementations of it by different vendors, which
+means that the flags are not identical across different
+platforms.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is a lint
+variant called <tt>&quot;splint&quot;</tt> (Secure
+Programming Lint) available from http://www.splint.org/ that
+should compile on any Unix-like platform.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There are
+<tt>&quot;lint&quot;</tt> and &lt;splint&gt; targets in
+Makefile, but you may have to diddle with the flags (see
+above).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Coverity</b>
+<br>
+Coverity (http://www.coverity.com/) is a product similar to
+lint and as a testbed for their product they periodically
+check several open source projects, and they give out
+accounts to open source developers to the defect
+databases.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>cpd
+(cut-and-paste detector)</b> <br>
+The cpd tool detects cut-and-paste coding. If one instance
+of the cut-and-pasted code changes, all the other spots
+should probably be changed, too. Therefore such code should
+probably be turned into a subroutine or a macro.</p>
+
+<p style="margin-left:11%; margin-top: 1em">cpd
+(http://pmd.sourceforge.net/cpd.html) is part of the pmd
+project (http://pmd.sourceforge.net/). pmd was originally
+written for static analysis of Java code, but later the cpd
+part of it was extended to parse also C and C
+<small>++</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">Download the
+pmd&minus;bin&minus;X.Y.zip () from the SourceForge site,
+extract the pmd&minus;X.Y.jar from it, and then run that on
+source code thusly:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  java &minus;cp pmd&minus;X.Y.jar net.sourceforge.pmd.cpd.CPD &minus;&minus;minimum&minus;tokens 100 &minus;&minus;files /some/where/src &minus;&minus;language c &gt; cpd.txt</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You may run
+into memory limits, in which case you should use the
+&minus;Xmx option:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  java &minus;Xmx512M ...</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>gcc
+warnings</b> <br>
+Though much can be written about the inconsistency and
+coverage problems of gcc warnings (like
+<tt>&quot;&minus;Wall&quot;</tt> not meaning &quot;all the
+warnings&quot;, or some common portability problems not
+being covered by <tt>&quot;&minus;Wall&quot;</tt>, or
+<tt>&quot;&minus;ansi&quot;</tt> and
+<tt>&quot;&minus;pedantic&quot;</tt> both being a poorly
+defined collection of warnings, and so forth), gcc is still
+a useful tool in keeping our coding nose clean.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;&minus;Wall&quot;</tt> is by default on.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;&minus;ansi&quot;</tt> (and its sidekick,
+<tt>&quot;&minus;pedantic&quot;</tt>) would be nice to be on
+always, but unfortunately they are not safe on all
+platforms, they can for example cause fatal conflicts with
+the system headers (Solaris being a prime example). If
+Configure <tt>&quot;&minus;Dgccansipedantic&quot;</tt> is
+used, the <tt>&quot;cflags&quot;</tt> frontend selects
+<tt>&quot;&minus;ansi &minus;pedantic&quot;</tt> for the
+platforms where they are known to be safe.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Starting from
+Perl 5.9.4 the following extra flags are added:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="48%">
+
+
+
+<p style="margin-top: 1em"><tt>&quot;&minus;Wendif&minus;labels&quot;</tt></p> </td>
+<td width="35%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="48%">
+
+
+<p><tt>&quot;&minus;Wextra&quot;</tt></p></td>
+<td width="35%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="48%">
+
+
+
+<p><tt>&quot;&minus;Wdeclaration&minus;after&minus;statement&quot;</tt></p> </td>
+<td width="35%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+flags would be nice to have but they would first need their
+own Augean stablemaster:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="32%">
+
+
+
+<p style="margin-top: 1em"><tt>&quot;&minus;Wpointer&minus;arith&quot;</tt></p> </td>
+<td width="51%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="32%">
+
+
+<p><tt>&quot;&minus;Wshadow&quot;</tt></p></td>
+<td width="51%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="32%">
+
+
+
+<p><tt>&quot;&minus;Wstrict&minus;prototypes&quot;</tt></p> </td>
+<td width="51%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;&minus;Wtraditional&quot;</tt> is another example
+of the annoying tendency of gcc to bundle a lot of warnings
+under one switch (it would be impossible to deploy in
+practice because it would complain a lot) but it does
+contain some warnings that would be beneficial to have
+available on their own, such as the warning about string
+constants inside macros containing the macro arguments: this
+behaved differently pre-ANSI than it does in
+<small>ANSI</small> , and some C compilers are still in
+transition, <small>AIX</small> being an example.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Warnings of
+other C compilers</b> <br>
+Other C compilers (yes, there <b>are</b> other C compilers
+than gcc) often have their &quot;strict <small>ANSI</small>
+&quot; or &quot;strict <small>ANSI</small> with some
+portability extensions&quot; modes on, like for example the
+Sun Workshop has its <tt>&quot;&minus;Xa&quot;</tt> mode on
+(though implicitly), or the <small>DEC</small> (these days,
+<small>HP</small> ...) has its
+<tt>&quot;&minus;std1&quot;</tt> mode on.</p>
+
+<h2>MEMORY DEBUGGERS
+<a name="MEMORY DEBUGGERS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>NOTE</small>
+1</b>: Running under memory debuggers such as Purify,
+valgrind, or Third Degree greatly slows down the execution:
+seconds become minutes, minutes become hours. For example as
+of Perl 5.8.1, the ext/Encode/t/Unicode.t takes
+extraordinarily long to complete under e.g. Purify, Third
+Degree, and valgrind. Under valgrind it takes more than six
+hours, even on a snappy computer. The said test must be
+doing something that is quite unfriendly for memory
+debuggers. If you don&rsquo;t feel like waiting, that you
+can simply kill away the perl process.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>NOTE</small>
+2</b>: To minimize the number of memory leak false alarms
+(see &quot; <small>PERL_DESTRUCT_LEVEL</small> &quot; for
+more information), you have to set the environment variable
+<small>PERL_DESTRUCT_LEVEL</small> to 2.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For csh-like
+shells:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    setenv PERL_DESTRUCT_LEVEL 2</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">For Bourne-type
+shells:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    PERL_DESTRUCT_LEVEL=2
+    export PERL_DESTRUCT_LEVEL</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In Unixy
+environments you can also use the <tt>&quot;env&quot;</tt>
+command:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    env PERL_DESTRUCT_LEVEL=2 valgrind ./perl &minus;Ilib ...</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>NOTE</small>
+3</b>: There are known memory leaks when there are
+compile-time errors within eval or require, seeing
+<tt>&quot;S_doeval&quot;</tt> in the call stack is a good
+sign of these. Fixing these leaks is non-trivial,
+unfortunately, but they must be fixed eventually.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>NOTE</small>
+4</b>: DynaLoader will not clean up after itself completely
+unless Perl is built with the Configure option
+<tt>&quot;&minus;Accflags=&minus;DDL_UNLOAD_ALL_AT_EXIT&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Rational
+Software&rsquo;s Purify</b> <br>
+Purify is a commercial tool that is helpful in identifying
+memory overruns, wild pointers, memory leaks and other such
+badness. Perl must be compiled in a specific way for optimal
+testing with Purify. Purify is available under Windows
+<small>NT</small> , Solaris, HP-UX, <small>SGI</small> , and
+Siemens Unix.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Purify on
+Unix</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">On Unix, Purify
+creates a new Perl binary. To get the most benefit out of
+Purify, you should create the perl to Purify using:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sh Configure &minus;Accflags=&minus;DPURIFY &minus;Doptimize='&minus;g' \
+     &minus;Uusemymalloc &minus;Dusemultiplicity</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">where these
+arguments mean:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="28%">
+
+
+
+<p style="margin-top: 1em">&minus;Accflags=&minus;DPURIFY</p> </td>
+<td width="55%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Disables
+Perl&rsquo;s arena memory allocation functions, as well as
+forcing use of memory allocation functions derived from the
+system malloc.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="23%">
+
+
+
+<p style="margin-top: 1em">&minus;Doptimize=&rsquo;&minus;g&rsquo;</p> </td>
+<td width="60%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Adds debugging
+information so that you see the exact source statements
+where the problem occurs. Without this flag, all you will
+see is the source filename of where the error occurred.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="20%">
+
+
+<p style="margin-top: 1em">&minus;Uusemymalloc</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Disable
+Perl&rsquo;s malloc so that Purify can more closely monitor
+allocations and leaks. Using Perl&rsquo;s malloc will make
+Purify report most leaks in the &quot;potential&quot; leaks
+category.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="26%">
+
+
+<p style="margin-top: 1em">&minus;Dusemultiplicity</p></td>
+<td width="57%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Enabling the
+multiplicity option allows perl to clean up thoroughly when
+the interpreter shuts down, which reduces the number of
+bogus leak reports from Purify.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Once
+you&rsquo;ve compiled a perl suitable for Purify&rsquo;ing,
+then you can just:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    make pureperl</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">which creates a
+binary named &rsquo;pureperl&rsquo; that has been
+Purify&rsquo;ed. This binary is used in place of the
+standard &rsquo;perl&rsquo; binary when you want to debug
+Perl memory problems.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As an example,
+to show any memory leaks produced during the standard Perl
+testset you would create and run the Purify&rsquo;ed perl
+as:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    make pureperl
+    cd t
+    ../pureperl &minus;I../lib harness</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">which would run
+Perl on test.pl and report any memory problems.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Purify outputs
+messages in &quot;Viewer&quot; windows by default. If you
+don&rsquo;t have a windowing environment or if you simply
+want the Purify output to unobtrusively go to a log file
+instead of to the interactive window, use these following
+options to output to the log file &quot;perl.log&quot;:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    setenv PURIFYOPTIONS &quot;&minus;chain&minus;length=25 &minus;windows=no \
+     &minus;log&minus;file=perl.log &minus;append&minus;logfile=yes&quot;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you plan to
+use the &quot;Viewer&quot; windows, then you only need this
+option:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    setenv PURIFYOPTIONS &quot;&minus;chain&minus;length=25&quot;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In Bourne-type
+shells:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    PURIFYOPTIONS=&quot;...&quot;
+    export PURIFYOPTIONS</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">or if you have
+the &quot;env&quot; utility:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    env PURIFYOPTIONS=&quot;...&quot; ../pureperl ...</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>Purify on
+<small>NT</small></i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Purify on
+Windows <small>NT</small> instruments the Perl binary
+&rsquo;perl.exe&rsquo; on the fly. <br>
+There are several options in the makefile you should change
+to get the most use out of Purify:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="11%">
+
+
+<p style="margin-top: 1em"><small>DEFINES</small></p></td>
+<td width="72%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">You should add
+&minus;DPURIFY to the <small>DEFINES</small> line so the
+<small>DEFINES</small> line looks something like:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">   DEFINES = &minus;DWIN32 &minus;D_CONSOLE &minus;DNO_STRICT $(CRYPT_FLAG) &minus;DPURIFY=1</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">to disable
+Perl&rsquo;s arena memory allocation functions, as well as
+to force use of memory allocation functions derived from the
+system malloc.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="28%">
+
+
+<p style="margin-top: 1em"><small>USE_MULTI</small> =
+define</p> </td>
+<td width="55%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Enabling the
+multiplicity option allows perl to clean up thoroughly when
+the interpreter shuts down, which reduces the number of
+bogus leak reports from Purify.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="32%">
+
+
+<p style="margin-top: 1em">#PERL_MALLOC = define</p></td>
+<td width="51%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Disable
+Perl&rsquo;s malloc so that Purify can more closely monitor
+allocations and leaks. Using Perl&rsquo;s malloc will make
+Purify report most leaks in the &quot;potential&quot; leaks
+category.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="17%">
+
+
+<p style="margin-top: 1em"><small>CFG</small> = Debug</p></td>
+<td width="66%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Adds debugging
+information so that you see the exact source statements
+where the problem occurs. Without this flag, all you will
+see is the source filename of where the error occurred.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As an example,
+to show any memory leaks produced during the standard Perl
+testset you would create and run Purify as:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    cd win32
+    make
+    cd ../t
+    purify ../perl &minus;I../lib harness</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">which would
+instrument Perl in memory, run Perl on test.pl, then finally
+report any memory problems.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>valgrind</b>
+<br>
+The excellent valgrind tool can be used to find out both
+memory leaks and illegal memory accesses. As of version
+3.3.0, Valgrind only supports Linux on x86, x86&minus;64 and
+PowerPC and Darwin ( <small>OS</small> X) on x86 and
+x86&minus;64). The special &quot;test.valgrind&quot; target
+can be used to run the tests under valgrind. Found errors
+and memory leaks are logged in files named
+<i>testfile.valgrind</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Valgrind also
+provides a cachegrind tool, invoked on perl as:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    VG_OPTS=&minus;&minus;tool=cachegrind make test.valgrind</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">As system
+libraries (most notably glibc) are also triggering errors,
+valgrind allows to suppress such errors using suppression
+files. The default suppression file that comes with valgrind
+already catches a lot of them. Some additional suppressions
+are defined in <i>t/perl.supp</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To get valgrind
+and for more information see</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    http://valgrind.org/</pre>
+
+
+<h2>PROFILING
+<a name="PROFILING"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Depending on
+your platform there are various ways of profiling Perl.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There are two
+commonly used techniques of profiling executables:
+<i>statistical time-sampling</i> and <i>basic-block
+counting</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The first
+method takes periodically samples of the <small>CPU</small>
+program counter, and since the program counter can be
+correlated with the code generated for functions, we get a
+statistical view of in which functions the program is
+spending its time. The caveats are that very small/fast
+functions have lower probability of showing up in the
+profile, and that periodically interrupting the program
+(this is usually done rather frequently, in the scale of
+milliseconds) imposes an additional overhead that may skew
+the results. The first problem can be alleviated by running
+the code for longer (in general this is a good idea for
+profiling), the second problem is usually kept in guard by
+the profiling tools themselves.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The second
+method divides up the generated code into <i>basic
+blocks</i>. Basic blocks are sections of code that are
+entered only in the beginning and exited only at the end.
+For example, a conditional jump starts a basic block. Basic
+block profiling usually works by <i>instrumenting</i> the
+code by adding <i>enter basic block #nnnn</i> book-keeping
+code to the generated code. During the execution of the code
+the basic block counters are then updated appropriately. The
+caveat is that the added extra code can skew the results:
+again, the profiling tools usually try to factor their own
+effects out of the results.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Gprof
+Profiling</b> <br>
+gprof is a profiling tool available in many Unix platforms,
+it uses <i>statistical time-sampling</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can build a
+profiled version of perl called &quot;perl.gprof&quot; by
+invoking the make target &quot;perl.gprof&quot; (What is
+required is that Perl must be compiled using the
+<tt>&quot;&minus;pg&quot;</tt> flag, you may need to
+re-Configure). Running the profiled version of Perl will
+create an output file called <i>gmon.out</i> is created
+which contains the profiling data collected during the
+execution.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The gprof tool
+can then display the collected data in various ways. Usually
+gprof understands the following options:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">&minus;a</p></td>
+<td width="80%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Suppress
+statically defined functions from the profile.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">&minus;b</p></td>
+<td width="80%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Suppress the
+verbose descriptions in the profile.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="15%">
+
+
+<p style="margin-top: 1em">&minus;e routine</p></td>
+<td width="68%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Exclude the
+given routine and its descendants from the profile.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="15%">
+
+
+<p style="margin-top: 1em">&minus;f routine</p></td>
+<td width="68%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Display only
+the given routine and its descendants in the profile.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">&minus;s</p></td>
+<td width="80%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Generate a
+summary file called <i>gmon.sum</i> which then may be given
+to subsequent gprof runs to accumulate data over several
+runs.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">&minus;z</p></td>
+<td width="80%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Display
+routines that have zero usage.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For more
+detailed explanation of the available commands and output
+formats, see your own local documentation of gprof.</p>
+
+<p style="margin-left:11%; margin-top: 1em">quick hint:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ sh Configure &minus;des &minus;Dusedevel &minus;Doptimize='&minus;pg' &amp;&amp; make perl.gprof
+    $ ./perl.gprof someprog # creates gmon.out in current directory
+    $ gprof ./perl.gprof &gt; out
+    $ view out</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>GCC</small>
+gcov Profiling</b> <br>
+Starting from <small>GCC</small> 3.0 <i>basic block
+profiling</i> is officially available for the <small>GNU
+CC</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can build a
+profiled version of perl called <i>perl.gcov</i> by invoking
+the make target &quot;perl.gcov&quot; (what is required that
+Perl must be compiled using gcc with the flags
+<tt>&quot;&minus;fprofile&minus;arcs
+&minus;ftest&minus;coverage&quot;</tt>, you may need to
+re-Configure).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Running the
+profiled version of Perl will cause profile output to be
+generated. For each source file an accompanying
+&quot;.da&quot; file will be created.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To display the
+results you use the &quot;gcov&quot; utility (which should
+be installed if you have gcc 3.0 or newer installed).
+<i>gcov</i> is run on source code files, like this</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    gcov sv.c</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">which will
+cause <i>sv.c.gcov</i> to be created. The <i>.gcov</i> files
+contain the source code annotated with relative frequencies
+of execution indicated by &quot;#&quot; markers.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Useful options
+of <i>gcov</i> include <tt>&quot;&minus;b&quot;</tt> which
+will summarise the basic block, branch, and function call
+coverage, and <tt>&quot;&minus;c&quot;</tt> which instead of
+relative frequencies will use the actual counts. For more
+information on the use of <i>gcov</i> and basic block
+profiling with gcc, see the latest <small>GNU CC</small>
+manual, as of <small>GCC</small> 3.0 see</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    http://gcc.gnu.org/onlinedocs/gcc&minus;3.0/gcc.html</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">and its section
+titled &quot;8. gcov: a Test Coverage Program&quot;</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    http://gcc.gnu.org/onlinedocs/gcc&minus;3.0/gcc_8.html#SEC132</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">quick hint:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ sh Configure &minus;des &minus;Dusedevel &minus;Doptimize='&minus;g' \
+        &minus;Accflags='&minus;fprofile&minus;arcs &minus;ftest&minus;coverage' \
+        &minus;Aldflags='&minus;fprofile&minus;arcs &minus;ftest&minus;coverage' &amp;&amp; make perl.gcov
+    $ rm &minus;f regexec.c.gcov regexec.gcda
+    $ ./perl.gcov
+    $ gcov regexec.c
+    $ view regexec.c.gcov</pre>
+
+
+<h2>MISCELLANEOUS TRICKS
+<a name="MISCELLANEOUS TRICKS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>PERL_DESTRUCT_LEVEL</small></b>
+<br>
+If you want to run any of the tests yourself manually using
+e.g. valgrind, or the pureperl or perl.third executables,
+please note that by default perl <b>does not</b> explicitly
+cleanup all the memory it has allocated (such as global
+memory arenas) but instead lets the <i>exit()</i> of the
+whole program &quot;take care&quot; of such allocations,
+also known as &quot;global destruction of objects&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is a way
+to tell perl to do complete cleanup: set the environment
+variable <small>PERL_DESTRUCT_LEVEL</small> to a non-zero
+value. The t/TEST wrapper does set this to 2, and this is
+what you need to do too, if you don&rsquo;t want to see the
+&quot;global leaks&quot;: For example, for
+&quot;third-degreed&quot; Perl:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        env PERL_DESTRUCT_LEVEL=2 ./perl.third &minus;Ilib t/foo/bar.t</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">(Note: the
+mod_perl apache module uses also this environment variable
+for its own purposes and extended its semantics. Refer to
+the mod_perl documentation for more information. Also,
+spawned threads do the equivalent of setting this variable
+to the value 1.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">If, at the end
+of a run you get the message <i>N scalars leaked</i>, you
+can recompile with
+<tt>&quot;&minus;DDEBUG_LEAKING_SCALARS&quot;</tt>, which
+will cause the addresses of all those leaked SVs to be
+dumped along with details as to where each <small>SV</small>
+was originally allocated. This information is also displayed
+by Devel::Peek. Note that the extra details recorded with
+each <small>SV</small> increases memory usage, so it
+shouldn&rsquo;t be used in production environments. It also
+converts <tt>&quot;new_SV()&quot;</tt> from a macro into a
+real function, so you can use your favourite debugger to
+discover where those pesky SVs were allocated.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you see that
+you&rsquo;re leaking memory at runtime, but neither valgrind
+nor <tt>&quot;&minus;DDEBUG_LEAKING_SCALARS&quot;</tt> will
+find anything, you&rsquo;re probably leaking SVs that are
+still reachable and will be properly cleaned up during
+destruction of the interpreter. In such cases, using the
+<tt>&quot;&minus;Dm&quot;</tt> switch can point you to the
+source of the leak. If the executable was built with
+<tt>&quot;&minus;DDEBUG_LEAKING_SCALARS&quot;</tt>,
+<tt>&quot;&minus;Dm&quot;</tt> will output <small>SV</small>
+allocations in addition to memory allocations. Each
+<small>SV</small> allocation has a distinct serial number
+that will be written on creation and destruction of the
+<small>SV</small> . So if you&rsquo;re executing the leaking
+code in a loop, you need to look for SVs that are created,
+but never destroyed between each cycle. If such an
+<small>SV</small> is found, set a conditional breakpoint
+within <tt>&quot;new_SV()&quot;</tt> and make it break only
+when <tt>&quot;PL_sv_serial&quot;</tt> is equal to the
+serial number of the leaking <small>SV</small> . Then you
+will catch the interpreter in exactly the state where the
+leaking <small>SV</small> is allocated, which is sufficient
+in many cases to find the source of the leak.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As
+<tt>&quot;&minus;Dm&quot;</tt> is using the PerlIO layer for
+output, it will by itself allocate quite a bunch of SVs,
+which are hidden to avoid recursion. You can bypass the
+PerlIO layer if you use the <small>SV</small> logging
+provided by <tt>&quot;&minus;DPERL_MEM_LOG&quot;</tt>
+instead.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>PERL_MEM_LOG</small></b>
+<br>
+If compiled with <tt>&quot;&minus;DPERL_MEM_LOG&quot;</tt>,
+both memory and <small>SV</small> allocations go through
+logging functions, which is handy for breakpoint
+setting.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Unless
+<tt>&quot;&minus;DPERL_MEM_LOG_NOIMPL&quot;</tt> is also
+compiled, the logging functions read <tt>$ENV</tt>{
+<small>PERL_MEM_LOG</small> } to determine whether to log
+the event, and if so how:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ENV{PERL_MEM_LOG} =~ /m/           Log all memory ops
+    $ENV{PERL_MEM_LOG} =~ /s/           Log all SV ops
+    $ENV{PERL_MEM_LOG} =~ /t/           include timestamp in Log
+    $ENV{PERL_MEM_LOG} =~ /^(\d+)/      write to FD given (default is 2)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Memory logging
+is somewhat similar to <tt>&quot;&minus;Dm&quot;</tt> but is
+independent of <tt>&quot;&minus;DDEBUGGING&quot;</tt>, and
+at a higher level; all uses of <i>Newx()</i>,
+<i>Renew()</i>, and <i>Safefree()</i> are logged with the
+caller&rsquo;s source code file and line number (and C
+function name, if supported by the C compiler). In contrast,
+<tt>&quot;&minus;Dm&quot;</tt> is directly at the point of
+<tt>&quot;malloc()&quot;</tt>. <small>SV</small> logging is
+similar.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since the
+logging doesn&rsquo;t use PerlIO, all <small>SV</small>
+allocations are logged and no extra <small>SV</small>
+allocations are introduced by enabling the logging. If
+compiled with
+<tt>&quot;&minus;DDEBUG_LEAKING_SCALARS&quot;</tt>, the
+serial number for each <small>SV</small> allocation is also
+logged.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>DDD</small>
+over gdb</b> <br>
+Those debugging perl with the <small>DDD</small> frontend
+over gdb may find the following useful:</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can extend
+the data conversion shortcuts menu, so for example you can
+display an <small>SV</small> &rsquo;s <small>IV</small>
+value with one click, without doing any typing. To do that
+simply edit ~/.ddd/init file and add after:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  ! Display shortcuts.
+  Ddd*gdbDisplayShortcuts: \
+  /t ()   // Convert to Bin\n\
+  /d ()   // Convert to Dec\n\
+  /x ()   // Convert to Hex\n\
+  /o ()   // Convert to Oct(\n\</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">the following
+two lines:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  ((XPV*) (())&minus;&gt;sv_any )&minus;&gt;xpv_pv  // 2pvx\n\
+  ((XPVIV*) (())&minus;&gt;sv_any )&minus;&gt;xiv_iv // 2ivx</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">so now you can
+do ivx and pvx lookups or you can plug there the sv_peek
+&quot;conversion&quot;:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  Perl_sv_peek(my_perl, (SV*)()) // sv_peek</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">(The my_perl is
+for threaded builds.) Just remember that every line, but the
+last one, should end with \n\</p>
+
+<p style="margin-left:11%; margin-top: 1em">Alternatively
+edit the init file interactively via: 3rd mouse button
+&minus;&gt; New Display &minus;&gt; Edit Menu</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note: you can
+define up to 20 conversion shortcuts in the gdb section.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Poison</b>
+<br>
+If you see in a debugger a memory area mysteriously full of
+0xABABABAB or 0xEFEFEFEF, you may be seeing the effect of
+the <i>Poison()</i> macros, see perlclib.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Read-only
+optrees</b> <br>
+Under ithreads the optree is read only. If you want to
+enforce this, to check for write accesses from buggy code,
+compile with <tt>&quot;&minus;DPL_OP_SLAB_ALLOC&quot;</tt>
+to enable the <small>OP</small> slab allocator and
+<tt>&quot;&minus;DPERL_DEBUG_READONLY_OPS&quot;</tt> to
+enable code that allocates op memory via
+<tt>&quot;mmap&quot;</tt>, and sets it read-only at run
+time. Any write access to an op results in a
+<tt>&quot;SIGBUS&quot;</tt> and abort.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This code is
+intended for development only, and may not be portable even
+to all Unix variants. Also, it is an 80% solution, in that
+it isn&rsquo;t able to make all ops read only. Specifically
+it</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">1</p></td>
+<td width="82%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Only sets
+read-only on all slabs of ops at <tt>&quot;CHECK&quot;</tt>
+time, hence ops allocated later via
+<tt>&quot;require&quot;</tt> or <tt>&quot;eval&quot;</tt>
+will be re-write</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">2</p></td>
+<td width="82%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Turns an entire
+slab of ops read-write if the refcount of any op in the slab
+needs to be decreased.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">3</p></td>
+<td width="82%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Turns an entire
+slab of ops read-write if any op from the slab is freed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It&rsquo;s not
+possible to turn the slabs to read-only after an action
+requiring read-write access, as either can happen during op
+tree building time, so there may still be legitimate write
+access.</p>
+
+<p style="margin-left:11%; margin-top: 1em">However, as an
+80% solution it is still effective, as currently it catches
+a write access during the generation of <i>Config.pm</i>,
+which means that we can&rsquo;t yet build <i>perl</i> with
+this enabled.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>The .i
+Targets</b> <br>
+You can expand the macros in a <i>foo.c</i> file by
+saying</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    make foo.i</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">which will
+expand the macros using cpp. Don&rsquo;t be scared by the
+results.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+was originally written by Nathan Torkington, and is
+maintained by the perl5&minus;porters mailing list.</p>
+<hr>
+</body>
+</html>

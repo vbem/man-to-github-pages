@@ -1,0 +1,4228 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:37:51 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERLOP</title>
+
+</head>
+<body>
+
+<h1 align="center">PERLOP</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlop &minus;
+Perl operators and precedence</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Operator
+Precedence and Associativity</b> <br>
+Operator precedence and associativity work in Perl more or
+less like they do in mathematics.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Operator
+precedence</i> means some operators are evaluated before
+others. For example, in <tt>&quot;2 + 4 * 5&quot;</tt>, the
+multiplication has higher precedence so <tt>&quot;4 *
+5&quot;</tt> is evaluated first yielding <tt>&quot;2 + 20 ==
+22&quot;</tt> and not <tt>&quot;6 * 5 == 30&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Operator
+associativity</i> defines what happens if a sequence of the
+same operators is used one after another: whether the
+evaluator will evaluate the left operations first or the
+right. For example, in <tt>&quot;8 &minus; 4 &minus;
+2&quot;</tt>, subtraction is left associative so Perl
+evaluates the expression left to right. <tt>&quot;8 &minus;
+4&quot;</tt> is evaluated first making the expression
+<tt>&quot;4 &minus; 2 == 2&quot;</tt> and not <tt>&quot;8
+&minus; 2 == 6&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl operators
+have the following associativity and precedence, listed from
+highest precedence to lowest. Operators borrowed from C keep
+the same precedence relationship with each other, even where
+C&rsquo;s precedence is slightly screwy. (This makes
+learning Perl easier for C folks.) With very few exceptions,
+these all operate on scalar values only, not array
+values.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    left        terms and list operators (leftward)
+    left        &minus;&gt;
+    nonassoc    ++ &minus;&minus;
+    right       **
+    right       ! ~ \ and unary + and &minus;
+    left        =~ !~
+    left        * / % x
+    left        + &minus; .
+    left        &lt;&lt; &gt;&gt;
+    nonassoc    named unary operators
+    nonassoc    &lt; &gt; &lt;= &gt;= lt gt le ge
+    nonassoc    == != &lt;=&gt; eq ne cmp ~~
+    left        &amp;
+    left        | ^
+    left        &amp;&amp;
+    left        || //
+    nonassoc    ..  ...
+    right       ?:
+    right       = += &minus;= *= etc.
+    left        , =&gt;
+    nonassoc    list operators (rightward)
+    right       not
+    left        and
+    left        or xor</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In the
+following sections, these operators are covered in
+precedence order.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Many operators
+can be overloaded for objects. See overload.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Terms and
+List Operators (Leftward)</b> <br>
+A <small>TERM</small> has the highest precedence in Perl.
+They include variables, quote and quote-like operators, any
+expression in parentheses, and any function whose arguments
+are parenthesized. Actually, there aren&rsquo;t really
+functions in this sense, just list operators and unary
+operators behaving as functions because you put parentheses
+around the arguments. These are all documented in
+perlfunc.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If any list
+operator (<i>print()</i>, etc.) or any unary operator
+(<i>chdir()</i>, etc.) is followed by a left parenthesis as
+the next token, the operator and arguments within
+parentheses are taken to be of highest precedence, just like
+a normal function call.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the absence
+of parentheses, the precedence of list operators such as
+<tt>&quot;print&quot;</tt>, <tt>&quot;sort&quot;</tt>, or
+<tt>&quot;chmod&quot;</tt> is either very high or very low
+depending on whether you are looking at the left side or the
+right side of the operator. For example, in</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @ary = (1, 3, sort 4, 2);
+    print @ary;         # prints 1324</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">the commas on
+the right of the sort are evaluated before the sort, but the
+commas on the left are evaluated after. In other words, list
+operators tend to gobble up all arguments that follow, and
+then act like a simple <small>TERM</small> with regard to
+the preceding expression. Be careful with parentheses:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    # These evaluate exit before doing the print:
+    print($foo, exit);  # Obviously not what you want.
+    print $foo, exit;   # Nor is this.
+    # These do the print before evaluating exit:
+    (print $foo), exit; # This is what you want.
+    print($foo), exit;  # Or this.
+    print ($foo), exit; # Or even this.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Also note
+that</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    print ($foo &amp; 255) + 1, &quot;\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">probably
+doesn&rsquo;t do what you expect at first glance. The
+parentheses enclose the argument list for
+<tt>&quot;print&quot;</tt> which is evaluated (printing the
+result of <tt>&quot;$foo &amp; 255&quot;</tt>). Then one is
+added to the return value of <tt>&quot;print&quot;</tt>
+(usually 1). The result is something like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    1 + 1, &quot;\n&quot;;    # Obviously not what you meant.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To do what you
+meant properly, you must write:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    print(($foo &amp; 255) + 1, &quot;\n&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">See &quot;Named
+Unary Operators&quot; for more discussion of this.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also parsed as
+terms are the <tt>&quot;do {}&quot;</tt> and <tt>&quot;eval
+{}&quot;</tt> constructs, as well as subroutine and method
+calls, and the anonymous constructors
+<tt>&quot;[]&quot;</tt> and <tt>&quot;{}&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See also
+&quot;Quote and Quote-like Operators&quot; toward the end of
+this section, as well as &quot;I/O Operators&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>The Arrow
+Operator</b> <br>
+&quot;<tt>&quot;&minus;&gt;&quot;</tt>&quot; is an infix
+dereference operator, just as it is in C and C
+<small>++</small> . If the right side is either a
+<tt>&quot;[...]&quot;</tt>, <tt>&quot;{...}&quot;</tt>, or a
+<tt>&quot;(...)&quot;</tt> subscript, then the left side
+must be either a hard or symbolic reference to an array, a
+hash, or a subroutine respectively. (Or technically
+speaking, a location capable of holding a hard reference, if
+it&rsquo;s an array or hash reference being used for
+assignment.) See perlreftut and perlref.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Otherwise, the
+right side is a method name or a simple scalar variable
+containing either the method name or a subroutine reference,
+and the left side must be either an object (a blessed
+reference) or a class name (that is, a package name). See
+perlobj.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Auto-increment
+and Auto-decrement</b> <br>
+&quot;++&quot; and &quot;&minus;&minus;&quot; work as in C.
+That is, if placed before a variable, they increment or
+decrement the variable by one before returning the value,
+and if placed after, increment or decrement after returning
+the value.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $i = 0;  $j = 0;
+    print $i++;  # prints 0
+    print ++$j;  # prints 1</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Note that just
+as in C, Perl doesn&rsquo;t define <b>when</b> the variable
+is incremented or decremented. You just know it will be done
+sometime before or after the value is returned. This also
+means that modifying a variable twice in the same statement
+will lead to undefined behavior. Avoid statements like:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $i = $i ++;
+    print ++ $i + $i ++;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Perl will not
+guarantee what the result of the above statements is.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+auto-increment operator has a little extra builtin magic to
+it. If you increment a variable that is numeric, or that has
+ever been used in a numeric context, you get a normal
+increment. If, however, the variable has been used in only
+string contexts since it was set, and has a value that is
+not the empty string and matches the pattern
+<tt>&quot;/^[a&minus;zA&minus;Z]*[0&minus;9]*\z/&quot;</tt>,
+the increment is done as a string, preserving each character
+within its range, with carry:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    print ++($foo = &quot;99&quot;);      # prints &quot;100&quot;
+    print ++($foo = &quot;a0&quot;);      # prints &quot;a1&quot;
+    print ++($foo = &quot;Az&quot;);      # prints &quot;Ba&quot;
+    print ++($foo = &quot;zz&quot;);      # prints &quot;aaa&quot;</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">&quot;undef&quot;
+is always treated as numeric, and in particular is changed
+to <tt>0</tt> before incrementing (so that a post-increment
+of an undef value will return <tt>0</tt> rather than
+<tt>&quot;undef&quot;</tt>).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+auto-decrement operator is not magical.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Exponentiation</b>
+<br>
+Binary &quot;**&quot; is the exponentiation operator. It
+binds even more tightly than unary minus, so &minus;2**4 is
+&minus;(2**4), not (&minus;2)**4. (This is implemented using
+C&rsquo;s <i>pow</i>(3) function, which actually works on
+doubles internally.)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Symbolic
+Unary Operators</b> <br>
+Unary &quot;!&quot; performs logical negation, that is,
+&quot;not&quot;. See also <tt>&quot;not&quot;</tt> for a
+lower precedence version of this.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Unary
+&quot;&minus;&quot; performs arithmetic negation if the
+operand is numeric, including any string that looks like a
+number. If the operand is an identifier, a string consisting
+of a minus sign concatenated with the identifier is
+returned. Otherwise, if the string starts with a plus or
+minus, a string starting with the opposite sign is returned.
+One effect of these rules is that &minus;bareword is
+equivalent to the string &quot;&minus;bareword&quot;. If,
+however, the string begins with a non-alphabetic character
+(excluding &quot;+&quot; or &quot;&minus;&quot;), Perl will
+attempt to convert the string to a numeric and the
+arithmetic negation is performed. If the string cannot be
+cleanly converted to a numeric, Perl will give the warning
+<b>Argument &quot;the string&quot; isn&rsquo;t numeric in
+negation (&minus;) at ...</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Unary
+&quot;~&quot; performs bitwise negation, that is, 1&rsquo;s
+complement. For example, <tt>&quot;0666 &amp;
+~027&quot;</tt> is 0640. (See also &quot;Integer
+Arithmetic&quot; and &quot;Bitwise String Operators&quot;.)
+Note that the width of the result is platform-dependent: ~0
+is 32 bits wide on a 32&minus;bit platform, but 64 bits wide
+on a 64&minus;bit platform, so if you are expecting a
+certain bit width, remember to use the &quot;&amp;&quot;
+operator to mask off the excess bits.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When
+complementing strings, if all characters have ordinal values
+under 256, then their complements will, also. But if they do
+not, all characters will be in either 32&minus; or
+64&minus;bit complements, depending on your architecture. So
+for example, <tt>&quot;~&quot;\x{3B1}&quot;&quot;</tt> is
+<tt>&quot;\x{FFFF_FC4E}&quot;</tt> on 32&minus;bit machines
+and <tt>&quot;\x{FFFF_FFFF_FFFF_FC4E}&quot;</tt> on
+64&minus;bit machines.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Unary
+&quot;+&quot; has no effect whatsoever, even on strings. It
+is useful syntactically for separating a function name from
+a parenthesized expression that would otherwise be
+interpreted as the complete list of function arguments. (See
+examples above under &quot;Terms and List Operators
+(Leftward)&quot;.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Unary
+&quot;\&quot; creates a reference to whatever follows it.
+See perlreftut and perlref. Do not confuse this behavior
+with the behavior of backslash within a string, although
+both forms do convey the notion of protecting the next thing
+from interpolation.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Binding
+Operators</b> <br>
+Binary &quot;=~&quot; binds a scalar expression to a pattern
+match. Certain operations search or modify the string
+<tt>$_</tt> by default. This operator makes that kind of
+operation work on some other string. The right argument is a
+search pattern, substitution, or transliteration. The left
+argument is what is supposed to be searched, substituted, or
+transliterated instead of the default <tt>$_</tt>. When used
+in scalar context, the return value generally indicates the
+success of the operation. The exceptions are substitution
+(s///) and transliteration (y///) with the
+<tt>&quot;/r&quot;</tt> (non-destructive) option, which
+cause the <b>r</b>eturn value to be the result of the
+substitution. Behavior in list context depends on the
+particular operator. See &quot;Regexp Quote-Like
+Operators&quot; for details and perlretut for examples using
+these operators.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the right
+argument is an expression rather than a search pattern,
+substitution, or transliteration, it is interpreted as a
+search pattern at run time. Note that this means that its
+contents will be interpolated twice, so</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    '\\' =~ q'\\';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">is not ok, as
+the regex engine will end up trying to compile the pattern
+<tt>&quot;\&quot;</tt>, which it will consider a syntax
+error.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;!~&quot; is just like &quot;=~&quot; except the return
+value is negated in the logical sense.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;!~&quot; with a non-destructive substitution (s///r)
+or transliteration (y///r) is a syntax error.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Multiplicative
+Operators</b> <br>
+Binary &quot;*&quot; multiplies two numbers.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;/&quot; divides two numbers.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;%&quot; is the modulo operator, which computes the
+division remainder of its first argument with respect to its
+second argument. Given integer operands <tt>$a</tt> and
+<tt>$b</tt>: If <tt>$b</tt> is positive, then <tt>&quot;$a %
+$b&quot;</tt> is <tt>$a</tt> minus the largest multiple of
+<tt>$b</tt> less than or equal to <tt>$a</tt>. If
+<tt>$b</tt> is negative, then <tt>&quot;$a % $b&quot;</tt>
+is <tt>$a</tt> minus the smallest multiple of <tt>$b</tt>
+that is not less than <tt>$a</tt> (that is, the result will
+be less than or equal to zero). If the operands <tt>$a</tt>
+and <tt>$b</tt> are floating point values and the absolute
+value of <tt>$b</tt> (that is <tt>&quot;abs($b)&quot;</tt>)
+is less than <tt>&quot;(UV_MAX + 1)&quot;</tt>, only the
+integer portion of <tt>$a</tt> and <tt>$b</tt> will be used
+in the operation (Note: here <tt>&quot;UV_MAX&quot;</tt>
+means the maximum of the unsigned integer type). If the
+absolute value of the right operand
+(<tt>&quot;abs($b)&quot;</tt>) is greater than or equal to
+<tt>&quot;(UV_MAX + 1)&quot;</tt>, &quot;%&quot; computes
+the floating-point remainder <tt>$r</tt> in the equation
+<tt>&quot;($r = $a &minus; $i*$b)&quot;</tt> where
+<tt>$i</tt> is a certain integer that makes <tt>$r</tt> have
+the same sign as the right operand <tt>$b</tt> (<b>not</b>
+as the left operand <tt>$a</tt> like C function
+<tt>&quot;fmod()&quot;</tt>) and the absolute value less
+than that of <tt>$b</tt>. Note that when <tt>&quot;use
+integer&quot;</tt> is in scope, &quot;%&quot; gives you
+direct access to the modulo operator as implemented by your
+C compiler. This operator is not as well defined for
+negative operands, but it will execute faster.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;x&quot; is the repetition operator. In scalar context
+or if the left operand is not enclosed in parentheses, it
+returns a string consisting of the left operand repeated the
+number of times specified by the right operand. In list
+context, if the left operand is enclosed in parentheses or
+is a list formed by <tt>&quot;qw/STRING/&quot;</tt>, it
+repeats the list. If the right operand is zero or negative,
+it returns an empty string or an empty list, depending on
+the context.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    print '&minus;' x 80;             # print row of dashes
+    print &quot;\t&quot; x ($tab/8), ' ' x ($tab%8);      # tab over
+    @ones = (1) x 80;           # a list of 80 1's
+    @ones = (5) x @ones;        # set all elements to 5</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Additive
+Operators</b> <br>
+Binary <tt>&quot;+&quot;</tt> returns the sum of two
+numbers.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+<tt>&quot;&minus;&quot;</tt> returns the difference of two
+numbers.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+<tt>&quot;.&quot;</tt> concatenates two strings.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Shift
+Operators</b> <br>
+Binary <tt>&quot;&lt;&lt;&quot;</tt> returns the value of
+its left argument shifted left by the number of bits
+specified by the right argument. Arguments should be
+integers. (See also &quot;Integer Arithmetic&quot;.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+<tt>&quot;&gt;&gt;&quot;</tt> returns the value of its left
+argument shifted right by the number of bits specified by
+the right argument. Arguments should be integers. (See also
+&quot;Integer Arithmetic&quot;.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that both
+<tt>&quot;&lt;&lt;&quot;</tt> and
+<tt>&quot;&gt;&gt;&quot;</tt> in Perl are implemented
+directly using <tt>&quot;&lt;&lt;&quot;</tt> and
+<tt>&quot;&gt;&gt;&quot;</tt> in C. If <tt>&quot;use
+integer&quot;</tt> (see &quot;Integer Arithmetic&quot;) is
+in force then signed C integers are used, else unsigned C
+integers are used. Either way, the implementation
+isn&rsquo;t going to generate results larger than the size
+of the integer type Perl was built with (32 bits or 64
+bits).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The result of
+overflowing the range of the integers is undefined because
+it is undefined also in C. In other words, using
+32&minus;bit integers, <tt>&quot;1 &lt;&lt; 32&quot;</tt> is
+undefined. Shifting by a negative number of bits is also
+undefined.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you get
+tired of being subject to your platform&rsquo;s native
+integers, the <tt>&quot;use bigint&quot;</tt> pragma neatly
+sidesteps the issue altogether:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    print 20 &lt;&lt; 20;  # 20971520
+    print 20 &lt;&lt; 40;  # 5120 on 32&minus;bit machines,
+                     # 21990232555520 on 64&minus;bit machines
+    use bigint;
+    print 20 &lt;&lt; 100; # 25353012004564588029934064107520</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Named Unary
+Operators</b> <br>
+The various named unary operators are treated as functions
+with one argument, with optional parentheses.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If any list
+operator (<i>print()</i>, etc.) or any unary operator
+(<i>chdir()</i>, etc.) is followed by a left parenthesis as
+the next token, the operator and arguments within
+parentheses are taken to be of highest precedence, just like
+a normal function call. For example, because named unary
+operators are higher precedence than
+<tt>&quot;||&quot;</tt>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    chdir $foo    || die;       # (chdir $foo) || die
+    chdir($foo)   || die;       # (chdir $foo) || die
+    chdir ($foo)  || die;       # (chdir $foo) || die
+    chdir +($foo) || die;       # (chdir $foo) || die</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">but, because *
+is higher precedence than named operators:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    chdir $foo * 20;    # chdir ($foo * 20)
+    chdir($foo) * 20;   # (chdir $foo) * 20
+    chdir ($foo) * 20;  # (chdir $foo) * 20
+    chdir +($foo) * 20; # chdir ($foo * 20)
+    rand 10 * 20;       # rand (10 * 20)
+    rand(10) * 20;      # (rand 10) * 20
+    rand (10) * 20;     # (rand 10) * 20
+    rand +(10) * 20;    # rand (10 * 20)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Regarding
+precedence, the filetest operators, like
+<tt>&quot;&minus;f&quot;</tt>,
+<tt>&quot;&minus;M&quot;</tt>, etc. are treated like named
+unary operators, but they don&rsquo;t follow this functional
+parenthesis rule. That means, for example, that
+<tt>&quot;&minus;f($file).&quot;.bak&quot;&quot;</tt> is
+equivalent to <tt>&quot;&minus;f
+&quot;$file.bak&quot;&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See also
+&quot;Terms and List Operators (Leftward)&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Relational
+Operators</b> <br>
+Perl operators that return true or false generally return
+values that can be safely used as numbers. For example, the
+relational operators in this section and the equality
+operators in the next one return <tt>1</tt> for true and a
+special version of the defined empty string,
+<tt>&quot;&quot;</tt>, which counts as a zero but is exempt
+from warnings about improper numeric conversions, just as
+<tt>&quot;0 but true&quot;</tt> is.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;&lt;&quot; returns true if the left argument is
+numerically less than the right argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;&gt;&quot; returns true if the left argument is
+numerically greater than the right argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;&lt;=&quot; returns true if the left argument is
+numerically less than or equal to the right argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;&gt;=&quot; returns true if the left argument is
+numerically greater than or equal to the right argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;lt&quot; returns true if the left argument is
+stringwise less than the right argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;gt&quot; returns true if the left argument is
+stringwise greater than the right argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;le&quot; returns true if the left argument is
+stringwise less than or equal to the right argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;ge&quot; returns true if the left argument is
+stringwise greater than or equal to the right argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Equality
+Operators</b> <br>
+Binary &quot;==&quot; returns true if the left argument is
+numerically equal to the right argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;!=&quot; returns true if the left argument is
+numerically not equal to the right argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;&lt;=&gt;&quot; returns &minus;1, 0, or 1 depending on
+whether the left argument is numerically less than, equal
+to, or greater than the right argument. If your platform
+supports NaNs (not-a-numbers) as numeric values, using them
+with &quot;&lt;=&gt;&quot; returns undef. NaN is not
+&quot;&lt;&quot;, &quot;==&quot;, &quot;&gt;&quot;,
+&quot;&lt;=&quot; or &quot;&gt;=&quot; anything (even NaN),
+so those 5 return false. NaN != NaN returns true, as does
+NaN != anything else. If your platform doesn&rsquo;t support
+NaNs then NaN is just a string with numeric value 0.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl &minus;le '$a = &quot;NaN&quot;; print &quot;No NaN support here&quot; if $a == $a'
+    $ perl &minus;le '$a = &quot;NaN&quot;; print &quot;NaN support here&quot; if $a != $a'</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">(Note that the
+bigint, bigrat, and bignum pragmas all support
+&quot;NaN&quot;.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;eq&quot; returns true if the left argument is
+stringwise equal to the right argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;ne&quot; returns true if the left argument is
+stringwise not equal to the right argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;cmp&quot; returns &minus;1, 0, or 1 depending on
+whether the left argument is stringwise less than, equal to,
+or greater than the right argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;~~&quot; does a smartmatch between its arguments.
+Smart matching is described in the next section.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&quot;lt&quot;,
+&quot;le&quot;, &quot;ge&quot;, &quot;gt&quot; and
+&quot;cmp&quot; use the collation (sort) order specified by
+the current locale if a legacy <tt>&quot;use
+locale&quot;</tt> (but not <tt>&quot;use locale
+':not_characters'&quot;</tt>) is in effect. See perllocale.
+Do not mix these with Unicode, only with legacy binary
+encodings. The standard Unicode::Collate and
+Unicode::Collate::Locale modules offer much more powerful
+solutions to collation issues.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Smartmatch
+Operator</b> <br>
+First available in Perl 5.10.1 (the 5.10.0 version behaved
+differently), binary <tt>&quot;~~&quot;</tt> does a
+&quot;smartmatch&quot; between its arguments. This is mostly
+used implicitly in the <tt>&quot;when&quot;</tt> construct
+described in perlsyn, although not all
+<tt>&quot;when&quot;</tt> clauses call the smartmatch
+operator. Unique among all of Perl&rsquo;s operators, the
+smartmatch operator can recurse.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is also
+unique in that all other Perl operators impose a context
+(usually string or numeric context) on their operands,
+autoconverting those operands to those imposed contexts. In
+contrast, smartmatch <i>infers</i> contexts from the actual
+types of its operands and uses that type information to
+select a suitable comparison mechanism.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;~~&quot;</tt> operator compares its operands
+&quot;polymorphically&quot;, determining how to compare them
+according to their actual types (numeric, string, array,
+hash, etc.) Like the equality operators with which it shares
+the same precedence, <tt>&quot;~~&quot;</tt> returns 1 for
+true and <tt>&quot;&quot;</tt> for false. It is often best
+read aloud as &quot;in&quot;, &quot;inside of&quot;, or
+&quot;is contained in&quot;, because the left operand is
+often looked for <i>inside</i> the right operand. That makes
+the order of the operands to the smartmatch operand often
+opposite that of the regular match operator. In other words,
+the &quot;smaller&quot; thing is usually placed in the left
+operand and the larger one in the right.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The behavior of
+a smartmatch depends on what type of things its arguments
+are, as determined by the following table. The first row of
+the table whose types apply determines the smartmatch
+behavior. Because what actually happens is mostly determined
+by the type of the second operand, the table is sorted on
+the right operand instead of on the left.</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> Left      Right      Description and pseudocode
+ ===============================================================
+ Any       undef      check whether Any is undefined
+                like: !defined Any
+ Any       Object     invoke ~~ overloading on Object, or die
+ Right operand is an ARRAY:
+ Left      Right      Description and pseudocode
+ ===============================================================
+ ARRAY1    ARRAY2     recurse on paired elements of ARRAY1 and ARRAY2[2]
+                like: (ARRAY1[0] ~~ ARRAY2[0])
+                        &amp;&amp; (ARRAY1[1] ~~ ARRAY2[1]) &amp;&amp; ...
+ HASH      ARRAY      any ARRAY elements exist as HASH keys
+                like: grep { exists HASH&minus;&gt;{$_} } ARRAY
+ Regexp    ARRAY      any ARRAY elements pattern match Regexp
+                like: grep { /Regexp/ } ARRAY
+ undef     ARRAY      undef in ARRAY
+                like: grep { !defined } ARRAY
+ Any       ARRAY      smartmatch each ARRAY element[3]
+                like: grep { Any ~~ $_ } ARRAY
+ Right operand is a HASH:
+ Left      Right      Description and pseudocode
+ ===============================================================
+ HASH1     HASH2      all same keys in both HASHes
+                like: keys HASH1 ==
+                         grep { exists HASH2&minus;&gt;{$_} } keys HASH1
+ ARRAY     HASH       any ARRAY elements exist as HASH keys
+                like: grep { exists HASH&minus;&gt;{$_} } ARRAY
+ Regexp    HASH       any HASH keys pattern match Regexp
+                like: grep { /Regexp/ } keys HASH
+ undef     HASH       always false (undef can't be a key)
+                like: 0 == 1
+ Any       HASH       HASH key existence
+                like: exists HASH&minus;&gt;{Any}
+ Right operand is CODE:
+ Left      Right      Description and pseudocode
+ ===============================================================
+ ARRAY     CODE       sub returns true on all ARRAY elements[1]
+                like: !grep { !CODE&minus;&gt;($_) } ARRAY
+ HASH      CODE       sub returns true on all HASH keys[1]
+                like: !grep { !CODE&minus;&gt;($_) } keys HASH
+ Any       CODE       sub passed Any returns true
+                like: CODE&minus;&gt;(Any)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Right operand
+is a Regexp:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> Left      Right      Description and pseudocode
+ ===============================================================
+ ARRAY     Regexp     any ARRAY elements match Regexp
+                like: grep { /Regexp/ } ARRAY
+ HASH      Regexp     any HASH keys match Regexp
+                like: grep { /Regexp/ } keys HASH
+ Any       Regexp     pattern match
+                like: Any =~ /Regexp/
+ Other:
+ Left      Right      Description and pseudocode
+ ===============================================================
+ Object    Any        invoke ~~ overloading on Object,
+                      or fall back to...
+ Any       Num        numeric equality
+                 like: Any == Num
+ Num       nummy[4]    numeric equality
+                 like: Num == nummy
+ undef     Any        check whether undefined
+                 like: !defined(Any)
+ Any       Any        string equality
+                 like: Any eq Any</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Notes: <br>
+1. Empty hashes or arrays match. <br>
+2. That is, each element smartmatches the element of the
+same index in <br>
+the other array.[3] <br>
+3. If a circular reference is found, fall back to
+referential equality. <br>
+4. Either an actual number, or a string that looks like
+one.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The smartmatch
+implicitly dereferences any non-blessed hash or array
+reference, so the <tt>&quot;</tt><i>HASH</i><tt>&quot;</tt>
+and <tt>&quot;</tt><i>ARRAY</i><tt>&quot;</tt> entries apply
+in those cases. For blessed references, the
+<tt>&quot;</tt><i>Object</i><tt>&quot;</tt> entries apply.
+Smartmatches involving hashes only consider hash keys, never
+hash values.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+&quot;like&quot; code entry is not always an exact
+rendition. For example, the smartmatch operator
+short-circuits whenever possible, but
+<tt>&quot;grep&quot;</tt> does not. Also,
+<tt>&quot;grep&quot;</tt> in scalar context returns the
+number of matches, but <tt>&quot;~~&quot;</tt> returns only
+true or false.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Unlike most
+operators, the smartmatch operator knows to treat
+<tt>&quot;undef&quot;</tt> specially:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use v5.10.1;
+    @array = (1, 2, 3, undef, 4, 5);
+    say &quot;some elements undefined&quot; if undef ~~ @array;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Each operand is
+considered in a modified scalar context, the modification
+being that array and hash variables are passed by reference
+to the operator, which implicitly dereferences them. Both
+elements of each pair are the same:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use v5.10.1;
+    my %hash = (red    =&gt; 1, blue   =&gt; 2, green  =&gt; 3,
+                orange =&gt; 4, yellow =&gt; 5, purple =&gt; 6,
+                black  =&gt; 7, grey   =&gt; 8, white  =&gt; 9);
+    my @array = qw(red blue green);
+    say &quot;some array elements in hash keys&quot; if  @array ~~  %hash;
+    say &quot;some array elements in hash keys&quot; if \@array ~~ \%hash;
+    say &quot;red in array&quot; if &quot;red&quot; ~~  @array;
+    say &quot;red in array&quot; if &quot;red&quot; ~~ \@array;
+    say &quot;some keys end in e&quot; if /e$/ ~~  %hash;
+    say &quot;some keys end in e&quot; if /e$/ ~~ \%hash;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Two arrays
+smartmatch if each element in the first array smartmatches
+(that is, is &quot;in&quot;) the corresponding element in
+the second array, recursively.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use v5.10.1;
+    my @little = qw(red blue green);
+    my @bigger = (&quot;red&quot;, &quot;blue&quot;, [ &quot;orange&quot;, &quot;green&quot; ] );
+    if (@little ~~ @bigger) {  # true!
+        say &quot;little is contained in bigger&quot;;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Because the
+smartmatch operator recurses on nested arrays, this will
+still report that &quot;red&quot; is in the array.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use v5.10.1;
+    my @array = qw(red blue green);
+    my $nested_array = [[[[[[[ @array ]]]]]]];
+    say &quot;red in array&quot; if &quot;red&quot; ~~ $nested_array;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If two arrays
+smartmatch each other, then they are deep copies of each
+others&rsquo; values, as this example reports:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use v5.12.0;
+    my @a = (0, 1, 2, [3, [4, 5], 6], 7);
+    my @b = (0, 1, 2, [3, [4, 5], 6], 7);
+    if (@a ~~ @b &amp;&amp; @b ~~ @a) {
+        say &quot;a and b are deep copies of each other&quot;;
+    }
+    elsif (@a ~~ @b) {
+        say &quot;a smartmatches in b&quot;;
+    }
+    elsif (@b ~~ @a) {
+        say &quot;b smartmatches in a&quot;;
+    }
+    else {
+        say &quot;a and b don't smartmatch each other at all&quot;;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you were to
+set <tt>&quot;$b[3] = 4&quot;</tt>, then instead of
+reporting that &quot;a and b are deep copies of each
+other&quot;, it now reports that &quot;b smartmatches in
+a&quot;. That because the corresponding position in
+<tt>@a</tt> contains an array that (eventually) has a 4 in
+it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Smartmatching
+one hash against another reports whether both contain the
+same keys, no more and no less. This could be used to see
+whether two records have the same field names, without
+caring what values those fields might have. For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use v5.10.1;
+    sub make_dogtag {
+        state $REQUIRED_FIELDS = { name=&gt;1, rank=&gt;1, serial_num=&gt;1 };
+        my ($class, $init_fields) = @_;
+        die &quot;Must supply (only) name, rank, and serial number&quot;
+            unless $init_fields ~~ $REQUIRED_FIELDS;
+        ...
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">or, if other
+non-required fields are allowed, use <small>ARRAY</small> ~~
+<small>HASH:</small></p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use v5.10.1;
+    sub make_dogtag {
+        state $REQUIRED_FIELDS = { name=&gt;1, rank=&gt;1, serial_num=&gt;1 };
+        my ($class, $init_fields) = @_;
+        die &quot;Must supply (at least) name, rank, and serial number&quot;
+            unless [keys %{$init_fields}] ~~ $REQUIRED_FIELDS;
+        ...
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The smartmatch
+operator is most often used as the implicit operator of a
+<tt>&quot;when&quot;</tt> clause. See the section on
+&quot;Switch Statements&quot; in perlsyn.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>Smartmatching
+of Objects</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">To avoid
+relying on an object&rsquo;s underlying representation, if
+the smartmatch&rsquo;s right operand is an object that
+doesn&rsquo;t overload <tt>&quot;~~&quot;</tt>, it raises
+the exception &quot;<tt>&quot;Smartmatching a
+non&minus;overloaded object breaks
+encapsulation&quot;</tt>&quot;. That&rsquo;s because one has
+no business digging around to see whether something is
+&quot;in&quot; an object. These are all illegal on objects
+without a <tt>&quot;~~&quot;</tt> overload:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    %hash ~~ $object
+       42 ~~ $object
+   &quot;fred&quot; ~~ $object</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">However, you
+can change the way an object is smartmatched by overloading
+the <tt>&quot;~~&quot;</tt> operator. This is allowed to
+extend the usual smartmatch semantics. For objects that do
+have an <tt>&quot;~~&quot;</tt> overload, see overload.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Using an object
+as the left operand is allowed, although not very useful.
+Smartmatching rules take precedence over overloading, so
+even if the object in the left operand has smartmatch
+overloading, this will be ignored. A left operand that is a
+non-overloaded object falls back on a string or numeric
+comparison of whatever the <tt>&quot;ref&quot;</tt> operator
+returns. That means that</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $object ~~ X</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">does <i>not</i>
+invoke the overload method with
+<tt>&quot;</tt><i>X</i><tt>&quot;</tt> as an argument.
+Instead the above table is consulted as normal, and based on
+the type of <tt>&quot;</tt><i>X</i><tt>&quot;</tt>,
+overloading may or may not be invoked. For simple strings or
+numbers, in becomes equivalent to this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $object ~~ $number          ref($object) == $number
+    $object ~~ $string          ref($object) eq $string</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">For example,
+this reports that the handle smells IOish (but please
+don&rsquo;t really do this!):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use IO::Handle;
+    my $fh = IO::Handle&minus;&gt;new();
+    if ($fh ~~ /\bIO\b/) {
+        say &quot;handle smells IOish&quot;;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">That&rsquo;s
+because it treats <tt>$fh</tt> as a string like
+<tt>&quot;IO::Handle=GLOB(0x8039e0)&quot;</tt>, then pattern
+matches against that.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Bitwise
+And</b> <br>
+Binary &quot;&amp;&quot; returns its operands ANDed together
+bit by bit. (See also &quot;Integer Arithmetic&quot; and
+&quot;Bitwise String Operators&quot;.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+&quot;&amp;&quot; has lower priority than relational
+operators, so for example the parentheses are essential in a
+test like</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    print &quot;Even\n&quot; if ($x &amp; 1) == 0;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Bitwise Or
+and Exclusive Or</b> <br>
+Binary &quot;|&quot; returns its operands ORed together bit
+by bit. (See also &quot;Integer Arithmetic&quot; and
+&quot;Bitwise String Operators&quot;.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+&quot;^&quot; returns its operands XORed together bit by
+bit. (See also &quot;Integer Arithmetic&quot; and
+&quot;Bitwise String Operators&quot;.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+&quot;|&quot; and &quot;^&quot; have lower priority than
+relational operators, so for example the brackets are
+essential in a test like</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    print &quot;false\n&quot; if (8 | 2) != 10;</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>C&minus;style
+Logical And</b> <br>
+Binary &quot;&amp;&amp;&quot; performs a short-circuit
+logical <small>AND</small> operation. That is, if the left
+operand is false, the right operand is not even evaluated.
+Scalar or list context propagates down to the right operand
+if it is evaluated.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>C&minus;style
+Logical Or</b> <br>
+Binary &quot;||&quot; performs a short-circuit logical
+<small>OR</small> operation. That is, if the left operand is
+true, the right operand is not even evaluated. Scalar or
+list context propagates down to the right operand if it is
+evaluated.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Logical
+Defined-Or</b> <br>
+Although it has no direct equivalent in C, Perl&rsquo;s
+<tt>&quot;//&quot;</tt> operator is related to its
+C&minus;style or. In fact, it&rsquo;s exactly the same as
+<tt>&quot;||&quot;</tt>, except that it tests the left hand
+side&rsquo;s definedness instead of its truth. Thus,
+<tt>&quot;EXPR1 // EXPR2&quot;</tt> returns the value of
+<tt>&quot;EXPR1&quot;</tt> if it&rsquo;s defined, otherwise,
+the value of <tt>&quot;EXPR2&quot;</tt> is returned.
+(<tt>&quot;EXPR1&quot;</tt> is evaluated in scalar context,
+<tt>&quot;EXPR2&quot;</tt> in the context of
+<tt>&quot;//&quot;</tt> itself). Usually, this is the same
+result as <tt>&quot;defined(EXPR1) ? EXPR1 :
+EXPR2&quot;</tt> (except that the ternary-operator form can
+be used as a lvalue, while <tt>&quot;EXPR1 //
+EXPR2&quot;</tt> cannot). This is very useful for providing
+default values for variables. If you actually want to test
+if at least one of <tt>$a</tt> and <tt>$b</tt> is defined,
+use <tt>&quot;defined($a // $b)&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;||&quot;</tt>, <tt>&quot;//&quot;</tt> and
+<tt>&quot;&amp;&amp;&quot;</tt> operators return the last
+value evaluated (unlike C&rsquo;s <tt>&quot;||&quot;</tt>
+and <tt>&quot;&amp;&amp;&quot;</tt>, which return 0 or 1).
+Thus, a reasonably portable way to find out the home
+directory might be:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $home =  $ENV{HOME}
+          // $ENV{LOGDIR}
+          // (getpwuid($&lt;))[7]
+          // die &quot;You're homeless!\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In particular,
+this means that you shouldn&rsquo;t use this for selecting
+between two aggregates for assignment:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @a = @b || @c;              # this is wrong
+    @a = scalar(@b) || @c;      # really meant this
+    @a = @b ? @b : @c;          # this works fine, though</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">As alternatives
+to <tt>&quot;&amp;&amp;&quot;</tt> and
+<tt>&quot;||&quot;</tt> when used for control flow, Perl
+provides the <tt>&quot;and&quot;</tt> and
+<tt>&quot;or&quot;</tt> operators (see below). The
+short-circuit behavior is identical. The precedence of
+&quot;and&quot; and &quot;or&quot; is much lower, however,
+so that you can safely use them after a list operator
+without the need for parentheses:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    unlink &quot;alpha&quot;, &quot;beta&quot;, &quot;gamma&quot;
+            or gripe(), next LINE;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">With the
+C&minus;style operators that would have been written like
+this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    unlink(&quot;alpha&quot;, &quot;beta&quot;, &quot;gamma&quot;)
+            || (gripe(), next LINE);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">It would be
+even more readable to write that this way:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    unless(unlink(&quot;alpha&quot;, &quot;beta&quot;, &quot;gamma&quot;)) {
+        gripe();
+        next LINE;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Using
+&quot;or&quot; for assignment is unlikely to do what you
+want; see below.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Range
+Operators</b> <br>
+Binary &quot;..&quot; is the range operator, which is really
+two different operators depending on the context. In list
+context, it returns a list of values counting (up by ones)
+from the left value to the right value. If the left value is
+greater than the right value then it returns the empty list.
+The range operator is useful for writing <tt>&quot;foreach
+(1..10)&quot;</tt> loops and for doing slice operations on
+arrays. In the current implementation, no temporary array is
+created when the range operator is used as the expression in
+<tt>&quot;foreach&quot;</tt> loops, but older versions of
+Perl might burn a lot of memory when you write something
+like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    for (1 .. 1_000_000) {
+        # code
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The range
+operator also works on strings, using the magical
+auto-increment, see below.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In scalar
+context, &quot;..&quot; returns a boolean value. The
+operator is bistable, like a flip-flop, and emulates the
+line-range (comma) operator of <b>sed</b>, <b>awk</b>, and
+various editors. Each &quot;..&quot; operator maintains its
+own boolean state, even across calls to a subroutine that
+contains it. It is false as long as its left operand is
+false. Once the left operand is true, the range operator
+stays true until the right operand is true,
+<i><small>AFTER</small></i> which the range operator becomes
+false again. It doesn&rsquo;t become false till the next
+time the range operator is evaluated. It can test the right
+operand and become false on the same evaluation it became
+true (as in <b>awk</b>), but it still returns true once. If
+you don&rsquo;t want it to test the right operand until the
+next evaluation, as in <b>sed</b>, just use three dots
+(&quot;...&quot;) instead of two. In all other regards,
+&quot;...&quot; behaves just like &quot;..&quot; does.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The right
+operand is not evaluated while the operator is in the
+&quot;false&quot; state, and the left operand is not
+evaluated while the operator is in the &quot;true&quot;
+state. The precedence is a little lower than || and
+&amp;&amp;. The value returned is either the empty string
+for false, or a sequence number (beginning with 1) for true.
+The sequence number is reset for each range encountered. The
+final sequence number in a range has the string
+&quot;E0&quot; appended to it, which doesn&rsquo;t affect
+its numeric value, but gives you something to search for if
+you want to exclude the endpoint. You can exclude the
+beginning point by waiting for the sequence number to be
+greater than 1.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If either
+operand of scalar &quot;..&quot; is a constant expression,
+that operand is considered true if it is equal
+(<tt>&quot;==&quot;</tt>) to the current input line number
+(the <tt>$.</tt> variable).</p>
+
+<p style="margin-left:11%; margin-top: 1em">To be pedantic,
+the comparison is actually <tt>&quot;int(EXPR) ==
+int(EXPR)&quot;</tt>, but that is only an issue if you use a
+floating point expression; when implicitly using <tt>$.</tt>
+as described in the previous paragraph, the comparison is
+<tt>&quot;int(EXPR) == int($.)&quot;</tt> which is only an
+issue when <tt>$.</tt> is set to a floating point value and
+you are not reading from a file. Furthermore,
+<tt>&quot;span&quot; .. &quot;spat&quot;</tt> or
+<tt>&quot;2.18 .. 3.14&quot;</tt> will not do what you want
+in scalar context because each of the operands are evaluated
+using their integer representation.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Examples:</p>
+
+<p style="margin-left:11%; margin-top: 1em">As a scalar
+operator:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    if (101 .. 200) { print; } # print 2nd hundred lines, short for
+                               #  if ($. == 101 .. $. == 200) { print; }
+    next LINE if (1 .. /^$/);  # skip header lines, short for
+                               #   next LINE if ($. == 1 .. /^$/);
+                               # (typically in a loop labeled LINE)
+    s/^/&gt; / if (/^$/ .. eof());  # quote body
+    # parse mail messages
+    while (&lt;&gt;) {
+        $in_header =   1  .. /^$/;
+        $in_body   = /^$/ .. eof;
+        if ($in_header) {
+            # do something
+        } else { # in body
+            # do something else
+        }
+    } continue {
+        close ARGV if eof;             # reset $. each file
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Here&rsquo;s a
+simple example to illustrate the difference between the two
+range operators:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @lines = (&quot;   &minus; Foo&quot;,
+              &quot;01 &minus; Bar&quot;,
+              &quot;1  &minus; Baz&quot;,
+              &quot;   &minus; Quux&quot;);
+    foreach (@lines) {
+        if (/0/ .. /1/) {
+            print &quot;$_\n&quot;;
+        }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This program
+will print only the line containing &quot;Bar&quot;. If the
+range operator is changed to <tt>&quot;...&quot;</tt>, it
+will also print the &quot;Baz&quot; line.</p>
+
+<p style="margin-left:11%; margin-top: 1em">And now some
+examples as a list operator:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    for (101 .. 200) { print }      # print $_ 100 times
+    @foo = @foo[0 .. $#foo];        # an expensive no&minus;op
+    @foo = @foo[$#foo&minus;4 .. $#foo];  # slice last 5 items</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The range
+operator (in list context) makes use of the magical
+auto-increment algorithm if the operands are strings. You
+can say</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @alphabet = (&quot;A&quot; .. &quot;Z&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">to get all
+normal letters of the English alphabet, or</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $hexdigit = (0 .. 9, &quot;a&quot; .. &quot;f&quot;)[$num &amp; 15];</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">to get a
+hexadecimal digit, or</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @z2 = (&quot;01&quot; .. &quot;31&quot;);
+    print $z2[$mday];</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">to get dates
+with leading zeros.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the final
+value specified is not in the sequence that the magical
+increment would produce, the sequence goes until the next
+value would be longer than the final value specified.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the initial
+value specified isn&rsquo;t part of a magical increment
+sequence (that is, a non-empty string matching
+<tt>&quot;/^[a&minus;zA&minus;Z]*[0&minus;9]*\z/&quot;</tt>),
+only the initial value will be returned. So the following
+will only return an alpha:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use charnames &quot;greek&quot;;
+    my @greek_small =  (&quot;\N{alpha}&quot; .. &quot;\N{omega}&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To get the 25
+traditional lowercase Greek letters, including both sigmas,
+you could use this instead:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use charnames &quot;greek&quot;;
+    my @greek_small =  map { chr } ( ord(&quot;\N{alpha}&quot;)
+                                        ..
+                                     ord(&quot;\N{omega}&quot;)
+                                   );</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">However,
+because there are <i>many</i> other lowercase Greek
+characters than just those, to match lowercase Greek
+characters in a regular expression, you would use the
+pattern
+<tt>&quot;/(?:(?=\p{Greek})\p{Lower})+/&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Because each
+operand is evaluated in integer form, <tt>&quot;2.18 ..
+3.14&quot;</tt> will return two elements in list
+context.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @list = (2.18 .. 3.14); # same as @list = (2 .. 3);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Conditional
+Operator</b> <br>
+Ternary &quot;?:&quot; is the conditional operator, just as
+in C. It works much like an if-then-else. If the argument
+before the ? is true, the argument before the : is returned,
+otherwise the argument after the : is returned. For
+example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    printf &quot;I have %d dog%s.\n&quot;, $n,
+            ($n == 1) ? &quot;&quot; : &quot;s&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Scalar or list
+context propagates downward into the 2nd or 3rd argument,
+whichever is selected.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $a = $ok ? $b : $c;  # get a scalar
+    @a = $ok ? @b : @c;  # get an array
+    $a = $ok ? @b : @c;  # oops, that's just a count!</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The operator
+may be assigned to if both the 2nd and 3rd arguments are
+legal lvalues (meaning that you can assign to them):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    ($a_or_b ? $a : $b) = $c;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Because this
+operator produces an assignable result, using assignments
+without parentheses will get you in trouble. For example,
+this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $a % 2 ? $a += 10 : $a += 2</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Really means
+this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    (($a % 2) ? ($a += 10) : $a) += 2</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Rather than
+this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    ($a % 2) ? ($a += 10) : ($a += 2)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">That should
+probably be written more simply as:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $a += ($a % 2) ? 10 : 2;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Assignment
+Operators</b> <br>
+&quot;=&quot; is the ordinary assignment operator.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Assignment
+operators work as in C. That is,</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $a += 2;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">is equivalent
+to</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $a = $a + 2;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">although
+without duplicating any side effects that dereferencing the
+lvalue might trigger, such as from <i>tie()</i>. Other
+assignment operators work similarly. The following are
+recognized:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    **=    +=    *=    &amp;=    &lt;&lt;=    &amp;&amp;=
+           &minus;=    /=    |=    &gt;&gt;=    ||=
+           .=    %=    ^=           //=
+                 x=</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Although these
+are grouped by family, they all have the precedence of
+assignment.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Unlike in C,
+the scalar assignment operator produces a valid lvalue.
+Modifying an assignment is equivalent to doing the
+assignment and then modifying the variable that was assigned
+to. This is useful for modifying a copy of something, like
+this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    ($tmp = $global) =~ tr/13579/24680/;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Although as of
+5.14, that can be also be accomplished this way:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use v5.14;
+    $tmp = ($global =~  tr/13579/24680/r);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Likewise,</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    ($a += 2) *= 3;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">is equivalent
+to</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $a += 2;
+    $a *= 3;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Similarly, a
+list assignment in list context produces the list of lvalues
+assigned to, and a list assignment in scalar context returns
+the number of elements produced by the expression on the
+right hand side of the assignment.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Comma
+Operator</b> <br>
+Binary &quot;,&quot; is the comma operator. In scalar
+context it evaluates its left argument, throws that value
+away, then evaluates its right argument and returns that
+value. This is just like C&rsquo;s comma operator.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In list
+context, it&rsquo;s just the list argument separator, and
+inserts both its arguments into the list. These arguments
+are also evaluated from left to right.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;=&gt;&quot;</tt> operator is a synonym for the
+comma except that it causes a word on its left to be
+interpreted as a string if it begins with a letter or
+underscore and is composed only of letters, digits and
+underscores. This includes operands that might otherwise be
+interpreted as operators, constants, single number
+v&minus;strings or function calls. If in doubt about this
+behavior, the left operand can be quoted explicitly.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Otherwise, the
+<tt>&quot;=&gt;&quot;</tt> operator behaves exactly as the
+comma operator or list argument separator, according to
+context.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use constant FOO =&gt; &quot;something&quot;;
+    my %h = ( FOO =&gt; 23 );</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">is equivalent
+to:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my %h = (&quot;FOO&quot;, 23);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">It is
+<i><small>NOT</small></i> :</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my %h = (&quot;something&quot;, 23);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;=&gt;&quot;</tt> operator is helpful in
+documenting the correspondence between keys and values in
+hashes, and other paired elements in lists.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    %hash = ( $key =&gt; $value );
+    login( $username =&gt; $password );</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The special
+quoting behavior ignores precedence, and hence may apply to
+<i>part</i> of the left operand:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    print time.shift =&gt; &quot;bbb&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">That example
+prints something like &quot;1314363215shiftbbb&quot;,
+because the <tt>&quot;=&gt;&quot;</tt> implicitly quotes the
+<tt>&quot;shift&quot;</tt> immediately on its left, ignoring
+the fact that <tt>&quot;time.shift&quot;</tt> is the entire
+left operand.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>List
+Operators (Rightward)</b> <br>
+On the right side of a list operator, the comma has very low
+precedence, such that it controls all comma-separated
+expressions found there. The only operators with lower
+precedence are the logical operators &quot;and&quot;,
+&quot;or&quot;, and &quot;not&quot;, which may be used to
+evaluate calls to list operators without the need for
+parentheses:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open HANDLE, &quot;&lt; :utf8&quot;, &quot;filename&quot; or die &quot;Can't open: $!\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">However, some
+people find that code harder to read than writing it with
+parentheses:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open(HANDLE, &quot;&lt; :utf8&quot;, &quot;filename&quot;) or die &quot;Can't open: $!\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">in which case
+you might as well just use the more customary &quot;||&quot;
+operator:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open(HANDLE, &quot;&lt; :utf8&quot;, &quot;filename&quot;) || die &quot;Can't open: $!\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">See also
+discussion of list operators in &quot;Terms and List
+Operators (Leftward)&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Logical
+Not</b> <br>
+Unary &quot;not&quot; returns the logical negation of the
+expression to its right. It&rsquo;s the equivalent of
+&quot;!&quot; except for the very low precedence.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Logical
+And</b> <br>
+Binary &quot;and&quot; returns the logical conjunction of
+the two surrounding expressions. It&rsquo;s equivalent to
+<tt>&quot;&amp;&amp;&quot;</tt> except for the very low
+precedence. This means that it short-circuits: the right
+expression is evaluated only if the left expression is
+true.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Logical or
+and Exclusive Or</b> <br>
+Binary &quot;or&quot; returns the logical disjunction of the
+two surrounding expressions. It&rsquo;s equivalent to
+<tt>&quot;||&quot;</tt> except for the very low precedence.
+This makes it useful for control flow:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    print FH $data              or die &quot;Can't write to FH: $!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This means that
+it short-circuits: the right expression is evaluated only if
+the left expression is false. Due to its precedence, you
+must be careful to avoid using it as replacement for the
+<tt>&quot;||&quot;</tt> operator. It usually works out
+better for flow control than in assignments:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $a = $b or $c;              # bug: this is wrong
+    ($a = $b) or $c;            # really means this
+    $a = $b || $c;              # better written this way</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">However, when
+it&rsquo;s a list-context assignment and you&rsquo;re trying
+to use <tt>&quot;||&quot;</tt> for control flow, you
+probably need &quot;or&quot; so that the assignment takes
+higher precedence.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @info = stat($file) || die;     # oops, scalar sense of stat!
+    @info = stat($file) or die;     # better, now @info gets its due</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Then again, you
+could always use parentheses.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Binary
+<tt>&quot;xor&quot;</tt> returns the exclusive-OR of the two
+surrounding expressions. It cannot short-circuit (of
+course).</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is no low
+precedence operator for defined-OR.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>C Operators
+Missing From Perl</b> <br>
+Here is what C has that Perl doesn&rsquo;t:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>unary &amp;</p></td>
+<td width="1%"></td>
+<td width="77%">
+
+
+<p>Address-of operator. (But see the &quot;\&quot; operator
+for taking a reference.)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>unary *</p></td>
+<td width="1%"></td>
+<td width="77%">
+
+
+<p>Dereference-address operator. (Perl&rsquo;s prefix
+dereferencing operators are typed: $, @, %, and &amp;.)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>( <small>TYPE</small> )</p></td>
+<td width="1%"></td>
+<td width="77%">
+
+
+<p>Type-casting operator.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Quote and
+Quote-like Operators</b> <br>
+While we usually think of quotes as literal values, in Perl
+they function as operators, providing various kinds of
+interpolating and pattern matching capabilities. Perl
+provides customary quote characters for these behaviors, but
+also provides a way for you to choose your quote character
+for any of them. In the following table, a
+<tt>&quot;{}&quot;</tt> represents any pair of delimiters
+you choose.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Customary  Generic        Meaning        Interpolates
+        ''       q{}          Literal             no
+        &quot;&quot;      qq{}          Literal             yes
+        ``      qx{}          Command             yes*
+                qw{}         Word list            no
+        //       m{}       Pattern match          yes*
+                qr{}          Pattern             yes*
+                 s{}{}      Substitution          yes*
+                tr{}{}    Transliteration         no (but see below)
+                 y{}{}    Transliteration         no (but see below)
+        &lt;&lt;EOF                 here&minus;doc            yes*
+        * unless the delimiter is ''.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Non-bracketing
+delimiters use the same character fore and aft, but the four
+sorts of <small>ASCII</small> brackets (round, angle,
+square, curly) all nest, which means that</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    q{foo{bar}baz}</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">is the same
+as</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    'foo{bar}baz'</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Note, however,
+that this does not always work for quoting Perl code:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $s = q{ if($a eq &quot;}&quot;) ... }; # WRONG</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">is a syntax
+error. The <tt>&quot;Text::Balanced&quot;</tt> module
+(standard as of v5.8, and from <small>CPAN</small> before
+then) is able to do this properly.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There can be
+whitespace between the operator and the quoting characters,
+except when <tt>&quot;#&quot;</tt> is being used as the
+quoting character. <tt>&quot;q#foo#&quot;</tt> is parsed as
+the string <tt>&quot;foo&quot;</tt>, while <tt>&quot;q
+#foo#&quot;</tt> is the operator <tt>&quot;q&quot;</tt>
+followed by a comment. Its argument will be taken from the
+next line. This allows you to write:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    s {foo}  # Replace foo
+      {bar}  # with bar.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+escape sequences are available in constructs that
+interpolate, and in transliterations:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Sequence     Note  Description
+    \t                  tab               (HT, TAB)
+    \n                  newline           (NL)
+    \r                  return            (CR)
+    \f                  form feed         (FF)
+    \b                  backspace         (BS)
+    \a                  alarm (bell)      (BEL)
+    \e                  escape            (ESC)
+    \x{263A}     [1,8]  hex char          (example: SMILEY)
+    \x1b         [2,8]  restricted range hex char (example: ESC)
+    \N{name}     [3]    named Unicode character or character sequence
+    \N{U+263D}   [4,8]  Unicode character (example: FIRST QUARTER MOON)
+    \c[          [5]    control char      (example: chr(27))
+    \o{23072}    [6,8]  octal char        (example: SMILEY)
+    \033         [7,8]  restricted range octal char  (example: ESC)</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p style="margin-top: 1em">[1]</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The result is the character
+specified by the hexadecimal number between the braces. See
+&quot;[8]&quot; below for details on which character.</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Only
+hexadecimal digits are valid between the braces. If an
+invalid character is encountered, a warning will be issued
+and the invalid character and all subsequent characters
+(valid or invalid) within the braces will be discarded.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If there are no
+valid digits between the braces, the generated character is
+the <small>NULL</small> character
+(<tt>&quot;\x{00}&quot;</tt>). However, an explicit empty
+brace (<tt>&quot;\x{}&quot;</tt>) will not cause a warning
+(currently).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p style="margin-top: 1em">[2]</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The result is the character
+specified by the hexadecimal number in the range 0x00 to
+0xFF. See &quot;[8]&quot; below for details on which
+character.</p> </td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Only
+hexadecimal digits are valid following
+<tt>&quot;\x&quot;</tt>. When <tt>&quot;\x&quot;</tt> is
+followed by fewer than two valid digits, any valid digits
+will be zero-padded. This means that
+<tt>&quot;\x7&quot;</tt> will be interpreted as
+<tt>&quot;\x07&quot;</tt>, and a lone &lt;\x&gt; will be
+interpreted as <tt>&quot;\x00&quot;</tt>. Except at the end
+of a string, having fewer than two valid digits will result
+in a warning. Note that although the warning says the
+illegal character is ignored, it is only ignored as part of
+the escape and will still be used as the subsequent
+character in the string. For example:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  Original    Result    Warns?
+  &quot;\x7&quot;       &quot;\x07&quot;    no
+  &quot;\x&quot;        &quot;\x00&quot;    no
+  &quot;\x7q&quot;      &quot;\x07q&quot;   yes
+  &quot;\xq&quot;       &quot;\x00q&quot;   yes</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p style="margin-top: 1em">[3]</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The result is the Unicode
+character or character sequence given by <i>name</i>. See
+charnames.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p>[4]</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;\N{U+</tt><i>hexadecimal
+number</i><tt>}&quot;</tt> means the Unicode character whose
+Unicode code point is <i>hexadecimal number</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p>[5]</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p>The character following <tt>&quot;\c&quot;</tt> is
+mapped to some other character as shown in the table:</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em"> Sequence   Value
+   \c@      chr(0)
+   \cA      chr(1)
+   \ca      chr(1)
+   \cB      chr(2)
+   \cb      chr(2)
+   ...
+   \cZ      chr(26)
+   \cz      chr(26)
+   \c[      chr(27)
+   \c]      chr(29)
+   \c^      chr(30)
+   \c?      chr(127)</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">In other words,
+it&rsquo;s the character whose code point has had 64
+xor&rsquo;d with its uppercase. <tt>&quot;\c?&quot;</tt> is
+<small>DELETE</small> because <tt>&quot;ord(&quot;@&quot;) ^
+64&quot;</tt> is 127, and <tt>&quot;\c@&quot;</tt> is
+<small>NULL</small> because the ord of &quot;@&quot; is 64,
+so xor&rsquo;ing 64 itself produces 0.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Also,
+<tt>&quot;\c\</tt><i>X</i><tt>&quot;</tt> yields <tt>&quot;
+chr(28) . &quot;</tt><i>X</i><tt>&quot;&quot;</tt> for any
+<i>X</i>, but cannot come at the end of a string, because
+the backslash would be parsed as escaping the end quote.</p>
+
+<p style="margin-left:17%; margin-top: 1em">On
+<small>ASCII</small> platforms, the resulting characters
+from the list above are the complete set of
+<small>ASCII</small> controls. This isn&rsquo;t the case on
+<small>EBCDIC</small> platforms; see &quot; <small>OPERATOR
+DIFFERENCES</small> &quot; in perlebcdic for the complete
+list of what these sequences mean on both
+<small>ASCII</small> and <small>EBCDIC</small>
+platforms.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Use of any
+other character following the &quot;c&quot; besides those
+listed above is discouraged, and some are deprecated with
+the intention of removing those in a later Perl version.
+What happens for any of these other characters currently
+though, is that the value is derived by xor&rsquo;ing with
+the seventh bit, which is 64.</p>
+
+<p style="margin-left:17%; margin-top: 1em">To get platform
+independent controls, you can use
+<tt>&quot;\N{...}&quot;</tt>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p style="margin-top: 1em">[6]</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The result is the character
+specified by the octal number between the braces. See
+&quot;[8]&quot; below for details on which character.</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">If a character
+that isn&rsquo;t an octal digit is encountered, a warning is
+raised, and the value is based on the octal digits before
+it, discarding it and all following characters up to the
+closing brace. It is a fatal error if there are no octal
+digits at all.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p style="margin-top: 1em">[7]</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The result is the character
+specified by the three-digit octal number in the range 000
+to 777 (but best to not use above 077, see next paragraph).
+See &quot;[8]&quot; below for details on which
+character.</p> </td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Some contexts
+allow 2 or even 1 digit, but any usage without exactly three
+digits, the first being a zero, may give unintended results.
+(For example, in a regular expression it may be confused
+with a backreference; see &quot;Octal escapes&quot; in
+perlrebackslash.) Starting in Perl 5.14, you may use
+<tt>&quot;\o{}&quot;</tt> instead, which avoids all these
+problems. Otherwise, it is best to use this construct only
+for ordinals <tt>&quot;\077&quot;</tt> and below,
+remembering to pad to the left with zeros to make three
+digits. For larger ordinals, either use
+<tt>&quot;\o{}&quot;</tt>, or convert to something else,
+such as to hex and use <tt>&quot;\x{}&quot;</tt>
+instead.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Having fewer
+than 3 digits may lead to a misleading warning message that
+says that what follows is ignored. For example,
+<tt>&quot;\128&quot;</tt> in the <small>ASCII</small>
+character set is equivalent to the two characters
+<tt>&quot;\n8&quot;</tt>, but the warning <tt>&quot;Illegal
+octal digit '8' ignored&quot;</tt> will be thrown. If
+<tt>&quot;\n8&quot;</tt> is what you want, you can avoid
+this warning by padding your octal number with
+<tt>0</tt>&rsquo;s: <tt>&quot;\0128&quot;</tt>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p style="margin-top: 1em">[8]</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Several constructs above specify
+a character by a number. That number gives the
+character&rsquo;s position in the character set encoding
+(indexed from 0). This is called synonymously its ordinal,
+code position, or code point. Perl works on platforms that
+have a native encoding currently of either ASCII/Latin1 or
+<small>EBCDIC</small> , each of which allow specification of
+256 characters. In general, if the number is 255 (0xFF,
+0377) or below, Perl interprets this in the platform&rsquo;s
+native encoding. If the number is 256 (0x100, 0400) or
+above, Perl interprets it as a Unicode code point and the
+result is the corresponding Unicode character. For example
+<tt>&quot;\x{50}&quot;</tt> and <tt>&quot;\o{120}&quot;</tt>
+both are the number 80 in decimal, which is less than 256,
+so the number is interpreted in the native character set
+encoding. In <small>ASCII</small> the character in the 80th
+position (indexed from 0) is the letter &quot;P&quot;, and
+in <small>EBCDIC</small> it is the ampersand symbol
+&quot;&amp;&quot;. <tt>&quot;\x{100}&quot;</tt> and
+<tt>&quot;\o{400}&quot;</tt> are both 256 in decimal, so the
+number is interpreted as a Unicode code point no matter what
+the native encoding is. The name of the character in the
+256th position (indexed by 0) in Unicode is <tt>&quot;LATIN
+CAPITAL LETTER A WITH MACRON&quot;</tt>.</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">There are a
+couple of exceptions to the above rule.
+<tt>&quot;\N{U+</tt><i>hex&nbsp;number</i><tt>}&quot;</tt>
+is always interpreted as a Unicode code point, so that
+<tt>&quot;\N{U+0050}&quot;</tt> is &quot;P&quot; even on
+<small>EBCDIC</small> platforms. And if
+<tt>&quot;use&nbsp;encoding&quot;</tt> is in effect, the
+number is considered to be in that encoding, and is
+translated from that into the platform&rsquo;s native
+encoding if there is a corresponding native character;
+otherwise to Unicode.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>NOTE</small></b>
+: Unlike C and other languages, Perl has no
+<tt>&quot;\v&quot;</tt> escape sequence for the vertical tab
+( <small>VT</small> &minus; <small>ASCII</small> 11), but
+you may use <tt>&quot;\ck&quot;</tt> or
+<tt>&quot;\x0b&quot;</tt>. (<tt>&quot;\v&quot;</tt> does
+have meaning in regular expression patterns in Perl, see
+perlre.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+escape sequences are available in constructs that
+interpolate, but not in transliterations.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    \l          lowercase next character only
+    \u          titlecase (not uppercase!) next character only
+    \L          lowercase all characters till \E or end of string
+    \U          uppercase all characters till \E or end of string
+    \F          foldcase all characters till \E or end of string
+    \Q          quote (disable) pattern metacharacters till \E or
+                end of string
+    \E          end either case modification or quoted section
+                (whichever was last seen)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">See
+&quot;quotemeta&quot; in perlfunc for the exact definition
+of characters that are quoted by
+<tt>&quot;\Q&quot;</tt>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;\L&quot;</tt>,
+<tt>&quot;\U&quot;</tt>, <tt>&quot;\F&quot;</tt>, and
+<tt>&quot;\Q&quot;</tt> can stack, in which case you need
+one <tt>&quot;\E&quot;</tt> for each. For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> say&quot;This \Qquoting \ubusiness \Uhere isn't quite\E done yet,\E is it?&quot;;
+ This quoting\ Business\ HERE\ ISN\'T\ QUITE\ done\ yet\, is it?</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If
+<tt>&quot;use locale&quot;</tt> is in effect (but not
+<tt>&quot;use locale ':not_characters'&quot;</tt>), the case
+map used by <tt>&quot;\l&quot;</tt>,
+<tt>&quot;\L&quot;</tt>, <tt>&quot;\u&quot;</tt>, and
+<tt>&quot;\U&quot;</tt> is taken from the current locale.
+See perllocale. If Unicode (for example,
+<tt>&quot;\N{}&quot;</tt> or code points of 0x100 or beyond)
+is being used, the case map used by <tt>&quot;\l&quot;</tt>,
+<tt>&quot;\L&quot;</tt>, <tt>&quot;\u&quot;</tt>, and
+<tt>&quot;\U&quot;</tt> is as defined by Unicode. That means
+that case-mapping a single character can sometimes produce
+several characters. Under <tt>&quot;use locale&quot;</tt>,
+<tt>&quot;\F&quot;</tt> produces the same results as
+<tt>&quot;\L&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">All systems use
+the virtual <tt>&quot;\n&quot;</tt> to represent a line
+terminator, called a &quot;newline&quot;. There is no such
+thing as an unvarying, physical newline character. It is
+only an illusion that the operating system, device drivers,
+C libraries, and Perl all conspire to preserve. Not all
+systems read <tt>&quot;\r&quot;</tt> as <small>ASCII
+CR</small> and <tt>&quot;\n&quot;</tt> as <small>ASCII
+LF</small> . For example, on the ancient Macs (pre-MacOS X)
+of yesteryear, these used to be reversed, and on systems
+without line terminator, printing <tt>&quot;\n&quot;</tt>
+might emit no actual data. In general, use
+<tt>&quot;\n&quot;</tt> when you mean a &quot;newline&quot;
+for your system, but use the literal <small>ASCII</small>
+when you need an exact character. For example, most
+networking protocols expect and prefer a
+<small>CR+LF</small> (<tt>&quot;\015\012&quot;</tt> or
+<tt>&quot;\cM\cJ&quot;</tt>) for line terminators, and
+although they often accept just <tt>&quot;\012&quot;</tt>,
+they seldom tolerate just <tt>&quot;\015&quot;</tt>. If you
+get in the habit of using <tt>&quot;\n&quot;</tt> for
+networking, you may be burned some day.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For constructs
+that do interpolate, variables beginning with
+&quot;<tt>&quot;$&quot;</tt>&quot; or
+&quot;<tt>&quot;@&quot;</tt>&quot; are interpolated.
+Subscripted variables such as <tt>$a[3]</tt> or
+<tt>&quot;$href&minus;&gt;{key}[0]&quot;</tt> are also
+interpolated, as are array and hash slices. But method calls
+such as <tt>&quot;$obj&minus;&gt;meth&quot;</tt> are
+not.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Interpolating
+an array or slice interpolates the elements in order,
+separated by the value of <tt>$&quot;</tt>, so is equivalent
+to interpolating <tt>&quot;join $&quot;, @array&quot;</tt>.
+&quot;Punctuation&quot; arrays such as
+<tt>&quot;@*&quot;</tt> are usually interpolated only if the
+name is enclosed in braces <tt>&quot;@{*}&quot;</tt>, but
+the arrays <tt>@_</tt>, <tt>&quot;@+&quot;</tt>, and
+<tt>&quot;@&minus;&quot;</tt> are interpolated even without
+braces.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+double-quoted strings, the quoting from
+<tt>&quot;\Q&quot;</tt> is applied after interpolation and
+escapes are processed.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    &quot;abc\Qfoo\tbar$s\Exyz&quot;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">is equivalent
+to</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    &quot;abc&quot; . quotemeta(&quot;foo\tbar$s&quot;) . &quot;xyz&quot;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">For the pattern
+of regex operators (<tt>&quot;qr//&quot;</tt>,
+<tt>&quot;m//&quot;</tt> and <tt>&quot;s///&quot;</tt>), the
+quoting from <tt>&quot;\Q&quot;</tt> is applied after
+interpolation is processed, but before escapes are
+processed. This allows the pattern to match literally
+(except for <tt>&quot;$&quot;</tt> and
+<tt>&quot;@&quot;</tt>). For example, the following
+matches:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    '\s\t' =~ /\Q\s\t/</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Because
+<tt>&quot;$&quot;</tt> or <tt>&quot;@&quot;</tt> trigger
+interpolation, you&rsquo;ll need to use something like
+<tt>&quot;/\Quser\E\@\Qhost/&quot;</tt> to match them
+literally.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Patterns are
+subject to an additional level of interpretation as a
+regular expression. This is done as a second pass, after
+variables are interpolated, so that regular expressions may
+be incorporated into the pattern from the variables. If this
+is not what you want, use <tt>&quot;\Q&quot;</tt> to
+interpolate a variable literally.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Apart from the
+behavior described above, Perl does not expand multiple
+levels of interpolation. In particular, contrary to the
+expectations of shell programmers, back-quotes do
+<i><small>NOT</small></i> interpolate within double quotes,
+nor do single quotes impede evaluation of variables when
+used within double quotes.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Regexp
+Quote-Like Operators</b> <br>
+Here are the quote-like operators that apply to pattern
+matching and related activities. <br>
+qr/STRING/msixpodual</p>
+
+<p style="margin-left:23%;">This operator quotes (and
+possibly compiles) its <i><small>STRING</small></i> as a
+regular expression. <i><small>STRING</small></i> is
+interpolated the same way as <i><small>PATTERN</small></i>
+in <tt>&quot;m/PATTERN/&quot;</tt>. If &quot;&rsquo;&quot;
+is used as the delimiter, no interpolation is done. Returns
+a Perl value which may be used instead of the corresponding
+<tt>&quot;/STRING/msixpodual&quot;</tt> expression. The
+returned value is a normalized version of the original
+pattern. It magically differs from a string containing the
+same characters: <tt>&quot;ref(qr/x/)&quot;</tt> returns
+&quot;Regexp&quot;; however, dereferencing it is not well
+defined (you currently get the normalized version of the
+original pattern, but this may change).</p>
+
+<p style="margin-left:23%; margin-top: 1em">For
+example,</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    $rex = qr/my.STRING/is;
+    print $rex;                 # prints (?si&minus;xm:my.STRING)
+    s/$rex/foo/;</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">is equivalent
+to</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    s/my.STRING/foo/is;</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">The result may
+be used as a subpattern in a match:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    $re = qr/$pattern/;
+    $string =~ /foo${re}bar/;   # can be interpolated in other patterns
+    $string =~ $re;             # or used standalone
+    $string =~ /$re/;           # or this way</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">Since Perl may
+compile the pattern at the moment of execution of the
+<i>qr()</i> operator, using <i>qr()</i> may have speed
+advantages in some situations, notably if the result of
+<i>qr()</i> is used standalone:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    sub match {
+        my $patterns = shift;
+        my @compiled = map qr/$_/i, @$patterns;
+        grep {
+            my $success = 0;
+            foreach my $pat (@compiled) {
+                $success = 1, last if /$pat/;
+            }
+            $success;
+        } @_;
+    }</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">Precompilation
+of the pattern into an internal representation at the moment
+of <i>qr()</i> avoids a need to recompile the pattern every
+time a match <tt>&quot;/$pat/&quot;</tt> is attempted. (Perl
+has many other internal optimizations, but none would be
+triggered in the above example if we did not use <i>qr()</i>
+operator.)</p>
+
+<p style="margin-left:23%; margin-top: 1em">Options
+(specified by the following modifiers) are:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    m   Treat string as multiple lines.
+    s   Treat string as single line. (Make . match a newline)
+    i   Do case&minus;insensitive pattern matching.
+    x   Use extended regular expressions.
+    p   When matching preserve a copy of the matched string so
+        that ${^PREMATCH}, ${^MATCH}, ${^POSTMATCH} will be defined.
+    o   Compile pattern only once.
+    a   ASCII&minus;restrict: Use ASCII for \d, \s, \w; specifying two a's
+        further restricts /i matching so that no ASCII character will
+        match a non&minus;ASCII one
+    l   Use the locale
+    u   Use Unicode rules
+    d   Use Unicode or native charset, as in 5.12 and earlier</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">If a
+precompiled pattern is embedded in a larger pattern then the
+effect of &quot;msixpluad&quot; will be propagated
+appropriately. The effect the &quot;o&quot; modifier has is
+not propagated, being restricted to those patterns
+explicitly using it.</p>
+
+<p style="margin-left:23%; margin-top: 1em">The last four
+modifiers listed above, added in Perl 5.14, control the
+character set semantics, but <tt>&quot;/a&quot;</tt> is the
+only one you are likely to want to specify explicitly; the
+other three are selected automatically by various
+pragmas.</p>
+
+<p style="margin-left:23%; margin-top: 1em">See perlre for
+additional information on valid syntax for
+<small>STRING</small> , and for a detailed look at the
+semantics of regular expressions. In particular, all
+modifiers except the largely obsolete
+<tt>&quot;/o&quot;</tt> are further explained in
+&quot;Modifiers&quot; in perlre. <tt>&quot;/o&quot;</tt> is
+described in the next section.</p>
+
+<p style="margin-left:11%;">m/PATTERN/msixpodualgc <br>
+/PATTERN/msixpodualgc</p>
+
+<p style="margin-left:23%;">Searches a string for a pattern
+match, and in scalar context returns true if it succeeds,
+false if it fails. If no string is specified via the
+<tt>&quot;=~&quot;</tt> or <tt>&quot;!~&quot;</tt> operator,
+the <tt>$_</tt> string is searched. (The string specified
+with <tt>&quot;=~&quot;</tt> need not be an lvalue--it may
+be the result of an expression evaluation, but remember the
+<tt>&quot;=~&quot;</tt> binds rather tightly.) See also
+perlre.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Options are as
+described in <tt>&quot;qr//&quot;</tt> above; in addition,
+the following match process modifiers are available:</p>
+
+<pre style="margin-left:23%; margin-top: 1em"> g  Match globally, i.e., find all occurrences.
+ c  Do not reset search position on a failed match when /g is in effect.</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">If
+&quot;/&quot; is the delimiter then the initial
+<tt>&quot;m&quot;</tt> is optional. With the
+<tt>&quot;m&quot;</tt> you can use any pair of
+non-whitespace ( <small>ASCII</small> ) characters as
+delimiters. This is particularly useful for matching path
+names that contain &quot;/&quot;, to avoid
+<small>LTS</small> (leaning toothpick syndrome). If
+&quot;?&quot; is the delimiter, then a match-only-once rule
+applies, described in <tt>&quot;m?PATTERN?&quot;</tt> below.
+If &quot;&rsquo;&quot; is the delimiter, no interpolation is
+performed on the <small>PATTERN</small> . When using a
+character valid in an identifier, whitespace is required
+after the <tt>&quot;m&quot;</tt>.</p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><small>PATTERN</small>
+may contain variables, which will be interpolated every time
+the pattern search is evaluated, except for when the
+delimiter is a single quote. (Note that <tt>$(</tt>,
+<tt>$)</tt>, and <tt>$|</tt> are not interpolated because
+they look like end-of-string tests.) Perl will not recompile
+the pattern unless an interpolated variable that it contains
+changes. You can force Perl to skip the test and never
+recompile by adding a <tt>&quot;/o&quot;</tt> (which stands
+for &quot;once&quot;) after the trailing delimiter. Once
+upon a time, Perl would recompile regular expressions
+unnecessarily, and this modifier was useful to tell it not
+to do so, in the interests of speed. But now, the only
+reasons to use <tt>&quot;/o&quot;</tt> are either:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="23%"></td>
+<td width="3%">
+
+
+<p>1.</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>The variables are thousands of characters long and you
+know that they don&rsquo;t change, and you need to wring out
+the last little bit of speed by having Perl skip testing for
+that. (There is a maintenance penalty for doing this, as
+mentioning <tt>&quot;/o&quot;</tt> constitutes a promise
+that you won&rsquo;t change the variables in the pattern. If
+you do change them, Perl won&rsquo;t even notice.)</p></td></tr>
+<tr valign="top" align="left">
+<td width="23%"></td>
+<td width="3%">
+
+
+<p>2.</p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>you want the pattern to use the initial values of the
+variables regardless of whether they change or not. (But
+there are saner ways of accomplishing this than using
+<tt>&quot;/o&quot;</tt>.)</p> </td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">The bottom line
+is that using <tt>&quot;/o&quot;</tt> is almost never a good
+idea.</p>
+
+<p style="margin-left:11%;">The empty pattern //</p>
+
+<p style="margin-left:23%;">If the <small>PATTERN</small>
+evaluates to the empty string, the last <i>successfully</i>
+matched regular expression is used instead. In this case,
+only the <tt>&quot;g&quot;</tt> and <tt>&quot;c&quot;</tt>
+flags on the empty pattern are honored; the other flags are
+taken from the original pattern. If no match has previously
+succeeded, this will (silently) act instead as a genuine
+empty pattern (which will always match).</p>
+
+<p style="margin-left:23%; margin-top: 1em">Note that
+it&rsquo;s possible to confuse Perl into thinking
+<tt>&quot;//&quot;</tt> (the empty regex) is really
+<tt>&quot;//&quot;</tt> (the defined-or operator). Perl is
+usually pretty good about this, but some pathological cases
+might trigger this, such as <tt>&quot;$a///&quot;</tt> (is
+that <tt>&quot;($a) / (//)&quot;</tt> or <tt>&quot;$a //
+/&quot;</tt>?) and <tt>&quot;print $fh //&quot;</tt>
+(<tt>&quot;print $fh(//&quot;</tt> or <tt>&quot;print($fh
+//&quot;</tt>?). In all of these examples, Perl will assume
+you meant defined-or. If you meant the empty regex, just use
+parentheses or spaces to disambiguate, or even prefix the
+empty regex with an <tt>&quot;m&quot;</tt> (so
+<tt>&quot;//&quot;</tt> becomes
+<tt>&quot;m//&quot;</tt>).</p>
+
+<p style="margin-left:11%;">Matching in list context</p>
+
+<p style="margin-left:23%;">If the <tt>&quot;/g&quot;</tt>
+option is not used, <tt>&quot;m//&quot;</tt> in list context
+returns a list consisting of the subexpressions matched by
+the parentheses in the pattern, that is, (<tt>$1</tt>,
+<tt>$2</tt>, <tt>$3</tt>...). (Note that here <tt>$1</tt>
+etc. are also set, and that this differs from Perl 4&rsquo;s
+behavior.) When there are no parentheses in the pattern, the
+return value is the list <tt>&quot;(1)&quot;</tt> for
+success. With or without parentheses, an empty list is
+returned upon failure.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Examples:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    open(TTY, &quot;+&lt;/dev/tty&quot;)
+        || die &quot;can't access /dev/tty: $!&quot;;
+    &lt;TTY&gt; =~ /^y/i &amp;&amp; foo();    # do foo if desired
+    if (/Version: *([0&minus;9.]*)/) { $version = $1; }
+    next if m#^/usr/spool/uucp#;
+    # poor man's grep
+    $arg = shift;
+    while (&lt;&gt;) {
+        print if /$arg/o;       # compile only once (no longer needed!)
+    }
+    if (($F1, $F2, $Etc) = ($foo =~ /^(\S+)\s+(\S+)\s*(.*)/))</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">This last
+example splits <tt>$foo</tt> into the first two words and
+the remainder of the line, and assigns those three fields to
+<tt>$F1</tt>, <tt>$F2</tt>, and <tt>$Etc</tt>. The
+conditional is true if any variables were assigned; that is,
+if the pattern matched.</p>
+
+<p style="margin-left:23%; margin-top: 1em">The
+<tt>&quot;/g&quot;</tt> modifier specifies global pattern
+matching--that is, matching as many times as possible within
+the string. How it behaves depends on the context. In list
+context, it returns a list of the substrings matched by any
+capturing parentheses in the regular expression. If there
+are no parentheses, it returns a list of all the matched
+strings, as if there were parentheses around the whole
+pattern.</p>
+
+<p style="margin-left:23%; margin-top: 1em">In scalar
+context, each execution of <tt>&quot;m//g&quot;</tt> finds
+the next match, returning true if it matches, and false if
+there is no further match. The position after the last match
+can be read or set using the <tt>&quot;pos()&quot;</tt>
+function; see &quot;pos&quot; in perlfunc. A failed match
+normally resets the search position to the beginning of the
+string, but you can avoid that by adding the
+<tt>&quot;/c&quot;</tt> modifier (for example,
+<tt>&quot;m//gc&quot;</tt>). Modifying the target string
+also resets the search position.</p>
+
+<p style="margin-left:11%;">\G assertion</p>
+
+<p style="margin-left:23%;">You can intermix
+<tt>&quot;m//g&quot;</tt> matches with
+<tt>&quot;m/\G.../g&quot;</tt>, where
+<tt>&quot;\G&quot;</tt> is a zero-width assertion that
+matches the exact position where the previous
+<tt>&quot;m//g&quot;</tt>, if any, left off. Without the
+<tt>&quot;/g&quot;</tt> modifier, the
+<tt>&quot;\G&quot;</tt> assertion still anchors at
+<tt>&quot;pos()&quot;</tt> as it was at the start of the
+operation (see &quot;pos&quot; in perlfunc), but the match
+is of course only attempted once. Using
+<tt>&quot;\G&quot;</tt> without <tt>&quot;/g&quot;</tt> on a
+target string that has not previously had a
+<tt>&quot;/g&quot;</tt> match applied to it is the same as
+using the <tt>&quot;\A&quot;</tt> assertion to match the
+beginning of the string. Note also that, currently,
+<tt>&quot;\G&quot;</tt> is only properly supported when
+anchored at the very beginning of the pattern.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Examples:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    # list context
+    ($one,$five,$fifteen) = (`uptime` =~ /(\d+\.\d+)/g);
+    # scalar context
+    local $/ = &quot;&quot;;
+    while ($paragraph = &lt;&gt;) {
+        while ($paragraph =~ /\p{Ll}['&quot;)]*[.!?]+['&quot;)]*\s/g) {
+            $sentences++;
+        }
+    }
+    say $sentences;</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">Here&rsquo;s
+another way to check for sentences in a paragraph:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    my $sentence_rx = qr{
+        (?: (?&lt;= ^ ) | (?&lt;= \s ) )  # after start&minus;of&minus;string or whitespace
+        \p{Lu}                      # capital letter
+        .*?                         # a bunch of anything
+        (?&lt;= \S )                   # that ends in non&minus;whitespace
+        (?&lt;! \b [DMS]r  )           # but isn't a common abbreviation
+        (?&lt;! \b Mrs )
+        (?&lt;! \b Sra )
+        (?&lt;! \b St  )
+        [.?!]                       # followed by a sentence ender
+        (?= $ | \s )                # in front of end&minus;of&minus;string or whitespace
+    }sx;
+    local $/ = &quot;&quot;;
+    while (my $paragraph = &lt;&gt;) {
+        say &quot;NEW PARAGRAPH&quot;;
+        my $count = 0;
+        while ($paragraph =~ /($sentence_rx)/g) {
+            printf &quot;\tgot sentence %d: &lt;%s&gt;\n&quot;, ++$count, $1;
+        }
+    }</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">Here&rsquo;s
+how to use <tt>&quot;m//gc&quot;</tt> with
+<tt>&quot;\G&quot;</tt>:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    $_ = &quot;ppooqppqq&quot;;
+    while ($i++ &lt; 2) {
+        print &quot;1: '&quot;;
+        print $1 while /(o)/gc; print &quot;', pos=&quot;, pos, &quot;\n&quot;;
+        print &quot;2: '&quot;;
+        print $1 if /\G(q)/gc;  print &quot;', pos=&quot;, pos, &quot;\n&quot;;
+        print &quot;3: '&quot;;
+        print $1 while /(p)/gc; print &quot;', pos=&quot;, pos, &quot;\n&quot;;
+    }
+    print &quot;Final: '$1', pos=&quot;,pos,&quot;\n&quot; if /\G(.)/;</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">The last
+example should print:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    1: 'oo', pos=4
+    2: 'q', pos=5
+    3: 'pp', pos=7
+    1: '', pos=7
+    2: 'q', pos=8
+    3: '', pos=8
+    Final: 'q', pos=8</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">Notice that the
+final match matched <tt>&quot;q&quot;</tt> instead of
+<tt>&quot;p&quot;</tt>, which a match without the
+<tt>&quot;\G&quot;</tt> anchor would have done. Also note
+that the final match did not update
+<tt>&quot;pos&quot;</tt>. <tt>&quot;pos&quot;</tt> is only
+updated on a <tt>&quot;/g&quot;</tt> match. If the final
+match did indeed match <tt>&quot;p&quot;</tt>, it&rsquo;s a
+good bet that you&rsquo;re running a very old
+(pre&minus;5.6.0) version of Perl.</p>
+
+<p style="margin-left:23%; margin-top: 1em">A useful idiom
+for <tt>&quot;lex&quot;</tt>&minus;like scanners is
+<tt>&quot;/\G.../gc&quot;</tt>. You can combine several
+regexps like this to process a string part-by-part, doing
+different actions depending on which regexp matched. Each
+regexp tries to match where the previous one leaves off.</p>
+
+<pre style="margin-left:23%; margin-top: 1em"> $_ = &lt;&lt;'EOL';
+    $url = URI::URL&minus;&gt;new( &quot;http://example.com/&quot; ); die if $url eq &quot;xXx&quot;;
+ EOL
+ LOOP: {
+     print(&quot; digits&quot;),       redo LOOP if /\G\d+\b[,.;]?\s*/gc;
+     print(&quot; lowercase&quot;),    redo LOOP if /\G\p{Ll}+\b[,.;]?\s*/gc;
+     print(&quot; UPPERCASE&quot;),    redo LOOP if /\G\p{Lu}+\b[,.;]?\s*/gc;
+     print(&quot; Capitalized&quot;),  redo LOOP if /\G\p{Lu}\p{Ll}+\b[,.;]?\s*/gc;
+     print(&quot; MiXeD&quot;),        redo LOOP if /\G\pL+\b[,.;]?\s*/gc;
+     print(&quot; alphanumeric&quot;), redo LOOP if /\G[\p{Alpha}\pN]+\b[,.;]?\s*/gc;
+     print(&quot; line&minus;noise&quot;),   redo LOOP if /\G\W+/gc;
+     print &quot;. That's all!\n&quot;;
+ }</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">Here is the
+output (split into several lines):</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    line&minus;noise lowercase line&minus;noise UPPERCASE line&minus;noise UPPERCASE
+    line&minus;noise lowercase line&minus;noise lowercase line&minus;noise lowercase
+    lowercase line&minus;noise lowercase lowercase line&minus;noise lowercase
+    lowercase line&minus;noise MiXeD line&minus;noise. That's all!</pre>
+
+
+<p style="margin-left:11%;">m?PATTERN?msixpodualgc <br>
+?PATTERN?msixpodualgc</p>
+
+<p style="margin-left:23%;">This is just like the
+<tt>&quot;m/PATTERN/&quot;</tt> search, except that it
+matches only once between calls to the <i>reset()</i>
+operator. This is a useful optimization when you want to see
+only the first occurrence of something in each file of a set
+of files, for instance. Only <tt>&quot;m??&quot;</tt>
+patterns local to the current package are reset.</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    while (&lt;&gt;) {
+        if (m?^$?) {
+                            # blank line between header and body
+        }
+    } continue {
+        reset if eof;       # clear m?? status for next file
+    }</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">Another example
+switched the first &quot;latin1&quot; encoding it finds to
+&quot;utf8&quot; in a pod file:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    s//utf8/ if m? ^ =encoding \h+ \K latin1 ?x;</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">The match-once
+behavior is controlled by the match delimiter being
+<tt>&quot;?&quot;</tt>; with any other delimiter this is the
+normal <tt>&quot;m//&quot;</tt> operator.</p>
+
+<p style="margin-left:23%; margin-top: 1em">For historical
+reasons, the leading <tt>&quot;m&quot;</tt> in
+<tt>&quot;m?PATTERN?&quot;</tt> is optional, but the
+resulting <tt>&quot;?PATTERN?&quot;</tt> syntax is
+deprecated, will warn on usage and might be removed from a
+future stable release of Perl (without further notice!).</p>
+
+
+<p style="margin-left:11%;">s/PATTERN/REPLACEMENT/msixpodualgcer</p>
+
+<p style="margin-left:23%;">Searches a string for a
+pattern, and if found, replaces that pattern with the
+replacement text and returns the number of substitutions
+made. Otherwise it returns false (specifically, the empty
+string).</p>
+
+<p style="margin-left:23%; margin-top: 1em">If the
+<tt>&quot;/r&quot;</tt> (non-destructive) option is used
+then it runs the substitution on a copy of the string and
+instead of returning the number of substitutions, it returns
+the copy whether or not a substitution occurred. The
+original string is never changed when
+<tt>&quot;/r&quot;</tt> is used. The copy will always be a
+plain string, even if the input is an object or a tied
+variable.</p>
+
+<p style="margin-left:23%; margin-top: 1em">If no string is
+specified via the <tt>&quot;=~&quot;</tt> or
+<tt>&quot;!~&quot;</tt> operator, the <tt>$_</tt> variable
+is searched and modified. Unless the <tt>&quot;/r&quot;</tt>
+option is used, the string specified must be a scalar
+variable, an array element, a hash element, or an assignment
+to one of those; that is, some sort of scalar lvalue.</p>
+
+<p style="margin-left:23%; margin-top: 1em">If the
+delimiter chosen is a single quote, no interpolation is done
+on either the <small>PATTERN</small> or the
+<small>REPLACEMENT</small> . Otherwise, if the
+<small>PATTERN</small> contains a $ that looks like a
+variable rather than an end-of-string test, the variable
+will be interpolated into the pattern at run-time. If you
+want the pattern compiled only once the first time the
+variable is interpolated, use the <tt>&quot;/o&quot;</tt>
+option. If the pattern evaluates to the empty string, the
+last successfully executed regular expression is used
+instead. See perlre for further explanation on these.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Options are as
+with m// with the addition of the following replacement
+specific options:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    e   Evaluate the right side as an expression.
+    ee  Evaluate the right side as a string then eval the result.
+    r   Return substitution and leave the original string untouched.</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">Any
+non-whitespace delimiter may replace the slashes. Add space
+after the <tt>&quot;s&quot;</tt> when using a character
+allowed in identifiers. If single quotes are used, no
+interpretation is done on the replacement string (the
+<tt>&quot;/e&quot;</tt> modifier overrides this, however).
+Unlike Perl 4, Perl 5 treats backticks as normal delimiters;
+the replacement text is not evaluated as a command. If the
+<small>PATTERN</small> is delimited by bracketing quotes,
+the <small>REPLACEMENT</small> has its own pair of quotes,
+which may or may not be bracketing quotes, for example,
+<tt>&quot;s(foo)(bar)&quot;</tt> or
+<tt>&quot;s&lt;foo&gt;/bar/&quot;</tt>. A
+<tt>&quot;/e&quot;</tt> will cause the replacement portion
+to be treated as a full-fledged Perl expression and
+evaluated right then and there. It is, however, syntax
+checked at compile-time. A second <tt>&quot;e&quot;</tt>
+modifier will cause the replacement portion to be
+<tt>&quot;eval&quot;</tt>ed before being run as a Perl
+expression.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Examples:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    s/\bgreen\b/mauve/g;                # don't change wintergreen
+    $path =~ s|/usr/bin|/usr/local/bin|;
+    s/Login: $foo/Login: $bar/; # run&minus;time pattern
+    ($foo = $bar) =~ s/this/that/;      # copy first, then change
+    ($foo = &quot;$bar&quot;) =~ s/this/that/;    # convert to string, copy, then change
+    $foo = $bar =~ s/this/that/r;       # Same as above using /r
+    $foo = $bar =~ s/this/that/r
+                =~ s/that/the other/r;  # Chained substitutes using /r
+    @foo = map { s/this/that/r } @bar   # /r is very useful in maps
+    $count = ($paragraph =~ s/Mister\b/Mr./g);  # get change&minus;count
+    $_ = 'abc123xyz';
+    s/\d+/$&amp;*2/e;               # yields 'abc246xyz'
+    s/\d+/sprintf(&quot;%5d&quot;,$&amp;)/e;  # yields 'abc  246xyz'
+    s/\w/$&amp; x 2/eg;             # yields 'aabbcc  224466xxyyzz'
+    s/%(.)/$percent{$1}/g;      # change percent escapes; no /e
+    s/%(.)/$percent{$1} || $&amp;/ge;       # expr now, so /e
+    s/^=(\w+)/pod($1)/ge;       # use function call
+    $_ = 'abc123xyz';
+    $a = s/abc/def/r;           # $a is 'def123xyz' and
+                                # $_ remains 'abc123xyz'.
+    # expand variables in $_, but dynamics only, using
+    # symbolic dereferencing
+    s/\$(\w+)/${$1}/g;
+    # Add one to the value of any numbers in the string
+    s/(\d+)/1 + $1/eg;
+    # Titlecase words in the last 30 characters only
+    substr($str, &minus;30) =~ s/\b(\p{Alpha}+)\b/\u\L$1/g;
+    # This will expand any embedded scalar variable
+    # (including lexicals) in $_ : First $1 is interpolated
+    # to the variable name, and then evaluated
+    s/(\$\w+)/$1/eeg;
+    # Delete (most) C comments.
+    $program =~ s {
+        /\*     # Match the opening delimiter.
+        .*?     # Match a minimal number of characters.
+        \*/     # Match the closing delimiter.
+    } []gsx;
+    s/^\s*(.*?)\s*$/$1/;        # trim whitespace in $_, expensively
+    for ($variable) {           # trim whitespace in $variable, cheap
+        s/^\s+//;
+        s/\s+$//;
+    }
+    s/([^ ]*) *([^ ]*)/$2 $1/;  # reverse 1st two fields</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">Note the use of
+$ instead of \ in the last example. Unlike <b>sed</b>, we
+use the \&lt;<i>digit</i>&gt; form in only the left hand
+side. Anywhere else it&rsquo;s $&lt;<i>digit</i>&gt;.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Occasionally,
+you can&rsquo;t use just a <tt>&quot;/g&quot;</tt> to get
+all the changes to occur that you might want. Here are two
+common cases:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    # put commas in the right places in an integer
+    1 while s/(\d)(\d\d\d)(?!\d)/$1,$2/g;
+    # expand tabs to 8&minus;column spacing
+    1 while s/\t+/' ' x (length($&amp;)*8 &minus; length($`)%8)/e;</pre>
+
+
+
+<p style="margin-left:23%; margin-top: 1em">&quot;s///le&quot;
+is treated as a substitution followed by the
+<tt>&quot;le&quot;</tt> operator, not the
+<tt>&quot;/le&quot;</tt> flags. This may change in a future
+version of Perl. It produces a warning if warnings are
+enabled. To disambiguate, use a space or change the order of
+the flags:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    s/foo/bar/ le 5;  # &quot;le&quot; infix operator
+    s/foo/bar/el;     # &quot;e&quot; and &quot;l&quot; flags</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Quote-Like
+Operators</b> <br>
+q/STRING/ <br>
+&rsquo; <small>STRING</small> &rsquo;</p>
+
+<p style="margin-left:17%;">A single-quoted, literal
+string. A backslash represents a backslash unless followed
+by the delimiter or another backslash, in which case the
+delimiter or backslash is interpolated.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    $foo = q!I said, &quot;You said, 'She said it.'&quot;!;
+    $bar = q('This is it.');
+    $baz = '\n';                # a two&minus;character string</pre>
+
+
+<p style="margin-left:11%;">qq/STRING/ <br>
+&quot; <small>STRING</small> &quot;</p>
+
+<p style="margin-left:17%;">A double-quoted, interpolated
+string.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    $_ .= qq
+     (*** The previous line contains the naughty word &quot;$1&quot;.\n)
+                if /\b(tcl|java|python)\b/i;      # :&minus;)
+    $baz = &quot;\n&quot;;                # a one&minus;character string</pre>
+
+
+<p style="margin-left:11%;">qx/STRING/ <br>
+&lsquo;STRING&lsquo;</p>
+
+<p style="margin-left:17%;">A string which is (possibly)
+interpolated and then executed as a system command with
+<tt>&quot;/bin/sh&quot;</tt> or its equivalent. Shell
+wildcards, pipes, and redirections will be honored. The
+collected standard output of the command is returned;
+standard error is unaffected. In scalar context, it comes
+back as a single (potentially multi-line) string, or undef
+if the command failed. In list context, returns a list of
+lines (however you&rsquo;ve defined lines with $/ or
+<tt>$INPUT_RECORD_SEPARATOR</tt>), or an empty list if the
+command failed.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Because
+backticks do not affect standard error, use shell file
+descriptor syntax (assuming the shell supports this) if you
+care to address this. To capture a command&rsquo;s
+<small>STDERR</small> and <small>STDOUT</small>
+together:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    $output = `cmd 2&gt;&amp;1`;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">To capture a
+command&rsquo;s <small>STDOUT</small> but discard its
+<small>STDERR:</small></p>
+
+<pre style="margin-left:17%; margin-top: 1em">    $output = `cmd 2&gt;/dev/null`;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">To capture a
+command&rsquo;s <small>STDERR</small> but discard its
+<small>STDOUT</small> (ordering is important here):</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    $output = `cmd 2&gt;&amp;1 1&gt;/dev/null`;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">To exchange a
+command&rsquo;s <small>STDOUT</small> and
+<small>STDERR</small> in order to capture the
+<small>STDERR</small> but leave its <small>STDOUT</small> to
+come out the old <small>STDERR:</small></p>
+
+<pre style="margin-left:17%; margin-top: 1em">    $output = `cmd 3&gt;&amp;1 1&gt;&amp;2 2&gt;&amp;3 3&gt;&amp;&minus;`;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">To read both a
+command&rsquo;s <small>STDOUT</small> and its
+<small>STDERR</small> separately, it&rsquo;s easiest to
+redirect them separately to files, and then read from those
+files when the program is done:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    system(&quot;program args 1&gt;program.stdout 2&gt;program.stderr&quot;);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The
+<small>STDIN</small> filehandle used by the command is
+inherited from Perl&rsquo;s <small>STDIN</small> . For
+example:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    open(SPLAT, &quot;stuff&quot;)   || die &quot;can't open stuff: $!&quot;;
+    open(STDIN, &quot;&lt;&amp;SPLAT&quot;) || die &quot;can't dupe SPLAT: $!&quot;;
+    print STDOUT `sort`;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">will print the
+sorted contents of the file named
+<i>&quot;stuff&quot;</i>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Using
+single-quote as a delimiter protects the command from
+Perl&rsquo;s double-quote interpolation, passing it on to
+the shell instead:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    $perl_info  = qx(ps $$);            # that's Perl's $$
+    $shell_info = qx'ps $$';            # that's the new shell's $$</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">How that string
+gets evaluated is entirely subject to the command
+interpreter on your system. On most platforms, you will have
+to protect shell metacharacters if you want them treated
+literally. This is in practice difficult to do, as
+it&rsquo;s unclear how to escape which characters. See
+perlsec for a clean and safe example of a manual
+<i>fork()</i> and <i>exec()</i> to emulate backticks
+safely.</p>
+
+<p style="margin-left:17%; margin-top: 1em">On some
+platforms (notably DOS-like ones), the shell may not be
+capable of dealing with multiline commands, so putting
+newlines in the string may not get you what you want. You
+may be able to evaluate multiple commands in a single line
+by separating them with the command separator character, if
+your shell supports that (for example,
+<tt>&quot;;&quot;</tt> on many Unix shells and
+<tt>&quot;&amp;&quot;</tt> on the Windows <small>NT</small>
+<tt>&quot;cmd&quot;</tt> shell).</p>
+
+<p style="margin-left:17%; margin-top: 1em">Beginning with
+v5.6.0, Perl will attempt to flush all files opened for
+output before starting the child process, but this may not
+be supported on some platforms (see perlport). To be safe,
+you may need to set <tt>$|</tt> ($AUTOFLUSH in English) or
+call the <tt>&quot;autoflush()&quot;</tt> method of
+<tt>&quot;IO::Handle&quot;</tt> on any open handles.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Beware that
+some command shells may place restrictions on the length of
+the command line. You must ensure your strings don&rsquo;t
+exceed this limit after any necessary interpolations. See
+the platform-specific release notes for more details about
+your particular environment.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Using this
+operator can lead to programs that are difficult to port,
+because the shell commands called vary between systems, and
+may in fact not be present at all. As one example, the
+<tt>&quot;type&quot;</tt> command under the
+<small>POSIX</small> shell is very different from the
+<tt>&quot;type&quot;</tt> command under <small>DOS</small> .
+That doesn&rsquo;t mean you should go out of your way to
+avoid backticks when they&rsquo;re the right way to get
+something done. Perl was made to be a glue language, and one
+of the things it glues together is commands. Just understand
+what you&rsquo;re getting yourself into.</p>
+
+<p style="margin-left:17%; margin-top: 1em">See &quot;I/O
+Operators&quot; for more discussion.</p>
+
+<p style="margin-left:11%;">qw/STRING/</p>
+
+<p style="margin-left:17%;">Evaluates to a list of the
+words extracted out of <small>STRING</small> , using
+embedded whitespace as the word delimiters. It can be
+understood as being roughly equivalent to:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    split(&quot; &quot;, q/STRING/);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">the differences
+being that it generates a real list at compile time, and in
+scalar context it returns the last element in the list. So
+this expression:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    qw(foo bar baz)</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">is semantically
+equivalent to the list:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    &quot;foo&quot;, &quot;bar&quot;, &quot;baz&quot;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Some frequently
+seen examples:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    use POSIX qw( setlocale localeconv )
+    @EXPORT = qw( foo bar baz );</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">A common
+mistake is to try to separate the words with comma or to put
+comments into a multi-line
+<tt>&quot;qw&quot;</tt>&minus;string. For this reason, the
+<tt>&quot;use warnings&quot;</tt> pragma and the
+<b>&minus;w</b> switch (that is, the <tt>$^W</tt> variable)
+produces warnings if the <small>STRING</small> contains the
+&quot;,&quot; or the &quot;#&quot; character.</p>
+
+
+<p style="margin-left:11%;">tr/SEARCHLIST/REPLACEMENTLIST/cdsr
+<br>
+y/SEARCHLIST/REPLACEMENTLIST/cdsr</p>
+
+<p style="margin-left:17%;">Transliterates all occurrences
+of the characters found in the search list with the
+corresponding character in the replacement list. It returns
+the number of characters replaced or deleted. If no string
+is specified via the <tt>&quot;=~&quot;</tt> or
+<tt>&quot;!~&quot;</tt> operator, the <tt>$_</tt> string is
+transliterated.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If the
+<tt>&quot;/r&quot;</tt> (non-destructive) option is present,
+a new copy of the string is made and its characters
+transliterated, and this copy is returned no matter whether
+it was modified or not: the original string is always left
+unchanged. The new copy is always a plain string, even if
+the input string is an object or a tied variable.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Unless the
+<tt>&quot;/r&quot;</tt> option is used, the string specified
+with <tt>&quot;=~&quot;</tt> must be a scalar variable, an
+array element, a hash element, or an assignment to one of
+those; in other words, an lvalue.</p>
+
+<p style="margin-left:17%; margin-top: 1em">A character
+range may be specified with a hyphen, so
+<tt>&quot;tr/A&minus;J/0&minus;9/&quot;</tt> does the same
+replacement as
+<tt>&quot;tr/ACEGIBDFHJ/0246813579/&quot;</tt>. For
+<b>sed</b> devotees, <tt>&quot;y&quot;</tt> is provided as a
+synonym for <tt>&quot;tr&quot;</tt>. If the
+<small>SEARCHLIST</small> is delimited by bracketing quotes,
+the <small>REPLACEMENTLIST</small> has its own pair of
+quotes, which may or may not be bracketing quotes; for
+example, <tt>&quot;tr[aeiouy][yuoiea]&quot;</tt> or
+<tt>&quot;tr(+\&minus;*/)/ABCD/&quot;</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Note that
+<tt>&quot;tr&quot;</tt> does <b>not</b> do regular
+expression character classes such as <tt>&quot;\d&quot;</tt>
+or <tt>&quot;\pL&quot;</tt>. The <tt>&quot;tr&quot;</tt>
+operator is not equivalent to the <i>tr</i>(1) utility. If
+you want to map strings between lower/upper cases, see
+&quot;lc&quot; in perlfunc and &quot;uc&quot; in perlfunc,
+and in general consider using the <tt>&quot;s&quot;</tt>
+operator if you need regular expressions. The
+<tt>&quot;\U&quot;</tt>, <tt>&quot;\u&quot;</tt>,
+<tt>&quot;\L&quot;</tt>, and <tt>&quot;\l&quot;</tt>
+string-interpolation escapes on the right side of a
+substitution operator will perform correct case-mappings,
+but <tt>&quot;tr[a&minus;z][A&minus;Z]&quot;</tt> will not
+(except sometimes on legacy 7&minus;bit data).</p>
+
+<p style="margin-left:17%; margin-top: 1em">Note also that
+the whole range idea is rather unportable between character
+sets--and even within character sets they may cause results
+you probably didn&rsquo;t expect. A sound principle is to
+use only ranges that begin from and end at either alphabets
+of equal case (a&minus;e, A&minus;E), or digits (0&minus;4).
+Anything else is unsafe. If in doubt, spell out the
+character sets in full.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Options:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    c   Complement the SEARCHLIST.
+    d   Delete found but unreplaced characters.
+    s   Squash duplicate replaced characters.
+    r   Return the modified string and leave the original string
+        untouched.</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">If the
+<tt>&quot;/c&quot;</tt> modifier is specified, the
+<small>SEARCHLIST</small> character set is complemented. If
+the <tt>&quot;/d&quot;</tt> modifier is specified, any
+characters specified by <small>SEARCHLIST</small> not found
+in <small>REPLACEMENTLIST</small> are deleted. (Note that
+this is slightly more flexible than the behavior of some
+<b>tr</b> programs, which delete anything they find in the
+<small>SEARCHLIST</small> , period.) If the
+<tt>&quot;/s&quot;</tt> modifier is specified, sequences of
+characters that were transliterated to the same character
+are squashed down to a single instance of the character.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If the
+<tt>&quot;/d&quot;</tt> modifier is used, the
+<small>REPLACEMENTLIST</small> is always interpreted exactly
+as specified. Otherwise, if the
+<small>REPLACEMENTLIST</small> is shorter than the
+<small>SEARCHLIST</small> , the final character is
+replicated till it is long enough. If the
+<small>REPLACEMENTLIST</small> is empty, the
+<small>SEARCHLIST</small> is replicated. This latter is
+useful for counting characters in a class or for squashing
+character sequences in a class.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Examples:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    $ARGV[1] =~ tr/A&minus;Z/a&minus;z/;    # canonicalize to lower case ASCII
+    $cnt = tr/*/*/;             # count the stars in $_
+    $cnt = $sky =~ tr/*/*/;     # count the stars in $sky
+    $cnt = tr/0&minus;9//;            # count the digits in $_
+    tr/a&minus;zA&minus;Z//s;               # bookkeeper &minus;&gt; bokeper
+    ($HOST = $host) =~ tr/a&minus;z/A&minus;Z/;
+     $HOST = $host  =~ tr/a&minus;z/A&minus;Z/r;   # same thing
+    $HOST = $host =~ tr/a&minus;z/A&minus;Z/r    # chained with s///r
+                  =~ s/:/ &minus;p/r;
+    tr/a&minus;zA&minus;Z/ /cs;             # change non&minus;alphas to single space
+    @stripped = map tr/a&minus;zA&minus;Z/ /csr, @original;
+                                # /r with map
+    tr [\200&minus;\377]
+       [\000&minus;\177];             # wickedly delete 8th bit</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">If multiple
+transliterations are given for a character, only the first
+one is used:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    tr/AAA/XYZ/</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">will
+transliterate any A to X.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Because the
+transliteration table is built at compile time, neither the
+<small>SEARCHLIST</small> nor the
+<small>REPLACEMENTLIST</small> are subjected to double quote
+interpolation. That means that if you want to use variables,
+you must use an <i>eval()</i>:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    eval &quot;tr/$oldlist/$newlist/&quot;;
+    die $@ if $@;
+    eval &quot;tr/$oldlist/$newlist/, 1&quot; or die $@;</pre>
+
+
+<p style="margin-left:11%;">&lt;&lt; <small>EOF</small></p>
+
+<p style="margin-left:17%;">A line-oriented form of quoting
+is based on the shell &quot;here-document&quot; syntax.
+Following a <tt>&quot;&lt;&lt;&quot;</tt> you specify a
+string to terminate the quoted material, and all lines
+following the current line down to the terminating string
+are the value of the item.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The terminating
+string may be either an identifier (a word), or some quoted
+text. An unquoted identifier works like double quotes. There
+may not be a space between the <tt>&quot;&lt;&lt;&quot;</tt>
+and the identifier, unless the identifier is explicitly
+quoted. (If you put a space it will be treated as a null
+identifier, which is valid, and matches the first empty
+line.) The terminating string must appear by itself
+(unquoted and with no surrounding whitespace) on the
+terminating line.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If the
+terminating string is quoted, the type of quotes used
+determine the treatment of the text. <br>
+Double Quotes</p>
+
+<p style="margin-left:23%;">Double quotes indicate that the
+text will be interpolated using exactly the same rules as
+normal double quoted strings.</p>
+
+<pre style="margin-left:23%; margin-top: 1em">       print &lt;&lt;EOF;
+    The price is $Price.
+    EOF
+       print &lt;&lt; &quot;EOF&quot;; # same as above
+    The price is $Price.
+    EOF</pre>
+
+
+<p style="margin-left:17%;">Single Quotes</p>
+
+<p style="margin-left:23%;">Single quotes indicate the text
+is to be treated literally with no interpolation of its
+content. This is similar to single quoted strings except
+that backslashes have no special meaning, with
+<tt>&quot;\\&quot;</tt> being treated as two backslashes and
+not one as they would in every other quoting construct.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Just as in the
+shell, a backslashed bareword following the
+<tt>&quot;&lt;&lt;&quot;</tt> means the same thing as a
+single-quoted string does:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">        $cost = &lt;&lt;'VISTA';  # hasta la ...
+    That'll be $10 please, ma'am.
+    VISTA
+        $cost = &lt;&lt;\VISTA;   # Same thing!
+    That'll be $10 please, ma'am.
+    VISTA</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">This is the
+only form of quoting in perl where there is no need to worry
+about escaping content, something that code generators can
+and do make good use of.</p>
+
+<p style="margin-left:17%;">Backticks</p>
+
+<p style="margin-left:23%;">The content of the here doc is
+treated just as it would be if the string were embedded in
+backticks. Thus the content is interpolated as though it
+were double quoted and then executed via the shell, with the
+results of the execution returned.</p>
+
+<pre style="margin-left:23%; margin-top: 1em">       print &lt;&lt; `EOC`; # execute command and get results
+    echo hi there
+    EOC</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">It is possible
+to stack multiple here-docs in a row:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">       print &lt;&lt;&quot;foo&quot;, &lt;&lt;&quot;bar&quot;; # you can stack them
+    I said foo.
+    foo
+    I said bar.
+    bar
+       myfunc(&lt;&lt; &quot;THIS&quot;, 23, &lt;&lt;'THAT');
+    Here's a line
+    or two.
+    THIS
+    and here's another.
+    THAT</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Just
+don&rsquo;t forget that you have to put a semicolon on the
+end to finish the statement, as Perl doesn&rsquo;t know
+you&rsquo;re not going to try to do this:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">       print &lt;&lt;ABC
+    179231
+    ABC
+       + 20;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">If you want to
+remove the line terminator from your here-docs, use
+<tt>&quot;chomp()&quot;</tt>.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    chomp($string = &lt;&lt;'END');
+    This is a string.
+    END</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">If you want
+your here-docs to be indented with the rest of the code,
+you&rsquo;ll need to remove leading whitespace from each
+line manually:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    ($quote = &lt;&lt;'FINIS') =~ s/^\s+//gm;
+       The Road goes ever on and on,
+       down from the door where it began.
+    FINIS</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">If you use a
+here-doc within a delimited construct, such as in
+<tt>&quot;s///eg&quot;</tt>, the quoted material must come
+on the lines following the final delimiter. So instead
+of</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    s/this/&lt;&lt;E . 'that'
+    the other
+    E
+     . 'more '/eg;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">you have to
+write</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    s/this/&lt;&lt;E . 'that'
+     . 'more '/eg;
+    the other
+    E</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">If the
+terminating identifier is on the last line of the program,
+you must be sure there is a newline after it; otherwise,
+Perl will give the warning <b>Can&rsquo;t find string
+terminator &quot; <small>END</small> &quot; anywhere before
+<small>EOF</small> ...</b>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Additionally,
+quoting rules for the end-of-string identifier are unrelated
+to Perl&rsquo;s quoting rules. <tt>&quot;q()&quot;</tt>,
+<tt>&quot;qq()&quot;</tt>, and the like are not supported in
+place of <tt>''</tt> and <tt>&quot;&quot;</tt>, and the only
+interpolation is for backslashing the quoting character:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    print &lt;&lt; &quot;abc\&quot;def&quot;;
+    testing...
+    abc&quot;def</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Finally, quoted
+strings cannot span multiple lines. The general rule is that
+the identifier must be a string literal. Stick with that,
+and you should be safe.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Gory details
+of parsing quoted constructs</b> <br>
+When presented with something that might have several
+different interpretations, Perl uses the
+<b><small>DWIM</small></b> (that&rsquo;s &quot;Do What I
+Mean&quot;) principle to pick the most probable
+interpretation. This strategy is so successful that Perl
+programmers often do not suspect the ambivalence of what
+they write. But from time to time, Perl&rsquo;s notions
+differ substantially from what the author honestly
+meant.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This section
+hopes to clarify how Perl handles quoted constructs.
+Although the most common reason to learn this is to unravel
+labyrinthine regular expressions, because the initial steps
+of parsing are the same for all quoting operators, they are
+all discussed together.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The most
+important Perl parsing rule is the first one discussed
+below: when processing a quoted construct, Perl first finds
+the end of that construct, then interprets its contents. If
+you understand this rule, you may skip the rest of this
+section on the first reading. The other rules are likely to
+contradict the user&rsquo;s expectations much less
+frequently than this first one.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Some passes
+discussed below are performed concurrently, but because
+their results are the same, we consider them individually.
+For different quoting constructs, Perl performs different
+numbers of passes, from one to four, but these passes are
+always performed in the same order. <br>
+Finding the end</p>
+
+<p style="margin-left:17%;">The first pass is finding the
+end of the quoted construct, where the information about the
+delimiters is used in parsing. During this search, text
+between the starting and ending delimiters is copied to a
+safe location. The text copied gets
+delimiter-independent.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If the
+construct is a here-doc, the ending delimiter is a line that
+has a terminating string as the content. Therefore
+<tt>&quot;&lt;&lt;EOF&quot;</tt> is terminated by
+<tt>&quot;EOF&quot;</tt> immediately followed by
+<tt>&quot;\n&quot;</tt> and starting from the first column
+of the terminating line. When searching for the terminating
+line of a here-doc, nothing is skipped. In other words,
+lines after the here-doc syntax are compared with the
+terminating string line by line.</p>
+
+<p style="margin-left:17%; margin-top: 1em">For the
+constructs except here-docs, single characters are used as
+starting and ending delimiters. If the starting delimiter is
+an opening punctuation (that is <tt>&quot;(&quot;</tt>,
+<tt>&quot;[&quot;</tt>, <tt>&quot;{&quot;</tt>, or
+<tt>&quot;&lt;&quot;</tt>), the ending delimiter is the
+corresponding closing punctuation (that is
+<tt>&quot;)&quot;</tt>, <tt>&quot;]&quot;</tt>,
+<tt>&quot;}&quot;</tt>, or <tt>&quot;&gt;&quot;</tt>). If
+the starting delimiter is an unpaired character like
+<tt>&quot;/&quot;</tt> or a closing punctuation, the ending
+delimiter is same as the starting delimiter. Therefore a
+<tt>&quot;/&quot;</tt> terminates a
+<tt>&quot;qq//&quot;</tt> construct, while a
+<tt>&quot;]&quot;</tt> terminates <tt>&quot;qq[]&quot;</tt>
+and <tt>&quot;qq]]&quot;</tt> constructs.</p>
+
+<p style="margin-left:17%; margin-top: 1em">When searching
+for single-character delimiters, escaped delimiters and
+<tt>&quot;\\&quot;</tt> are skipped. For example, while
+searching for terminating <tt>&quot;/&quot;</tt>,
+combinations of <tt>&quot;\\&quot;</tt> and
+<tt>&quot;\/&quot;</tt> are skipped. If the delimiters are
+bracketing, nested pairs are also skipped. For example,
+while searching for closing <tt>&quot;]&quot;</tt> paired
+with the opening <tt>&quot;[&quot;</tt>, combinations of
+<tt>&quot;\\&quot;</tt>, <tt>&quot;\]&quot;</tt>, and
+<tt>&quot;\[&quot;</tt> are all skipped, and nested
+<tt>&quot;[&quot;</tt> and <tt>&quot;]&quot;</tt> are
+skipped as well. However, when backslashes are used as the
+delimiters (like <tt>&quot;qq\\&quot;</tt> and
+<tt>&quot;tr\\\&quot;</tt>), nothing is skipped. During the
+search for the end, backslashes that escape delimiters or
+backslashes are removed (exactly speaking, they are not
+copied to the safe location).</p>
+
+<p style="margin-left:17%; margin-top: 1em">For constructs
+with three-part delimiters (<tt>&quot;s///&quot;</tt>,
+<tt>&quot;y///&quot;</tt>, and <tt>&quot;tr///&quot;</tt>),
+the search is repeated once more. If the first delimiter is
+not an opening punctuation, three delimiters must be same
+such as <tt>&quot;s!!!&quot;</tt> and
+<tt>&quot;tr)))&quot;</tt>, in which case the second
+delimiter terminates the left part and starts the right part
+at once. If the left part is delimited by bracketing
+punctuation (that is <tt>&quot;()&quot;</tt>,
+<tt>&quot;[]&quot;</tt>, <tt>&quot;{}&quot;</tt>, or
+<tt>&quot;&lt;&gt;&quot;</tt>), the right part needs another
+pair of delimiters such as <tt>&quot;s(){}&quot;</tt> and
+<tt>&quot;tr[]//&quot;</tt>. In these cases, whitespace and
+comments are allowed between both parts, though the comment
+must follow at least one whitespace character; otherwise a
+character expected as the start of the comment may be
+regarded as the starting delimiter of the right part.</p>
+
+<p style="margin-left:17%; margin-top: 1em">During this
+search no attention is paid to the semantics of the
+construct. Thus:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    &quot;$hash{&quot;$foo/$bar&quot;}&quot;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">or:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    m/
+      bar       # NOT a comment, this slash / terminated m//!
+     /x</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">do not form
+legal quoted expressions. The quoted part ends on the first
+<tt>&quot;&quot;&quot;</tt> and <tt>&quot;/&quot;</tt>, and
+the rest happens to be a syntax error. Because the slash
+that terminated <tt>&quot;m//&quot;</tt> was followed by a
+<tt>&quot;SPACE&quot;</tt>, the example above is not
+<tt>&quot;m//x&quot;</tt>, but rather
+<tt>&quot;m//&quot;</tt> with no <tt>&quot;/x&quot;</tt>
+modifier. So the embedded <tt>&quot;#&quot;</tt> is
+interpreted as a literal <tt>&quot;#&quot;</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Also no
+attention is paid to <tt>&quot;\c\&quot;</tt> (multichar
+control char syntax) during this search. Thus the second
+<tt>&quot;\&quot;</tt> in <tt>&quot;qq/\c\/&quot;</tt> is
+interpreted as a part of <tt>&quot;\/&quot;</tt>, and the
+following <tt>&quot;/&quot;</tt> is not recognized as a
+delimiter. Instead, use <tt>&quot;\034&quot;</tt> or
+<tt>&quot;\x1c&quot;</tt> at the end of quoted
+constructs.</p>
+
+<p style="margin-left:11%;">Interpolation</p>
+
+<p style="margin-left:17%;">The next step is interpolation
+in the text obtained, which is now delimiter-independent.
+There are multiple cases. <br>
+&quot;&lt;&lt;'EOF'&quot;</p>
+
+<p style="margin-left:23%;">No interpolation is performed.
+Note that the combination <tt>&quot;\\&quot;</tt> is left
+intact, since escaped delimiters are not available for
+here-docs.</p>
+
+<p style="margin-left:17%;">&quot;m''&quot;, the pattern of
+&quot;s'''&quot;</p>
+
+<p style="margin-left:23%;">No interpolation is performed
+at this stage. Any backslashed sequences including
+<tt>&quot;\\&quot;</tt> are treated at the stage to
+&quot;parsing regular expressions&quot;.</p>
+
+<p style="margin-left:17%;">'', &quot;q//&quot;,
+&quot;tr'''&quot;, &quot;y'''&quot;, the replacement of
+&quot;s'''&quot;</p>
+
+<p style="margin-left:23%;">The only interpolation is
+removal of <tt>&quot;\&quot;</tt> from pairs of
+<tt>&quot;\\&quot;</tt>. Therefore
+<tt>&quot;&minus;&quot;</tt> in <tt>&quot;tr'''&quot;</tt>
+and <tt>&quot;y'''&quot;</tt> is treated literally as a
+hyphen and no character range is available.
+<tt>&quot;\1&quot;</tt> in the replacement of
+<tt>&quot;s'''&quot;</tt> does not work as <tt>$1</tt>.</p>
+
+<p style="margin-left:17%;">&quot;tr///&quot;,
+&quot;y///&quot;</p>
+
+<p style="margin-left:23%;">No variable interpolation
+occurs. String modifying combinations for case and quoting
+such as <tt>&quot;\Q&quot;</tt>, <tt>&quot;\U&quot;</tt>,
+and <tt>&quot;\E&quot;</tt> are not recognized. The other
+escape sequences such as <tt>&quot;\200&quot;</tt> and
+<tt>&quot;\t&quot;</tt> and backslashed characters such as
+<tt>&quot;\\&quot;</tt> and <tt>&quot;\&minus;&quot;</tt>
+are converted to appropriate literals. The character
+<tt>&quot;&minus;&quot;</tt> is treated specially and
+therefore <tt>&quot;\&minus;&quot;</tt> is treated as a
+literal <tt>&quot;&minus;&quot;</tt>.</p>
+
+<p style="margin-left:17%;">&quot;&quot;, &quot;``&quot;,
+&quot;qq//&quot;, &quot;qx//&quot;,
+&quot;&lt;file*glob&gt;&quot;,
+&quot;&lt;&lt;&quot;EOF&quot;&quot;</p>
+
+<p style="margin-left:23%;"><tt>&quot;\Q&quot;</tt>,
+<tt>&quot;\U&quot;</tt>, <tt>&quot;\u&quot;</tt>,
+<tt>&quot;\L&quot;</tt>, <tt>&quot;\l&quot;</tt>,
+<tt>&quot;\F&quot;</tt> (possibly paired with
+<tt>&quot;\E&quot;</tt>) are converted to corresponding Perl
+constructs. Thus, <tt>&quot;$foo\Qbaz$bar&quot;</tt> is
+converted to <tt>&quot;$foo . (quotemeta(&quot;baz&quot; .
+$bar))&quot;</tt> internally. The other escape sequences
+such as <tt>&quot;\200&quot;</tt> and
+<tt>&quot;\t&quot;</tt> and backslashed characters such as
+<tt>&quot;\\&quot;</tt> and <tt>&quot;\&minus;&quot;</tt>
+are replaced with appropriate expansions.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Let it be
+stressed that <i>whatever falls between &quot;\Q&quot; and
+&quot;\E&quot;</i> is interpolated in the usual way.
+Something like <tt>&quot;\Q\\E&quot;</tt> has no
+<tt>&quot;\E&quot;</tt> inside. instead, it has
+<tt>&quot;\Q&quot;</tt>, <tt>&quot;\\&quot;</tt>, and
+<tt>&quot;E&quot;</tt>, so the result is the same as for
+<tt>&quot;\\\\E&quot;</tt>. As a general rule, backslashes
+between <tt>&quot;\Q&quot;</tt> and <tt>&quot;\E&quot;</tt>
+may lead to counterintuitive results. So,
+<tt>&quot;\Q\t\E&quot;</tt> is converted to
+<tt>&quot;quotemeta(&quot;\t&quot;)&quot;</tt>, which is the
+same as <tt>&quot;\\\t&quot;</tt> (since <small>TAB</small>
+is not alphanumeric). Note also that:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">  $str = '\t';
+  return &quot;\Q$str&quot;;</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">may be closer
+to the conjectural <i>intention</i> of the writer of
+<tt>&quot;\Q\t\E&quot;</tt>.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Interpolated
+scalars and arrays are converted internally to the
+<tt>&quot;join&quot;</tt> and <tt>&quot;.&quot;</tt>
+catenation operations. Thus, <tt>&quot;$foo XXX
+'@arr'&quot;</tt> becomes:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">  $foo . &quot; XXX '&quot; . (join $&quot;, @arr) . &quot;'&quot;;</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">All operations
+above are performed simultaneously, left to right.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Because the
+result of <tt>&quot;\Q STRING \E&quot;</tt> has all
+metacharacters quoted, there is no way to insert a literal
+<tt>&quot;$&quot;</tt> or <tt>&quot;@&quot;</tt> inside a
+<tt>&quot;\Q\E&quot;</tt> pair. If protected by
+<tt>&quot;\&quot;</tt>, <tt>&quot;$&quot;</tt> will be
+quoted to became <tt>&quot;\\\$&quot;</tt>; if not, it is
+interpreted as the start of an interpolated scalar.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Note also that
+the interpolation code needs to make a decision on where the
+interpolated scalar ends. For instance, whether <tt>&quot;a
+$b &minus;&gt; {c}&quot;</tt> really means:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">  &quot;a &quot; . $b . &quot; &minus;&gt; {c}&quot;;</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">or:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">  &quot;a &quot; . $b &minus;&gt; {c};</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">Most of the
+time, the longest possible text that does not include spaces
+between components and which contains matching braces or
+brackets. because the outcome may be determined by voting
+based on heuristic estimators, the result is not strictly
+predictable. Fortunately, it&rsquo;s usually correct for
+ambiguous cases.</p>
+
+<p style="margin-left:17%;">the replacement of
+&quot;s///&quot;</p>
+
+<p style="margin-left:23%;">Processing of
+<tt>&quot;\Q&quot;</tt>, <tt>&quot;\U&quot;</tt>,
+<tt>&quot;\u&quot;</tt>, <tt>&quot;\L&quot;</tt>,
+<tt>&quot;\l&quot;</tt>, <tt>&quot;\F&quot;</tt> and
+interpolation happens as with <tt>&quot;qq//&quot;</tt>
+constructs.</p>
+
+<p style="margin-left:23%; margin-top: 1em">It is at this
+step that <tt>&quot;\1&quot;</tt> is begrudgingly converted
+to <tt>$1</tt> in the replacement text of
+<tt>&quot;s///&quot;</tt>, in order to correct the
+incorrigible <i>sed</i> hackers who haven&rsquo;t picked up
+the saner idiom yet. A warning is emitted if the
+<tt>&quot;use warnings&quot;</tt> pragma or the
+<b>&minus;w</b> command-line flag (that is, the <tt>$^W</tt>
+variable) was set.</p>
+
+<p style="margin-left:17%;">&quot;RE&quot; in
+&quot;?RE?&quot;, &quot;/RE/&quot;, &quot;m/RE/&quot;,
+&quot;s/RE/foo/&quot;,</p>
+
+<p style="margin-left:23%;">Processing of
+<tt>&quot;\Q&quot;</tt>, <tt>&quot;\U&quot;</tt>,
+<tt>&quot;\u&quot;</tt>, <tt>&quot;\L&quot;</tt>,
+<tt>&quot;\l&quot;</tt>, <tt>&quot;\F&quot;</tt>,
+<tt>&quot;\E&quot;</tt>, and interpolation happens (almost)
+as with <tt>&quot;qq//&quot;</tt> constructs.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Processing of
+<tt>&quot;\N{...}&quot;</tt> is also done here, and compiled
+into an intermediate form for the regex compiler. (This is
+because, as mentioned below, the regex compilation may be
+done at execution time, and <tt>&quot;\N{...}&quot;</tt> is
+a compile-time construct.)</p>
+
+<p style="margin-left:23%; margin-top: 1em">However any
+other combinations of <tt>&quot;\&quot;</tt> followed by a
+character are not substituted but only skipped, in order to
+parse them as regular expressions at the following step. As
+<tt>&quot;\c&quot;</tt> is skipped at this step,
+<tt>&quot;@&quot;</tt> of <tt>&quot;\c@&quot;</tt> in
+<small>RE</small> is possibly treated as an array symbol
+(for example <tt>@foo</tt>), even though the same text in
+<tt>&quot;qq//&quot;</tt> gives interpolation of
+<tt>&quot;\c@&quot;</tt>.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Moreover,
+inside <tt>&quot;(?{BLOCK})&quot;</tt>, <tt>&quot;(?#
+comment )&quot;</tt>, and a
+<tt>&quot;#&quot;</tt>&minus;comment in a
+<tt>&quot;//x&quot;</tt>&minus;regular expression, no
+processing is performed whatsoever. This is the first step
+at which the presence of the <tt>&quot;//x&quot;</tt>
+modifier is relevant.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Interpolation
+in patterns has several quirks: <tt>$|</tt>, <tt>$(</tt>,
+<tt>$)</tt>, <tt>&quot;@+&quot;</tt> and
+<tt>&quot;@&minus;&quot;</tt> are not interpolated, and
+constructs <tt>$var[SOMETHING]</tt> are voted (by several
+different estimators) to be either an array element or
+<tt>$var</tt> followed by an <small>RE</small> alternative.
+This is where the notation <tt>&quot;${arr[$bar]}&quot;</tt>
+comes handy: <tt>&quot;/${arr[0&minus;9]}/&quot;</tt> is
+interpreted as array element <tt>&quot;&minus;9&quot;</tt>,
+not as a regular expression from the variable <tt>$arr</tt>
+followed by a digit, which would be the interpretation of
+<tt>&quot;/$arr[0&minus;9]/&quot;</tt>. Since voting among
+different estimators may occur, the result is not
+predictable.</p>
+
+<p style="margin-left:23%; margin-top: 1em">The lack of
+processing of <tt>&quot;\\&quot;</tt> creates specific
+restrictions on the post-processed text. If the delimiter is
+<tt>&quot;/&quot;</tt>, one cannot get the combination
+<tt>&quot;\/&quot;</tt> into the result of this step.
+<tt>&quot;/&quot;</tt> will finish the regular expression,
+<tt>&quot;\/&quot;</tt> will be stripped to
+<tt>&quot;/&quot;</tt> on the previous step, and
+<tt>&quot;\\/&quot;</tt> will be left as is. Because
+<tt>&quot;/&quot;</tt> is equivalent to
+<tt>&quot;\/&quot;</tt> inside a regular expression, this
+does not matter unless the delimiter happens to be character
+special to the <small>RE</small> engine, such as in
+<tt>&quot;s*foo*bar*&quot;</tt>,
+<tt>&quot;m[foo]&quot;</tt>, or <tt>&quot;?foo?&quot;</tt>;
+or an alphanumeric char, as in:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">  m m ^ a \s* b mmx;</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">In the
+<small>RE</small> above, which is intentionally obfuscated
+for illustration, the delimiter is <tt>&quot;m&quot;</tt>,
+the modifier is <tt>&quot;mx&quot;</tt>, and after
+delimiter-removal the <small>RE</small> is the same as for
+<tt>&quot;m/ ^ a \s* b /mx&quot;</tt>. There&rsquo;s more
+than one reason you&rsquo;re encouraged to restrict your
+delimiters to non-alphanumeric, non-whitespace choices.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This step is
+the last one for all constructs except regular expressions,
+which are processed further.</p>
+
+<p style="margin-left:11%;">parsing regular expressions</p>
+
+<p style="margin-left:17%;">Previous steps were performed
+during the compilation of Perl code, but this one happens at
+run time, although it may be optimized to be calculated at
+compile time if appropriate. After preprocessing described
+above, and possibly after evaluation if concatenation,
+joining, casing translation, or metaquoting are involved,
+the resulting <i>string</i> is passed to the
+<small>RE</small> engine for compilation.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Whatever
+happens in the <small>RE</small> engine might be better
+discussed in perlre, but for the sake of continuity, we
+shall do so here.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This is another
+step where the presence of the <tt>&quot;//x&quot;</tt>
+modifier is relevant. The <small>RE</small> engine scans the
+string from left to right and converts it to a finite
+automaton.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Backslashed
+characters are either replaced with corresponding literal
+strings (as with <tt>&quot;\{&quot;</tt>), or else they
+generate special nodes in the finite automaton (as with
+<tt>&quot;\b&quot;</tt>). Characters special to the
+<small>RE</small> engine (such as <tt>&quot;|&quot;</tt>)
+generate corresponding nodes or groups of nodes.
+<tt>&quot;(?#...)&quot;</tt> comments are ignored. All the
+rest is either converted to literal strings to match, or
+else is ignored (as is whitespace and
+<tt>&quot;#&quot;</tt>&minus;style comments if
+<tt>&quot;//x&quot;</tt> is present).</p>
+
+<p style="margin-left:17%; margin-top: 1em">Parsing of the
+bracketed character class construct,
+<tt>&quot;[...]&quot;</tt>, is rather different than the
+rule used for the rest of the pattern. The terminator of
+this construct is found using the same rules as for finding
+the terminator of a <tt>&quot;{}&quot;</tt>&minus;delimited
+construct, the only exception being that
+<tt>&quot;]&quot;</tt> immediately following
+<tt>&quot;[&quot;</tt> is treated as though preceded by a
+backslash. Similarly, the terminator of
+<tt>&quot;(?{...})&quot;</tt> is found using the same rules
+as for finding the terminator of a
+<tt>&quot;{}&quot;</tt>&minus;delimited construct.</p>
+
+<p style="margin-left:17%; margin-top: 1em">It is possible
+to inspect both the string given to <small>RE</small> engine
+and the resulting finite automaton. See the arguments
+<tt>&quot;debug&quot;</tt>/<tt>&quot;debugcolor&quot;</tt>
+in the <tt>&quot;use re&quot;</tt> pragma, as well as
+Perl&rsquo;s <b>&minus;Dr</b> command-line switch documented
+in &quot;Command Switches&quot; in perlrun.</p>
+
+<p style="margin-left:11%;">Optimization of regular
+expressions</p>
+
+<p style="margin-left:17%;">This step is listed for
+completeness only. Since it does not change semantics,
+details of this step are not documented and are subject to
+change without notice. This step is performed over the
+finite automaton that was generated during the previous
+pass.</p>
+
+<p style="margin-left:17%; margin-top: 1em">It is at this
+stage that <tt>&quot;split()&quot;</tt> silently optimizes
+<tt>&quot;/^/&quot;</tt> to mean
+<tt>&quot;/^/m&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>I/O
+Operators</b> <br>
+There are several I/O operators you should know about.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A string
+enclosed by backticks (grave accents) first undergoes
+double-quote interpolation. It is then interpreted as an
+external command, and the output of that command is the
+value of the backtick string, like in a shell. In scalar
+context, a single string consisting of all output is
+returned. In list context, a list of values is returned, one
+per line of output. (You can set <tt>$/</tt> to use a
+different line terminator.) The command is executed each
+time the pseudo-literal is evaluated. The status value of
+the command is returned in <tt>$?</tt> (see perlvar for the
+interpretation of <tt>$?</tt>). Unlike in <b>csh</b>, no
+translation is done on the return data--newlines remain
+newlines. Unlike in any of the shells, single quotes do not
+hide variable names in the command from interpretation. To
+pass a literal dollar-sign through to the shell you need to
+hide it with a backslash. The generalized form of backticks
+is <tt>&quot;qx//&quot;</tt>. (Because backticks always
+undergo shell expansion as well, see perlsec for security
+concerns.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">In scalar
+context, evaluating a filehandle in angle brackets yields
+the next line from that file (the newline, if any,
+included), or <tt>&quot;undef&quot;</tt> at end-of-file or
+on error. When <tt>$/</tt> is set to
+<tt>&quot;undef&quot;</tt> (sometimes known as file-slurp
+mode) and the file is empty, it returns <tt>''</tt> the
+first time, followed by <tt>&quot;undef&quot;</tt>
+subsequently.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Ordinarily you
+must assign the returned value to a variable, but there is
+one situation where an automatic assignment happens. If and
+only if the input symbol is the only thing inside the
+conditional of a <tt>&quot;while&quot;</tt> statement (even
+if disguised as a <tt>&quot;for(;;)&quot;</tt> loop), the
+value is automatically assigned to the global variable
+<tt>$_</tt>, destroying whatever was there previously. (This
+may seem like an odd thing to you, but you&rsquo;ll use the
+construct in almost every Perl script you write.) The
+<tt>$_</tt> variable is not implicitly localized.
+You&rsquo;ll have to put a <tt>&quot;local $_;&quot;</tt>
+before the loop if you want that to happen.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+lines are equivalent:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    while (defined($_ = &lt;STDIN&gt;)) { print; }
+    while ($_ = &lt;STDIN&gt;) { print; }
+    while (&lt;STDIN&gt;) { print; }
+    for (;&lt;STDIN&gt;;) { print; }
+    print while defined($_ = &lt;STDIN&gt;);
+    print while ($_ = &lt;STDIN&gt;);
+    print while &lt;STDIN&gt;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This also
+behaves similarly, but assigns to a lexical variable instead
+of to <tt>$_</tt>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    while (my $line = &lt;STDIN&gt;) { print $line }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In these loop
+constructs, the assigned value (whether assignment is
+automatic or explicit) is then tested to see whether it is
+defined. The defined test avoids problems where the line has
+a string value that would be treated as false by Perl; for
+example a &quot;&quot; or a &quot;0&quot; with no trailing
+newline. If you really mean for such values to terminate the
+loop, they should be tested for explicitly:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    while (($_ = &lt;STDIN&gt;) ne '0') { ... }
+    while (&lt;STDIN&gt;) { last unless $_; ... }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In other
+boolean contexts, <tt>&quot;&lt;FILEHANDLE&gt;&quot;</tt>
+without an explicit <tt>&quot;defined&quot;</tt> test or
+comparison elicits a warning if the <tt>&quot;use
+warnings&quot;</tt> pragma or the <b>&minus;w</b>
+command-line switch (the <tt>$^W</tt> variable) is in
+effect.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The filehandles
+<small>STDIN</small> , <small>STDOUT</small> , and
+<small>STDERR</small> are predefined. (The filehandles
+<tt>&quot;stdin&quot;</tt>, <tt>&quot;stdout&quot;</tt>, and
+<tt>&quot;stderr&quot;</tt> will also work except in
+packages, where they would be interpreted as local
+identifiers rather than global.) Additional filehandles may
+be created with the <i>open()</i> function, amongst others.
+See perlopentut and &quot;open&quot; in perlfunc for details
+on this.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If a &lt;
+<small>FILEHANDLE</small> &gt; is used in a context that is
+looking for a list, a list comprising all input lines is
+returned, one line per list element. It&rsquo;s easy to grow
+to a rather large data space this way, so use with care.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&lt;
+<small>FILEHANDLE</small> &gt; may also be spelled
+<tt>&quot;readline(*FILEHANDLE)&quot;</tt>. See
+&quot;readline&quot; in perlfunc.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The null
+filehandle &lt;&gt; is special: it can be used to emulate
+the behavior of <b>sed</b> and <b>awk</b>, and any other
+Unix filter program that takes a list of filenames, doing
+the same to each line of input from all of them. Input from
+&lt;&gt; comes either from standard input, or from each file
+listed on the command line. Here&rsquo;s how it works: the
+first time &lt;&gt; is evaluated, the <tt>@ARGV</tt> array
+is checked, and if it is empty, <tt>$ARGV[0]</tt> is set to
+&quot;&minus;&quot;, which when opened gives you standard
+input. The <tt>@ARGV</tt> array is then processed as a list
+of filenames. The loop</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    while (&lt;&gt;) {
+        ...                     # code for each line
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">is equivalent
+to the following Perl-like pseudo code:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    unshift(@ARGV, '&minus;') unless @ARGV;
+    while ($ARGV = shift) {
+        open(ARGV, $ARGV);
+        while (&lt;ARGV&gt;) {
+            ...         # code for each line
+        }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">except that it
+isn&rsquo;t so cumbersome to say, and will actually work. It
+really does shift the <tt>@ARGV</tt> array and put the
+current filename into the <tt>$ARGV</tt> variable. It also
+uses filehandle <i><small>ARGV</small></i> internally.
+&lt;&gt; is just a synonym for &lt; <small>ARGV</small>
+&gt;, which is magical. (The pseudo code above doesn&rsquo;t
+work because it treats &lt; <small>ARGV</small> &gt; as
+non-magical.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since the null
+filehandle uses the two argument form of &quot;open&quot; in
+perlfunc it interprets special characters, so if you have a
+script like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    while (&lt;&gt;) {
+        print;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">and call it
+with <tt>&quot;perl dangerous.pl 'rm &minus;rfv
+*|'&quot;</tt>, it actually opens a pipe, executes the
+<tt>&quot;rm&quot;</tt> command and reads
+<tt>&quot;rm&quot;</tt>&rsquo;s output from that pipe. If
+you want all items in <tt>@ARGV</tt> to be interpreted as
+file names, you can use the module
+<tt>&quot;ARGV::readonly&quot;</tt> from <small>CPAN</small>
+.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can modify
+<tt>@ARGV</tt> before the first &lt;&gt; as long as the
+array ends up containing the list of filenames you really
+want. Line numbers (<tt>$.</tt>) continue as though the
+input were one big happy file. See the example in
+&quot;eof&quot; in perlfunc for how to reset line numbers on
+each file.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+set <tt>@ARGV</tt> to your own list of files, go right
+ahead. This sets <tt>@ARGV</tt> to all plain text files if
+no <tt>@ARGV</tt> was given:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @ARGV = grep { &minus;f &amp;&amp; &minus;T } glob('*') unless @ARGV;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can even
+set them to pipe commands. For example, this automatically
+filters compressed arguments through <b>gzip</b>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @ARGV = map { /\.(gz|Z)$/ ? &quot;gzip &minus;dc &lt; $_ |&quot; : $_ } @ARGV;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+pass switches into your script, you can use one of the
+Getopts modules or put a loop on the front like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    while ($_ = $ARGV[0], /^&minus;/) {
+        shift;
+        last if /^&minus;&minus;$/;
+        if (/^&minus;D(.*)/) { $debug = $1 }
+        if (/^&minus;v/)     { $verbose++  }
+        # ...           # other switches
+    }
+    while (&lt;&gt;) {
+        # ...           # code for each line
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The &lt;&gt;
+symbol will return <tt>&quot;undef&quot;</tt> for
+end-of-file only once. If you call it again after this, it
+will assume you are processing another <tt>@ARGV</tt> list,
+and if you haven&rsquo;t set <tt>@ARGV</tt>, will read input
+from <small>STDIN</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">If what the
+angle brackets contain is a simple scalar variable (for
+example, &lt;$foo&gt;), then that variable contains the name
+of the filehandle to input from, or its typeglob, or a
+reference to the same. For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $fh = \*STDIN;
+    $line = &lt;$fh&gt;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If what&rsquo;s
+within the angle brackets is neither a filehandle nor a
+simple scalar variable containing a filehandle name,
+typeglob, or typeglob reference, it is interpreted as a
+filename pattern to be globbed, and either a list of
+filenames or the next filename in the list is returned,
+depending on context. This distinction is determined on
+syntactic grounds alone. That means
+<tt>&quot;&lt;$x&gt;&quot;</tt> is always a
+<i>readline()</i> from an indirect handle, but
+<tt>&quot;&lt;$hash{key}&gt;&quot;</tt> is always a
+<i>glob()</i>. That&rsquo;s because <tt>$x</tt> is a simple
+scalar variable, but <tt>$hash{key}</tt> is not--it&rsquo;s
+a hash element. Even <tt>&quot;&lt;$x &gt;&quot;</tt> (note
+the extra space) is treated as <tt>&quot;glob(&quot;$x
+&quot;)&quot;</tt>, not
+<tt>&quot;readline($x)&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">One level of
+double-quote interpretation is done first, but you
+can&rsquo;t say <tt>&quot;&lt;$foo&gt;&quot;</tt> because
+that&rsquo;s an indirect filehandle as explained in the
+previous paragraph. (In older versions of Perl, programmers
+would insert curly brackets to force interpretation as a
+filename glob: <tt>&quot;&lt;${foo}&gt;&quot;</tt>. These
+days, it&rsquo;s considered cleaner to call the internal
+function directly as <tt>&quot;glob($foo)&quot;</tt>, which
+is probably the right way to have done it in the first
+place.) For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    while (&lt;*.c&gt;) {
+        chmod 0644, $_;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">is roughly
+equivalent to:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open(FOO, &quot;echo *.c | tr &minus;s ' \t\r\f' '\\012\\012\\012\\012'|&quot;);
+    while (&lt;FOO&gt;) {
+        chomp;
+        chmod 0644, $_;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">except that the
+globbing is actually done internally using the standard
+<tt>&quot;File::Glob&quot;</tt> extension. Of course, the
+shortest way to do the above is:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    chmod 0644, &lt;*.c&gt;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">A (file)glob
+evaluates its (embedded) argument only when it is starting a
+new list. All values must be read before it will start over.
+In list context, this isn&rsquo;t important because you
+automatically get them all anyway. However, in scalar
+context the operator returns the next value each time
+it&rsquo;s called, or <tt>&quot;undef&quot;</tt> when the
+list has run out. As with filehandle reads, an automatic
+<tt>&quot;defined&quot;</tt> is generated when the glob
+occurs in the test part of a <tt>&quot;while&quot;</tt>,
+because legal glob returns (for example, a file called
+<i>0</i>) would otherwise terminate the loop. Again,
+<tt>&quot;undef&quot;</tt> is returned only once. So if
+you&rsquo;re expecting a single value from a glob, it is
+much better to say</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    ($file) = &lt;blurch*&gt;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">than</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $file = &lt;blurch*&gt;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">because the
+latter will alternate between returning a filename and
+returning false.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you&rsquo;re
+trying to do variable interpolation, it&rsquo;s definitely
+better to use the <i>glob()</i> function, because the older
+notation can cause people to become confused with the
+indirect filehandle notation.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @files = glob(&quot;$dir/*.[ch]&quot;);
+    @files = glob($files[$i]);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Constant
+Folding</b> <br>
+Like C, Perl does a certain amount of expression evaluation
+at compile time whenever it determines that all arguments to
+an operator are static and have no side effects. In
+particular, string concatenation happens at compile time
+between literals that don&rsquo;t do variable substitution.
+Backslash interpolation also happens at compile time. You
+can say</p>
+
+<pre style="margin-left:11%; margin-top: 1em">      'Now is the time for all'
+    . &quot;\n&quot;
+    .  'good men to come to.'</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">and this all
+reduces to one string internally. Likewise, if you say</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    foreach $file (@filenames) {
+        if (&minus;s $file &gt; 5 + 100 * 2**16) {  }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">the compiler
+precomputes the number which that expression represents so
+that the interpreter won&rsquo;t have to.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>No-ops</b>
+<br>
+Perl doesn&rsquo;t officially have a no-op operator, but the
+bare constants <tt>0</tt> and <tt>1</tt> are special-cased
+not to produce a warning in void context, so you can for
+example safely do</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    1 while foo();</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Bitwise
+String Operators</b> <br>
+Bitstrings of any size may be manipulated by the bitwise
+operators (<tt>&quot;~ | &amp; ^&quot;</tt>).</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the operands
+to a binary bitwise op are strings of different sizes,
+<b>|</b> and <b>^</b> ops act as though the shorter operand
+had additional zero bits on the right, while the
+<b>&amp;</b> op acts as though the longer operand were
+truncated to the length of the shorter. The granularity for
+such extension or truncation is one or more bytes.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    # ASCII&minus;based examples
+    print &quot;j p \n&quot; ^ &quot; a h&quot;;            # prints &quot;JAPH\n&quot;
+    print &quot;JA&quot; | &quot;  ph\n&quot;;              # prints &quot;japh\n&quot;
+    print &quot;japh\nJunk&quot; &amp; '_____';       # prints &quot;JAPH\n&quot;;
+    print 'p N$' ^ &quot; E&lt;H\n&quot;;            # prints &quot;Perl\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you are
+intending to manipulate bitstrings, be certain that
+you&rsquo;re supplying bitstrings: If an operand is a
+number, that will imply a <b>numeric</b> bitwise operation.
+You may explicitly show which type of operation you intend
+by using <tt>&quot;&quot;</tt> or <tt>&quot;0+&quot;</tt>,
+as in the examples below.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $foo =  150  |  105;        # yields 255  (0x96 | 0x69 is 0xFF)
+    $foo = '150' |  105;        # yields 255
+    $foo =  150  | '105';       # yields 255
+    $foo = '150' | '105';       # yields string '155' (under ASCII)
+    $baz = 0+$foo &amp; 0+$bar;     # both ops explicitly numeric
+    $biz = &quot;$foo&quot; ^ &quot;$bar&quot;;     # both ops explicitly stringy</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">See
+&quot;vec&quot; in perlfunc for information on how to
+manipulate individual bits in a bit vector.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Integer
+Arithmetic</b> <br>
+By default, Perl assumes that it must do most of its
+arithmetic in floating point. But by saying</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use integer;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">you may tell
+the compiler to use integer operations (see integer for a
+detailed explanation) from here to the end of the enclosing
+<small>BLOCK</small> . An inner <small>BLOCK</small> may
+countermand this by saying</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    no integer;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">which lasts
+until the end of that <small>BLOCK</small> . Note that this
+doesn&rsquo;t mean everything is an integer, merely that
+Perl will use integer operations for arithmetic, comparison,
+and bitwise operators. For example, even under <tt>&quot;use
+integer&quot;</tt>, if you take the <tt>sqrt(2)</tt>,
+you&rsquo;ll still get <tt>1.4142135623731</tt> or so.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Used on
+numbers, the bitwise operators (&quot;&amp;&quot;,
+&quot;|&quot;, &quot;^&quot;, &quot;~&quot;,
+&quot;&lt;&lt;&quot;, and &quot;&gt;&gt;&quot;) always
+produce integral results. (But see also &quot;Bitwise String
+Operators&quot;.) However, <tt>&quot;use integer&quot;</tt>
+still has meaning for them. By default, their results are
+interpreted as unsigned integers, but if <tt>&quot;use
+integer&quot;</tt> is in effect, their results are
+interpreted as signed integers. For example,
+<tt>&quot;~0&quot;</tt> usually evaluates to a large
+integral value. However, <tt>&quot;use integer;
+~0&quot;</tt> is <tt>&quot;&minus;1&quot;</tt> on
+two&rsquo;s-complement machines.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Floating-point
+Arithmetic</b> <br>
+While <tt>&quot;use integer&quot;</tt> provides integer-only
+arithmetic, there is no analogous mechanism to provide
+automatic rounding or truncation to a certain number of
+decimal places. For rounding to a certain number of digits,
+<i>sprintf()</i> or <i>printf()</i> is usually the easiest
+route. See perlfaq4.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Floating-point
+numbers are only approximations to what a mathematician
+would call real numbers. There are infinitely more reals
+than floats, so some corners must be cut. For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    printf &quot;%.20g\n&quot;, 123456789123456789;
+    #        produces 123456789123456784</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Testing for
+exact floating-point equality or inequality is not a good
+idea. Here&rsquo;s a (relatively expensive) work-around to
+compare whether two floating-point numbers are equal to a
+particular number of decimal places. See Knuth, volume
+<small>II</small> , for a more robust treatment of this
+topic.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sub fp_equal {
+        my ($X, $Y, $POINTS) = @_;
+        my ($tX, $tY);
+        $tX = sprintf(&quot;%.${POINTS}g&quot;, $X);
+        $tY = sprintf(&quot;%.${POINTS}g&quot;, $Y);
+        return $tX eq $tY;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<small>POSIX</small> module (part of the standard perl
+distribution) implements <i>ceil()</i>, <i>floor()</i>, and
+other mathematical and trigonometric functions. The
+Math::Complex module (part of the standard perl
+distribution) defines mathematical functions that work on
+both the reals and the imaginary numbers. Math::Complex not
+as efficient as <small>POSIX</small> , but
+<small>POSIX</small> can&rsquo;t work with complex
+numbers.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Rounding in
+financial applications can have serious implications, and
+the rounding method used should be specified precisely. In
+these cases, it probably pays not to trust whichever system
+rounding is being used by Perl, but to instead implement the
+rounding function you need yourself.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Bigger
+Numbers</b> <br>
+The standard <tt>&quot;Math::BigInt&quot;</tt>,
+<tt>&quot;Math::BigRat&quot;</tt>, and
+<tt>&quot;Math::BigFloat&quot;</tt> modules, along with the
+<tt>&quot;bigint&quot;</tt>, <tt>&quot;bigrat&quot;</tt>,
+and <tt>&quot;bitfloat&quot;</tt> pragmas, provide
+variable-precision arithmetic and overloaded operators,
+although they&rsquo;re currently pretty slow. At the cost of
+some space and considerable speed, they avoid the normal
+pitfalls associated with limited-precision
+representations.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use 5.010;
+        use bigint;  # easy interface to Math::BigInt
+        $x = 123456789123456789;
+        say $x * $x;
+    +15241578780673678515622620750190521</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Or with
+rationals:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use 5.010;
+        use bigrat;
+        $a = 3/22;
+        $b = 4/6;
+        say &quot;a/b is &quot;, $a/$b;
+        say &quot;a*b is &quot;, $a*$b;
+    a/b is 9/44
+    a*b is 1/11</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Several modules
+let you calculate with (bound only by memory and
+<small>CPU</small> time) unlimited or fixed precision. There
+are also some non-standard modules that provide faster
+implementations via external C libraries.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here is a
+short, but incomplete summary:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  Math::Fraction         big, unlimited fractions like 9973 / 12967
+  Math::String           treat string sequences like numbers
+  Math::FixedPrecision   calculate with a fixed precision
+  Math::Currency         for currency calculations
+  Bit::Vector            manipulate bit vectors fast (uses C)
+  Math::BigIntFast       Bit::Vector wrapper for big numbers
+  Math::Pari             provides access to the Pari C library
+  Math::BigInteger       uses an external C library
+  Math::Cephes           uses external Cephes C library (no big numbers)
+  Math::Cephes::Fraction fractions via the Cephes library
+  Math::GMP              another one using an external C library</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Choose
+wisely.</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,372 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:32:46 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>E2IMAGE</title>
+
+</head>
+<body>
+
+<h1 align="center">E2IMAGE</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RESTORING FILESYSTEM METADATA USING AN IMAGE FILE">RESTORING FILESYSTEM METADATA USING AN IMAGE FILE</a><br>
+<a href="#RAW IMAGE FILES">RAW IMAGE FILES</a><br>
+<a href="#QCOW2 IMAGE FILES">QCOW2 IMAGE FILES</a><br>
+<a href="#INCLUDING DATA">INCLUDING DATA</a><br>
+<a href="#OFFSETS">OFFSETS</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#AVAILABILITY">AVAILABILITY</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">e2image &minus;
+Save critical ext2/ext3/ext4 filesystem metadata to a
+file</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>e2image</b>
+[ <b>&minus;r|Q</b> ] [ <b>&minus;fr</b> ] <i>device
+image-file</i> <b><br>
+e2image &minus;I</b> <i>device image-file</i> <b><br>
+e2image &minus;ra</b> [ <b>&minus;cfnp</b> ] [
+<b>&minus;o</b> <i>src_offset</i> ] [ <b>&minus;O</b>
+<i>dest_offset</i> ] <i>src_fs</i> [ <i>dest_fs</i> ]</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>e2image</b> program will save critical ext2, ext3, or
+ext4 filesystem metadata located on <i>device</i> to a file
+specified by <i>image-file</i>. The image file may be
+examined by <b>dumpe2fs</b> and <b>debugfs</b>, by using the
+<b>&minus;i</b> option to those programs. This can assist an
+expert in recovering catastrophically corrupted filesystems.
+In the future, e2fsck will be enhanced to be able to use the
+image file to help recover a badly damaged filesystem.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When saving an
+e2image for debugging purposes, using either the
+<b>&minus;r</b> or <b>&minus;Q</b> options, the filesystem
+must be unmounted or be mounted read/only, in order for the
+image file to be in a consistent state. This requirement can
+be overriden using the <b>&minus;f</b> option, but the
+resulting image file is very likely not going to be
+useful.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<i>image-file</i> is &minus;, then the output of
+<b>e2image</b> will be sent to standard output, so that the
+output can be piped to another program, such as
+<b>gzip</b>(1). (Note that this is currently only supported
+when creating a raw image file using the <b>&minus;r</b>
+option, since the process of creating a normal image file,
+or QCOW2 image currently requires random access to the file,
+which cannot be done using a pipe. This restriction will
+hopefully be lifted in a future version of
+<b>e2image</b>.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is a very
+good idea to create image files for all of filesystems on a
+system and save the partition layout (which can be generated
+using the <b>fdisk &minus;l</b> command) at regular
+intervals --- at boot time, and/or every week or so. The
+image file should be stored on some filesystem other than
+the filesystem whose data it contains, to ensure that this
+data is accessible in the case where the filesystem has been
+badly damaged.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To save disk
+space, <b>e2image</b> creates the image file as a sparse
+file, or in QCOW2 format. Hence, if the sparse image file
+needs to be copied to another location, it should either be
+compressed first or copied using the
+<b>&minus;&minus;sparse=always</b> option to the GNU version
+of <b>cp</b>. This does not apply to the QCOW2 image, which
+is not sparse.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The size of an
+ext2 image file depends primarily on the size of the
+filesystems and how many inodes are in use. For a typical 10
+gigabyte filesystem, with 200,000 inodes in use out of 1.2
+million inodes, the image file will be approximately 35
+megabytes; a 4 gigabyte filesystem with 15,000 inodes in use
+out of 550,000 inodes will result in a 3 megabyte image
+file. Image files tend to be quite compressible; an image
+file taking up 32 megabytes of space on disk will generally
+compress down to 3 or 4 megabytes.</p>
+
+<h2>RESTORING FILESYSTEM METADATA USING AN IMAGE FILE
+<a name="RESTORING FILESYSTEM METADATA USING AN IMAGE FILE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>&minus;I</b> option will cause e2image to install the
+metadata stored in the image file back to the device. It can
+be used to restore the filesystem metadata back to the
+device in emergency situations.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>WARNING!!!!</b>
+The <b>&minus;I</b> option should only be used as a
+desperation measure when other alternatives have failed. If
+the filesystem has changed since the image file was created,
+data <b>will</b> be lost. In general, you should make a full
+image backup of the filesystem first, in case you wish to
+try other recovery strategies afterwards.</p>
+
+<h2>RAW IMAGE FILES
+<a name="RAW IMAGE FILES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>&minus;r</b> option will create a raw image file instead
+of a normal image file. A raw image file differs from a
+normal image file in two ways. First, the filesystem
+metadata is placed in the proper position so that e2fsck,
+dumpe2fs, debugfs, etc. can be run directly on the raw image
+file. In order to minimize the amount of disk space consumed
+by a raw image file, the file is created as a sparse file.
+(Beware of copying or compressing/decompressing this file
+with utilities that don&rsquo;t understand how to create
+sparse files; the file will become as large as the
+filesystem itself!) Secondly, the raw image file also
+includes indirect blocks and directory blocks, which the
+standard image file does not have, although this may change
+in the future.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Raw image files
+are sometimes used when sending filesystems to the
+maintainer as part of bug reports to e2fsprogs. When used in
+this capacity, the recommended command is as follows
+(replace hda1 with the appropriate device):</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="8%"></td>
+<td width="7%"></td>
+<td width="85%">
+
+
+<p><b>e2image &minus;r /dev/hda1 &minus; | bzip2 &gt;
+hda1.e2i.bz2</b></p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">This will only
+send the metadata information, without any data blocks.
+However, the filenames in the directory blocks can still
+reveal information about the contents of the filesystem that
+the bug reporter may wish to keep confidential. To address
+this concern, the <b>&minus;s</b> option can be specified.
+This will cause <b>e2image</b> to scramble directory entries
+and zero out any unused portions of the directory blocks
+before writing the image file. However, the <b>&minus;s</b>
+option will prevent analysis of problems related to
+hash-tree indexed directories.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that this
+will work even if you substitute &quot;/dev/hda1&quot; for
+another raw disk image, or QCOW2 image previously created by
+<b>e2image</b>.</p>
+
+<h2>QCOW2 IMAGE FILES
+<a name="QCOW2 IMAGE FILES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>&minus;Q</b> option will create a QCOW2 image file
+instead of a normal, or raw image file. A QCOW2 image
+contains all the information the raw image does, however
+unlike the raw image it is not sparse. The QCOW2 image
+minimize the amount of disk space by storing data in special
+format with pack data closely together, hence avoiding holes
+while still minimizing size.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In order to
+send filesystem to the maintainer as a part of bug report to
+e2fsprogs, use following commands (replace hda1 with the
+appropriate device):</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="8%"></td>
+<td width="92%">
+
+
+<p><b>e2image &minus;Q /dev/hda1 hda1.qcow2</b></p></td></tr>
+<tr valign="top" align="left">
+<td width="8%"></td>
+<td width="92%">
+
+
+<p><b>bzip2 -z hda1.qcow2</b></p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">This will only
+send the metadata information, without any data blocks.
+However, the filenames in the directory blocks can still
+reveal information about the contents of the filesystem that
+the bug reporter may wish to keep confidential. To address
+this concern, the <b>&minus;s</b> option can be specified.
+This will cause <b>e2image</b> to scramble directory entries
+and zero out any unused portions of the directory blocks
+before writing the image file. However, the <b>&minus;s</b>
+option will prevent analysis of problems related to
+hash-tree indexed directories.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that QCOW2
+image created by <b>e2image</b> is regular QCOW2 image and
+can be processed by tools aware of QCOW2 format such as for
+example <b>qemu-img</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can convert
+a qcow2 image into a raw image with:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="8%"></td>
+<td width="92%">
+
+
+<p><b>e2image &minus;r hda1.qcow2 hda1.raw</b></p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">This can be
+useful to write a qcow2 image containing all data to a
+sparse image file where it can be loop mounted, or to a disk
+partition. Note that this may not work with qcow2 images not
+generated by e2image.</p>
+
+<h2>INCLUDING DATA
+<a name="INCLUDING DATA"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Normally
+<b>e2image</b> only includes fs metadata, not regular file
+data. The <b>&minus;a</b> option can be specified to include
+all data. This will give an image that is suitable to use to
+clone the entire FS or for backup purposes. Note that this
+option only works with the raw or QCOW2 formats. The
+<b>&minus;p</b> switch may be given to show progress. If the
+file system is being cloned to a flash-based storage device
+(where reads are very fast and where it is desirable to
+avoid unnecessary writes to reduce write wear on the
+device), the <b>&minus;c</b> option which cause e2image to
+try reading a block from the destination to see if it is
+identical to the block which <b>e2image</b> is about to
+copy. If the block is already the same, the write can be
+skipped. The <b>&minus;n</b> option will cause all of the
+writes to be no-ops, and print the blocks that would have
+been written.</p>
+
+<h2>OFFSETS
+<a name="OFFSETS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Normally a
+filesystem starts at the beginning of a partition, and
+<b>e2image</b> is run on the partition. When working with
+image files, you don&rsquo;t have the option of using the
+partition device, so you can specify the offset where the
+filesystem starts directly with the <b>&minus;o</b> option.
+Similarly the <b>&minus;O</b> option specifies the offset
+that should be seeked to in the destination before writing
+the filesystem.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For example, if
+you have a <b>dd</b> image of a whole hard drive that
+contains an ext2 fs in a partition starting at 1 MiB, you
+can clone that fs with:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="8%"></td>
+<td width="92%">
+
+
+<p><b>e2image &minus;aro 1048576 img /dev/sda1</b></p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Or you can
+clone a fs into an image file, leaving room in the first MiB
+for a partition table with:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="8%"></td>
+<td width="92%">
+
+
+<p><b>e2image -arO 1048576 /dev/sda1 img</b></p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">If you specify
+at least one offset, and only one file, an in-place move
+will be performed, allowing you to safely move the
+filesystem from one offset to another.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>e2image</b>
+was written by Theodore Ts&rsquo;o (tytso@mit.edu).</p>
+
+<h2>AVAILABILITY
+<a name="AVAILABILITY"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>e2image</b>
+is part of the e2fsprogs package and is available from
+http://e2fsprogs.sourceforge.net.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>dumpe2fs</b>(8),
+<b>debugfs</b>(8)</p>
+<hr>
+</body>
+</html>

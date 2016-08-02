@@ -1,0 +1,274 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:38:10 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERLTRU64</title>
+
+</head>
+<body>
+
+<h1 align="center">PERLTRU64</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#Testing Perl on Tru64">Testing Perl on Tru64</a><br>
+<a href="#ext/ODBM_File/odbm Test Failing With Static Builds">ext/ODBM_File/odbm Test Failing With Static Builds</a><br>
+<a href="#Perl Fails Because Of Unresolved Symbol sockatmark">Perl Fails Because Of Unresolved Symbol sockatmark</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perltru64
+&minus; Perl version 5 on Tru64 (formerly known as Digital
+UNIX formerly known as DEC OSF/1) systems</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+describes various features of <small>HP</small> &rsquo;s
+(formerly Compaq&rsquo;s, formerly Digital&rsquo;s) Unix
+operating system (Tru64) that will affect how Perl version 5
+(hereafter just Perl) is configured, compiled and/or
+runs.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Compiling
+Perl 5 on Tru64</b> <br>
+The recommended compiler to use in Tru64 is the native C
+compiler. The native compiler produces much faster code (the
+speed difference is noticeable: several dozen percentages)
+and also more correct code: if you are considering using the
+<small>GNU</small> C compiler you should use at the very
+least the release of 2.95.3 since all older gcc releases are
+known to produce broken code when compiling Perl. One
+manifestation of this brokenness is the lib/sdbm test
+dumping core; another is many of the op/regexp and op/pat,
+or ext/Storable tests dumping core (the exact pattern of
+failures depending on the <small>GCC</small> release and
+optimization flags).</p>
+
+<p style="margin-left:11%; margin-top: 1em">gcc 3.2.1 is
+known to work okay with Perl 5.8.0. However, when optimizing
+the toke.c gcc likes to have a lot of memory, 256 megabytes
+seems to be enough. The default setting of the process data
+section in Tru64 should be one gigabyte, but some
+sites/setups might have lowered that. The configuration
+process of Perl checks for too low process limits, and
+lowers the optimization for the toke.c if necessary, and
+also gives advice on how to raise the process limits.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also, Configure
+might abort with</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Build a threading Perl? [n]
+    Configure[2437]: Syntax error at line 1 : 'config.sh' is not expected.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This indicates
+that Configure is being run with a broken Korn shell (even
+though you think you are using a Bourne shell by using
+&quot;sh Configure&quot; or &quot;./Configure&quot;). The
+Korn shell bug has been reported to Compaq as of February
+1999 but in the meanwhile, the reason ksh is being used is
+that you have the environment variable <small>BIN_SH</small>
+set to &rsquo;xpg4&rsquo;. This causes /bin/sh to delegate
+its duties to /bin/posix/sh (a ksh). Unset the environment
+variable and rerun Configure.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Using Large
+Files with Perl on Tru64</b> <br>
+In Tru64 Perl is automatically able to use large files, that
+is, files larger than 2 gigabytes, there is no need to use
+the Configure &minus;Duselargefiles option as described in
+<small>INSTALL</small> (though using the option is
+harmless).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Threaded
+Perl on Tru64</b> <br>
+If you want to use threads, you should primarily use the
+Perl 5.8.0 threads model by running Configure with
+&minus;Duseithreads.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl threading
+is going to work only in Tru64 4.0 and newer releases, older
+operating releases like 3.2 aren&rsquo;t probably going to
+work properly with threads.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In Tru64 V5 (at
+least V5.1A, V5.1B) you cannot build threaded Perl with gcc
+because the system header &lt;pthread.h&gt; explicitly
+checks for supported C compilers, gcc (at least 3.2.2) not
+being one of them. But the system C compiler should work
+just fine.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Long Doubles
+on Tru64</b> <br>
+You cannot Configure Perl to use long doubles unless you
+have at least Tru64 V5.0, the long double support simply
+wasn&rsquo;t functional enough before that. Perl&rsquo;s
+Configure will override attempts to use the long doubles
+(you can notice this by Configure finding out that the
+<i>modfl()</i> function does not work as it should).</p>
+
+<p style="margin-left:11%; margin-top: 1em">At the time of
+this writing (June 2002), there is a known bug in the Tru64
+libc printing of long doubles when not using &quot;e&quot;
+notation. The values are correct and usable, but you only
+get a limited number of digits displayed unless you force
+the issue by using <tt>&quot;printf
+&quot;%.33e&quot;,$num&quot;</tt> or the like. For Tru64
+versions V5.0A through V5.1A, a patch is expected sometime
+after perl 5.8.0 is released. If your libc has not yet been
+patched, you&rsquo;ll get a warning from Configure when
+selecting long doubles.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>DB_File
+tests failing on Tru64</b> <br>
+The DB_File tests (db&minus;btree.t, db&minus;hash.t,
+db&minus;recno.t) may fail you have installed a newer
+version of Berkeley <small>DB</small> into the system and
+the &minus;I and &minus;L compiler and linker flags
+introduce version conflicts with the <small>DB</small> 1.85
+headers and libraries that came with the Tru64. For example,
+mixing a <small>DB</small> v2 library with the
+<small>DB</small> v1 headers is a bad idea. Watch out for
+Configure options &minus;Dlocincpth and &minus;Dloclibpth,
+and check your /usr/local/include and /usr/local/lib since
+they are included by default.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The second
+option is to explicitly instruct Configure to detect the
+newer Berkeley <small>DB</small> installation, by supplying
+the right directories with
+<tt>&quot;&minus;Dlocincpth=/some/include&quot;</tt> and
+<tt>&quot;&minus;Dloclibpth=/some/lib&quot;</tt> <b>and</b>
+before running &quot;make test&quot; setting your
+<small>LD_LIBRARY_PATH</small> to <i>/some/lib</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The third
+option is to work around the problem by disabling the
+DB_File completely when build Perl by specifying
+&minus;Ui_db to Configure, and then using the BerkeleyDB
+module from <small>CPAN</small> instead of DB_File. The
+BerkeleyDB works with Berkeley <small>DB</small> versions
+2.* or greater.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The Berkeley
+<small>DB</small> 4.1.25 has been tested with Tru64 V5.1A
+and found to work. The latest Berkeley <small>DB</small> can
+be found from &lt;http://www.sleepycat.com&gt;.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>64&minus;bit
+Perl on Tru64</b> <br>
+In Tru64 Perl&rsquo;s integers are automatically
+64&minus;bit wide, there is no need to use the Configure
+&minus;Duse64bitint option as described in
+<small>INSTALL</small> . Similarly, there is no need for
+&minus;Duse64bitall since pointers are automatically
+64&minus;bit wide.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Warnings
+about floating-point overflow when compiling Perl on
+Tru64</b> <br>
+When compiling Perl in Tru64 you may (depending on the
+compiler release) see two warnings like this</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    cc: Warning: numeric.c, line 104: In this statement, floating&minus;point overflow occurs in evaluating the expression &quot;1.8e308&quot;. (floatoverfl)
+        return HUGE_VAL;
+    &minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;^</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">and when
+compiling the <small>POSIX</small> extension</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    cc: Warning: const&minus;c.inc, line 2007: In this statement, floating&minus;point overflow occurs in evaluating the expression &quot;1.8e308&quot;. (floatoverfl)
+                return HUGE_VAL;
+    &minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;^</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The exact line
+numbers may vary between Perl releases. The warnings are
+benign and can be ignored: in later C compiler releases the
+warnings should be gone.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When the file
+<i>pp_sys.c</i> is being compiled you may (depending on the
+operating system release) see an additional compiler flag
+being used: <tt>&quot;&minus;DNO_EFF_ONLY_OK&quot;</tt>.
+This is normal and refers to a feature that is relevant only
+if you use the <tt>&quot;filetest&quot;</tt> pragma. In
+older releases of the operating system the feature was
+broken and the <small>NO_EFF_ONLY_OK</small> instructs Perl
+not to use the feature.</p>
+
+<h2>Testing Perl on Tru64
+<a name="Testing Perl on Tru64"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">During
+&quot;make test&quot; the <tt>&quot;comp/cpp&quot;</tt> will
+be skipped because on Tru64 it cannot be tested before Perl
+has been installed. The test refers to the use of the
+<tt>&quot;&minus;P&quot;</tt> option of Perl.</p>
+
+<h2>ext/ODBM_File/odbm Test Failing With Static Builds
+<a name="ext/ODBM_File/odbm Test Failing With Static Builds"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+ext/ODBM_File/odbm is known to fail with static builds
+(Configure &minus;Uusedl) due to a known bug in
+Tru64&rsquo;s static libdbm library. The good news is that
+you very probably don&rsquo;t need to ever use the ODBM_File
+extension since more advanced NDBM_File works fine, not to
+mention the even more advanced DB_File.</p>
+
+<h2>Perl Fails Because Of Unresolved Symbol sockatmark
+<a name="Perl Fails Because Of Unresolved Symbol sockatmark"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you get an
+error like</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Can't load '.../OSF1/lib/perl5/5.8.0/alpha&minus;dec_osf/auto/IO/IO.so' for module IO: Unresolved symbol in .../lib/perl5/5.8.0/alpha&minus;dec_osf/auto/IO/IO.so: sockatmark at .../lib/perl5/5.8.0/alpha&minus;dec_osf/XSLoader.pm line 75.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">you need to
+either recompile your Perl in Tru64 4.0D or upgrade your
+Tru64 4.0D to at least 4.0F: the <i>sockatmark()</i> system
+call was added in Tru64 4.0F, and the <small>IO</small>
+extension refers that symbol.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Jarkko
+Hietaniemi &lt;jhi@iki.fi&gt;</p>
+<hr>
+</body>
+</html>

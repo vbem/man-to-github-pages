@@ -1,0 +1,576 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:40:33 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SYSTEMD.RESOURCE&minus;CONTROL</title>
+
+</head>
+<body>
+
+<h1 align="center">SYSTEMD.RESOURCE&minus;CONTROL</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#NOTES">NOTES</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">systemd.resource-control
+&minus; Resource control unit settings</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>slice</i>.slice,
+<i>scope</i>.scope, <i>service</i>.service,
+<i>socket</i>.socket, <i>mount</i>.mount,
+<i>swap</i>.swap</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Unit
+configuration files for services, slices, scopes, sockets,
+mount points, and swap devices share a subset of
+configuration options for resource control of spawned
+processes. Internally, this relies on the Control Groups
+kernel concept for organizing processes in a hierarchical
+tree of named groups for the purpose of resource
+management.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This man page
+lists the configuration options shared by those six unit
+types. See <b>systemd.unit</b>(5) for the common options of
+all unit configuration files, and <b>systemd.slice</b>(5),
+<b>systemd.scope</b>(5), <b>systemd.service</b>(5),
+<b>systemd.socket</b>(5), <b>systemd.mount</b>(5), and
+<b>systemd.swap</b>(5) for more information on the specific
+unit configuration files. The resource control configuration
+options are configured in the [Slice], [Scope], [Service],
+[Socket], [Mount], or [Swap] sections, depending on the unit
+type.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See the
+<b><font color="#0000FF">New Control Group
+Interfaces</font></b>
+<small><font color="#000000">[1]</font></small>
+<font color="#000000">for an introduction on how to make use
+of resource control APIs from programs.</font></p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Units
+of the types listed above can have settings for resource
+control configuration:</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>CPUAccounting=</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Turn on
+CPU usage accounting for this unit. Takes a boolean
+argument. Note that turning on CPU accounting for one unit
+might also implicitly turn it on for all units contained in
+the same slice and for all its parent slices and the units
+contained therein. The system default for this setting maybe
+controlled with <i>DefaultCPUAccounting=</i> in
+<b>systemd-system.conf</b>(5).</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>CPUShares=weight</i>,
+<i>StartupCPUShares=weight</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Assign
+the specified CPU time share weight to the processes
+executed. Those options take an integer value and control
+the &quot;cpu.shares&quot; control group attribute, which
+defaults to 1024. For details about this control group
+attribute, see</font>
+<b><font color="#0000FF">sched&minus;design&minus;CFS.txt</font></b>
+<small><font color="#000000">[2]</font></small>
+<font color="#000000">. The available CPU time is split up
+among all units within one slice relative to their CPU time
+share weight.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">While
+<i>StartupCPUShares=</i> only applies to the startup phase
+of the system, <i>CPUShares=</i> applies to normal runtime
+of the system, and if the former is not set also to the
+startup phase. Using <i>StartupCPUShares=</i> allows
+prioritizing specific services at boot&minus;up differently
+than during normal runtime.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Those
+options imply &quot;CPUAccounting=true&quot;.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>CPUQuota=</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Assign
+the specified CPU time quota to the processes executed.
+Takes a percentage value, suffixed with &quot;%&quot;. The
+percentage specifies how much CPU time the unit shall get at
+maximum, relative to the total CPU time available on one
+CPU. Use values &gt; 100% for allotting CPU time on more
+than one CPU. This controls the &quot;cpu.cfs_quota_us&quot;
+control group attribute. For details about this control
+group attribute, see</font>
+<b><font color="#0000FF">sched&minus;design&minus;CFS.txt</font></b>
+<small><font color="#000000">[2]</font></small>
+<font color="#000000">.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Example:
+<i>CPUQuota=20%</i> ensures that the executed processes will
+never get more than 20% CPU time on one CPU.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Implies
+&quot;CPUAccounting=true&quot;.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>MemoryAccounting=</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Turn on
+process and kernel memory accounting for this unit. Takes a
+boolean argument. Note that turning on memory accounting for
+one unit might also implicitly turn it on for all its parent
+slices. The system default for this setting maybe controlled
+with <i>DefaultMemoryAccounting=</i> in
+<b>systemd-system.conf</b>(5).</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>MemoryLimit=bytes</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Specify
+the limit on maximum memory usage of the executed processes.
+The limit specifies how much process and kernel memory can
+be used by tasks in this unit. Takes a memory size in bytes.
+If the value is suffixed with K, M, G or T, the specified
+memory size is parsed as Kilobytes, Megabytes, Gigabytes, or
+Terabytes (with the base 1024), respectively. This controls
+the &quot;memory.limit_in_bytes&quot; control group
+attribute. For details about this control group attribute,
+see</font> <b><font color="#0000FF">memory.txt</font></b>
+<small><font color="#000000">[3]</font></small>
+<font color="#000000">.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Implies
+&quot;MemoryAccounting=true&quot;.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>BlockIOAccounting=</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Turn on
+Block IO accounting for this unit. Takes a boolean argument.
+Note that turning on block IO accounting for one unit might
+also implicitly turn it on for all units contained in the
+same slice and all for its parent slices and the units
+contained therein. The system default for this setting maybe
+controlled with <i>DefaultBlockIOAccounting=</i> in
+<b>systemd-system.conf</b>(5).</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>BlockIOWeight=weight</i>,
+<i>StartupBlockIOWeight=weight</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Set the
+default overall block IO weight for the executed processes.
+Takes a single weight value (between 10 and 1000) to set the
+default block IO weight. This controls the
+&quot;blkio.weight&quot; control group attribute, which
+defaults to 1000. For details about this control group
+attribute, see</font>
+<b><font color="#0000FF">blkio&minus;controller.txt</font></b>
+<small><font color="#000000">[4]</font></small>
+<font color="#000000">. The available IO bandwidth is split
+up among all units within one slice relative to their block
+IO weight.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">While
+<i>StartupBlockIOWeight=</i> only applies to the startup
+phase of the system, <i>BlockIOWeight=</i> applies to the
+later runtime of the system, and if the former is not set
+also to the startup phase. This allows prioritizing specific
+services at boot&minus;up differently than during
+runtime.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Implies
+&quot;BlockIOAccounting=true&quot;.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>BlockIODeviceWeight=device
+weight</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Set the
+per&minus;device overall block IO weight for the executed
+processes. Takes a space&minus;separated pair of a file path
+and a weight value to specify the device specific weight
+value, between 10 and 1000. (Example: &quot;/dev/sda
+500&quot;). The file path may be specified as path to a
+block device node or as any other file, in which case the
+backing block device of the file system of the file is
+determined. This controls the
+&quot;blkio.weight_device&quot; control group attribute,
+which defaults to 1000. Use this option multiple times to
+set weights for multiple devices. For details about this
+control group attribute, see</font>
+<b><font color="#0000FF">blkio&minus;controller.txt</font></b>
+<small><font color="#000000">[4]</font></small>
+<font color="#000000">.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Implies
+&quot;BlockIOAccounting=true&quot;.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>BlockIOReadBandwidth=device
+bytes</i>, <i>BlockIOWriteBandwidth=device
+bytes</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Set the
+per&minus;device overall block IO bandwidth limit for the
+executed processes. Takes a space&minus;separated pair of a
+file path and a bandwidth value (in bytes per second) to
+specify the device specific bandwidth. The file path may be
+a path to a block device node, or as any other file in which
+case the backing block device of the file system of the file
+is used. If the bandwidth is suffixed with K, M, G, or T,
+the specified bandwidth is parsed as Kilobytes, Megabytes,
+Gigabytes, or Terabytes, respectively, to the base of 1000.
+(Example:
+&quot;/dev/disk/by&minus;path/pci&minus;0000:00:1f.2&minus;scsi&minus;0:0:0:0
+5M&quot;). This controls the
+&quot;blkio.read_bps_device&quot; and
+&quot;blkio.write_bps_device&quot; control group attributes.
+Use this option multiple times to set bandwidth limits for
+multiple devices. For details about these control group
+attributes, see</font>
+<b><font color="#0000FF">blkio&minus;controller.txt</font></b>
+<small><font color="#000000">[4]</font></small>
+<font color="#000000">.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Implies
+&quot;BlockIOAccounting=true&quot;.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>DeviceAllow=</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Control
+access to specific device nodes by the executed processes.
+Takes two space&minus;separated strings: a device node
+specifier followed by a combination of <b>r</b>, <b>w</b>,
+<b>m</b> to control <i>r</i>eading, <i>w</i>riting, or
+creation of the specific device node(s) by the unit
+(<i>m</i>knod), respectively. This controls the
+&quot;devices.allow&quot; and &quot;devices.deny&quot;
+control group attributes. For details about these control
+group attributes, see</font>
+<b><font color="#0000FF">devices.txt</font></b>
+<small><font color="#000000">[5]</font></small>
+<font color="#000000">.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">The
+device node specifier is either a path to a device node in
+the file system, starting with /dev/, or a string starting
+with either &quot;char&minus;&quot; or
+&quot;block&minus;&quot; followed by a device group name, as
+listed in /proc/devices. The latter is useful to whitelist
+all current and future devices belonging to a specific
+device group at once. The device group is matched according
+to file name globbing rules, you may hence use the
+&quot;*&quot; and &quot;?&quot; wildcards. Examples:
+/dev/sda5 is a path to a device node, referring to an ATA or
+SCSI block device. &quot;char&minus;pts&quot; and
+&quot;char&minus;alsa&quot; are specifiers for all pseudo
+TTYs and all ALSA sound devices, respectively.
+&quot;char&minus;cpu/*&quot; is a specifier matching all CPU
+related device groups.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>DevicePolicy=auto|closed|strict</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Control
+the policy for allowing device access:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><b>strict</b></font></p>
+
+<p style="margin-left:23%;"><font color="#000000">means to
+only allow types of access that are explicitly
+specified.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><b>closed</b></font></p>
+
+<p style="margin-left:23%;"><font color="#000000">in
+addition, allows access to standard pseudo devices including
+/dev/null, /dev/zero, /dev/full, /dev/random, and
+/dev/urandom.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><b>auto</b></font></p>
+
+<p style="margin-left:23%;"><font color="#000000">in
+addition, allows access to all devices if no explicit
+<i>DeviceAllow=</i> is present. This is the
+default.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>Slice=</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">The name
+of the slice unit to place the unit in. Defaults to
+system.slice for all non&minus;instantiated units of all
+unit types (except for slice units themselves see below).
+Instance units are by default placed in a subslice of
+system.slice that is named after the template
+name.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">This
+option may be used to arrange systemd units in a hierarchy
+of slices each of which might have resource settings
+applied.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">For
+units of type slice, the only accepted value for this
+setting is the parent slice. Since the name of a slice unit
+implies the parent slice, it is hence redundant to ever set
+this parameter directly for slice units.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>Delegate=</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Turns on
+delegation of further resource control partitioning to
+processes of the unit. For unprivileged services (i.e. those
+using the <i>User=</i> setting) this allows processes to
+create a subhierarchy beneath its control group path. For
+privileged services and scopes this ensures the processes
+will have all control group controllers enabled.</font></p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>systemd</b>(1),
+<b>systemd.unit</b>(5), <b>systemd.service</b>(5),
+<b>systemd.slice</b>(5), <b>systemd.scope</b>(5),
+<b>systemd.socket</b>(5), <b>systemd.mount</b>(5),
+<b>systemd.swap</b>(5), <b>systemd.directives</b>(7),
+<b>systemd.special</b>(7), The documentation for control
+groups and specific controllers in the Linux kernel:</font>
+<b><font color="#0000FF">cgroups.txt</font></b>
+<small><font color="#000000">[6]</font></small>
+<font color="#000000">,</font>
+<b><font color="#0000FF">cpuacct.txt</font></b>
+<small><font color="#000000">[7]</font></small>
+<font color="#000000">,</font>
+<b><font color="#0000FF">memory.txt</font></b>
+<small><font color="#000000">[3]</font></small>
+<font color="#000000">,</font>
+<b><font color="#0000FF">blkio&minus;controller.txt</font></b>
+<small><font color="#000000">[4]</font></small>
+<font color="#000000">.</font></p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">1.</font></p> </td>
+<td width="2%"></td>
+<td width="43%">
+
+
+<p style="margin-top: 1em"><font color="#000000">New
+Control Group Interfaces</font></p></td>
+<td width="40%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">http://www.freedesktop.org/wiki/Software/systemd/ControlGroupInterface/</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">2.</font></p> </td>
+<td width="2%"></td>
+<td width="31%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">sched-design-CFS.txt</font></p> </td>
+<td width="52%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">https://www.kernel.org/doc/Documentation/scheduler/sched-design-CFS.txt</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">3.</font></p> </td>
+<td width="2%"></td>
+<td width="15%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">memory.txt</font></p> </td>
+<td width="68%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">https://www.kernel.org/doc/Documentation/cgroups/memory.txt</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">4.</font></p> </td>
+<td width="2%"></td>
+<td width="31%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">blkio-controller.txt</font></p> </td>
+<td width="52%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">https://www.kernel.org/doc/Documentation/cgroups/blkio-controller.txt</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">5.</font></p> </td>
+<td width="2%"></td>
+<td width="17%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">devices.txt</font></p> </td>
+<td width="66%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">https://www.kernel.org/doc/Documentation/cgroups/devices.txt</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">6.</font></p> </td>
+<td width="2%"></td>
+<td width="17%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">cgroups.txt</font></p> </td>
+<td width="66%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">https://www.kernel.org/doc/Documentation/cgroups/cgroups.txt</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">7.</font></p> </td>
+<td width="2%"></td>
+<td width="17%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">cpuacct.txt</font></p> </td>
+<td width="66%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">https://www.kernel.org/doc/Documentation/cgroups/cpuacct.txt</font></p>
+<hr>
+</body>
+</html>

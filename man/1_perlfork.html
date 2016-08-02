@@ -1,0 +1,566 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Tue Aug  2 15:37:35 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERLFORK</title>
+
+</head>
+<body>
+
+<h1 align="center">PERLFORK</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#CAVEATS AND LIMITATIONS">CAVEATS AND LIMITATIONS</a><br>
+<a href="#PORTABILITY CAVEATS">PORTABILITY CAVEATS</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlfork
+&minus; Perl&rsquo;s fork() emulation</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">    NOTE:  As of the 5.8.0 release, fork() emulation has considerably
+    matured.  However, there are still a few known bugs and differences
+    from real fork() that might affect you.  See the &quot;BUGS&quot; and
+    &quot;CAVEATS AND LIMITATIONS&quot; sections below.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Perl provides a
+<i>fork()</i> keyword that corresponds to the Unix system
+call of the same name. On most Unix-like platforms where the
+<i>fork()</i> system call is available, Perl&rsquo;s
+<i>fork()</i> simply calls it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On some
+platforms such as Windows where the <i>fork()</i> system
+call is not available, Perl can be built to emulate
+<i>fork()</i> at the interpreter level. While the emulation
+is designed to be as compatible as possible with the real
+<i>fork()</i> at the level of the Perl program, there are
+certain important differences that stem from the fact that
+all the pseudo child &quot;processes&quot; created this way
+live in the same real process as far as the operating system
+is concerned.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This document
+provides a general overview of the capabilities and
+limitations of the <i>fork()</i> emulation. Note that the
+issues discussed here are not applicable to platforms where
+a real <i>fork()</i> is available and Perl has been
+configured to use it.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>fork()</i> emulation is implemented at the level of the
+Perl interpreter. What this means in general is that running
+<i>fork()</i> will actually clone the running interpreter
+and all its state, and run the cloned interpreter in a
+separate thread, beginning execution in the new thread just
+after the point where the <i>fork()</i> was called in the
+parent. We will refer to the thread that implements this
+child &quot;process&quot; as the pseudo-process.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To the Perl
+program that called <i>fork()</i>, all this is designed to
+be transparent. The parent returns from the <i>fork()</i>
+with a pseudo-process <small>ID</small> that can be
+subsequently used in any process-manipulation functions; the
+child returns from the <i>fork()</i> with a value of
+<tt>0</tt> to signify that it is the child
+pseudo-process.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Behavior of
+other Perl features in forked pseudo-processes</b> <br>
+Most Perl features behave in a natural way within
+pseudo-processes. <br>
+$$ or $PROCESS_ID</p>
+
+<p style="margin-left:23%;">This special variable is
+correctly set to the pseudo-process <small>ID</small> . It
+can be used to identify pseudo-processes within a particular
+session. Note that this value is subject to recycling if any
+pseudo-processes are launched after others have been
+<i>wait()</i>&minus;ed on.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p>%ENV</p></td>
+<td width="6%"></td>
+<td width="77%">
+
+
+<p>Each pseudo-process maintains its own virtual
+environment. Modifications to <tt>%ENV</tt> affect the
+virtual environment, and are only visible within that
+pseudo-process, and in any processes (or pseudo-processes)
+launched from it.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><i>chdir()</i> and all other
+builtins that accept filenames</p>
+
+<p style="margin-left:23%;">Each pseudo-process maintains
+its own virtual idea of the current directory. Modifications
+to the current directory using <i>chdir()</i> are only
+visible within that pseudo-process, and in any processes (or
+pseudo-processes) launched from it. All file and directory
+accesses from the pseudo-process will correctly map the
+virtual working directory to the real working directory
+appropriately.</p>
+
+<p style="margin-left:11%;"><i>wait()</i> and
+<i>waitpid()</i></p>
+
+<p style="margin-left:23%;"><i>wait()</i> and
+<i>waitpid()</i> can be passed a pseudo-process
+<small>ID</small> returned by <i>fork()</i>. These calls
+will properly wait for the termination of the pseudo-process
+and return its status.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><i>kill()</i></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p><tt>&quot;kill('KILL', ...)&quot;</tt> can be used to
+terminate a pseudo-process by passing it the
+<small>ID</small> returned by <i>fork()</i>. The outcome of
+kill on a pseudo-process is unpredictable and it should not
+be used except under dire circumstances, because the
+operating system may not guarantee integrity of the process
+resources when a running thread is terminated. The process
+which implements the pseudo-processes can be blocked and the
+Perl interpreter hangs. Note that using
+<tt>&quot;kill('KILL', ...)&quot;</tt> on a
+pseudo&minus;<i>process()</i> may typically cause memory
+leaks, because the thread that implements the pseudo-process
+does not get a chance to clean up its resources.</p></td></tr>
+</table>
+
+
+<p style="margin-left:23%; margin-top: 1em"><tt>&quot;kill('TERM',
+...)&quot;</tt> can also be used on pseudo-processes, but
+the signal will not be delivered while the pseudo-process is
+blocked by a system call, e.g. waiting for a socket to
+connect, or trying to read from a socket with no data
+available. Starting in Perl 5.14 the parent process will not
+wait for children to exit once they have been signalled with
+<tt>&quot;kill('TERM', ...)&quot;</tt> to avoid deadlock
+during process exit. You will have to explicitly call
+<i>waitpid()</i> to make sure the child has time to clean-up
+itself, but you are then also responsible that the child is
+not blocking on I/O either.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><i>exec()</i></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">Calling <i>exec()</i> within a
+pseudo-process actually spawns the requested executable in a
+separate process and waits for it to complete before exiting
+with the same exit status as that process. This means that
+the process <small>ID</small> reported within the running
+executable will be different from what the earlier Perl
+<i>fork()</i> might have returned. Similarly, any process
+manipulation functions applied to the <small>ID</small>
+returned by <i>fork()</i> will affect the waiting
+pseudo-process that called <i>exec()</i>, not the real
+process it is waiting for after the <i>exec()</i>.</p></td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">When
+<i>exec()</i> is called inside a pseudo-process then
+<small>DESTROY</small> methods and <small>END</small> blocks
+will still be called after the external process returns.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><i>exit()</i></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em"><i>exit()</i> always exits just
+the executing pseudo-process, after automatically
+<i>wait()</i>&minus;ing for any outstanding child
+pseudo-processes. Note that this means that the process as a
+whole will not exit unless all running pseudo-processes have
+exited. See below for some limitations with open
+filehandles.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%;">Open handles to files,
+directories and network sockets</p>
+
+<p style="margin-left:23%;">All open handles are
+<i>dup()</i>&minus;ed in pseudo-processes, so that closing
+any handles in one process does not affect the others. See
+below for some limitations.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Resource
+limits</b> <br>
+In the eyes of the operating system, pseudo-processes
+created via the <i>fork()</i> emulation are simply threads
+in the same process. This means that any process-level
+limits imposed by the operating system apply to all
+pseudo-processes taken together. This includes any limits
+imposed by the operating system on the number of open file,
+directory and socket handles, limits on disk space usage,
+limits on memory size, limits on <small>CPU</small>
+utilization etc.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Killing the
+parent process</b> <br>
+If the parent process is killed (either using Perl&rsquo;s
+<i>kill()</i> builtin, or using some external means) all the
+pseudo-processes are killed as well, and the whole process
+exits.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Lifetime of
+the parent process and pseudo-processes</b> <br>
+During the normal course of events, the parent process and
+every pseudo-process started by it will wait for their
+respective pseudo-children to complete before they exit.
+This means that the parent and every pseudo-child created by
+it that is also a pseudo-parent will only exit after their
+pseudo-children have exited.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Starting with
+Perl 5.14 a parent will not <i>wait()</i> automatically for
+any child that has been signalled with <tt>&quot;sig('TERM',
+...)&quot;</tt> to avoid a deadlock in case the child is
+blocking on I/O and never receives the signal.</p>
+
+<h2>CAVEATS AND LIMITATIONS
+<a name="CAVEATS AND LIMITATIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>BEGIN</small>
+blocks</p>
+
+<p style="margin-left:23%;">The <i>fork()</i> emulation
+will not work entirely correctly when called from within a
+<small>BEGIN</small> block. The forked copy will run the
+contents of the <small>BEGIN</small> block, but will not
+continue parsing the source stream after the
+<small>BEGIN</small> block. For example, consider the
+following code:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    BEGIN {
+        fork and exit;          # fork child and exit the parent
+        print &quot;inner\n&quot;;
+    }
+    print &quot;outer\n&quot;;</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">This will
+print:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    inner</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">rather than the
+expected:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    inner
+    outer</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">This limitation
+arises from fundamental technical difficulties in cloning
+and restarting the stacks used by the Perl parser in the
+middle of a parse.</p>
+
+<p style="margin-left:11%;">Open filehandles</p>
+
+<p style="margin-left:23%;">Any filehandles open at the
+time of the <i>fork()</i> will be <i>dup()</i>&minus;ed.
+Thus, the files can be closed independently in the parent
+and child, but beware that the <i>dup()</i>&minus;ed handles
+will still share the same seek pointer. Changing the seek
+position in the parent will change it in the child and
+vice-versa. One can avoid this by opening files that need
+distinct seek pointers separately in the child.</p>
+
+<p style="margin-left:23%; margin-top: 1em">On some
+operating systems, notably Solaris and Unixware, calling
+<tt>&quot;exit()&quot;</tt> from a child process will flush
+and close open filehandles in the parent, thereby corrupting
+the filehandles. On these systems, calling
+<tt>&quot;_exit()&quot;</tt> is suggested instead.
+<tt>&quot;_exit()&quot;</tt> is available in Perl through
+the <tt>&quot;POSIX&quot;</tt> module. Please consult your
+system&rsquo;s manpages for more information on this.</p>
+
+<p style="margin-left:11%;">Open directory handles</p>
+
+<p style="margin-left:23%;">Perl will completely read from
+all open directory handles until they reach the end of the
+stream. It will then <i>seekdir()</i> back to the original
+location and all future <i>readdir()</i> requests will be
+fulfilled from the cache buffer. That means that neither the
+directory handle held by the parent process nor the one held
+by the child process will see any changes made to the
+directory after the <i>fork()</i> call.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Note that
+<i>rewinddir()</i> has a similar limitation on Windows and
+will not force <i>readdir()</i> to read the directory again
+either. Only a newly opened directory handle will reflect
+changes to the directory.</p>
+
+<p style="margin-left:11%;">Forking pipe <i>open()</i> not
+yet implemented</p>
+
+<p style="margin-left:23%;">The <tt>&quot;open(FOO,
+&quot;|&minus;&quot;)&quot;</tt> and <tt>&quot;open(BAR,
+&quot;&minus;|&quot;)&quot;</tt> constructs are not yet
+implemented. This limitation can be easily worked around in
+new code by creating a pipe explicitly. The following
+example shows how to write to a forked child:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    # simulate open(FOO, &quot;|&minus;&quot;)
+    sub pipe_to_fork ($) {
+        my $parent = shift;
+        pipe my $child, $parent or die;
+        my $pid = fork();
+        die &quot;fork() failed: $!&quot; unless defined $pid;
+        if ($pid) {
+            close $child;
+        }
+        else {
+            close $parent;
+            open(STDIN, &quot;&lt;&amp;=&quot; . fileno($child)) or die;
+        }
+        $pid;
+    }
+    if (pipe_to_fork('FOO')) {
+        # parent
+        print FOO &quot;pipe_to_fork\n&quot;;
+        close FOO;
+    }
+    else {
+        # child
+        while (&lt;STDIN&gt;) { print; }
+        exit(0);
+    }</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">And this one
+reads from the child:</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    # simulate open(FOO, &quot;&minus;|&quot;)
+    sub pipe_from_fork ($) {
+        my $parent = shift;
+        pipe $parent, my $child or die;
+        my $pid = fork();
+        die &quot;fork() failed: $!&quot; unless defined $pid;
+        if ($pid) {
+            close $child;
+        }
+        else {
+            close $parent;
+            open(STDOUT, &quot;&gt;&amp;=&quot; . fileno($child)) or die;
+        }
+        $pid;
+    }
+    if (pipe_from_fork('BAR')) {
+        # parent
+        while (&lt;BAR&gt;) { print; }
+        close BAR;
+    }
+    else {
+        # child
+        print &quot;pipe_from_fork\n&quot;;
+        exit(0);
+    }</pre>
+
+
+<p style="margin-left:23%; margin-top: 1em">Forking pipe
+<i>open()</i> constructs will be supported in future.</p>
+
+<p style="margin-left:11%;">Global state maintained by
+XSUBs</p>
+
+<p style="margin-left:23%;">External subroutines (XSUBs)
+that maintain their own global state may not work correctly.
+Such XSUBs will either need to maintain locks to protect
+simultaneous access to global data from different
+pseudo-processes, or maintain all their state on the Perl
+symbol table, which is copied naturally when <i>fork()</i>
+is called. A callback mechanism that provides extensions an
+opportunity to clone their state will be provided in the
+near future.</p>
+
+<p style="margin-left:11%;">Interpreter embedded in larger
+application</p>
+
+<p style="margin-left:23%;">The <i>fork()</i> emulation may
+not behave as expected when it is executed in an application
+which embeds a Perl interpreter and calls Perl APIs that can
+evaluate bits of Perl code. This stems from the fact that
+the emulation only has knowledge about the Perl
+interpreter&rsquo;s own data structures and knows nothing
+about the containing application&rsquo;s state. For example,
+any state carried on the application&rsquo;s own call stack
+is out of reach.</p>
+
+<p style="margin-left:11%;">Thread-safety of extensions</p>
+
+<p style="margin-left:23%;">Since the <i>fork()</i>
+emulation runs code in multiple threads, extensions calling
+into non-thread-safe libraries may not work reliably when
+calling <i>fork()</i>. As Perl&rsquo;s threading support
+gradually becomes more widely adopted even on platforms with
+a native <i>fork()</i>, such extensions are expected to be
+fixed for thread-safety.</p>
+
+<h2>PORTABILITY CAVEATS
+<a name="PORTABILITY CAVEATS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In portable
+Perl code, <tt>&quot;kill(9, $child)&quot;</tt> must not be
+used on forked processes. Killing a forked process is unsafe
+and has unpredictable results. See
+&quot;<i>kill()</i>&quot;, above.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="11%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">Having pseudo-process IDs be
+negative integers breaks down for the integer
+<tt>&quot;&minus;1&quot;</tt> because the <i>wait()</i> and
+<i>waitpid()</i> functions treat this number as being
+special. The tacit assumption in the current implementation
+is that the system never allocates a thread
+<small>ID</small> of <tt>1</tt> for user threads. A better
+representation for pseudo-process IDs will be implemented in
+future.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="11%"></td>
+<td width="77%">
+
+
+<p>In certain cases, the OS-level handles created by the
+<i>pipe()</i>, <i>socket()</i>, and <i>accept()</i>
+operators are apparently not duplicated accurately in
+pseudo-processes. This only happens in some situations, but
+where it does happen, it may result in deadlocks between the
+read and write ends of pipe handles, or inability to send or
+receive data across socket handles.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="11%"></td>
+<td width="77%">
+
+
+<p>This document may be incomplete in some respects.</p></td></tr>
+</table>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Support for
+concurrent interpreters and the <i>fork()</i> emulation was
+implemented by ActiveState, with funding from Microsoft
+Corporation.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This document
+is authored and maintained by Gurusamy Sarathy
+&lt;gsar@activestate.com&gt;.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">&quot;fork&quot;
+in perlfunc, perlipc</p>
+<hr>
+</body>
+</html>
