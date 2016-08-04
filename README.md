@@ -1,6 +1,8 @@
 # man-to-github-pages
 Convert man pages to HTML on github pages
 
+[Live Demo](https://vbem.github.io/man-to-github-pages)
+
 ### Snapshot
 ![snapshot](https://raw.githubusercontent.com/vbem/man-to-github-pages/gh-pages/img/snapshot.png)
 
