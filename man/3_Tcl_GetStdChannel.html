@@ -1,0 +1,187 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Mon Aug  8 16:07:22 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Tcl_GetStdChannel</title>
+
+</head>
+<body>
+
+<h1 align="center">Tcl_GetStdChannel</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#ARGUMENTS">ARGUMENTS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#KEYWORDS">KEYWORDS</a><br>
+
+<hr>
+
+
+
+<p>______________________________________________________________________________</p>
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">Tcl_GetStdChannel,
+Tcl_SetStdChannel &minus; procedures for retrieving and
+replacing the standard channels</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;tcl.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">Tcl_Channel
+<b><br>
+Tcl_GetStdChannel</b>(<i>type</i>)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_SetStdChannel</b>(<i>channel,
+type</i>)</p>
+
+<h2>ARGUMENTS
+<a name="ARGUMENTS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="37%">
+
+
+<p style="margin-top: 1em">int <i>type</i> (in)</p></td>
+<td width="15%"></td>
+<td width="37%">
+
+
+<p style="margin-top: 1em">The identifier for the standard
+channel to retrieve or modify. Must be one of
+<b>TCL_STDIN</b>, <b>TCL_STDOUT</b>, or
+<b>TCL_STDERR</b>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="37%">
+
+
+<p>Tcl_Channel <i>channel</i> (in)</p></td>
+<td width="15%"></td>
+<td width="37%">
+
+
+<p>The channel to use as the new value for the specified
+standard channel.</p></td></tr>
+</table>
+
+
+<p style="margin-left:63%;">_________________________________________________________________</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Tcl defines
+three special channels that are used by various I/O related
+commands if no other channels are specified. The standard
+input channel has a channel name of <b>stdin</b> and is used
+by <b>read</b> and <b>gets</b>. The standard output channel
+is named <b>stdout</b> and is used by <b>puts</b>. The
+standard error channel is named <b>stderr</b> and is used
+for reporting errors. In addition, the standard channels are
+inherited by any child processes created using <b>exec</b>
+or <b>open</b> in the absence of any other redirections.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The standard
+channels are actually aliases for other normal channels. The
+current channel associated with a standard channel can be
+retrieved by calling <b>Tcl_GetStdChannel</b> with one of
+<b>TCL_STDIN</b>, <b>TCL_STDOUT</b>, or <b>TCL_STDERR</b> as
+the <i>type</i>. The return value will be a valid channel,
+or NULL.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A new channel
+can be set for the standard channel specified by <i>type</i>
+by calling <b>Tcl_SetStdChannel</b> with a new channel or
+NULL in the <i>channel</i> argument. If the specified
+channel is closed by a later call to <b>Tcl_Close</b>, then
+the corresponding standard channel will automatically be set
+to NULL.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If a non-NULL
+value for <i>channel</i> is passed to
+<b>Tcl_SetStdChannel</b>, then that same value should be
+passed to <b>Tcl_RegisterChannel</b>, like so:</p>
+
+<p style="margin-left:22%;">Tcl_RegisterChannel(NULL,
+channel);</p>
+
+<p style="margin-left:11%;">This is a workaround for a
+misfeature in <b>Tcl_SetStdChannel</b> that it fails to do
+some reference counting housekeeping. This misfeature cannot
+be corrected without contradicting the assumptions of some
+existing code that calls <b>Tcl_SetStdChannel</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b>Tcl_GetStdChannel</b> is called before
+<b>Tcl_SetStdChannel</b>, Tcl will construct a new channel
+to wrap the appropriate platform-specific standard file
+handle. If <b>Tcl_SetStdChannel</b> is called before
+<b>Tcl_GetStdChannel</b>, then the default channel will not
+be created.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If one of the
+standard channels is set to NULL, either by calling
+<b>Tcl_SetStdChannel</b> with a NULL <i>channel</i>
+argument, or by calling <b>Tcl_Close</b> on the channel,
+then the next call to <b>Tcl_CreateChannel</b> will
+automatically set the standard channel with the newly
+created channel. If more than one standard channel is NULL,
+then the standard channels will be assigned starting with
+standard input, followed by standard output, with standard
+error being last.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See
+<b>Tcl_StandardChannels</b> for a general treatise about
+standard channels and the behaviour of the Tcl library with
+regard to them.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Tcl_Close(3),
+Tcl_CreateChannel(3), Tcl_Main(3), tclsh(1)</p>
+
+<h2>KEYWORDS
+<a name="KEYWORDS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">standard
+channel, standard input, standard output, standard error</p>
+<hr>
+</body>
+</html>

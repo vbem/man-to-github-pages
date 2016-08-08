@@ -1,0 +1,138 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Mon Aug  8 15:54:26 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>fblocked</title>
+
+</head>
+<body>
+
+<h1 align="center">fblocked</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#KEYWORDS">KEYWORDS</a><br>
+
+<hr>
+
+
+
+<p>______________________________________________________________________________</p>
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">fblocked
+&minus; Test whether the last input operation exhausted all
+available input</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>fblocked</b>
+<i>channelId</i>
+_________________________________________________________________</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>fblocked</b> command returns 1 if the most recent input
+operation on <i>channelId</i> returned less information than
+requested because all available input was exhausted. For
+example, if <b>gets</b> is invoked when there are only three
+characters available for input and no end-of-line sequence,
+<b>gets</b> returns an empty string and a subsequent call to
+<b>fblocked</b> will return 1.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>ChannelId</i>
+must be an identifier for an open channel such as a Tcl
+standard channel (<b>stdin</b>, <b>stdout</b>, or
+<b>stderr</b>), the return value from an invocation of
+<b>open</b> or <b>socket</b>, or the result of a channel
+creation command provided by a Tcl extension.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>fblocked</b> command is particularly useful when writing
+network servers, as it allows you to write your code in a
+line-by-line style without preventing the servicing of other
+connections. This can be seen in this simple
+echo-service:</p>
+
+<p style="margin-left:22%; margin-top: 1em"># This is
+called whenever a new client connects to the server <br>
+proc connect {chan host port} { <br>
+set clientName [format &lt;%s:%d&gt; $host $port] <br>
+puts &quot;connection from $clientName&quot; <br>
+fconfigure $chan -blocking 0 -buffering line <br>
+fileevent $chan readable [list echoLine $chan $clientName]
+<br>
+}</p>
+
+<p style="margin-left:22%; margin-top: 1em"># This is
+called whenever either at least one byte of input <br>
+# data is available, or the channel was closed by the
+client. <br>
+proc echoLine {chan clientName} { <br>
+gets $chan line <br>
+if {[eof $chan]} { <br>
+puts &quot;finishing connection from $clientName&quot; <br>
+close $chan <br>
+} elseif {![<b>fblocked</b> $chan]} { <br>
+# Didn&rsquo;t block waiting for end-of-line <br>
+puts &quot;$clientName - $line&quot; <br>
+puts $chan $line <br>
+} <br>
+}</p>
+
+<p style="margin-left:22%; margin-top: 1em"># Create the
+server socket and enter the event-loop to wait <br>
+# for incoming connections... <br>
+socket -server connect 12345 <br>
+vwait forever</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">gets(n),
+open(n), read(n), socket(n), Tcl_StandardChannels(3)</p>
+
+<h2>KEYWORDS
+<a name="KEYWORDS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">blocking,
+nonblocking</p>
+<hr>
+</body>
+</html>

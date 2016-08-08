@@ -1,0 +1,192 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Mon Aug  8 16:17:27 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>XGetEventData</title>
+
+</head>
+<body>
+
+<h1 align="center">XGetEventData</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNTAX">SYNTAX</a><br>
+<a href="#ARGUMENTS">ARGUMENTS</a><br>
+<a href="#STRUCTURES">STRUCTURES</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#EXAMPLE CODE">EXAMPLE CODE</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">XGetEventData,
+XFreeEventData, XGenericEventCookie &minus; retrieve and
+free additional event data through cookies.</p>
+
+<h2>SYNTAX
+<a name="SYNTAX"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="89%">
+
+
+<p style="margin-top: 1em">Bool XGetEventData(Display
+*<i>display</i>, XGenericEventCookie *<i>cookie</i>);</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="89%">
+
+
+<p style="margin-top: 1em">void XFreeEventData(Display
+*<i>display</i>, XGenericEventCookie *<i>cookie</i>);</p></td></tr>
+</table>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+
+
+<h2>ARGUMENTS
+<a name="ARGUMENTS"></a>
+</h2>
+<td width="11%"></td>
+<td width="11%"></td>
+<td width="4%"></td>
+<td width="74%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p><i>display</i></p></td>
+<td width="4%"></td>
+<td width="74%">
+
+
+<p>Specifies the connection to the X server.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p><i>cookie</i></p></td>
+<td width="4%"></td>
+<td width="74%">
+
+
+<p>Specifies the cookie to free or retrieve the data
+for.</p> </td></tr>
+</table>
+
+<h2>STRUCTURES
+<a name="STRUCTURES"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">typedef struct {
+        int type;
+        unsigned long serial;
+        Bool send_event;
+        Display *display;
+        int extension;
+        int evtype;
+        unsigned int cookie;
+        void *data;
+} XGenericEventCookie;</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Some extension
+<i>XGenericEvents</i> require additional memory to store
+information. For these events, the library returns a
+<i>XGenericEventCookie</i> with a token
+(&rsquo;cookie&rsquo;) unique to this event. The
+<i>XGenericEventCookie</i>&rsquo;s data pointer is undefined
+until <i>XGetEventData</i> is called.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>XGetEventData</i> function retrieves this extra data for
+the given cookie. No round-trip to the server is required.
+If the cookie is invalid or the event is not an event
+handled by cookie handlers, <i>False</i> is returned. If
+<i>XGetEventData</i> returns <i>True</i>, the cookie&rsquo;s
+data pointer points to the memory containing the event
+information. A client must call <i>XFreeEventData</i> to
+free this memory. <i>XGetEventData</i> returns <i>False</i>
+for multiple calls for the same event cookie.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>XFreeEventData</i> function frees the data associated
+with a cookie. A client must call <i>XFreeEventData</i> for
+each cookie claimed with <i>XGetEventData</i>.</p>
+
+<h2>EXAMPLE CODE
+<a name="EXAMPLE CODE"></a>
+</h2>
+
+<pre style="margin-left:11%; margin-top: 1em">XEvent event;
+XGenericEventCookie *cookie = &amp;ev;
+
+
+XNextEvent(display, &amp;event);
+if (XGetEventData(display, cookie)) {
+    handle_cookie_event(cookie-&gt;data);
+} else
+    handle_event(&amp;event);
+}
+XFreeEventData(display, cookie);</pre>
+
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">A cookie is
+defined as unclaimed if it has been returned to the client
+through <i>XNextEvent</i> but its data has not been
+retrieved via <i>XGetEventData</i>. Subsequent calls to
+<i>XNextEvent</i> may free memory associated with unclaimed
+cookies. Multi-threaded X clients must ensure that
+<i>XGetEventData</i> is called before the next call to
+<i>XNextEvent</i>.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">XNextEvent(3),
+<i><br>
+Xlib &minus; C Language X Interface</i></p>
+<hr>
+</body>
+</html>

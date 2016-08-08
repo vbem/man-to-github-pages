@@ -1,0 +1,242 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Mon Aug  8 16:06:43 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Tcl_CreateInterp</title>
+
+</head>
+<body>
+
+<h1 align="center">Tcl_CreateInterp</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#ARGUMENTS">ARGUMENTS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#INTERPRETERS AND MEMORY MANAGEMENT">INTERPRETERS AND MEMORY MANAGEMENT</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#KEYWORDS">KEYWORDS</a><br>
+
+<hr>
+
+
+
+<p>______________________________________________________________________________</p>
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">Tcl_CreateInterp,
+Tcl_DeleteInterp, Tcl_InterpDeleted &minus; create and
+delete Tcl command interpreters</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;tcl.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">Tcl_Interp *
+<b><br>
+Tcl_CreateInterp</b>()</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_DeleteInterp</b>(<i>interp</i>)</p>
+
+<p style="margin-left:11%; margin-top: 1em">int <b><br>
+Tcl_InterpDeleted</b>(<i>interp</i>)</p>
+
+<h2>ARGUMENTS
+<a name="ARGUMENTS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="35%">
+
+
+<p style="margin-top: 1em">Tcl_Interp <i>*interp</i>
+(in)</p> </td>
+<td width="16%"></td>
+<td width="38%">
+
+
+<p style="margin-top: 1em">Token for interpreter to be
+destroyed.</p> </td></tr>
+</table>
+
+
+<p style="margin-left:62%;">_________________________________________________________________</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_CreateInterp</b>
+creates a new interpreter structure and returns a token for
+it. The token is required in calls to most other Tcl
+procedures, such as <b>Tcl_CreateCommand</b>,
+<b>Tcl_Eval</b>, and <b>Tcl_DeleteInterp</b>. Clients are
+only allowed to access a few of the fields of Tcl_Interp
+structures; see the <b>Tcl_Interp</b> and
+<b>Tcl_CreateCommand</b> man pages for details. The new
+interpreter is initialized with the built-in Tcl commands
+and with the variables documented in tclvars(n). To bind in
+additional commands, call <b>Tcl_CreateCommand</b>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_DeleteInterp</b>
+marks an interpreter as deleted; the interpreter will
+eventually be deleted when all calls to <b>Tcl_Preserve</b>
+for it have been matched by calls to <b>Tcl_Release</b>. At
+that time, all of the resources associated with it,
+including variables, procedures, and application-specific
+command bindings, will be deleted. After
+<b>Tcl_DeleteInterp</b> returns any attempt to use
+<b>Tcl_Eval</b> on the interpreter will fail and return
+<b>TCL_ERROR</b>. After the call to <b>Tcl_DeleteInterp</b>
+it is safe to examine the interpreter&rsquo;s result, query
+or set the values of variables, define, undefine or retrieve
+procedures, and examine the runtime evaluation stack. See
+below, in the section <b>INTERPRETERS AND MEMORY
+MANAGEMENT</b> for details.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_InterpDeleted</b>
+returns nonzero if <b>Tcl_DeleteInterp</b> was called with
+<i>interp</i> as its argument; this indicates that the
+interpreter will eventually be deleted, when the last call
+to <b>Tcl_Preserve</b> for it is matched by a call to
+<b>Tcl_Release</b>. If nonzero is returned, further calls to
+<b>Tcl_Eval</b> in this interpreter will return
+<b>TCL_ERROR</b>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_InterpDeleted</b>
+is useful in deletion callbacks to distinguish between when
+only the memory the callback is responsible for is being
+deleted and when the whole interpreter is being deleted. In
+the former case the callback may recreate the data being
+deleted, but this would lead to an infinite loop if the
+interpreter were being deleted.</p>
+
+<h2>INTERPRETERS AND MEMORY MANAGEMENT
+<a name="INTERPRETERS AND MEMORY MANAGEMENT"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_DeleteInterp</b>
+can be called at any time on an interpreter that may be used
+by nested evaluations and C code in various extensions. Tcl
+implements a simple mechanism that allows callers to use
+interpreters without worrying about the interpreter being
+deleted in a nested call, and without requiring special code
+to protect the interpreter, in most cases. This mechanism
+ensures that nested uses of an interpreter can safely
+continue using it even after <b>Tcl_DeleteInterp</b> is
+called.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The mechanism
+relies on matching up calls to <b>Tcl_Preserve</b> with
+calls to <b>Tcl_Release</b>. If <b>Tcl_DeleteInterp</b> has
+been called, only when the last call to <b>Tcl_Preserve</b>
+is matched by a call to <b>Tcl_Release</b>, will the
+interpreter be freed. See the manual entry for
+<b>Tcl_Preserve</b> for a description of these
+functions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The rules for
+when the user of an interpreter must call
+<b>Tcl_Preserve</b> and <b>Tcl_Release</b> are simple: <br>
+Interpreters Passed As Arguments</p>
+
+<p style="margin-left:22%;">Functions that are passed an
+interpreter as an argument can safely use the interpreter
+without any special protection. Thus, when you write an
+extension consisting of new Tcl commands, no special code is
+needed to protect interpreters received as arguments. This
+covers the majority of all uses.</p>
+
+<p style="margin-left:11%;">Interpreter Creation And
+Deletion</p>
+
+<p style="margin-left:22%;">When a new interpreter is
+created and used in a call to <b>Tcl_Eval</b>,
+<b>Tcl_VarEval</b>, <b>Tcl_GlobalEval</b>,
+<b>Tcl_SetVar</b>, or <b>Tcl_GetVar</b>, a pair of calls to
+<b>Tcl_Preserve</b> and <b>Tcl_Release</b> should be wrapped
+around all uses of the interpreter. Remember that it is
+unsafe to use the interpreter once <b>Tcl_Release</b> has
+been called. To ensure that the interpreter is properly
+deleted when it is no longer needed, call
+<b>Tcl_InterpDeleted</b> to test if some other code already
+called <b>Tcl_DeleteInterp</b>; if not, call
+<b>Tcl_DeleteInterp</b> before calling <b>Tcl_Release</b> in
+your own code.</p>
+
+<p style="margin-left:11%;">Retrieving An Interpreter From
+A Data Structure</p>
+
+<p style="margin-left:22%;">When an interpreter is
+retrieved from a data structure (e.g. the client data of a
+callback) for use in <b>Tcl_Eval</b>, <b>Tcl_VarEval</b>,
+<b>Tcl_GlobalEval</b>, <b>Tcl_SetVar</b>, or
+<b>Tcl_GetVar</b>, a pair of calls to <b>Tcl_Preserve</b>
+and <b>Tcl_Release</b> should be wrapped around all uses of
+the interpreter; it is unsafe to reuse the interpreter once
+<b>Tcl_Release</b> has been called. If an interpreter is
+stored inside a callback data structure, an appropriate
+deletion cleanup mechanism should be set up by the code that
+creates the data structure so that the interpreter is
+removed from the data structure (e.g. by setting the field
+to NULL) when the interpreter is deleted. Otherwise, you may
+be using an interpreter that has been freed and whose memory
+may already have been reused.</p>
+
+<p style="margin-left:11%; margin-top: 1em">All uses of
+interpreters in Tcl and Tk have already been protected.
+Extension writers should ensure that their code also
+properly protects any additional interpreters used, as
+described above.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">Tcl_Preserve(3),
+Tcl_Release(3)</p>
+
+<h2>KEYWORDS
+<a name="KEYWORDS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">command,
+create, delete, interpreter</p>
+<hr>
+</body>
+</html>

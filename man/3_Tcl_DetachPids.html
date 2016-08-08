@@ -1,0 +1,194 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Mon Aug  8 16:06:44 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Tcl_DetachPids</title>
+
+</head>
+<body>
+
+<h1 align="center">Tcl_DetachPids</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#ARGUMENTS">ARGUMENTS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#KEYWORDS">KEYWORDS</a><br>
+
+<hr>
+
+
+
+<p>______________________________________________________________________________</p>
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">Tcl_DetachPids,
+Tcl_ReapDetachedProcs, Tcl_WaitPid &minus; manage child
+processes in background</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;tcl.h&gt;</b></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_DetachPids</b>(<i>numPids,
+pidPtr</i>)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_ReapDetachedProcs</b>()</p>
+
+<p style="margin-left:11%; margin-top: 1em">Tcl_Pid <b><br>
+Tcl_WaitPid</b>(<i>pid, statusPtr, options</i>)</p>
+
+<h2>ARGUMENTS
+<a name="ARGUMENTS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="31%">
+
+
+<p style="margin-top: 1em">int <i>numPids</i> (in)</p></td>
+<td width="20%"></td>
+<td width="38%">
+
+
+<p style="margin-top: 1em">Number of process ids contained
+in the array pointed to by <i>pidPtr</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="31%">
+
+
+<p>int <i>*pidPtr</i> (in)</p></td>
+<td width="20%"></td>
+<td width="38%">
+
+
+<p>Address of array containing <i>numPids</i> process
+ids.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="31%">
+
+
+<p>Tcl_Pid <i>pid</i> (in)</p></td>
+<td width="20%"></td>
+<td width="38%">
+
+
+<p>The id of the process (pipe) to wait for.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="31%">
+
+
+<p>int <i>*statusPtr</i> (out)</p></td>
+<td width="20%"></td>
+<td width="38%">
+
+
+<p>The result of waiting on a process (pipe). Either 0 or
+ECHILD.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="31%">
+
+
+<p>int <i>options</i> (in)</p></td>
+<td width="20%"></td>
+<td width="38%">
+
+
+<p>The options controlling the wait. WNOHANG specifies not
+to wait when checking the process.</p></td></tr>
+</table>
+
+
+<p style="margin-left:62%;">_________________________________________________________________</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_DetachPids</b>
+and <b>Tcl_ReapDetachedProcs</b> provide a mechanism for
+managing subprocesses that are running in background. These
+procedures are needed because the parent of a process must
+eventually invoke the <b>waitpid</b> kernel call (or one of
+a few other similar kernel calls) to wait for the child to
+exit. Until the parent waits for the child, the
+child&rsquo;s state cannot be completely reclaimed by the
+system. If a parent continually creates children and
+doesn&rsquo;t wait on them, the system&rsquo;s process table
+will eventually overflow, even if all the children have
+exited.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_DetachPids</b>
+may be called to ask Tcl to take responsibility for one or
+more processes whose process ids are contained in the
+<i>pidPtr</i> array passed as argument. The caller
+presumably has started these processes running in background
+and does not want to have to deal with them again.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_ReapDetachedProcs</b>
+invokes the <b>waitpid</b> kernel call on each of the
+background processes so that its state can be cleaned up if
+it has exited. If the process has not exited yet,
+<b>Tcl_ReapDetachedProcs</b> does not wait for it to exit;
+it will check again the next time it is invoked. Tcl
+automatically calls <b>Tcl_ReapDetachedProcs</b> each time
+the <b>exec</b> command is executed, so in most cases it is
+not necessary for any code outside of Tcl to invoke
+<b>Tcl_ReapDetachedProcs</b>. However, if you call
+<b>Tcl_DetachPids</b> in situations where the <b>exec</b>
+command may never get executed, you may wish to call
+<b>Tcl_ReapDetachedProcs</b> from time to time so that
+background processes can be cleaned up.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_WaitPid</b>
+is a thin wrapper around the facilities provided by the
+operating system to wait on the end of a spawned process and
+to check a whether spawned process is still running. It is
+used by <b>Tcl_ReapDetachedProcs</b> and the channel system
+to portably access the operating system.</p>
+
+<h2>KEYWORDS
+<a name="KEYWORDS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">background,
+child, detach, process, wait</p>
+<hr>
+</body>
+</html>

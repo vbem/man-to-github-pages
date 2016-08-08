@@ -1,0 +1,171 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Mon Aug  8 16:09:36 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>uplevel</title>
+
+</head>
+<body>
+
+<h1 align="center">uplevel</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#KEYWORDS">KEYWORDS</a><br>
+
+<hr>
+
+
+
+<p>______________________________________________________________________________</p>
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">uplevel &minus;
+Execute a script in a different stack frame</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>uplevel</b>
+?<i>level</i>? <i>arg</i> ?<i>arg ...</i>?
+_________________________________________________________________</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">All of the
+<i>arg</i> arguments are concatenated as if they had been
+passed to <b>concat</b>; the result is then evaluated in the
+variable context indicated by <i>level</i>. <b>Uplevel</b>
+returns the result of that evaluation.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If <i>level</i>
+is an integer then it gives a distance (up the procedure
+calling stack) to move before executing the command. If
+<i>level</i> consists of <b>#</b> followed by a number then
+the number gives an absolute level number. If <i>level</i>
+is omitted then it defaults to <b>1</b>. <i>Level</i> cannot
+be defaulted if the first <i>command</i> argument starts
+with a digit or <b>#</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For example,
+suppose that procedure <b>a</b> was invoked from top-level,
+and that it called <b>b</b>, and that <b>b</b> called
+<b>c</b>. Suppose that <b>c</b> invokes the <b>uplevel</b>
+command. If <i>level</i> is <b>1</b> or <b>#2</b> or
+omitted, then the command will be executed in the variable
+context of <b>b</b>. If <i>level</i> is <b>2</b> or
+<b>#1</b> then the command will be executed in the variable
+context of <b>a</b>. If <i>level</i> is <b>3</b> or
+<b>#0</b> then the command will be executed at top-level
+(only global variables will be visible).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>uplevel</b> command causes the invoking procedure to
+disappear from the procedure calling stack while the command
+is being executed. In the above example, suppose <b>c</b>
+invokes the command</p>
+
+<p style="margin-left:22%;"><b>uplevel</b> 1 {set x 43;
+d}</p>
+
+<p style="margin-left:11%;">where <b>d</b> is another Tcl
+procedure. The <b>set</b> command will modify the variable
+<b>x</b> in <b>b</b>&rsquo;s context, and <b>d</b> will
+execute at level 3, as if called from <b>b</b>. If it in
+turn executes the command</p>
+
+<p style="margin-left:22%;"><b>uplevel</b> {set x 42}</p>
+
+<p style="margin-left:11%;">then the <b>set</b> command
+will modify the same variable <b>x</b> in <b>b</b>&rsquo;s
+context: the procedure <b>c</b> does not appear to be on the
+call stack when <b>d</b> is executing. The <b>info level</b>
+command may be used to obtain the level of the current
+procedure.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Uplevel</b>
+makes it possible to implement new control constructs as Tcl
+procedures (for example, <b>uplevel</b> could be used to
+implement the <b>while</b> construct as a Tcl
+procedure).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>namespace eval</b> and <b>apply</b> commands offer other
+ways (besides procedure calls) that the Tcl naming context
+can change. They add a call frame to the stack to represent
+the namespace context. This means each <b>namespace eval</b>
+command counts as another call level for <b>uplevel</b> and
+<b>upvar</b> commands. For example, <b>info level 1</b> will
+return a list describing a command that is either the
+outermost procedure call or the outermost <b>namespace
+eval</b> command. Also, <b>uplevel #0</b> evaluates a script
+at top-level in the outermost namespace (the global
+namespace).</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">As stated
+above, the <b>uplevel</b> command is useful for creating new
+control constructs. This example shows how (without error
+handling) it can be used to create a <b>do</b> command that
+is the counterpart of <b>while</b> except for always
+performing the test after running the loop body:</p>
+
+<p style="margin-left:22%;">proc do {body while condition}
+{ <br>
+if {$while ne &quot;while&quot;} { <br>
+error &quot;required word missing&quot; <br>
+} <br>
+set conditionCmd [list expr $condition] <br>
+while {1} { <b><br>
+uplevel</b> 1 $body <br>
+if {![<b>uplevel</b> 1 $conditionCmd]} { <br>
+break <br>
+} <br>
+} <br>
+}</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">apply(n),
+namespace(n), upvar(n)</p>
+
+<h2>KEYWORDS
+<a name="KEYWORDS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">context, level,
+namespace, stack frame, variables</p>
+<hr>
+</body>
+</html>
