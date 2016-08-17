@@ -1,0 +1,186 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:19:33 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Tcl_Interp</title>
+
+</head>
+<body>
+
+<h1 align="center">Tcl_Interp</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#KEYWORDS">KEYWORDS</a><br>
+
+<hr>
+
+
+
+<p>______________________________________________________________________________</p>
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Tcl_Interp
+&minus; client-visible fields of interpreter structures</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;tcl.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">typedef struct
+{ <br>
+char *<i>result</i>; <br>
+Tcl_FreeProc *<i>freeProc</i>; <br>
+int <i>errorLine</i>; <br>
+} Tcl_Interp;</p>
+
+<p style="margin-left:11%; margin-top: 1em">typedef void
+Tcl_FreeProc(char *<i>blockPtr</i>);
+_________________________________________________________________</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>Tcl_CreateInterp</b> procedure returns a pointer to a
+Tcl_Interp structure. This pointer is then passed into other
+Tcl procedures to process commands in the interpreter and
+perform other operations on the interpreter. Interpreter
+structures contain many fields that are used by Tcl, but
+only three that may be accessed by clients: <i>result</i>,
+<i>freeProc</i>, and <i>errorLine</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Note that
+access to all three fields,</b> <i>result</i><b>,</b>
+<i>freeProc</i> <b>and</b> <i>errorLine</i> <b>is</b>
+<big>&#9474;</big> <b>deprecated.</b> Use
+<b>Tcl_SetResult</b>, <b>Tcl_GetResult</b>, and
+<b>Tcl_GetReturnOptions</b> <big>&#9474;</big> instead.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>result</i> and <i>freeProc</i> fields are used to return
+results or error messages from commands. This information is
+returned by command procedures back to <b>Tcl_Eval</b>, and
+by <b>Tcl_Eval</b> back to its callers. The <i>result</i>
+field points to the string that represents the result or
+error message, and the <i>freeProc</i> field tells how to
+dispose of the storage for the string when it is not needed
+anymore. The easiest way for command procedures to
+manipulate these fields is to call procedures like
+<b>Tcl_SetResult</b> or <b>Tcl_AppendResult</b>; they will
+hide all the details of managing the fields. The description
+below is for those procedures that manipulate the fields
+directly.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Whenever a
+command procedure returns, it must ensure that the
+<i>result</i> field of its interpreter points to the string
+being returned by the command. The <i>result</i> field must
+always point to a valid string. If a command wishes to
+return no result then <i>interp-&gt;result</i> should point
+to an empty string. Normally, results are assumed to be
+statically allocated, which means that the contents will not
+change before the next time <b>Tcl_Eval</b> is called or
+some other command procedure is invoked. In this case, the
+<i>freeProc</i> field must be zero. Alternatively, a command
+procedure may dynamically allocate its return value (e.g.
+using <b>Tcl_Alloc</b>) and store a pointer to it in
+<i>interp-&gt;result</i>. In this case, the command
+procedure must also set <i>interp-&gt;freeProc</i> to the
+address of a procedure that can free the value, or
+<b>TCL_DYNAMIC</b> if the storage was allocated directly by
+Tcl or by a call to <b>Tcl_Alloc</b>. If
+<i>interp-&gt;freeProc</i> is non-zero, then Tcl will call
+<i>freeProc</i> to free the space pointed to by
+<i>interp-&gt;result</i> before it invokes the next command.
+If a client procedure overwrites <i>interp-&gt;result</i>
+when <i>interp-&gt;freeProc</i> is non-zero, then it is
+responsible for calling <i>freeProc</i> to free the old
+<i>interp-&gt;result</i> (the <b>Tcl_FreeResult</b> macro
+should be used for this purpose).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>FreeProc</i>
+should have arguments and result that match the
+<b>Tcl_FreeProc</b> declaration above: it receives a single
+argument which is a pointer to the result value to free. In
+most applications <b>TCL_DYNAMIC</b> is the only non-zero
+value ever used for <i>freeProc</i>. However, an application
+may store a different procedure address in <i>freeProc</i>
+in order to use an alternate memory allocator or in order to
+do other cleanup when the result memory is freed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As part of
+processing each command, <b>Tcl_Eval</b> initializes
+<i>interp-&gt;result</i> and <i>interp-&gt;freeProc</i> just
+before calling the command procedure for the command. The
+<i>freeProc</i> field will be initialized to zero, and
+<i>interp-&gt;result</i> will point to an empty string.
+Commands that do not return any value can simply leave the
+fields alone. Furthermore, the empty string pointed to by
+<i>result</i> is actually part of an array of
+<b>TCL_RESULT_SIZE</b> characters (approximately 200). If a
+command wishes to return a short string, it can simply copy
+it to the area pointed to by <i>interp-&gt;result</i>. Or,
+it can use the sprintf procedure to generate a short result
+string at the location pointed to by
+<i>interp-&gt;result</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is a general
+convention in Tcl-based applications that the result of an
+interpreter is normally in the initialized state described
+in the previous paragraph. Procedures that manipulate an
+interpreter&rsquo;s result (e.g. by returning an error) will
+generally assume that the result has been initialized when
+the procedure is called. If such a procedure is to be called
+after the result has been changed, then
+<b>Tcl_ResetResult</b> should be called first to reset the
+result to its initialized state. The direct use of
+<i>interp-&gt;result</i> is strongly deprecated (see
+<b>Tcl_SetResult</b>).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>errorLine</i> field is valid only after <b>Tcl_Eval</b>
+returns a <b>TCL_ERROR</b> return code. In this situation
+the <i>errorLine</i> field identifies the line number of the
+command being executed when the error occurred. The line
+numbers are relative to the command being executed: 1 means
+the first line of the command passed to <b>Tcl_Eval</b>, 2
+means the second line, and so on. The <i>errorLine</i> field
+is typically used in conjunction with
+<b>Tcl_AddErrorInfo</b> to report information about where an
+error occurred. <i>ErrorLine</i> should not normally be
+modified except by <b>Tcl_Eval</b>.</p>
+
+<h2>KEYWORDS
+<a name="KEYWORDS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">free,
+initialized, interpreter, malloc, result</p>
+<hr>
+</body>
+</html>

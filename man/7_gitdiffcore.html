@@ -1,0 +1,427 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:39:11 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>GITDIFFCORE</title>
+
+</head>
+<body>
+
+<h1 align="center">GITDIFFCORE</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#THE CHAIN OF OPERATION">THE CHAIN OF OPERATION</a><br>
+<a href="#DIFFCORE-BREAK: FOR SPLITTING UP COMPLETE REWRITES&quot;&quot;">DIFFCORE-BREAK: FOR SPLITTING UP COMPLETE REWRITES&quot;&quot;</a><br>
+<a href="#DIFFCORE-RENAME: FOR DETECTION RENAMES AND COPIES">DIFFCORE-RENAME: FOR DETECTION RENAMES AND COPIES</a><br>
+<a href="#DIFFCORE-MERGE-BROKEN: FOR PUTTING COMPLETE REWRITES&quot; BACK TOGETHER&quot;">DIFFCORE-MERGE-BROKEN: FOR PUTTING COMPLETE REWRITES&quot; BACK TOGETHER&quot;</a><br>
+<a href="#DIFFCORE-PICKAXE: FOR DETECTING ADDITION/DELETION OF SPECIFIED STRING">DIFFCORE-PICKAXE: FOR DETECTING ADDITION/DELETION OF SPECIFIED STRING</a><br>
+<a href="#DIFFCORE-ORDER: FOR SORTING THE OUTPUT BASED ON FILENAMES">DIFFCORE-ORDER: FOR SORTING THE OUTPUT BASED ON FILENAMES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#GIT">GIT</a><br>
+<a href="#NOTES">NOTES</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">gitdiffcore
+&minus; Tweaking diff output</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>git diff</i>
+*</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The diff
+commands <i>git diff&minus;index</i>, <i>git
+diff&minus;files</i>, and <i>git diff&minus;tree</i> can be
+told to manipulate differences they find in unconventional
+ways before showing <i>diff</i> output. The manipulation is
+collectively called &quot;diffcore transformation&quot;.
+This short note describes what they are and how to use them
+to produce <i>diff</i> output that is easier to understand
+than the conventional kind.</p>
+
+<h2>THE CHAIN OF OPERATION
+<a name="THE CHAIN OF OPERATION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The <i>git
+diff&minus;*</i> family works by first comparing two sets of
+files:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; <i>git
+diff&minus;index</i> compares contents of a &quot;tree&quot;
+object and the working directory (when
+<i>&minus;&minus;cached</i> flag is not used) or a
+&quot;tree&quot; object and the index file (when
+<i>&minus;&minus;cached</i> flag is used);</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; <i>git
+diff&minus;files</i> compares contents of the index file and
+the working directory;</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; <i>git
+diff&minus;tree</i> compares contents of two
+&quot;tree&quot; objects;</p>
+
+<p style="margin-left:11%; margin-top: 1em">In all of these
+cases, the commands themselves first optionally limit the
+two sets of files by any pathspecs given on their
+command&minus;lines, and compare corresponding paths in the
+two resulting sets of files.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The pathspecs
+are used to limit the world diff operates in. They remove
+the filepairs outside the specified sets of pathnames. E.g.
+If the input set of filepairs included:</p>
+
+<p style="margin-left:17%; margin-top: 1em">:100644 100644
+bcd1234... 0123456... M junkfile</p>
+
+<p style="margin-left:11%; margin-top: 1em">but the command
+invocation was git diff&minus;files myfile, then the
+junkfile entry would be removed from the list because only
+&quot;myfile&quot; is under consideration.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The result of
+comparison is passed from these commands to what is
+internally called &quot;diffcore&quot;, in a format similar
+to what is output when the &minus;p option is not used.
+E.g.</p>
+
+<p style="margin-left:17%; margin-top: 1em">in&minus;place
+edit :100644 100644 bcd1234... 0123456... M file0 <br>
+create :000000 100644 0000000... 1234567... A file4 <br>
+delete :100644 000000 1234567... 0000000... D file5 <br>
+unmerged :000000 000000 0000000... 0000000... U file6</p>
+
+<p style="margin-left:11%; margin-top: 1em">The diffcore
+mechanism is fed a list of such comparison results (each of
+which is called &quot;filepair&quot;, although at this point
+each of them talks about a single file), and transforms such
+a list into another list. There are currently 5 such
+transformations:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+diffcore&minus;break</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+diffcore&minus;rename</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+diffcore&minus;merge&minus;broken</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+diffcore&minus;pickaxe</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+diffcore&minus;order</p>
+
+<p style="margin-left:11%; margin-top: 1em">These are
+applied in sequence. The set of filepairs <i>git
+diff&minus;*</i> commands find are used as the input to
+diffcore&minus;break, and the output from
+diffcore&minus;break is used as the input to the next
+transformation. The final result is then passed to the
+output routine and generates either diff&minus;raw format
+(see Output format sections of the manual for <i>git
+diff&minus;*</i> commands) or diff&minus;patch format.</p>
+
+<h2>DIFFCORE-BREAK: FOR SPLITTING UP COMPLETE REWRITES&quot;&quot;
+<a name="DIFFCORE-BREAK: FOR SPLITTING UP COMPLETE REWRITES&quot;&quot;"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The second
+transformation in the chain is diffcore&minus;break, and is
+controlled by the &minus;B option to the <i>git
+diff&minus;*</i> commands. This is used to detect a filepair
+that represents &quot;complete rewrite&quot; and break such
+filepair into two filepairs that represent delete and
+create. E.g. If the input contained this filepair:</p>
+
+<p style="margin-left:17%; margin-top: 1em">:100644 100644
+bcd1234... 0123456... M file0</p>
+
+<p style="margin-left:11%; margin-top: 1em">and if it
+detects that the file &quot;file0&quot; is completely
+rewritten, it changes it to:</p>
+
+<p style="margin-left:17%; margin-top: 1em">:100644 000000
+bcd1234... 0000000... D file0 <br>
+:000000 100644 0000000... 0123456... A file0</p>
+
+<p style="margin-left:11%; margin-top: 1em">For the purpose
+of breaking a filepair, diffcore&minus;break examines the
+extent of changes between the contents of the files before
+and after modification (i.e. the contents that have
+&quot;bcd1234...&quot; and &quot;0123456...&quot; as their
+SHA&minus;1 content ID, in the above example). The amount of
+deletion of original contents and insertion of new material
+are added together, and if it exceeds the &quot;break
+score&quot;, the filepair is broken into two. The break
+score defaults to 50% of the size of the smaller of the
+original and the result (i.e. if the edit shrinks the file,
+the size of the result is used; if the edit lengthens the
+file, the size of the original is used), and can be
+customized by giving a number after &quot;&minus;B&quot;
+option (e.g. &quot;&minus;B75&quot; to tell it to use
+75%).</p>
+
+<h2>DIFFCORE-RENAME: FOR DETECTION RENAMES AND COPIES
+<a name="DIFFCORE-RENAME: FOR DETECTION RENAMES AND COPIES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This
+transformation is used to detect renames and copies, and is
+controlled by the &minus;M option (to detect renames) and
+the &minus;C option (to detect copies as well) to the <i>git
+diff&minus;*</i> commands. If the input contained these
+filepairs:</p>
+
+<p style="margin-left:17%; margin-top: 1em">:100644 000000
+0123456... 0000000... D fileX <br>
+:000000 100644 0000000... 0123456... A file0</p>
+
+<p style="margin-left:11%; margin-top: 1em">and the
+contents of the deleted file fileX is similar enough to the
+contents of the created file file0, then rename detection
+merges these filepairs and creates:</p>
+
+<p style="margin-left:17%; margin-top: 1em">:100644 100644
+0123456... 0123456... R100 fileX file0</p>
+
+<p style="margin-left:11%; margin-top: 1em">When the
+&quot;&minus;C&quot; option is used, the original contents
+of modified files, and deleted files (and also unmodified
+files, if the
+&quot;&minus;&minus;find&minus;copies&minus;harder&quot;
+option is used) are considered as candidates of the source
+files in rename/copy operation. If the input were like these
+filepairs, that talk about a modified file fileY and a newly
+created file file0:</p>
+
+<p style="margin-left:17%; margin-top: 1em">:100644 100644
+0123456... 1234567... M fileY <br>
+:000000 100644 0000000... bcd3456... A file0</p>
+
+<p style="margin-left:11%; margin-top: 1em">the original
+contents of fileY and the resulting contents of file0 are
+compared, and if they are similar enough, they are changed
+to:</p>
+
+<p style="margin-left:17%; margin-top: 1em">:100644 100644
+0123456... 1234567... M fileY <br>
+:100644 100644 0123456... bcd3456... C100 fileY file0</p>
+
+<p style="margin-left:11%; margin-top: 1em">In both rename
+and copy detection, the same &quot;extent of changes&quot;
+algorithm used in diffcore&minus;break is used to determine
+if two files are &quot;similar enough&quot;, and can be
+customized to use a similarity score different from the
+default of 50% by giving a number after the
+&quot;&minus;M&quot; or &quot;&minus;C&quot; option (e.g.
+&quot;&minus;M8&quot; to tell it to use 8/10 = 80%).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note. When the
+&quot;&minus;C&quot; option is used with
+&minus;&minus;find&minus;copies&minus;harder option, <i>git
+diff&minus;*</i> commands feed unmodified filepairs to
+diffcore mechanism as well as modified ones. This lets the
+copy detector consider unmodified files as copy source
+candidates at the expense of making it slower. Without
+&minus;&minus;find&minus;copies&minus;harder, <i>git
+diff&minus;*</i> commands can detect copies only if the file
+that was copied happened to have been modified in the same
+changeset.</p>
+
+<h2>DIFFCORE-MERGE-BROKEN: FOR PUTTING COMPLETE REWRITES&quot; BACK TOGETHER&quot;
+<a name="DIFFCORE-MERGE-BROKEN: FOR PUTTING COMPLETE REWRITES&quot; BACK TOGETHER&quot;"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This
+transformation is used to merge filepairs broken by
+diffcore&minus;break, and not transformed into rename/copy
+by diffcore&minus;rename, back into a single modification.
+This always runs when diffcore&minus;break is used.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For the purpose
+of merging broken filepairs back, it uses a different
+&quot;extent of changes&quot; computation from the ones used
+by diffcore&minus;break and diffcore&minus;rename. It counts
+only the deletion from the original, and does not count
+insertion. If you removed only 10 lines from a
+100&minus;line document, even if you added 910 new lines to
+make a new 1000&minus;line document, you did not do a
+complete rewrite. diffcore&minus;break breaks such a case in
+order to help diffcore&minus;rename to consider such
+filepairs as candidate of rename/copy detection, but if
+filepairs broken that way were not matched with other
+filepairs to create rename/copy, then this transformation
+merges them back into the original
+&quot;modification&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+&quot;extent of changes&quot; parameter can be tweaked from
+the default 80% (that is, unless more than 80% of the
+original material is deleted, the broken pairs are merged
+back into a single modification) by giving a second number
+to &minus;B option, like these:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+&minus;B50/60 (give 50% &quot;break score&quot; to
+diffcore&minus;break, use 60% for
+diffcore&minus;merge&minus;broken).</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+&minus;B/60 (the same as above, since diffcore&minus;break
+defaults to 50%).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+earlier implementation left a broken pair as a separate
+creation and deletion patches. This was an unnecessary hack
+and the latest implementation always merges all the broken
+pairs back into modifications, but the resulting patch
+output is formatted differently for easier review in case of
+such a complete rewrite by showing the entire contents of
+old version prefixed with <i>&minus;</i>, followed by the
+entire contents of new version prefixed with <i>+</i>.</p>
+
+<h2>DIFFCORE-PICKAXE: FOR DETECTING ADDITION/DELETION OF SPECIFIED STRING
+<a name="DIFFCORE-PICKAXE: FOR DETECTING ADDITION/DELETION OF SPECIFIED STRING"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This
+transformation is used to find filepairs that represent
+changes that touch a specified string, and is controlled by
+the &minus;S option and the &minus;&minus;pickaxe&minus;all
+option to the <i>git diff&minus;*</i> commands.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When
+diffcore&minus;pickaxe is in use, it checks if there are
+filepairs whose &quot;result&quot; side and whose
+&quot;origin&quot; side have different number of specified
+string. Such a filepair represents &quot;the string appeared
+in this changeset&quot;. It also checks for the opposite
+case that loses the specified string.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When
+&minus;&minus;pickaxe&minus;all is not in effect,
+diffcore&minus;pickaxe leaves only such filepairs that touch
+the specified string in its output. When
+&minus;&minus;pickaxe&minus;all is used,
+diffcore&minus;pickaxe leaves all filepairs intact if there
+is such a filepair, or makes the output empty otherwise. The
+latter behaviour is designed to make reviewing of the
+changes in the context of the whole changeset easier.</p>
+
+<h2>DIFFCORE-ORDER: FOR SORTING THE OUTPUT BASED ON FILENAMES
+<a name="DIFFCORE-ORDER: FOR SORTING THE OUTPUT BASED ON FILENAMES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is used to
+reorder the filepairs according to the user&rsquo;s (or
+project&rsquo;s) taste, and is controlled by the &minus;O
+option to the <i>git diff&minus;*</i> commands.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This takes a
+text file each of whose lines is a shell glob pattern.
+Filepairs that match a glob pattern on an earlier line in
+the file are output before ones that match a later line, and
+filepairs that do not match any glob pattern are output
+last.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As an example,
+a typical orderfile for the core Git probably would look
+like this:</p>
+
+<p style="margin-left:17%; margin-top: 1em">README <br>
+Makefile <br>
+Documentation <br>
+*.h <br>
+*.c <br>
+t</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>git-diff</b>(1),
+<b>git-diff-files</b>(1), <b>git-diff-index</b>(1),
+<b>git-diff-tree</b>(1), <b>git-format-patch</b>(1),
+<b>git-log</b>(1), <b>gitglossary</b>(7),
+<b><font color="#0000FF">The Git User&rsquo;s
+Manual</font></b>
+<small><font color="#000000">[1]</font></small></p>
+
+<h2>GIT
+<a name="GIT"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Part
+of the <b>git</b>(1) suite.</font></p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">1.</font></p> </td>
+<td width="2%"></td>
+<td width="32%">
+
+
+<p style="margin-top: 1em"><font color="#000000">The Git
+User&rsquo;s Manual</font></p></td>
+<td width="51%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">file:///usr/share/doc/git-1.8.3.1/user-manual.html</font></p>
+<hr>
+</body>
+</html>

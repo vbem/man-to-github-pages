@@ -1,0 +1,1161 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:32:55 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Hash::Util::FieldHash</title>
+
+</head>
+<body>
+
+<h1 align="center">Hash::Util::FieldHash</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#FUNCTIONS">FUNCTIONS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
+<a href="#GUTS">GUTS</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#COPYRIGHT AND LICENSE">COPYRIGHT AND LICENSE</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">Hash::Util::FieldHash
+&minus; Support for Inside&minus;Out Classes</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  ### Create fieldhashes
+  use Hash::Util qw(fieldhash fieldhashes);
+  # Create a single field hash
+  fieldhash my %foo;
+  # Create three at once...
+  fieldhashes \ my(%foo, %bar, %baz);
+  # ...or any number
+  fieldhashes @hashrefs;
+  ### Create an idhash and register it for garbage collection
+  use Hash::Util::FieldHash qw(idhash register);
+  idhash my %name;
+  my $object = \ do { my $o };
+  # register the idhash for garbage collection with $object
+  register($object, \ %name);
+  # the following entry will be deleted when $object goes out of scope
+  $name{$object} = 'John Doe';
+  ### Register an ordinary hash for garbage collection
+  use Hash::Util::FieldHash qw(id register);
+  my %name;
+  my $object = \ do { my $o };
+  # register the hash %name for garbage collection of $object's id
+  register $object, \ %name;
+  # the following entry will be deleted when $object goes out of scope
+  $name{id $object} = 'John Doe';</pre>
+
+
+<h2>FUNCTIONS
+<a name="FUNCTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;Hash::Util::FieldHash&quot;</tt>
+offers a number of functions in support of &quot;The
+Inside-out Technique&quot; of class construction.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>id</p></td>
+<td width="9%"></td>
+<td width="12%">
+
+<pre>    id($obj)</td>
+<td width="65%">
+</td></tr>
+</table></pre>
+
+<p style="margin-left:17%; margin-top: 1em">Returns the
+reference address of a reference <tt>$obj</tt>. If
+<tt>$obj</tt> is not a reference, returns <tt>$obj</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This function
+is a stand-in replacement for Scalar::Util::refaddr, that
+is, it returns the reference address of its argument as a
+numeric value. The only difference is that
+<tt>&quot;refaddr()&quot;</tt> returns
+<tt>&quot;undef&quot;</tt> when given a non-reference while
+<tt>&quot;id()&quot;</tt> returns its argument
+unchanged.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;id()&quot;</tt>
+also uses a caching technique that makes it faster when the
+id of an object is requested often, but slower if it is
+needed only once or twice.</p>
+
+<p style="margin-left:11%;">id_2obj</p>
+<pre style="margin-left:17%;">    $obj = id_2obj($id)</pre>
+
+<p style="margin-left:17%; margin-top: 1em">If <tt>$id</tt>
+is the id of a registered object (see &quot;register&quot;),
+returns the object, otherwise an undefined value. For
+registered objects this is the inverse function of
+<tt>&quot;id()&quot;</tt>.</p>
+
+<p style="margin-left:11%;">register</p>
+
+<pre style="margin-left:17%;">    register($obj)
+    register($obj, @hashrefs)</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">In the first
+form, registers an object to work with for the function
+<tt>&quot;id_2obj()&quot;</tt>. In the second form, it
+additionally marks the given hashrefs down for garbage
+collection. This means that when the object goes out of
+scope, any entries in the given hashes under the key of
+<tt>&quot;id($obj)&quot;</tt> will be deleted from the
+hashes.</p>
+
+<p style="margin-left:17%; margin-top: 1em">It is a fatal
+error to register a non-reference <tt>$obj</tt>. Any
+non-hashrefs among the following arguments are silently
+ignored.</p>
+
+<p style="margin-left:17%; margin-top: 1em">It is
+<i>not</i> an error to register the same object multiple
+times with varying sets of hashrefs. Any hashrefs that are
+not registered yet will be added, others ignored.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Registry also
+implies thread support. When a new thread is created, all
+references are replaced with new ones, including all
+objects. If a hash uses the reference address of an object
+as a key, that connection would be broken. With a registered
+object, its id will be updated in all hashes registered with
+it.</p>
+
+<p style="margin-left:11%;">idhash</p>
+<pre style="margin-left:17%;">    idhash my %hash</pre>
+
+<p style="margin-left:17%; margin-top: 1em">Makes an idhash
+from the argument, which must be a hash.</p>
+
+<p style="margin-left:17%; margin-top: 1em">An
+<i>idhash</i> works like a normal hash, except that it
+stringifies a <i>reference used as a key</i> differently. A
+reference is stringified as if the <tt>&quot;id()&quot;</tt>
+function had been invoked on it, that is, its reference
+address in decimal is used as the key.</p>
+
+<p style="margin-left:11%;">idhashes</p>
+
+<pre style="margin-left:17%;">    idhashes \ my(%hash, %gnash, %trash)
+    idhashes \ @hashrefs</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Creates many
+idhashes from its hashref arguments. Returns those arguments
+that could be converted or their number in scalar
+context.</p>
+
+<p style="margin-left:11%;">fieldhash</p>
+<pre style="margin-left:17%;">    fieldhash %hash;</pre>
+
+<p style="margin-left:17%; margin-top: 1em">Creates a
+single fieldhash. The argument must be a hash. Returns a
+reference to the given hash if successful, otherwise
+nothing.</p>
+
+<p style="margin-left:17%; margin-top: 1em">A
+<i>fieldhash</i> is, in short, an idhash with auto-registry.
+When an object (or, indeed, any reference) is used as a
+fieldhash key, the fieldhash is automatically registered for
+garbage collection with the object, as if <tt>&quot;register
+$obj, \ %fieldhash&quot;</tt> had been called.</p>
+
+<p style="margin-left:11%;">fieldhashes</p>
+
+<pre style="margin-left:17%;">    fieldhashes @hashrefs;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Creates any
+number of field hashes. Arguments must be hash references.
+Returns the converted hashrefs in list context, their number
+in scalar context.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">A word on
+terminology: I shall use the term <i>field</i> for a scalar
+piece of data that a class associates with an object. Other
+terms that have been used for this concept are &quot;object
+variable&quot;, &quot;(object) property&quot;,
+&quot;(object) attribute&quot; and more. Especially
+&quot;attribute&quot; has some currency among Perl
+programmer, but that clashes with the
+<tt>&quot;attributes&quot;</tt> pragma. The term
+&quot;field&quot; also has some currency in this sense and
+doesn&rsquo;t seem to conflict with other Perl
+terminology.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In Perl, an
+object is a blessed reference. The standard way of
+associating data with an object is to store the data inside
+the object&rsquo;s body, that is, the piece of data pointed
+to by the reference.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In consequence,
+if two or more classes want to access an object they
+<i>must</i> agree on the type of reference and also on the
+organization of data within the object body. Failure to
+agree on the type results in immediate death when the wrong
+method tries to access an object. Failure to agree on data
+organization may lead to one class trampling over the data
+of another.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This object
+model leads to a tight coupling between subclasses. If one
+class wants to inherit from another (and both classes access
+object data), the classes must agree about implementation
+details. Inheritance can only be used among classes that are
+maintained together, in a single source or not.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In particular,
+it is not possible to write general-purpose classes in this
+technique, classes that can advertise themselves as
+&quot;Put me on your <tt>@ISA</tt> list and use my
+methods&quot;. If the other class has different ideas about
+how the object body is used, there is trouble.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For reference
+<tt>&quot;Name_hash&quot;</tt> in &quot;Example 1&quot;
+shows the standard implementation of a simple class
+<tt>&quot;Name&quot;</tt> in the well-known hash based way.
+It also demonstrates the predictable failure to construct a
+common subclass <tt>&quot;NamedFile&quot;</tt> of
+<tt>&quot;Name&quot;</tt> and the class
+<tt>&quot;IO::File&quot;</tt> (whose objects <i>must</i> be
+globrefs).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Thus,
+techniques are of interest that store object data <i>not</i>
+in the object body but some other place.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>The
+Inside-out Technique</b> <br>
+With <i>inside-out</i> classes, each class declares a
+(typically lexical) hash for each field it wants to use. The
+reference address of an object is used as the hash key. By
+definition, the reference address is unique to each object
+so this guarantees a place for each field that is private to
+the class and unique to each object. See
+<tt>&quot;Name_id&quot;</tt> in &quot;Example 1&quot; for a
+simple example.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In comparison
+to the standard implementation where the object is a hash
+and the fields correspond to hash keys, here the fields
+correspond to hashes, and the object determines the hash
+key. Thus the hashes appear to be turned <i>inside
+out</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The body of an
+object is never examined by an inside-out class, only its
+reference address is used. This allows for the body of an
+actual object to be <i>anything at all</i> while the object
+methods of the class still work as designed. This is a key
+feature of inside-out classes.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Problems of
+Inside-out</b> <br>
+Inside-out classes give us freedom of inheritance, but as
+usual there is a price.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Most obviously,
+there is the necessity of retrieving the reference address
+of an object for each data access. It&rsquo;s a minor
+inconvenience, but it does clutter the code.</p>
+
+<p style="margin-left:11%; margin-top: 1em">More important
+(and less obvious) is the necessity of garbage collection.
+When a normal object dies, anything stored in the object
+body is garbage-collected by perl. With inside-out objects,
+Perl knows nothing about the data stored in field hashes by
+a class, but these must be deleted when the object goes out
+of scope. Thus the class must provide a
+<tt>&quot;DESTROY&quot;</tt> method to take care of
+that.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the presence
+of multiple classes it can be non-trivial to make sure that
+every relevant destructor is called for every object. Perl
+calls the first one it finds on the inheritance tree (if
+any) and that&rsquo;s it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A related issue
+is thread-safety. When a new thread is created, the Perl
+interpreter is cloned, which implies that all reference
+addresses in use will be replaced with new ones. Thus, if a
+class tries to access a field of a cloned object its
+(cloned) data will still be stored under the now invalid
+reference address of the original in the parent thread. A
+general <tt>&quot;CLONE&quot;</tt> method must be provided
+to re-establish the association.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Solutions</b>
+<tt><br>
+&quot;Hash::Util::FieldHash&quot;</tt> addresses these
+issues on several levels.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;id()&quot;</tt> function is provided in addition
+to the existing
+<tt>&quot;Scalar::Util::refaddr()&quot;</tt>. Besides its
+short name it can be a little faster under some
+circumstances (and a bit slower under others). Benchmark if
+it matters. The working of <tt>&quot;id()&quot;</tt> also
+allows the use of the class name as a <i>generic object</i>
+as described further down.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;id()&quot;</tt> function is incorporated in <i>id
+hashes</i> in the sense that it is called automatically on
+every key that is used with the hash. No explicit call is
+necessary.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The problems of
+garbage collection and thread safety are both addressed by
+the function <tt>&quot;register()&quot;</tt>. It registers
+an object together with any number of hashes. Registry means
+that when the object dies, an entry in any of the hashes
+under the reference address of this object will be deleted.
+This guarantees garbage collection in these hashes. It also
+means that on thread cloning the object&rsquo;s entries in
+registered hashes will be replaced with updated entries
+whose key is the cloned object&rsquo;s reference address.
+Thus the object-data association becomes thread-safe.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Object registry
+is best done when the object is initialized for use with a
+class. That way, garbage collection and thread safety are
+established for every object and every field that is
+initialized.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Finally,
+<i>field hashes</i> incorporate all these functions in one
+package. Besides automatically calling the
+<tt>&quot;id()&quot;</tt> function on every object used as a
+key, the object is registered with the field hash on first
+use. Classes based on field hashes are fully
+garbage-collected and thread safe without further
+measures.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>More
+Problems</b> <br>
+Another problem that occurs with inside-out classes is
+serialization. Since the object data is not in its usual
+place, standard routines like
+<tt>&quot;Storable::freeze()&quot;</tt>,
+<tt>&quot;Storable::thaw()&quot;</tt> and
+<tt>&quot;Data::Dumper::Dumper()&quot;</tt> can&rsquo;t deal
+with it on their own. Both <tt>&quot;Data::Dumper&quot;</tt>
+and <tt>&quot;Storable&quot;</tt> provide the necessary
+hooks to make things work, but the functions or methods used
+by the hooks must be provided by each inside-out class.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A general
+solution to the serialization problem would require another
+level of registry, one that that associates <i>classes</i>
+and fields. So far, the functions of
+<tt>&quot;Hash::Util::FieldHash&quot;</tt> are unaware of
+any classes, which I consider a feature. Therefore
+<tt>&quot;Hash::Util::FieldHash&quot;</tt> doesn&rsquo;t
+address the serialization problems.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>The Generic
+Object</b> <br>
+Classes based on the <tt>&quot;id()&quot;</tt> function (and
+hence classes based on <tt>&quot;idhash()&quot;</tt> and
+<tt>&quot;fieldhash()&quot;</tt>) show a peculiar behavior
+in that the class name can be used like an object.
+Specifically, methods that set or read data associated with
+an object continue to work as class methods, just as if the
+class name were an object, distinct from all other objects,
+with its own data. This object may be called the <i>generic
+object</i> of the class.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This works
+because field hashes respond to keys that are not references
+like a normal hash would and use the string offered as the
+hash key. Thus, if a method is called as a class method, the
+field hash is presented with the class name instead of an
+object and blithely uses it as a key. Since the keys of real
+objects are decimal numbers, there is no conflict and the
+slot in the field hash can be used like any other. The
+<tt>&quot;id()&quot;</tt> function behaves correspondingly
+with respect to non-reference arguments.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Two possible
+uses (besides ignoring the property) come to mind. A
+singleton class could be implemented this using the generic
+object. If necessary, an <tt>&quot;init()&quot;</tt> method
+could die or ignore calls with actual objects (references),
+so only the generic object will ever exist.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Another use of
+the generic object would be as a template. It is a
+convenient place to store class-specific defaults for
+various fields to be used in actual object
+initialization.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Usually, the
+feature can be entirely ignored. Calling <i>object
+methods</i> as <i>class methods</i> normally leads to an
+error and isn&rsquo;t used routinely anywhere. It may be a
+problem that this error isn&rsquo;t indicated by a class
+with a generic object.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How to use
+Field Hashes</b> <br>
+Traditionally, the definition of an inside-out class
+contains a bare block inside which a number of lexical
+hashes are declared and the basic accessor methods defined,
+usually through <tt>&quot;Scalar::Util::refaddr&quot;</tt>.
+Further methods may be defined outside this block. There has
+to be a <small>DESTROY</small> method and, for thread
+support, a <small>CLONE</small> method.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When field
+hashes are used, the basic structure remains the same. Each
+lexical hash will be made a field hash. The call to
+<tt>&quot;refaddr&quot;</tt> can be omitted from the
+accessor methods. <small>DESTROY</small> and
+<small>CLONE</small> methods are not necessary.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you have an
+existing inside-out class, simply making all hashes field
+hashes with no other change should make no difference.
+Through the calls to <tt>&quot;refaddr&quot;</tt> or
+equivalent, the field hashes never get to see a reference
+and work like normal hashes. Your <small>DESTROY</small>
+(and <small>CLONE</small> ) methods are still needed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To make the
+field hashes kick in, it is easiest to redefine
+<tt>&quot;refaddr&quot;</tt> as</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sub refaddr { shift }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">instead of
+importing it from <tt>&quot;Scalar::Util&quot;</tt>. It
+should now be possible to disable <small>DESTROY</small> and
+<small>CLONE</small> . Note that while it isn&rsquo;t
+disabled, <small>DESTROY</small> will be called before the
+garbage collection of field hashes, so it will be invoked
+with a functional object and will continue to function.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is not
+desirable to import the functions
+<tt>&quot;fieldhash&quot;</tt> and/or
+<tt>&quot;fieldhashes&quot;</tt> into every class that is
+going to use them. They are only used once to set up the
+class. When the class is up and running, these functions
+serve no more purpose.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If there are
+only a few field hashes to declare, it is simplest to</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Hash::Util::FieldHash;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">early and call
+the functions qualified:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Hash::Util::FieldHash::fieldhash my %foo;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Otherwise,
+import the functions into a convenient package like
+<tt>&quot;HUF&quot;</tt> or, more general,
+<tt>&quot;Aux&quot;</tt></p>
+
+<p style="margin-left:11%; margin-top: 1em"><tt>{ <br>
+package Aux; <br>
+use Hash::Util::FieldHash ':all'; <br>
+}</tt></p>
+
+<p style="margin-left:11%; margin-top: 1em">and call</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Aux::fieldhash my %foo;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">as needed.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Garbage-Collected
+Hashes</b> <br>
+Garbage collection in a field hash means that entries will
+&quot;spontaneously&quot; disappear when the object that
+created them disappears. That must be borne in mind,
+especially when looping over a field hash. If anything you
+do inside the loop could cause an object to go out of scope,
+a random key may be deleted from the hash you are looping
+over. That can throw the loop iterator, so it&rsquo;s best
+to cache a consistent snapshot of the keys and/or values and
+loop over that. You will still have to check that a cached
+entry still exists when you get to it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Garbage
+collection can be confusing when keys are created in a field
+hash from normal scalars as well as references. Once a
+reference is <i>used</i> with a field hash, the entry will
+be collected, even if it was later overwritten with a plain
+scalar key (every positive integer is a candidate). This is
+true even if the original entry was deleted in the meantime.
+In fact, deletion from a field hash, and also a test for
+existence constitute <i>use</i> in this sense and create a
+liability to delete the entry when the reference goes out of
+scope. If you happen to create an entry with an identical
+key from a string or integer, that will be collected
+instead. Thus, mixed use of references and plain scalars as
+field hash keys is not entirely supported.</p>
+
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The examples
+show a very simple class that implements a <i>name</i>,
+consisting of a first and last name (no middle initial). The
+name class has four methods:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="12%">
+
+
+<p><tt>&quot;init()&quot;</tt></p></td>
+<td width="71%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">An object
+method that initializes the first and last name to its two
+arguments. If called as a class method,
+<tt>&quot;init()&quot;</tt> creates an object in the given
+class and initializes that.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="14%">
+
+
+
+<p style="margin-top: 1em"><tt>&quot;first()&quot;</tt></p> </td>
+<td width="69%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Retrieve the
+first name</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="12%">
+
+
+<p style="margin-top: 1em"><tt>&quot;last()&quot;</tt></p></td>
+<td width="71%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Retrieve the
+last name</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="12%">
+
+
+<p style="margin-top: 1em"><tt>&quot;name()&quot;</tt></p></td>
+<td width="71%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Retrieve the
+full name, the first and last name joined by a blank.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The examples
+show this class implemented with different levels of support
+by <tt>&quot;Hash::Util::FieldHash&quot;</tt>. All supported
+combinations are shown. The difference between
+implementations is often quite small. The implementations
+are:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="17%">
+
+
+
+<p style="margin-top: 1em"><tt>&quot;Name_hash&quot;</tt></p> </td>
+<td width="66%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">A conventional
+(not inside-out) implementation where an object is a hash
+that stores the field values, without support by
+<tt>&quot;Hash::Util::FieldHash&quot;</tt>. This
+implementation doesn&rsquo;t allow arbitrary
+inheritance.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="14%">
+
+
+
+<p style="margin-top: 1em"><tt>&quot;Name_id&quot;</tt></p> </td>
+<td width="69%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Inside-out
+implementation based on the <tt>&quot;id()&quot;</tt>
+function. It needs a <tt>&quot;DESTROY&quot;</tt> method.
+For thread support a <tt>&quot;CLONE&quot;</tt> method (not
+shown) would also be needed. Instead of
+<tt>&quot;Hash::Util::FieldHash::id()&quot;</tt> the
+function <tt>&quot;Scalar::Util::refaddr&quot;</tt> could be
+used with very little functional difference. This is the
+basic pattern of an inside-out class.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="20%">
+
+
+
+<p style="margin-top: 1em"><tt>&quot;Name_idhash&quot;</tt></p> </td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Idhash-based
+inside-out implementation. Like <tt>&quot;Name_id&quot;</tt>
+it needs a <tt>&quot;DESTROY&quot;</tt> method and would
+need <tt>&quot;CLONE&quot;</tt> for thread support.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="20%">
+
+
+
+<p style="margin-top: 1em"><tt>&quot;Name_id_reg&quot;</tt></p> </td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Inside-out
+implementation based on the <tt>&quot;id()&quot;</tt>
+function with explicit object registry. No destructor is
+needed and objects are thread safe.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="26%">
+
+
+
+<p style="margin-top: 1em"><tt>&quot;Name_idhash_reg&quot;</tt></p> </td>
+<td width="57%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">Idhash-based
+inside-out implementation with explicit object registry. No
+destructor is needed and objects are thread safe.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="25%">
+
+
+
+<p style="margin-top: 1em"><tt>&quot;Name_fieldhash&quot;</tt></p> </td>
+<td width="58%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%; margin-top: 1em">FieldHash-based
+inside-out implementation. Object registry happens
+automatically. No destructor is needed and objects are
+thread safe.</p>
+
+<p style="margin-left:11%; margin-top: 1em">These examples
+are realized in the code below, which could be copied to a
+file <i>Example.pm</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example
+1</b></p>
+
+<pre style="margin-left:11%;">    use strict; use warnings;
+    {
+        package Name_hash; # standard implementation: the object is a hash
+        sub init {
+            my $obj = shift;
+            my ($first, $last) = @_;
+            # create an object if called as class method
+            $obj = bless {}, $obj unless ref $obj;
+            $obj&minus;&gt;{ first} = $first;
+            $obj&minus;&gt;{ last} = $last;
+            $obj;
+        }
+        sub first { shift()&minus;&gt;{ first} }
+        sub last { shift()&minus;&gt;{ last} }
+        sub name {
+            my $n = shift;
+            join ' ' =&gt; $n&minus;&gt;first, $n&minus;&gt;last;
+        }
+    }
+    {
+        package Name_id;
+        use Hash::Util::FieldHash qw(id);
+        my (%first, %last);
+        sub init {
+            my $obj = shift;
+            my ($first, $last) = @_;
+            # create an object if called as class method
+            $obj = bless \ my $o, $obj unless ref $obj;
+            $first{ id $obj} = $first;
+            $last{ id $obj} = $last;
+            $obj;
+        }
+        sub first { $first{ id shift()} }
+        sub last { $last{ id shift()} }
+        sub name {
+            my $n = shift;
+            join ' ' =&gt; $n&minus;&gt;first, $n&minus;&gt;last;
+        }
+        sub DESTROY {
+            my $id = id shift;
+            delete $first{ $id};
+            delete $last{ $id};
+        }
+    }
+    {
+        package Name_idhash;
+        use Hash::Util::FieldHash;
+        Hash::Util::FieldHash::idhashes( \ my (%first, %last) );
+        sub init {
+            my $obj = shift;
+            my ($first, $last) = @_;
+            # create an object if called as class method
+            $obj = bless \ my $o, $obj unless ref $obj;
+            $first{ $obj} = $first;
+            $last{ $obj} = $last;
+            $obj;
+        }
+        sub first { $first{ shift()} }
+        sub last { $last{ shift()} }
+        sub name {
+            my $n = shift;
+            join ' ' =&gt; $n&minus;&gt;first, $n&minus;&gt;last;
+        }
+        sub DESTROY {
+            my $n = shift;
+            delete $first{ $n};
+            delete $last{ $n};
+        }
+    }
+    {
+        package Name_id_reg;
+        use Hash::Util::FieldHash qw(id register);
+        my (%first, %last);
+        sub init {
+            my $obj = shift;
+            my ($first, $last) = @_;
+            # create an object if called as class method
+            $obj = bless \ my $o, $obj unless ref $obj;
+            register( $obj, \ (%first, %last) );
+            $first{ id $obj} = $first;
+            $last{ id $obj} = $last;
+            $obj;
+        }
+        sub first { $first{ id shift()} }
+        sub last { $last{ id shift()} }
+        sub name {
+            my $n = shift;
+            join ' ' =&gt; $n&minus;&gt;first, $n&minus;&gt;last;
+        }
+    }
+    {
+        package Name_idhash_reg;
+        use Hash::Util::FieldHash qw(register);
+        Hash::Util::FieldHash::idhashes \ my (%first, %last);
+        sub init {
+            my $obj = shift;
+            my ($first, $last) = @_;
+            # create an object if called as class method
+            $obj = bless \ my $o, $obj unless ref $obj;
+            register( $obj, \ (%first, %last) );
+            $first{ $obj} = $first;
+            $last{ $obj} = $last;
+            $obj;
+        }
+        sub first { $first{ shift()} }
+        sub last { $last{ shift()} }
+        sub name {
+            my $n = shift;
+            join ' ' =&gt; $n&minus;&gt;first, $n&minus;&gt;last;
+        }
+    }
+    {
+        package Name_fieldhash;
+        use Hash::Util::FieldHash;
+        Hash::Util::FieldHash::fieldhashes \ my (%first, %last);
+        sub init {
+            my $obj = shift;
+            my ($first, $last) = @_;
+            # create an object if called as class method
+            $obj = bless \ my $o, $obj unless ref $obj;
+            $first{ $obj} = $first;
+            $last{ $obj} = $last;
+            $obj;
+        }
+        sub first { $first{ shift()} }
+        sub last { $last{ shift()} }
+        sub name {
+            my $n = shift;
+            join ' ' =&gt; $n&minus;&gt;first, $n&minus;&gt;last;
+        }
+    }
+    1;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To exercise the
+various implementations the script below can be used.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It sets up a
+class <tt>&quot;Name&quot;</tt> that is a mirror of one of
+the implementation classes <tt>&quot;Name_hash&quot;</tt>,
+<tt>&quot;Name_id&quot;</tt>, ...,
+<tt>&quot;Name_fieldhash&quot;</tt>. That determines which
+implementation is run.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The script
+first verifies the function of the <tt>&quot;Name&quot;</tt>
+class.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the second
+step, the free inheritability of the implementation (or lack
+thereof) is demonstrated. For this purpose it constructs a
+class called <tt>&quot;NamedFile&quot;</tt> which is a
+common subclass of <tt>&quot;Name&quot;</tt> and the
+standard class <tt>&quot;IO::File&quot;</tt>. This puts
+inheritability to the test because objects of
+<tt>&quot;IO::File&quot;</tt> <i>must</i> be globrefs.
+Objects of <tt>&quot;NamedFile&quot;</tt> should behave like
+a file opened for reading and also support the
+<tt>&quot;name()&quot;</tt> method. This class juncture
+works with exception of the <tt>&quot;Name_hash&quot;</tt>
+implementation, where object initialization fails because of
+the incompatibility of object bodies.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example
+2</b></p>
+
+<pre style="margin-left:11%;">    use strict; use warnings; $| = 1;
+    use Example;
+    {
+        package Name;
+        use base 'Name_id';      # define here which implementation to run
+    }
+    # Verify that the base package works
+    my $n = Name&minus;&gt;init(qw(Albert Einstein));
+    print $n&minus;&gt;name, &quot;\n&quot;;
+    print &quot;\n&quot;;
+    # Create a named file handle (See definition below)
+    my $nf = NamedFile&minus;&gt;init(qw(/tmp/x Filomena File));
+    # use as a file handle...
+    for ( 1 .. 3 ) {
+        my $l = &lt;$nf&gt;;
+        print &quot;line $_: $l&quot;;
+    }
+    # ...and as a Name object
+    print &quot;...brought to you by &quot;, $nf&minus;&gt;name, &quot;\n&quot;;
+    exit;
+    # Definition of NamedFile
+    package NamedFile;
+    use base 'Name';
+    use base 'IO::File';
+    sub init {
+        my $obj = shift;
+        my ($file, $first, $last) = @_;
+        $obj = $obj&minus;&gt;IO::File::new() unless ref $obj;
+        $obj&minus;&gt;open($file) or die &quot;Can't read '$file': $!&quot;;
+        $obj&minus;&gt;Name::init($first, $last);
+    }
+    __END__</pre>
+
+
+<h2>GUTS
+<a name="GUTS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">To make
+<tt>&quot;Hash::Util::FieldHash&quot;</tt> work, there were
+two changes to <i>perl</i> itself.
+<tt>&quot;PERL_MAGIC_uvar&quot;</tt> was made available for
+hashes, and weak references now call uvar
+<tt>&quot;get&quot;</tt> magic after a weakref has been
+cleared. The first feature is used to make field hashes
+intercept their keys upon access. The second one triggers
+garbage collection.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>The
+&quot;PERL_MAGIC_uvar&quot; interface for hashes</b>
+<tt><br>
+&quot;PERL_MAGIC_uvar&quot;</tt> <i>get</i> magic is called
+from <tt>&quot;hv_fetch_common&quot;</tt> and
+<tt>&quot;hv_delete_common&quot;</tt> through the function
+<tt>&quot;hv_magic_uvar_xkey&quot;</tt>, which defines the
+interface. The call happens for hashes with &quot;uvar&quot;
+magic if the <tt>&quot;ufuncs&quot;</tt> structure has equal
+values in the <tt>&quot;uf_val&quot;</tt> and
+<tt>&quot;uf_set&quot;</tt> fields. Hashes are unaffected if
+(and as long as) these fields hold different values.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Upon the call,
+the <tt>&quot;mg_obj&quot;</tt> field will hold the hash key
+to be accessed. Upon return, the <tt>&quot;SV*&quot;</tt>
+value in <tt>&quot;mg_obj&quot;</tt> will be used in place
+of the original key in the hash access. The integer index
+value in the first parameter will be the
+<tt>&quot;action&quot;</tt> value from
+<tt>&quot;hv_fetch_common&quot;</tt>, or &minus;1 if the
+call is from <tt>&quot;hv_delete_common&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is a
+template for a function suitable for the
+<tt>&quot;uf_val&quot;</tt> field in a
+<tt>&quot;ufuncs&quot;</tt> structure for this call. The
+<tt>&quot;uf_set&quot;</tt> and
+<tt>&quot;uf_index&quot;</tt> fields are irrelevant.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    IV watch_key(pTHX_ IV action, SV* field) {
+        MAGIC* mg = mg_find(field, PERL_MAGIC_uvar);
+        SV* keysv = mg&minus;&gt;mg_obj;
+        /* Do whatever you need to.  If you decide to
+           supply a different key newkey, return it like this
+        */
+        sv_2mortal(newkey);
+        mg&minus;&gt;mg_obj = newkey;
+        return 0;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Weakrefs
+call uvar magic</b> <br>
+When a weak reference is stored in an
+<tt>&quot;SV&quot;</tt> that has &quot;uvar&quot; magic,
+<tt>&quot;set&quot;</tt> magic is called after the reference
+has gone stale. This hook can be used to trigger further
+garbage-collection activities associated with the referenced
+object.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How field
+hashes work</b> <br>
+The three features of key hashes, <i>key replacement</i>,
+<i>thread support</i>, and <i>garbage collection</i> are
+supported by a data structure called the <i>object
+registry</i>. This is a private hash where every object is
+stored. An &quot;object&quot; in this sense is any reference
+(blessed or unblessed) that has been used as a field hash
+key.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The object
+registry keeps track of references that have been used as
+field hash keys. The keys are generated from the reference
+address like in a field hash (though the registry
+isn&rsquo;t a field hash). Each value is a weak copy of the
+original reference, stored in an <tt>&quot;SV&quot;</tt>
+that is itself magical (<tt>&quot;PERL_MAGIC_uvar&quot;</tt>
+again). The magical structure holds a list (another hash,
+really) of field hashes that the reference has been used
+with. When the weakref becomes stale, the magic is activated
+and uses the list to delete the reference from all field
+hashes it has been used with. After that, the entry is
+removed from the object registry itself. Implicitly, that
+frees the magic structure and the storage it has been
+using.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Whenever a
+reference is used as a field hash key, the object registry
+is checked and a new entry is made if necessary. The field
+hash is then added to the list of fields this reference has
+used.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The object
+registry is also used to repair a field hash after thread
+cloning. Here, the entire object registry is processed. For
+every reference found there, the field hashes it has used
+are visited and the entry is updated.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Internal
+function Hash::Util::FieldHash::_fieldhash</b></p>
+
+<pre style="margin-left:11%;">    # test if %hash is a field hash
+    my $result = _fieldhash \ %hash, 0;
+    # make %hash a field hash
+    my $result = _fieldhash \ %hash, 1;</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">&quot;_fieldhash&quot;
+is the internal function used to create field hashes. It
+takes two arguments, a hashref and a mode. If the mode is
+boolean false, the hash is not changed but tested if it is a
+field hash. If the hash isn&rsquo;t a field hash the return
+value is boolean false. If it is, the return value indicates
+the mode of field hash. When called with a boolean true
+mode, it turns the given hash into a field hash of this
+mode, returning the mode of the created field hash.
+<tt>&quot;_fieldhash&quot;</tt> does not erase the given
+hash.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Currently there
+is only one type of field hash, and only the boolean value
+of the mode makes a difference, but that may change.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Anno Siegel (
+<small>ANNO</small> ) wrote the xs code and the changes in
+perl proper Jerry Hedden ( <small>JDHEDDEN</small> ) made it
+faster</p>
+
+<h2>COPYRIGHT AND LICENSE
+<a name="COPYRIGHT AND LICENSE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (C)
+2006&minus;2007 by (Anno Siegel)</p>
+
+<p style="margin-left:11%; margin-top: 1em">This library is
+free software; you can redistribute it and/or modify it
+under the same terms as Perl itself, either Perl version
+5.8.7 or, at your option, any later version of Perl 5 you
+may have available.</p>
+<hr>
+</body>
+</html>

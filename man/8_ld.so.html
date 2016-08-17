@@ -1,0 +1,664 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:40:23 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>LD.SO</title>
+
+</head>
+<body>
+
+<h1 align="center">LD.SO</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#HARDWARE CAPABILITIES">HARDWARE CAPABILITIES</a><br>
+<a href="#ENVIRONMENT">ENVIRONMENT</a><br>
+<a href="#FILES">FILES</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">ld.so,
+ld-linux.so* &minus; dynamic linker/loader</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The dynamic
+linker can be run either indirectly by running some
+dynamically linked program or library (in which case no
+command-line options to the dynamic linker can be passed
+and, in the ELF case, the dynamic linker which is stored in
+the <b>.interp</b> section of the program is executed) or
+directly by running:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>/lib/ld-linux.so.*</i>
+[OPTIONS] [PROGRAM [ARGUMENTS]]</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The programs
+<b>ld.so</b> and <b>ld-linux.so*</b> find and load the
+shared libraries needed by a program, prepare the program to
+run, and then run it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Linux binaries
+require dynamic linking (linking at run time) unless the
+<b>&minus;static</b> option was given to <b>ld</b>(1) during
+compilation.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The program
+<b>ld.so</b> handles a.out binaries, a format used long ago;
+<b>ld-linux.so*</b> handles ELF (<i>/lib/ld-linux.so.1</i>
+for libc5, <i>/lib/ld-linux.so.2</i> for glibc2), which
+everybody has been using for years now. Otherwise both have
+the same behavior, and use the same support files and
+programs <b>ldd</b>(1), <b>ldconfig</b>(8) and
+<i>/etc/ld.so.conf</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When resolving
+library dependencies, the dynamic linker first inspects each
+dependency string to see if it contains a slash (this can
+occur if a library pathname containing slashes was specified
+at link time). If a slash is found, then the dependency
+string is interpreted as a (relative or absolute) pathname,
+and the library is loaded using that pathname.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If a library
+dependency does not contain a slash, then it is searched for
+in the following order:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>o</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>(ELF only) Using the directories specified in the
+DT_RPATH dynamic section attribute of the binary if present
+and DT_RUNPATH attribute does not exist. Use of DT_RPATH is
+deprecated.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>o</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>Using the environment variable <b>LD_LIBRARY_PATH</b>.
+Except if the executable is a set-user-ID/set-group-ID
+binary, in which case it is ignored.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>o</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>(ELF only) Using the directories specified in the
+DT_RUNPATH dynamic section attribute of the binary if
+present.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>o</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>From the cache file <i>/etc/ld.so.cache</i>, which
+contains a compiled list of candidate libraries previously
+found in the augmented library path. If, however, the binary
+was linked with the <b>&minus;z nodeflib</b> linker option,
+libraries in the default library paths are skipped.
+Libraries installed in hardware capability directories (see
+below) are preferred to other libraries.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>o</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>In the default path <i>/lib</i>, and then
+<i>/usr/lib</i>. If the binary was linked with the
+<b>&minus;z nodeflib</b> linker option, this step is
+skipped.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Rpath token
+expansion <br>
+ld.so</b> understands certain strings in an rpath
+specification (DT_RPATH or DT_RUNPATH); those strings are
+substituted as follows <i><br>
+$ORIGIN</i> (or equivalently <i>${ORIGIN}</i>)</p>
+
+<p style="margin-left:22%;">This expands to the directory
+containing the application executable. Thus, an application
+located in <i>somedir/app</i> could be compiled with</p>
+
+<p style="margin-left:22%; margin-top: 1em">gcc
+-Wl,-rpath,'$ORIGIN/../lib'</p>
+
+<p style="margin-left:22%; margin-top: 1em">so that it
+finds an associated shared library in <i>somedir/lib</i> no
+matter where <i>somedir</i> is located in the directory
+hierarchy. This facilitates the creation of
+&quot;turn-key&quot; applications that do not need to be
+installed into special directories, but can instead be
+unpacked into any directory and still find their own shared
+libraries.</p>
+
+<p style="margin-left:11%;"><i>$LIB</i> (or equivalently
+<i>${LIB}</i>)</p>
+
+<p style="margin-left:22%;">This expands to <i>lib</i> or
+<i>lib64</i> depending on the architecture (e.g., on x86-64,
+it expands to <i>lib64</i> and on x86-32, it expands to
+<i>lib</i>).</p>
+
+<p style="margin-left:11%;"><i>$PLATFORM</i> (or
+equivalently <i>${PLATFORM}</i>)</p>
+
+<p style="margin-left:22%;">This expands to a string
+corresponding to the processor type of the host system
+(e.g., &quot;x86_64&quot;). On some architectures, the Linux
+kernel doesn&rsquo;t provide a platform string to the
+dynamic linker. The value of this string is taken from the
+<b>AT_PLATFORM</b> value in the auxiliary vector (see
+<b>getauxval</b>(3)).</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>&minus;&minus;list</b></p></td>
+<td width="2%"></td>
+<td width="73%">
+
+
+<p style="margin-top: 1em">List all dependencies and how
+they are resolved.</p></td>
+<td width="5%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;verify</b></p>
+
+<p style="margin-left:22%;">Verify that program is
+dynamically linked and this dynamic linker can handle
+it.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;library&minus;path
+PATH</b></p>
+
+<p style="margin-left:22%;">Use PATH instead of
+<b>LD_LIBRARY_PATH</b> environment variable setting (see
+below).</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&minus;inhibit&minus;rpath
+LIST</b></p>
+
+<p style="margin-left:22%;">Ignore RPATH and RUNPATH
+information in object names in LIST. This option is ignored
+if <b>ld.so</b> is set-user-ID or set-group-ID.</p>
+
+<p style="margin-left:11%;"><b>&minus;&minus;audit
+LIST</b></p>
+
+<p style="margin-left:22%;">Use objects named in LIST as
+auditors.</p>
+
+<h2>HARDWARE CAPABILITIES
+<a name="HARDWARE CAPABILITIES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Some libraries
+are compiled using hardware-specific instructions which do
+not exist on every CPU. Such libraries should be installed
+in directories whose names define the required hardware
+capabilities, such as <i>/usr/lib/sse2/</i>. The dynamic
+linker checks these directories against the hardware of the
+machine and selects the most suitable version of a given
+library. Hardware capability directories can be cascaded to
+combine CPU features. The list of supported hardware
+capability names depends on the CPU. The following names are
+currently recognized:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>Alpha</b></p></td>
+<td width="4%"></td>
+<td width="60%">
+
+
+<p>ev4, ev5, ev56, ev6, ev67</p></td>
+<td width="18%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>MIPS</b></p></td>
+<td width="4%"></td>
+<td width="60%">
+
+
+<p>loongson2e, loongson2f, octeon, octeon2</p></td>
+<td width="18%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>PowerPC</b></p>
+
+<p style="margin-left:22%;">4xxmac, altivec, arch_2_05,
+arch_2_06, booke, cellbe, dfp, efpdouble, efpsingle, fpu,
+ic_snoop, mmu, notb, pa6t, power4, power5, power5+, power6x,
+ppc32, ppc601, ppc64, smt, spe, ucache, vsx</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>SPARC</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>flush, muldiv, stbar, swap, ultra3, v9, v9v, v9v2</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>s390</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>dfp, eimm, esan3, etf3enh, g5, highgprs, hpage, ldisp,
+msa, stfle, z900, z990, z9-109, z10, zarch</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>x86 (32-bit only)</b></p>
+
+<p style="margin-left:22%;">acpi, apic, clflush, cmov, cx8,
+dts, fxsr, ht, i386, i486, i586, i686, mca, mmx, mtrr, pat,
+pbe, pge, pn, pse36, sep, ss, sse, sse2, tm</p>
+
+<h2>ENVIRONMENT
+<a name="ENVIRONMENT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">There are four
+important environment variables. <b><br>
+LD_ASSUME_KERNEL</b></p>
+
+<p style="margin-left:22%;">(glibc since 2.2.3) Each shared
+library can inform the dynamic linker of the minimum kernel
+ABI version that it requires. (This requirement is encoded
+in an ELF note section that is viewable via
+<i>readelf&nbsp;&minus;n</i> as a section labeled
+<b>NT_GNU_ABI_TAG</b>.) At run time, the dynamic linker
+determines the ABI version of the running kernel and will
+reject loading shared libraries that specify minimum ABI
+versions that exceed that ABI version.</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><b>LD_ASSUME_KERNEL</b>
+can be used to cause the dynamic linker to assume that it is
+running on a system with a different kernel ABI version. For
+example, the following command line causes the dynamic
+linker to assume it is running on Linux 2.2.5 when loading
+the shared libraries required by <i>myprog</i>:</p>
+
+<p style="margin-left:28%; margin-top: 1em">$
+<b>LD_ASSUME_KERNEL=2.2.5 ./myprog</b></p>
+
+<p style="margin-left:22%; margin-top: 1em">On systems that
+provide multiple versions of a shared library (in different
+directories in the search path) that have different minimum
+kernel ABI version requirements, <b>LD_ASSUME_KERNEL</b> can
+be used to select the version of the library that is used
+(dependent on the directory search order). Historically, the
+most common use of the <b>LD_ASSUME_KERNEL</b> feature was
+to manually select the older LinuxThreads POSIX threads
+implementation on systems that provided both LinuxThreads
+and NPTL (which latter was typically the default on such
+systems); see <b>pthreads</b>(7).</p>
+
+<p style="margin-left:11%;"><b>LD_BIND_NOT</b></p>
+
+<p style="margin-left:22%;">(glibc since 2.2) Don&rsquo;t
+update the Global Offset Table (GOT) and Procedure Linkage
+Table (PLT) when resolving a symbol.</p>
+
+<p style="margin-left:11%;"><b>LD_BIND_NOW</b></p>
+
+<p style="margin-left:22%;">(libc5; glibc since 2.1.1) If
+set to a nonempty string, causes the dynamic linker to
+resolve all symbols at program startup instead of deferring
+function call resolution to the point when they are first
+referenced. This is useful when using a debugger.</p>
+
+<p style="margin-left:11%;"><b>LD_LIBRARY_PATH</b></p>
+
+<p style="margin-left:22%;">A colon-separated list of
+directories in which to search for ELF libraries at
+execution-time. Similar to the <b>PATH</b> environment
+variable. Ignored in set-user-ID and set-group-ID
+programs.</p>
+
+<p style="margin-left:11%;"><b>LD_PRELOAD</b></p>
+
+<p style="margin-left:22%;">A list of additional,
+user-specified, ELF shared libraries to be loaded before all
+others. The items of the list can be separated by spaces or
+colons. This can be used to selectively override functions
+in other shared libraries. The libraries are searched for
+using the rules given under DESCRIPTION. For
+set-user-ID/set-group-ID ELF binaries, preload pathnames
+containing slashes are ignored, and libraries in the
+standard search directories are loaded only if the
+set-user-ID permission bit is enabled on the library
+file.</p>
+
+
+<p style="margin-left:11%;"><b>LD_TRACE_LOADED_OBJECTS</b></p>
+
+<p style="margin-left:22%;">(ELF only) If set to a nonempty
+string, causes the program to list its dynamic library
+dependencies, as if run by <b>ldd</b>(1), instead of running
+normally.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Then there are
+lots of more or less obscure variables, many obsolete or
+only for internal use. <b><br>
+LD_AOUT_LIBRARY_PATH</b></p>
+
+<p style="margin-left:22%;">(libc5) Version of
+<b>LD_LIBRARY_PATH</b> for a.out binaries only. Old versions
+of ld&minus;linux.so.1 also supported
+<b>LD_ELF_LIBRARY_PATH</b>.</p>
+
+<p style="margin-left:11%;"><b>LD_AOUT_PRELOAD</b></p>
+
+<p style="margin-left:22%;">(libc5) Version of
+<b>LD_PRELOAD</b> for a.out binaries only. Old versions of
+ld&minus;linux.so.1 also supported
+<b>LD_ELF_PRELOAD</b>.</p>
+
+<p style="margin-left:11%;"><b>LD_AUDIT</b></p>
+
+<p style="margin-left:22%;">(glibc since 2.4) A
+colon-separated list of user-specified, ELF shared objects
+to be loaded before all others in a separate linker
+namespace (i.e., one that does not intrude upon the normal
+symbol bindings that would occur in the process). These
+libraries can be used to audit the operation of the dynamic
+linker. <b>LD_AUDIT</b> is ignored for
+set-user-ID/set-group-ID binaries.</p>
+
+<p style="margin-left:22%; margin-top: 1em">The dynamic
+linker will notify the audit libraries at so-called auditing
+checkpoints&mdash;for example, loading a new library,
+resolving a symbol, or calling a symbol from another shared
+object&mdash;by calling an appropriate function within the
+audit library. For details, see <b>rtld-audit</b>(7). The
+auditing interface is largely compatible with that provided
+on Solaris, as described in its <i>Linker and Libraries
+Guide</i>, in the chapter <i>Runtime Linker Auditing
+Interface</i>.</p>
+
+<p style="margin-left:11%;"><b>LD_BIND_NOT</b></p>
+
+<p style="margin-left:22%;">(glibc since 2.1.95) Do not
+update the GOT (global offset table) and PLT (procedure
+linkage table) after resolving a symbol.</p>
+
+<p style="margin-left:11%;"><b>LD_DEBUG</b></p>
+
+<p style="margin-left:22%;">(glibc since 2.1) Output
+verbose debugging information about the dynamic linker. If
+set to <b>all</b> prints all debugging information it has,
+if set to <b>help</b> prints a help message about which
+categories can be specified in this environment variable.
+Since glibc 2.3.4, <b>LD_DEBUG</b> is ignored for
+set-user-ID/set-group-ID binaries.</p>
+
+<p style="margin-left:11%;"><b>LD_DEBUG_OUTPUT</b></p>
+
+<p style="margin-left:22%;">(glibc since 2.1) File in which
+<b>LD_DEBUG</b> output should be written. The default is
+standard output. <b>LD_DEBUG_OUTPUT</b> is ignored for
+set-user-ID/set-group-ID binaries.</p>
+
+<p style="margin-left:11%;"><b>LD_DYNAMIC_WEAK</b></p>
+
+<p style="margin-left:22%;">(glibc since 2.1.91) Allow weak
+symbols to be overridden (reverting to old glibc behavior).
+For security reasons, since glibc 2.3.4,
+<b>LD_DYNAMIC_WEAK</b> is ignored for
+set-user-ID/set-group-ID binaries.</p>
+
+<p style="margin-left:11%;"><b>LD_HWCAP_MASK</b></p>
+
+<p style="margin-left:22%;">(glibc since 2.1) Mask for
+hardware capabilities.</p>
+
+<p style="margin-left:11%;"><b>LD_KEEPDIR</b></p>
+
+<p style="margin-left:22%;">(a.out only)(libc5) Don&rsquo;t
+ignore the directory in the names of a.out libraries to be
+loaded. Use of this option is strongly discouraged.</p>
+
+<p style="margin-left:11%;"><b>LD_NOWARN</b></p>
+
+<p style="margin-left:22%;">(a.out only)(libc5) Suppress
+warnings about a.out libraries with incompatible minor
+version numbers.</p>
+
+<p style="margin-left:11%;"><b>LD_ORIGIN_PATH</b></p>
+
+<p style="margin-left:22%;">(glibc since 2.1) Path where
+the binary is found (for non-set-user-ID programs). For
+security reasons, since glibc 2.4, <b>LD_ORIGIN_PATH</b> is
+ignored for set-user-ID/set-group-ID binaries.</p>
+
+<p style="margin-left:11%;"><b>LD_POINTER_GUARD</b></p>
+
+<p style="margin-left:22%;">(glibc since 2.4) Set to 0 to
+disable pointer guarding. Any other value enables pointer
+guarding, which is also the default. Pointer guarding is a
+security mechanism whereby some pointers to code stored in
+writable program memory (return addresses saved by
+<b>setjmp</b>(3) or function pointers used by various glibc
+internals) are mangled semi-randomly to make it more
+difficult for an attacker to hijack the pointers for use in
+the event of a buffer overrun or stack-smashing attack.</p>
+
+<p style="margin-left:11%;"><b>LD_PROFILE</b></p>
+
+<p style="margin-left:22%;">(glibc since 2.1) Shared object
+to be profiled, specified either as a pathname or a soname.
+Profiling output is written to the file whose name is:
+&quot;<i>$LD_PROFILE_OUTPUT</i>/<i>$LD_PROFILE</i>.profile&quot;.</p>
+
+<p style="margin-left:11%;"><b>LD_PROFILE_OUTPUT</b></p>
+
+<p style="margin-left:22%;">(glibc since 2.1) Directory
+where <b>LD_PROFILE</b> output should be written. If this
+variable is not defined, or is defined as an empty string,
+then the default is <i>/var/tmp</i>.
+<b>LD_PROFILE_OUTPUT</b> is ignored for set-user-ID and
+set-group-ID programs, which always use
+<i>/var/profile</i>.</p>
+
+<p style="margin-left:11%;"><b>LD_SHOW_AUXV</b></p>
+
+<p style="margin-left:22%;">(glibc since 2.1) Show
+auxiliary array passed up from the kernel. For security
+reasons, since glibc 2.3.5, <b>LD_SHOW_AUXV</b> is ignored
+for set-user-ID/set-group-ID binaries.</p>
+
+<p style="margin-left:11%;"><b>LD_USE_LOAD_BIAS</b></p>
+
+<p style="margin-left:22%;">By default (i.e., if this
+variable is not defined) executables and prelinked shared
+objects will honor base addresses of their dependent
+libraries and (nonprelinked) position-independent
+executables (PIEs) and other shared objects will not honor
+them. If <b>LD_USE_LOAD_BIAS</b> is defined wit the value,
+both executables and PIEs will honor the base addresses. If
+<b>LD_USE_LOAD_BIAS</b> is defined with the value 0, neither
+executables nor PIEs will honor the base addresses. This
+variable is ignored by set-user-ID and set-group-ID
+programs.</p>
+
+<p style="margin-left:11%;"><b>LD_VERBOSE</b></p>
+
+<p style="margin-left:22%;">(glibc since 2.1) If set to a
+nonempty string, output symbol versioning information about
+the program if the <b>LD_TRACE_LOADED_OBJECTS</b>
+environment variable has been set.</p>
+
+<p style="margin-left:11%;"><b>LD_WARN</b></p>
+
+<p style="margin-left:22%;">(ELF only)(glibc since 2.1.3)
+If set to a nonempty string, warn about unresolved
+symbols.</p>
+
+<p style="margin-left:11%;"><b>LDD_ARGV0</b></p>
+
+<p style="margin-left:22%;">(libc5) <i>argv</i>[0] to be
+used by <b>ldd</b>(1) when none is present.</p>
+
+<h2>FILES
+<a name="FILES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>/lib/ld.so</i></p>
+
+<p style="margin-left:22%;">a.out dynamic linker/loader</p>
+
+
+<p style="margin-left:11%;"><i>/lib/ld&minus;linux.so.</i>{<i>1</i>,<i>2</i>}</p>
+
+<p style="margin-left:22%;">ELF dynamic linker/loader</p>
+
+<p style="margin-left:11%;"><i>/etc/ld.so.cache</i></p>
+
+<p style="margin-left:22%;">File containing a compiled list
+of directories in which to search for libraries and an
+ordered list of candidate libraries.</p>
+
+<p style="margin-left:11%;"><i>/etc/ld.so.preload</i></p>
+
+<p style="margin-left:22%;">File containing a
+whitespace-separated list of ELF shared libraries to be
+loaded before the program.</p>
+
+<p style="margin-left:11%;"><b>lib*.so*</b></p>
+
+<p style="margin-left:22%;">shared libraries</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>ld.so</b> functionality is available for executables
+compiled using libc version 4.4.3 or greater. ELF
+functionality is available since Linux 1.1.52 and libc5.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>ldd</b>(1),
+<b>sln</b>(1), <b>getauxval</b>(3), <b>rtld-audit</b>(7),
+<b>ldconfig</b>(8)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

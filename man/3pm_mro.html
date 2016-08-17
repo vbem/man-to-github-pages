@@ -1,0 +1,453 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:33:22 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>mro</title>
+
+</head>
+<body>
+
+<h1 align="center">mro</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OVERVIEW">OVERVIEW</a><br>
+<a href="#The C3 MRO">The C3 MRO</a><br>
+<a href="#Functions">Functions</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mro &minus;
+Method Resolution Order</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  use mro; # enables next::method and friends globally
+  use mro 'dfs'; # enable DFS MRO for this class (Perl default)
+  use mro 'c3'; # enable C3 MRO for this class</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+&quot;mro&quot; namespace provides several utilities for
+dealing with method resolution order and method caching in
+general.</p>
+
+<p style="margin-left:11%; margin-top: 1em">These
+interfaces are only available in Perl 5.9.5 and higher. See
+MRO::Compat on <small>CPAN</small> for a mostly forwards
+compatible implementation for older Perls.</p>
+
+<h2>OVERVIEW
+<a name="OVERVIEW"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">It&rsquo;s
+possible to change the <small>MRO</small> of a given class
+either by using <tt>&quot;use mro&quot;</tt> as shown in the
+synopsis, or by using the &quot;mro::set_mro&quot; function
+below.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The special
+methods <tt>&quot;next::method&quot;</tt>,
+<tt>&quot;next::can&quot;</tt>, and
+<tt>&quot;maybe::next::method&quot;</tt> are not available
+until this <tt>&quot;mro&quot;</tt> module has been loaded
+via <tt>&quot;use&quot;</tt> or
+<tt>&quot;require&quot;</tt>.</p>
+
+<h2>The C3 MRO
+<a name="The C3 MRO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In addition to
+the traditional Perl default <small>MRO</small> (depth first
+search, called <tt>&quot;DFS&quot;</tt> here), Perl now
+offers the C3 <small>MRO</small> as well. Perl&rsquo;s
+support for C3 is based on the work done in Stevan
+Little&rsquo;s module Class::C3, and most of the
+C3&minus;related documentation here is ripped directly from
+there.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>What is
+C3?</b> <br>
+C3 is the name of an algorithm which aims to provide a sane
+method resolution order under multiple inheritance. It was
+first introduced in the language Dylan (see links in the
+&quot; <small>SEE ALSO</small> &quot; section), and then
+later adopted as the preferred <small>MRO</small> (Method
+Resolution Order) for the new-style classes in Python 2.3.
+Most recently it has been adopted as the
+&quot;canonical&quot; <small>MRO</small> for Perl 6 classes,
+and the default <small>MRO</small> for Parrot objects as
+well.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How does C3
+work</b> <br>
+C3 works by always preserving local precedence ordering.
+This essentially means that no class will appear before any
+of its subclasses. Take, for instance, the classic diamond
+inheritance pattern:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">     &lt;A&gt;
+    /   \
+  &lt;B&gt;   &lt;C&gt;
+    \   /
+     &lt;D&gt;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The standard
+Perl 5 <small>MRO</small> would be (D, B, A, C). The result
+being that <b>A</b> appears before <b>C</b>, even though
+<b>C</b> is the subclass of <b>A</b>. The C3
+<small>MRO</small> algorithm however, produces the following
+order: (D, B, C, A), which does not have this issue.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This example is
+fairly trivial; for more complex cases and a deeper
+explanation, see the links in the &quot; <small>SEE
+ALSO</small> &quot; section.</p>
+
+<h2>Functions
+<a name="Functions"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mro::get_linear_isa($classname[,
+$type])</b> <br>
+Returns an arrayref which is the linearized
+<small>MRO</small> of the given class. Uses whichever
+<small>MRO</small> is currently in effect for that class by
+default, or the given <small>MRO</small> (either
+<tt>&quot;c3&quot;</tt> or <tt>&quot;dfs&quot;</tt> if
+specified as <tt>$type</tt>).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The linearized
+<small>MRO</small> of a class is an ordered array of all of
+the classes one would search when resolving a method on that
+class, starting with the class itself.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+requested class doesn&rsquo;t yet exist, this function will
+still succeed, and return <tt>&quot;[ $classname
+]&quot;</tt></p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+<tt>&quot;UNIVERSAL&quot;</tt> (and any members of
+<tt>&quot;UNIVERSAL&quot;</tt>&rsquo;s <small>MRO</small> )
+are not part of the <small>MRO</small> of a class, even
+though all classes implicitly inherit methods from
+<tt>&quot;UNIVERSAL&quot;</tt> and its parents.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mro::set_mro
+($classname, $type)</b> <br>
+Sets the <small>MRO</small> of the given class to the
+<tt>$type</tt> argument (either <tt>&quot;c3&quot;</tt> or
+<tt>&quot;dfs&quot;</tt>).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mro::get_mro($classname)</b>
+<br>
+Returns the <small>MRO</small> of the given class (either
+<tt>&quot;c3&quot;</tt> or <tt>&quot;dfs&quot;</tt>).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mro::get_isarev($classname)</b>
+<br>
+Gets the <tt>&quot;mro_isarev&quot;</tt> for this class,
+returned as an arrayref of class names. These are every
+class that &quot;isa&quot; the given class name, even if the
+isa relationship is indirect. This is used internally by the
+<small>MRO</small> code to keep track of method/MRO cache
+invalidations.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As with
+<tt>&quot;mro::get_linear_isa&quot;</tt> above,
+<tt>&quot;UNIVERSAL&quot;</tt> is special.
+<tt>&quot;UNIVERSAL&quot;</tt> (and parents&rsquo;) isarev
+lists do not include every class in existence, even though
+all classes are effectively descendants for method
+inheritance purposes.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mro::is_universal($classname)</b>
+<br>
+Returns a boolean status indicating whether or not the given
+classname is either <tt>&quot;UNIVERSAL&quot;</tt> itself,
+or one of <tt>&quot;UNIVERSAL&quot;</tt>&rsquo;s parents by
+<tt>@ISA</tt> inheritance.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Any class for
+which this function returns true is &quot;universal&quot; in
+the sense that all classes potentially inherit methods from
+it.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>mro::invalidate_all_method_caches()</i>
+<br>
+Increments <tt>&quot;PL_sub_generation&quot;</tt>, which
+invalidates method caching in all packages.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mro::method_changed_in($classname)</b>
+<br>
+Invalidates the method cache of any classes dependent on the
+given class. This is not normally necessary. The only known
+case where pure perl code can confuse the method cache is
+when you manually install a new constant subroutine by using
+a readonly scalar value, like the internals of constant do.
+If you find another case, please report it so we can either
+fix it or document the exception here.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mro::get_pkg_gen($classname)</b>
+<br>
+Returns an integer which is incremented every time a real
+local method in the package <tt>$classname</tt> changes, or
+the local <tt>@ISA</tt> of <tt>$classname</tt> is
+modified.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is
+intended for authors of modules which do lots of class
+introspection, as it allows them to very quickly check if
+anything important about the local properties of a given
+class have changed since the last time they looked. It does
+not increment on method/<tt>@ISA</tt> changes in
+superclasses.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It&rsquo;s
+still up to you to seek out the actual changes, and there
+might not actually be any. Perhaps all of the changes since
+you last checked cancelled each other out and left the
+package in the state it was in before.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This integer
+normally starts off at a value of <tt>1</tt> when a package
+stash is instantiated. Calling it on packages whose stashes
+do not exist at all will return <tt>0</tt>. If a package
+stash is completely deleted (not a normal occurence, but it
+can happen if someone does something like <tt>&quot;undef
+%PkgName::&quot;</tt>), the number will be reset to either
+<tt>0</tt> or <tt>1</tt>, depending on how completely
+package was wiped out.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>next::method</b>
+<br>
+This is somewhat like <tt>&quot;SUPER&quot;</tt>, but it
+uses the C3 method resolution order to get better
+consistency in multiple inheritance situations. Note that
+while inheritance in general follows whichever
+<small>MRO</small> is in effect for the given class,
+<tt>&quot;next::method&quot;</tt> only uses the C3
+<small>MRO</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">One generally
+uses it like so:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  sub some_method {
+    my $self = shift;
+    my $superclass_answer = $self&minus;&gt;next::method(@_);
+    return $superclass_answer + 1;
+  }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Note that you
+don&rsquo;t (re&minus;)specify the method name. It forces
+you to always use the same method name as the method you
+started in.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It can be
+called on an object or a class, of course.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The way it
+resolves which actual method to call is:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>1.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>First, it determines the linearized C3
+<small>MRO</small> of the object or class it is being called
+on.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>2.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>Then, it determines the class and method name of the
+context it was invoked from.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>3.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>Finally, it searches down the C3 <small>MRO</small> list
+until it reaches the contextually enclosing class, then
+searches further down the <small>MRO</small> list for the
+next method with the same name as the contextually enclosing
+method.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Failure to find
+a next method will result in an exception being thrown (see
+below for alternatives).</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is
+substantially different than the behavior of
+<tt>&quot;SUPER&quot;</tt> under complex multiple
+inheritance. (This becomes obvious when one realizes that
+the common superclasses in the C3 linearizations of a given
+class and one of its parents will not always be ordered the
+same for both.)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Caveat</b>:
+Calling <tt>&quot;next::method&quot;</tt> from methods
+defined outside the class:</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is an
+edge case when using <tt>&quot;next::method&quot;</tt> from
+within a subroutine which was created in a different module
+than the one it is called from. It sounds complicated, but
+it really isn&rsquo;t. Here is an example which will not
+work correctly:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  *Foo::foo = sub { (shift)&minus;&gt;next::method(@_) };</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The problem
+exists because the anonymous subroutine being assigned to
+the <tt>*Foo::foo</tt> glob will show up in the call stack
+as being called <tt>&quot;__ANON__&quot;</tt> and not
+<tt>&quot;foo&quot;</tt> as you might expect. Since
+<tt>&quot;next::method&quot;</tt> uses
+<tt>&quot;caller&quot;</tt> to find the name of the method
+it was called in, it will fail in this case.</p>
+
+<p style="margin-left:11%; margin-top: 1em">But fear not,
+there&rsquo;s a simple solution. The module
+<tt>&quot;Sub::Name&quot;</tt> will reach into the perl
+internals and assign a name to an anonymous subroutine for
+you. Simply do this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  use Sub::Name 'subname';
+  *Foo::foo = subname 'Foo::foo' =&gt; sub { (shift)&minus;&gt;next::method(@_) };</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">and things will
+Just Work.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>next::can</b>
+<br>
+This is similar to <tt>&quot;next::method&quot;</tt>, but
+just returns either a code reference or
+<tt>&quot;undef&quot;</tt> to indicate that no further
+methods of this name exist.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>maybe::next::method</b>
+<br>
+In simple cases, it is equivalent to:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   $self&minus;&gt;next::method(@_) if $self&minus;&gt;next::can;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">But there are
+some cases where only this solution works (like
+<tt>&quot;goto &amp;maybe::next::method&quot;</tt>);</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>The original
+Dylan paper</b> <br>
+
+http://www.webcom.com/haahr/dylan/linearization&minus;oopsla96.html
+<br>
+
+&lt;http://www.webcom.com/haahr/dylan/linearization-oopsla96.html&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Pugs</b>
+<br>
+The Pugs prototype Perl 6 Object Model uses C3</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Parrot</b>
+<br>
+Parrot now uses C3 <br>
+&lt;http://use.perl.org/~autrijus/journal/25768&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Python 2.3
+<small>MRO</small> related links</b> <br>
+&lt;http://www.python.org/2.3/mro.html&gt; <br>
+&lt;http://www.python.org/2.2.2/descrintro.html#mro&gt;</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Class::C3</b>
+<br>
+Class::C3</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Brandon L.
+Black, &lt;blblack@gmail.com&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">Based on Stevan
+Little&rsquo;s Class::C3</p>
+<hr>
+</body>
+</html>

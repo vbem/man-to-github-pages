@@ -1,0 +1,245 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:32:15 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SOCKATMARK</title>
+
+</head>
+<body>
+
+<h1 align="center">SOCKATMARK</h1>
+
+<a href="#PROLOG">PROLOG</a><br>
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
+<a href="#APPLICATION USAGE">APPLICATION USAGE</a><br>
+<a href="#RATIONALE">RATIONALE</a><br>
+<a href="#FUTURE DIRECTIONS">FUTURE DIRECTIONS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+
+<hr>
+
+
+<h2>PROLOG
+<a name="PROLOG"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This manual
+page is part of the POSIX Programmer&rsquo;s Manual. The
+Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux
+behavior), or the interface may not be implemented on
+Linux.</p>
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">sockatmark
+&minus; determine whether a socket is at the out-of-band
+mark</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;sys/socket.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+sockatmark(int</b> <i>s</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>sockatmark</i>() function shall determine whether the
+socket specified by the descriptor <i>s</i> is at the
+out-of-band data mark (see the System Interfaces volume of
+IEEE&nbsp;Std&nbsp;1003.1-2001, Section 2.10.12, Socket
+Out-of-Band State). If the protocol for the socket supports
+out-of-band data by marking the stream with an out-of-band
+data mark, the <i>sockatmark</i>() function shall return 1
+when all data preceding the mark has been read and the
+out-of-band data mark is the first element in the receive
+queue. The <i>sockatmark</i>() function shall not remove the
+mark from the stream.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Upon successful
+completion, the <i>sockatmark</i>() function shall return a
+value indicating whether the socket is at an out-of-band
+data mark. If the protocol has marked the data stream and
+all data preceding the mark has been read, the return value
+shall be 1; if there is no mark, or if data precedes the
+mark in the receive queue, the <i>sockatmark</i>() function
+shall return 0. Otherwise, it shall return a value of -1 and
+set <i>errno</i> to indicate the error.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>sockatmark</i>() function shall fail if:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EBADF</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The <i>s</i> argument is not a valid file
+descriptor.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOTTY</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The <i>s</i> argument does not specify a descriptor for
+a socket.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><i>The
+following sections are informative.</i></p>
+
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">None.</p>
+
+<h2>APPLICATION USAGE
+<a name="APPLICATION USAGE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The use of this
+function between receive operations allows an application to
+determine which received data precedes the out-of-band data
+and which follows the out-of-band data.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is an
+inherent race condition in the use of this function. On an
+empty receive queue, the current read of the location might
+well be at the &quot;mark&quot;, but the system has no way
+of knowing that the next data segment that will arrive from
+the network will carry the mark, and <i>sockatmark</i>()
+will return false, and the next read operation will silently
+consume the mark.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Hence, this
+function can only be used reliably when the application
+already knows that the out-of-band data has been seen by the
+system or that it is known that there is data waiting to be
+read at the socket (via SIGURG or <i>select</i>()). See
+<i>Socket Receive Queue</i>, <i>Socket Out-of-Band Data
+State</i>, <i>Signals</i>, and <i>pselect</i>() for
+details.</p>
+
+<h2>RATIONALE
+<a name="RATIONALE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>sockatmark</i>() function replaces the historical
+SIOCATMARK command to <i>ioctl</i>() which implemented the
+same functionality on many implementations. Using a wrapper
+function follows the adopted conventions to avoid specifying
+commands to the <i>ioctl</i>() function, other than those
+now included to support XSI STREAMS. The <i>sockatmark</i>()
+function could be implemented as follows:</p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>#include
+&lt;sys/ioctl.h&gt;</b></p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>int
+sockatmark(int s) <br>
+{ <br>
+int val; <br>
+if (ioctl(s,SIOCATMARK,&amp;val)==-1) <br>
+return(-1); <br>
+return(val); <br>
+}</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">The use of
+[ENOTTY] to indicate an incorrect descriptor type matches
+the historical behavior of SIOCATMARK.</p>
+
+<h2>FUTURE DIRECTIONS
+<a name="FUTURE DIRECTIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">None.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>pselect</i>(),
+<i>recv</i>(), <i>recvmsg</i>(), the Base Definitions volume
+of IEEE&nbsp;Std&nbsp;1003.1-2001,
+<i>&lt;sys/socket.h&gt;</i></p>
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Portions of
+this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2003 Edition, Standard for Information
+Technology -- Portable Operating System Interface (POSIX),
+The Open Group Base Specifications Issue 6, Copyright (C)
+2001-2003 by the Institute of Electrical and Electronics
+Engineers, Inc and The Open Group. In the event of any
+discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open
+Group Standard is the referee document. The original
+Standard can be obtained online at
+http://www.opengroup.org/unix/online.html .</p>
+<hr>
+</body>
+</html>

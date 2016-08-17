@@ -1,0 +1,442 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:56 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SPU_CREATE</title>
+
+</head>
+<body>
+
+<h1 align="center">SPU_CREATE</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#FILES">FILES</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">spu_create
+&minus; create a new spu context</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;sys/types.h&gt; <br>
+#include &lt;sys/spu.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+spu_create(const char *</b><i>pathname</i><b>, int</b>
+<i>flags</i><b>, mode_t</b> <i>mode</i><b>); <br>
+int spu_create(const char *</b><i>pathname</i><b>, int</b>
+<i>flags</i><b>, mode_t</b> <i>mode</i><b>, <br>
+int</b> <i>neighbor_fd</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Note</i>:
+There is no glibc wrapper for this system call; see
+NOTES.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>spu_create</b>() system call is used on PowerPC machines
+that implement the Cell Broadband Engine Architecture in
+order to access Synergistic Processor Units (SPUs). It
+creates a new logical context for an SPU in <i>pathname</i>
+and returns a file descriptor associated with it.
+<i>pathname</i> must refer to a nonexistent directory in the
+mount point of the SPU file system (<b>spufs</b>). If
+<b>spu_create</b>() is successful, a directory is created at
+<i>pathname</i> and it is populated with the files described
+in <b>spufs</b>(7).</p>
+
+<p style="margin-left:11%; margin-top: 1em">When a context
+is created, the returned file descriptor can only be passed
+to <b>spu_run</b>(2), used as the <i>dirfd</i> argument to
+the <b>*at</b> family of system calls (e.g.,
+<b>openat</b>(2)), or closed; other operations are not
+defined. A logical SPU context is destroyed (along with all
+files created within the context&rsquo;s <i>pathname</i>
+directory) once the last reference to the context has gone;
+this usually occurs when the file descriptor returned by
+<b>spu_create</b>() is closed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>flags</i> argument can be zero or any bitwise OR-ed
+combination of the following constants: <b><br>
+SPU_CREATE_EVENTS_ENABLED</b></p>
+
+<p style="margin-left:22%;">Rather than using signals for
+reporting DMA errors, use the <i>event</i> argument to
+<b>spu_run</b>(2).</p>
+
+<p style="margin-left:11%;"><b>SPU_CREATE_GANG</b></p>
+
+<p style="margin-left:22%;">Create an SPU gang instead of a
+context. (A gang is a group of SPU contexts that are
+functionally related to each other and which share common
+scheduling parameters&mdash;priority and policy. In the
+future, gang scheduling may be implemented causing the group
+to be switched in and out as a single unit.)</p>
+
+<p style="margin-left:22%; margin-top: 1em">A new directory
+will be created at the location specified by the
+<i>pathname</i> argument. This gang may be used to hold
+other SPU contexts, by providing a pathname that is within
+the gang directory to further calls to
+<b>spu_create</b>().</p>
+
+<p style="margin-left:11%;"><b>SPU_CREATE_NOSCHED</b></p>
+
+<p style="margin-left:22%;">Create a context that is not
+affected by the SPU scheduler. Once the context is run, it
+will not be scheduled out until it is destroyed by the
+creating process.</p>
+
+<p style="margin-left:22%; margin-top: 1em">Because the
+context cannot be removed from the SPU, some functionality
+is disabled for <b>SPU_CREATE_NOSCHED</b> contexts. Only a
+subset of the files will be available in this context
+directory in <b>spufs</b>. Additionally,
+<b>SPU_CREATE_NOSCHED</b> contexts cannot dump a core file
+when crashing.</p>
+
+<p style="margin-left:22%; margin-top: 1em">Creating
+<b>SPU_CREATE_NOSCHED</b> contexts requires the
+<b>CAP_SYS_NICE</b> capability.</p>
+
+<p style="margin-left:11%;"><b>SPU_CREATE_ISOLATE</b></p>
+
+<p style="margin-left:22%;">Create an isolated SPU context.
+Isolated contexts are protected from some PPE (PowerPC
+Processing Element) operations, such as access to the SPU
+local store and the NPC register.</p>
+
+<p style="margin-left:22%; margin-top: 1em">Creating
+<b>SPU_CREATE_ISOLATE</b> contexts also requires the
+<b>SPU_CREATE_NOSCHED</b> flag.</p>
+
+
+<p style="margin-left:11%;"><b>SPU_CREATE_AFFINITY_SPU</b></p>
+
+<p style="margin-left:22%;">Create a context with affinity
+to another SPU context. This affinity information is used
+within the SPU scheduling algorithm. Using this flag
+requires that a file descriptor referring to the other SPU
+context be passed in the <i>neighbor_fd</i> argument.</p>
+
+
+<p style="margin-left:11%;"><b>SPU_CREATE_AFFINITY_MEM</b></p>
+
+<p style="margin-left:22%;">Create a context with affinity
+to system memory. This affinity information is used within
+the SPU scheduling algorithm.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>mode</i>
+argument (minus any bits set in the process&rsquo;s
+<b>umask</b>(2)) specifies the permissions used for creating
+the new directory in <b>spufs</b>. See <b>stat</b>(2) for a
+full list of the possible <i>mode</i> values.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success,
+<b>spu_create</b>() returns a new file descriptor. On error,
+&minus;1 is returned, and <i>errno</i> is set to one of the
+error codes listed below.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EACCES</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">The current user does not have
+write access to the <b>spufs</b>(7) mount point.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EEXIST</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>An SPU context already exists at the given path
+name.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>pathname</i> is not a valid string pointer in the
+calling process&rsquo;s address space.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>pathname</i> is not a directory in the
+<b>spufs</b>(7) mount point, or invalid flags have been
+provided.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ELOOP</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Too many symbolic links were found while resolving
+<i>pathname</i>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EMFILE</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The process has reached its maximum open files
+limit.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>ENAMETOOLONG</b></p>
+
+<p style="margin-left:22%;"><i>pathname</i> is too
+long.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENFILE</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The system has reached the global open files limit.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENODEV</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>An isolated context was requested, but the hardware does
+not support SPU isolation.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOENT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Part of <i>pathname</i> could not be resolved.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The kernel could not allocate all resources
+required.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOSPC</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>There are not enough SPU resources available to create a
+new context or the user-specific limit for the number of SPU
+contexts has been reached.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOSYS</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The functionality is not provided by the current system,
+because either the hardware does not provide SPUs or the
+spufs module is not loaded.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>ENOTDIR</b></p>
+
+<p style="margin-left:22%;">A part of <i>pathname</i> is
+not a directory.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>EPERM</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>The <i>SPU_CREATE_NOSCHED</i> flag has been given, but
+the user does not have the <b>CAP_SYS_NICE</b>
+capability.</p> </td></tr>
+</table>
+
+<h2>FILES
+<a name="FILES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>pathname</i>
+must point to a location beneath the mount point of
+<b>spufs</b>. By convention, it gets mounted in
+<i>/spu</i>.</p>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>spu_create</b>() system call was added to Linux in kernel
+2.6.16.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This call is
+Linux-specific and implemented only on the PowerPC
+architecture. Programs using this system call are not
+portable.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Glibc does not
+provide a wrapper for this system call; call it using
+<b>syscall</b>(2). Note however, that <b>spu_create</b>() is
+meant to be used from libraries that implement a more
+abstract interface to SPUs, not to be used from regular
+applications. See
+<a href="http://www.bsc.es/projects/deepcomputing/linuxoncell/">http://www.bsc.es/projects/deepcomputing/linuxoncell/</a>
+for the recommended libraries.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">See
+<b>spu_run</b>(2) for an example of the use of
+<b>spu_create</b>()</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>close</b>(2),
+<b>spu_run</b>(2), <b>capabilities</b>(7),
+<b>spufs</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

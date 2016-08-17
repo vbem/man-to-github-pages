@@ -1,0 +1,641 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:39:12 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>GITWORKFLOWS</title>
+
+</head>
+<body>
+
+<h1 align="center">GITWORKFLOWS</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#SEPARATE CHANGES">SEPARATE CHANGES</a><br>
+<a href="#MANAGING BRANCHES">MANAGING BRANCHES</a><br>
+<a href="#DISTRIBUTED WORKFLOWS">DISTRIBUTED WORKFLOWS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#GIT">GIT</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">gitworkflows
+&minus; An overview of recommended workflows with Git</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">git *</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+attempts to write down and motivate some of the workflow
+elements used for git.git itself. Many ideas apply in
+general, though the full workflow is rarely required for
+smaller projects with fewer people involved.</p>
+
+<p style="margin-left:11%; margin-top: 1em">We formulate a
+set of <i>rules</i> for quick reference, while the prose
+tries to motivate each of them. Do not always take them
+literally; you should value good reasons for your actions
+higher than manpages such as this one.</p>
+
+<h2>SEPARATE CHANGES
+<a name="SEPARATE CHANGES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">As a general
+rule, you should try to split your changes into small
+logical steps, and commit each of them. They should be
+consistent, working independently of any later commits, pass
+the test suite, etc. This makes the review process much
+easier, and the history much more useful for later
+inspection and analysis, for example with
+<b>git-blame</b>(1) and <b>git-bisect</b>(1).</p>
+
+<p style="margin-left:11%; margin-top: 1em">To achieve
+this, try to split your work into small steps from the very
+beginning. It is always easier to squash a few commits
+together than to split one big commit into several.
+Don&rsquo;t be afraid of making too small or imperfect steps
+along the way. You can always go back later and edit the
+commits with git rebase &minus;&minus;interactive before you
+publish them. You can use git stash save
+&minus;&minus;keep&minus;index to run the test suite
+independent of other uncommitted changes; see the EXAMPLES
+section of <b>git-stash</b>(1).</p>
+
+<h2>MANAGING BRANCHES
+<a name="MANAGING BRANCHES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">There are two
+main tools that can be used to include changes from one
+branch on another: <b>git-merge</b>(1) and
+<b>git-cherry-pick</b>(1).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Merges have
+many advantages, so we try to solve as many problems as
+possible with merges alone. Cherry&minus;picking is still
+occasionally useful; see &quot;Merging upwards&quot; below
+for an example.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Most
+importantly, merging works at the branch level, while
+cherry&minus;picking works at the commit level. This means
+that a merge can carry over the changes from 1, 10, or 1000
+commits with equal ease, which in turn means the workflow
+scales much better to a large number of contributors (and
+contributions). Merges are also easier to understand because
+a merge commit is a &quot;promise&quot; that all changes
+from all its parents are now included.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is a
+tradeoff of course: merges require a more careful branch
+management. The following subsections discuss the important
+points.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Graduation</b>
+<br>
+As a given feature goes from experimental to stable, it also
+&quot;graduates&quot; between the corresponding branches of
+the software. git.git uses the following <i>integration
+branches</i>:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<i>maint</i> tracks the commits that should go into the next
+&quot;maintenance release&quot;, i.e., update of the last
+released stable version;</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<i>master</i> tracks the commits that should go into the
+next release;</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<i>next</i> is intended as a testing branch for topics being
+tested for stability for master.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is a
+fourth official branch that is used slightly
+differently:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<i>pu</i> (proposed updates) is an integration branch for
+things that are not quite ready for inclusion yet (see
+&quot;Integration Branches&quot; below).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Each of the
+four branches is usually a direct descendant of the one
+above it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Conceptually,
+the feature enters at an unstable branch (usually
+<i>next</i> or <i>pu</i>), and &quot;graduates&quot; to
+<i>master</i> for the next release once it is considered
+stable enough.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Merging
+upwards</b> <br>
+The &quot;downwards graduation&quot; discussed above cannot
+be done by actually merging downwards, however, since that
+would merge <i>all</i> changes on the unstable branch into
+the stable one. Hence the following:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;1.&nbsp;Merge
+upwards</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">Always commit
+your fixes to the oldest supported branch that require them.
+Then (periodically) merge the integration branches upwards
+into each other.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This gives a
+very controlled flow of fixes. If you notice that you have
+applied a fix to e.g. <i>master</i> that is also required in
+<i>maint</i>, you will need to cherry&minus;pick it (using
+<b>git-cherry-pick</b>(1)) downwards. This will happen a few
+times and is nothing to worry about unless you do it very
+frequently.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Topic
+branches</b> <br>
+Any nontrivial feature will require several patches to
+implement, and may get extra bugfixes or improvements during
+its lifetime.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Committing
+everything directly on the integration branches leads to
+many problems: Bad commits cannot be undone, so they must be
+reverted one by one, which creates confusing histories and
+further error potential when you forget to revert part of a
+group of changes. Working in parallel mixes up the changes,
+creating further confusion.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Use of
+&quot;topic branches&quot; solves these problems. The name
+is pretty self explanatory, with a caveat that comes from
+the &quot;merge upwards&quot; rule above:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;2.&nbsp;Topic
+branches</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">Make a side
+branch for every topic (feature, bugfix, ...). Fork it off
+at the oldest integration branch that you will eventually
+want to merge it into.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Many things can
+then be done very naturally:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; To get
+the feature/bugfix into an integration branch, simply merge
+it. If the topic has evolved further in the meantime, merge
+again. (Note that you do not necessarily have to merge it to
+the oldest integration branch first. For example, you can
+first merge a bugfix to <i>next</i>, give it some testing
+time, and merge to <i>maint</i> when you know it is
+stable.)</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; If you
+find you need new features from the branch <i>other</i> to
+continue working on your topic, merge <i>other</i> to
+<i>topic</i>. (However, do not do this &quot;just
+habitually&quot;, see below.)</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; If you
+find you forked off the wrong branch and want to move it
+&quot;back in time&quot;, use <b>git-rebase</b>(1).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that the
+last point clashes with the other two: a topic that has been
+merged elsewhere should not be rebased. See the section on
+RECOVERING FROM UPSTREAM REBASE in <b>git-rebase</b>(1).</p>
+
+<p style="margin-left:11%; margin-top: 1em">We should point
+out that &quot;habitually&quot; (regularly for no real
+reason) merging an integration branch into your topics
+&mdash; and by extension, merging anything upstream into
+anything downstream on a regular basis &mdash; is frowned
+upon:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;3.&nbsp;Merge
+to downstream only at well-defined points</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">Do not merge to
+downstream except with a good reason: upstream API changes
+affect your branch; your branch no longer merges to upstream
+cleanly; etc.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Otherwise, the
+topic that was merged to suddenly contains more than a
+single (well&minus;separated) change. The many resulting
+small merges will greatly clutter up history. Anyone who
+later investigates the history of a file will have to find
+out whether that merge affected the topic in development. An
+upstream might even inadvertently be merged into a
+&quot;more stable&quot; branch. And so on.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Throw&minus;away
+integration</b> <br>
+If you followed the last paragraph, you will now have many
+small topic branches, and occasionally wonder how they
+interact. Perhaps the result of merging them does not even
+work? But on the other hand, we want to avoid merging them
+anywhere &quot;stable&quot; because such merges cannot
+easily be undone.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The solution,
+of course, is to make a merge that we can undo: merge into a
+throw&minus;away branch.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;4.&nbsp;Throw-away
+integration branches</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">To test the
+interaction of several topics, merge them into a
+throw&minus;away branch. You must never base any work on
+such a branch!</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you make it
+(very) clear that this branch is going to be deleted right
+after the testing, you can even publish this branch, for
+example to give the testers a chance to work with it, or
+other developers a chance to see if their in&minus;progress
+work will be compatible. git.git has such an official
+throw&minus;away integration branch called <i>pu</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Branch
+management for a release</b> <br>
+Assuming you are using the merge approach discussed above,
+when you are releasing your project you will need to do some
+additional branch management work.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A feature
+release is created from the <i>master</i> branch, since
+<i>master</i> tracks the commits that should go into the
+next feature release.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>master</i> branch is supposed to be a superset of
+<i>maint</i>. If this condition does not hold, then
+<i>maint</i> contains some commits that are not included on
+<i>master</i>. The fixes represented by those commits will
+therefore not be included in your feature release.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To verify that
+<i>master</i> is indeed a superset of <i>maint</i>, use git
+log:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;5.&nbsp;Verify</b>
+<i>master</i> is a superset of <i>maint</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">git log
+master..maint</p>
+
+<p style="margin-left:11%; margin-top: 1em">This command
+should not list any commits. Otherwise, check out
+<i>master</i> and merge <i>maint</i> into it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Now you can
+proceed with the creation of the feature release. Apply a
+tag to the tip of <i>master</i> indicating the release
+version:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;6.&nbsp;Release
+tagging</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">git tag
+&minus;s &minus;m &quot;Git X.Y.Z&quot; vX.Y.Z master</p>
+
+<p style="margin-left:11%; margin-top: 1em">You need to
+push the new tag to a public Git server (see
+&quot;DISTRIBUTED WORKFLOWS&quot; below). This makes the tag
+available to others tracking your project. The push could
+also trigger a post&minus;update hook to perform
+release&minus;related items such as building release
+tarballs and preformatted documentation pages.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Similarly, for
+a maintenance release, <i>maint</i> is tracking the commits
+to be released. Therefore, in the steps above simply tag and
+push <i>maint</i> rather than <i>master</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Maintenance
+branch management after a feature release</b> <br>
+After a feature release, you need to manage your maintenance
+branches.</p>
+
+<p style="margin-left:11%; margin-top: 1em">First, if you
+wish to continue to release maintenance fixes for the
+feature release made before the recent one, then you must
+create another branch to track commits for that previous
+release.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To do this, the
+current maintenance branch is copied to another branch named
+with the previous release version number (e.g.
+maint&minus;X.Y.(Z&minus;1) where X.Y.Z is the current
+release).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;7.&nbsp;Copy
+maint</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">git branch
+maint&minus;X.Y.(Z&minus;1) maint</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>maint</i> branch should now be fast&minus;forwarded to
+the newly released code so that maintenance fixes can be
+tracked for the current release:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;8.&nbsp;Update
+maint to new release</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; git
+checkout maint</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; git
+merge &minus;&minus;ff&minus;only master</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the merge
+fails because it is not a fast&minus;forward, then it is
+possible some fixes on <i>maint</i> were missed in the
+feature release. This will not happen if the content of the
+branches was verified as described in the previous
+section.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Branch
+management for next and pu after a feature release</b> <br>
+After a feature release, the integration branch <i>next</i>
+may optionally be rewound and rebuilt from the tip of
+<i>master</i> using the surviving topics on <i>next</i>:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;9.&nbsp;Rewind
+and rebuild next</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; git
+checkout next</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; git
+reset &minus;&minus;hard master</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; git
+merge ai/topic_in_next1</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; git
+merge ai/topic_in_next2</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; ...</p>
+
+<p style="margin-left:11%; margin-top: 1em">The advantage
+of doing this is that the history of <i>next</i> will be
+clean. For example, some topics merged into <i>next</i> may
+have initially looked promising, but were later found to be
+undesirable or premature. In such a case, the topic is
+reverted out of <i>next</i> but the fact remains in the
+history that it was once merged and reverted. By recreating
+<i>next</i>, you give another incarnation of such topics a
+clean slate to retry, and a feature release is a good point
+in history to do so.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you do this,
+then you should make a public announcement indicating that
+<i>next</i> was rewound and rebuilt.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The same rewind
+and rebuild process may be followed for <i>pu</i>. A public
+announcement is not necessary since <i>pu</i> is a
+throw&minus;away branch, as described above.</p>
+
+<h2>DISTRIBUTED WORKFLOWS
+<a name="DISTRIBUTED WORKFLOWS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">After the last
+section, you should know how to manage topics. In general,
+you will not be the only person working on the project, so
+you will have to share your work.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Roughly
+speaking, there are two important workflows: merge and
+patch. The important difference is that the merge workflow
+can propagate full history, including merges, while patches
+cannot. Both workflows can be used in parallel: in git.git,
+only subsystem maintainers use the merge workflow, while
+everyone else sends patches.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that the
+maintainer(s) may impose restrictions, such as
+&quot;Signed&minus;off&minus;by&quot; requirements, that all
+commits/patches submitted for inclusion must adhere to.
+Consult your project&rsquo;s documentation for more
+information.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Merge
+workflow</b> <br>
+The merge workflow works by copying branches between
+upstream and downstream. Upstream can merge contributions
+into the official history; downstream base their work on the
+official history.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There are three
+main tools that can be used for this:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>git-push</b>(1) copies your branches to a remote
+repository, usually to one that can be read by all involved
+parties;</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>git-fetch</b>(1) that copies remote branches to your
+repository; and</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+<b>git-pull</b>(1) that does fetch and merge in one go.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note the last
+point. Do <i>not</i> use <i>git pull</i> unless you actually
+want to merge the remote branch.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Getting changes
+out is easy:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;10.&nbsp;Push/pull:
+Publishing branches/topics</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">git push
+&lt;remote&gt; &lt;branch&gt; and tell everyone where they
+can fetch from.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You will still
+have to tell people by other means, such as mail. (Git
+provides the <b>git-request-pull</b>(1) to send preformatted
+pull requests to upstream maintainers to simplify this
+task.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you just
+want to get the newest copies of the integration branches,
+staying up to date is easy too:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;11.&nbsp;Push/pull:
+Staying up to date</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">Use git fetch
+&lt;remote&gt; or git remote update to stay up to date.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Then simply
+fork your topic branches from the stable remotes as
+explained earlier.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you are a
+maintainer and would like to merge other people&rsquo;s
+topic branches to the integration branches, they will
+typically send a request to do so by mail. Such a request
+looks like</p>
+
+<p style="margin-left:17%; margin-top: 1em">Please pull
+from <br>
+&lt;url&gt; &lt;branch&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">In that case,
+<i>git pull</i> can do the fetch and merge in one go, as
+follows.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;12.&nbsp;Push/pull:
+Merging remote topics</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">git pull
+&lt;url&gt; &lt;branch&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">Occasionally,
+the maintainer may get merge conflicts when he tries to pull
+changes from downstream. In this case, he can ask downstream
+to do the merge and resolve the conflicts themselves
+(perhaps they will know better how to resolve them). It is
+one of the rare cases where downstream <i>should</i> merge
+from upstream.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Patch
+workflow</b> <br>
+If you are a contributor that sends changes upstream in the
+form of emails, you should use topic branches as usual (see
+above). Then use <b>git-format-patch</b>(1) to generate the
+corresponding emails (highly recommended over manually
+formatting them because it makes the maintainer&rsquo;s life
+easier).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;13.&nbsp;format-patch/am:
+Publishing branches/topics</b></p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; git
+format&minus;patch &minus;M upstream..topic to turn them
+into preformatted patch files</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; git
+send&minus;email &minus;&minus;to=&lt;recipient&gt;
+&lt;patches&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">See the
+<b>git-format-patch</b>(1) and <b>git-send-email</b>(1)
+manpages for further usage notes.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+maintainer tells you that your patch no longer applies to
+the current upstream, you will have to rebase your topic
+(you cannot use a merge because you cannot
+format&minus;patch merges):</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;14.&nbsp;format-patch/am:
+Keeping topics up to date</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">git pull
+&minus;&minus;rebase &lt;url&gt; &lt;branch&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can then
+fix the conflicts during the rebase. Presumably you have not
+published your topic other than by mail, so rebasing it is
+not a problem.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you receive
+such a patch series (as maintainer, or perhaps as a reader
+of the mailing list it was sent to), save the mails to
+files, create a new topic branch and use <i>git am</i> to
+import the commits:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;15.&nbsp;format-patch/am:
+Importing patches</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">git am &lt;
+patch</p>
+
+<p style="margin-left:11%; margin-top: 1em">One feature
+worth pointing out is the three&minus;way merge, which can
+help if you get conflicts: git am &minus;3 will use index
+information contained in patches to figure out the merge
+base. See <b>git-am</b>(1) for other options.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>gittutorial</b>(7),
+<b>git-push</b>(1), <b>git-pull</b>(1), <b>git-merge</b>(1),
+<b>git-rebase</b>(1), <b>git-format-patch</b>(1),
+<b>git-send-email</b>(1), <b>git-am</b>(1)</p>
+
+<h2>GIT
+<a name="GIT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Part of the
+<b>git</b>(1) suite.</p>
+<hr>
+</body>
+</html>

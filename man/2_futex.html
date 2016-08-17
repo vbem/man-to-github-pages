@@ -1,0 +1,372 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:19 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>FUTEX</title>
+
+</head>
+<body>
+
+<h1 align="center">FUTEX</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">futex &minus;
+fast user-space locking</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;linux/futex.h&gt; <br>
+#include &lt;sys/time.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+futex(int *</b><i>uaddr</i><b>, int</b> <i>op</i><b>,
+int</b> <i>val</i><b>, const struct timespec
+*</b><i>timeout</i><b>, <br>
+int *</b><i>uaddr2</i><b>, int</b> <i>val3</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>futex</b>() system call provides a method for a program
+to wait for a value at a given address to change, and a
+method to wake up anyone waiting on a particular address
+(while the addresses for the same memory in separate
+processes may not be equal, the kernel maps them internally
+so the same memory mapped in different locations will
+correspond for <b>futex</b>() calls). This system call is
+typically used to implement the contended case of a lock in
+shared memory, as described in <b>futex</b>(7).</p>
+
+<p style="margin-left:11%; margin-top: 1em">When a
+<b>futex</b>(7) operation did not finish uncontended in user
+space, a call needs to be made to the kernel to arbitrate.
+Arbitration can either mean putting the calling process to
+sleep or, conversely, waking a waiting process.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Callers of this
+function are expected to adhere to the semantics as set out
+in <b>futex</b>(7). As these semantics involve writing
+nonportable assembly instructions, this in turn probably
+means that most users will in fact be library authors and
+not general application developers.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>uaddr</i> argument needs to point to an aligned integer
+which stores the counter. The operation to execute is passed
+via the <i>op</i> argument, along with a value
+<i>val</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Five operations
+are currently defined: <b><br>
+FUTEX_WAIT</b></p>
+
+<p style="margin-left:22%;">This operation atomically
+verifies that the futex address <i>uaddr</i> still contains
+the value <i>val</i>, and sleeps awaiting <b>FUTEX_WAKE</b>
+on this futex address. If the <i>timeout</i> argument is
+non-NULL, its contents describe the minimum duration of the
+wait, which is infinite otherwise. The arguments
+<i>uaddr2</i> and <i>val3</i> are ignored.</p>
+
+<p style="margin-left:22%; margin-top: 1em">For
+<b>futex</b>(7), this call is executed if decrementing the
+count gave a negative value (indicating contention), and
+will sleep until another process releases the futex and
+executes the <b>FUTEX_WAKE</b> operation.</p>
+
+<p style="margin-left:11%;"><b>FUTEX_WAKE</b></p>
+
+<p style="margin-left:22%;">This operation wakes at most
+<i>val</i> processes waiting on this futex address (i.e.,
+inside <b>FUTEX_WAIT</b>). The arguments <i>timeout</i>,
+<i>uaddr2</i> and <i>val3</i> are ignored.</p>
+
+<p style="margin-left:22%; margin-top: 1em">For
+<b>futex</b>(7), this is executed if incrementing the count
+showed that there were waiters, once the futex value has
+been set to 1 (indicating that it is available).</p>
+
+<p style="margin-left:11%;"><b>FUTEX_FD</b> (present up to
+and including Linux 2.6.25)</p>
+
+<p style="margin-left:22%;">To support asynchronous
+wakeups, this operation associates a file descriptor with a
+futex. If another process executes a <b>FUTEX_WAKE</b>, the
+process will receive the signal number that was passed in
+<i>val</i>. The calling process must close the returned file
+descriptor after use. The arguments <i>timeout</i>,
+<i>uaddr2</i> and <i>val3</i> are ignored.</p>
+
+<p style="margin-left:22%; margin-top: 1em">To prevent race
+conditions, the caller should test if the futex has been
+upped after <b>FUTEX_FD</b> returns.</p>
+
+<p style="margin-left:22%; margin-top: 1em">Because it was
+inherently racy, <b>FUTEX_FD</b> has been removed from Linux
+2.6.26 onward.</p>
+
+<p style="margin-left:11%;"><b>FUTEX_REQUEUE</b> (since
+Linux 2.5.70)</p>
+
+<p style="margin-left:22%;">This operation was introduced
+in order to avoid a &quot;thundering herd&quot; effect when
+<b>FUTEX_WAKE</b> is used and all processes woken up need to
+acquire another futex. This call wakes up <i>val</i>
+processes, and requeues all other waiters on the futex at
+address <i>uaddr2</i>. The arguments <i>timeout</i> and
+<i>val3</i> are ignored.</p>
+
+<p style="margin-left:11%;"><b>FUTEX_CMP_REQUEUE</b> (since
+Linux 2.6.7)</p>
+
+<p style="margin-left:22%;">There was a race in the
+intended use of <b>FUTEX_REQUEUE</b>, so
+<b>FUTEX_CMP_REQUEUE</b> was introduced. This is similar to
+<b>FUTEX_REQUEUE</b>, but first checks whether the location
+<i>uaddr</i> still contains the value <i>val3</i>. If not,
+the operation fails with the error <b>EAGAIN</b>. The
+argument <i>timeout</i> is ignored.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In the event of
+an error, all operations return &minus;1, and set
+<i>errno</i> to indicate the error. The return value on
+success depends on the operation, as described in the
+following list: <b><br>
+FUTEX_WAIT</b></p>
+
+<p style="margin-left:22%;">Returns 0 if the process was
+woken by a <b>FUTEX_WAKE</b> call. See ERRORS for the
+various possible error returns.</p>
+
+<p style="margin-left:11%;"><b>FUTEX_WAKE</b></p>
+
+<p style="margin-left:22%;">Returns the number of processes
+woken up.</p>
+
+<p style="margin-left:11%;"><b>FUTEX_FD</b></p>
+
+<p style="margin-left:22%;">Returns the new file descriptor
+associated with the futex.</p>
+
+<p style="margin-left:11%;"><b>FUTEX_REQUEUE</b></p>
+
+<p style="margin-left:22%;">Returns the number of processes
+woken up.</p>
+
+<p style="margin-left:11%;"><b>FUTEX_CMP_REQUEUE</b></p>
+
+<p style="margin-left:22%;">Returns the number of processes
+woken up.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EACCES</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">No read access to futex
+memory.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EAGAIN</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><b>FUTEX_CMP_REQUEUE</b> detected that the value pointed
+to by <i>uaddr</i> is not equal to the expected value
+<i>val3</i>. (This probably indicates a race; use the safe
+<b>FUTEX_WAKE</b> now.)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Error retrieving <i>timeout</i> information from user
+space.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINTR</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>A <b>FUTEX_WAIT</b> operation was interrupted by a
+signal (see <b>signal</b>(7)) or a spurious wakeup.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Invalid argument.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENFILE</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The system limit on the total number of open files has
+been reached.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOSYS</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Invalid operation specified in <i>op</i>.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>ETIMEDOUT</b></p>
+
+<p style="margin-left:22%;">Timeout during the
+<b>FUTEX_WAIT</b> operation.</p>
+
+<p style="margin-left:11%;"><b>EWOULDBLOCK</b></p>
+
+<p style="margin-left:22%;"><i>op</i> was <b>FUTEX_WAIT</b>
+and the value pointed to by <i>uaddr</i> was not equal to
+the expected value <i>val</i> at the time of the call.</p>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Initial futex
+support was merged in Linux 2.5.7 but with different
+semantics from what was described above. A 4-argument system
+call with the semantics described in this page was
+introduced in Linux 2.5.40. In Linux 2.5.70 one argument was
+added. In Linux 2.6.7 a sixth argument was
+added&mdash;messy, especially on the s390 architecture.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This system
+call is Linux-specific.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">To reiterate,
+bare futexes are not intended as an easy-to-use abstraction
+for end-users. (There is no wrapper function for this system
+call in glibc.) Implementors are expected to be assembly
+literate and to have read the sources of the futex
+user-space library referenced below.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>restart_syscall</b>(2),
+<b>futex</b>(7)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Fuss,
+Futexes and Furwocks: Fast Userlevel Locking in Linux</i>
+(proceedings of the Ottawa Linux Symposium 2002), online at
+<br>
+
+<a href="http://kernel.org/doc/ols/2002/ols2002-pages-479-495.pdf">http://kernel.org/doc/ols/2002/ols2002-pages-479-495.pdf</a></p>
+
+<p style="margin-left:11%; margin-top: 1em">Futex example
+library, futex-*.tar.bz2 at <br>
+
+<a href="ftp://ftp.nl.kernel.org/pub/linux/kernel/people/rusty/">ftp://ftp.nl.kernel.org/pub/linux/kernel/people/rusty/</a></p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

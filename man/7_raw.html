@@ -1,0 +1,354 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:39:46 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>RAW</title>
+
+</head>
+<body>
+
+<h1 align="center">RAW</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">raw &minus;
+Linux IPv4 raw sockets</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;sys/socket.h&gt; <br>
+#include &lt;netinet/in.h&gt; <br>
+raw_socket = socket(AF_INET, SOCK_RAW, int</b>
+<i>protocol</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Raw sockets
+allow new IPv4 protocols to be implemented in user space. A
+raw socket receives or sends the raw datagram not including
+link level headers.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The IPv4 layer
+generates an IP header when sending a packet unless the
+<b>IP_HDRINCL</b> socket option is enabled on the socket.
+When it is enabled, the packet must contain an IP header.
+For receiving the IP header is always included in the
+packet.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Only processes
+with an effective user ID of 0 or the <b>CAP_NET_RAW</b>
+capability are allowed to open raw sockets.</p>
+
+<p style="margin-left:11%; margin-top: 1em">All packets or
+errors matching the <i>protocol</i> number specified for the
+raw socket are passed to this socket. For a list of the
+allowed protocols see RFC&nbsp;1700 assigned numbers and
+<b>getprotobyname</b>(3).</p>
+
+<p style="margin-left:11%; margin-top: 1em">A protocol of
+<b>IPPROTO_RAW</b> implies enabled <b>IP_HDRINCL</b> and is
+able to send any IP protocol that is specified in the passed
+header. Receiving of all IP protocols via <b>IPPROTO_RAW</b>
+is not possible using raw sockets.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b>IP_HDRINCL</b> is specified and the IP header has a
+nonzero destination address then the destination address of
+the socket is used to route the packet. When
+<b>MSG_DONTROUTE</b> is specified, the destination address
+should refer to a local interface, otherwise a routing table
+lookup is done anyway but gatewayed routes are ignored.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b>IP_HDRINCL</b> isn&rsquo;t set, then IP header options
+can be set on raw sockets with <b>setsockopt</b>(2); see
+<b>ip</b>(7) for more information.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In Linux 2.2,
+all IP header fields and options can be set using IP socket
+options. This means raw sockets are usually needed only for
+new protocols or protocols with no user interface (like
+ICMP).</p>
+
+<p style="margin-left:11%; margin-top: 1em">When a packet
+is received, it is passed to any raw sockets which have been
+bound to its protocol before it is passed to other protocol
+handlers (e.g., kernel protocol modules).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Address
+format</b> <br>
+Raw sockets use the standard <i>sockaddr_in</i> address
+structure defined in <b>ip</b>(7). The <i>sin_port</i> field
+could be used to specify the IP protocol number, but it is
+ignored for sending in Linux 2.2 and should be always set to
+0 (see BUGS). For incoming packets, <i>sin_port</i> is set
+to the protocol of the packet. See the
+<i>&lt;netinet/in.h&gt;</i> include file for valid IP
+protocols.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Socket
+options</b> <br>
+Raw socket options can be set with <b>setsockopt</b>(2) and
+read with <b>getsockopt</b>(2) by passing the
+<b>IPPROTO_RAW</b> family flag. <b><br>
+ICMP_FILTER</b></p>
+
+<p style="margin-left:22%;">Enable a special filter for raw
+sockets bound to the <b>IPPROTO_ICMP</b> protocol. The value
+has a bit set for each ICMP message type which should be
+filtered out. The default is to filter no ICMP messages.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In addition,
+all <b>ip</b>(7) <b>IPPROTO_IP</b> socket options valid for
+datagram sockets are supported.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Error
+handling</b> <br>
+Errors originating from the network are passed to the user
+only when the socket is connected or the <b>IP_RECVERR</b>
+flag is enabled. For connected sockets, only <b>EMSGSIZE</b>
+and <b>EPROTO</b> are passed for compatibility. With
+<b>IP_RECVERR</b>, all network errors are saved in the error
+queue.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EACCES</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">User tried to send to a
+broadcast address without having the broadcast flag set on
+the socket.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>An invalid memory address was supplied.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Invalid argument.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>EMSGSIZE</b></p>
+
+<p style="margin-left:22%;">Packet too big. Either Path MTU
+Discovery is enabled (the <b>IP_MTU_DISCOVER</b> socket
+flag) or the packet size exceeds the maximum allowed IPv4
+packet size of 64KB.</p>
+
+<p style="margin-left:11%;"><b>EOPNOTSUPP</b></p>
+
+<p style="margin-left:22%;">Invalid flag has been passed to
+a socket call (like <b>MSG_OOB</b>).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EPERM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The user doesn&rsquo;t have permission to open raw
+sockets. Only processes with an effective user ID of 0 or
+the <b>CAP_NET_RAW</b> attribute may do that.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EPROTO</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>An ICMP error has arrived reporting a parameter
+problem.</p> </td></tr>
+</table>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>IP_RECVERR</b>
+and <b>ICMP_FILTER</b> are new in Linux 2.2. They are Linux
+extensions and should not be used in portable programs.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Linux 2.0
+enabled some bug-to-bug compatibility with BSD in the raw
+socket code when the <b>SO_BSDCOMPAT</b> socket option was
+set &mdash; since Linux 2.2, this option no longer has that
+effect.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">By default, raw
+sockets do path MTU (Maximum Transmission Unit) discovery.
+This means the kernel will keep track of the MTU to a
+specific target IP address and return <b>EMSGSIZE</b> when a
+raw packet write exceeds it. When this happens, the
+application should decrease the packet size. Path MTU
+discovery can be also turned off using the
+<b>IP_MTU_DISCOVER</b> socket option or the
+<i>/proc/sys/net/ipv4/ip_no_pmtu_disc</i> file, see
+<b>ip</b>(7) for details. When turned off, raw sockets will
+fragment outgoing packets that exceed the interface MTU.
+However, disabling it is not recommended for performance and
+reliability reasons.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A raw socket
+can be bound to a specific local address using the
+<b>bind</b>(2) call. If it isn&rsquo;t bound, all packets
+with the specified IP protocol are received. In addition, a
+RAW socket can be bound to a specific network device using
+<b>SO_BINDTODEVICE</b>; see <b>socket</b>(7).</p>
+
+<p style="margin-left:11%; margin-top: 1em">An
+<b>IPPROTO_RAW</b> socket is send only. If you really want
+to receive all IP packets, use a <b>packet</b>(7) socket
+with the <b>ETH_P_IP</b> protocol. Note that packet sockets
+don&rsquo;t reassemble IP fragments, unlike raw sockets.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+receive all ICMP packets for a datagram socket, it is often
+better to use <b>IP_RECVERR</b> on that particular socket;
+see <b>ip</b>(7).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Raw sockets may
+tap all IP protocols in Linux, even protocols like ICMP or
+TCP which have a protocol module in the kernel. In this
+case, the packets are passed to both the kernel module and
+the raw socket(s). This should not be relied upon in
+portable programs, many other BSD socket implementation have
+limitations here.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Linux never
+changes headers passed from the user (except for filling in
+some zeroed fields as described for <b>IP_HDRINCL</b>). This
+differs from many other implementations of raw sockets.</p>
+
+<p style="margin-left:11%; margin-top: 1em">RAW sockets are
+generally rather unportable and should be avoided in
+programs intended to be portable.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Sending on raw
+sockets should take the IP protocol from <i>sin_port</i>;
+this ability was lost in Linux 2.2. The workaround is to use
+<b>IP_HDRINCL</b>.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Transparent
+proxy extensions are not described.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When the
+<b>IP_HDRINCL</b> option is set, datagrams will not be
+fragmented and are limited to the interface MTU.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Setting the IP
+protocol for sending in <i>sin_port</i> got lost in Linux
+2.2. The protocol that the socket was bound to or that was
+specified in the initial <b>socket</b>(2) call is always
+used.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>recvmsg</b>(2),
+<b>sendmsg</b>(2), <b>capabilities</b>(7), <b>ip</b>(7),
+<b>socket</b>(7)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>RFC&nbsp;1191</b>
+for path MTU discovery. <b>RFC&nbsp;791</b> and the
+<i>&lt;linux/ip.h&gt;</i> header file for the IP
+protocol.</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

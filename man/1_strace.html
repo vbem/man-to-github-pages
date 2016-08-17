@@ -1,0 +1,998 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:15:58 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>STRACE</title>
+
+</head>
+<body>
+
+<h1 align="center">STRACE</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#DIAGNOSTICS">DIAGNOSTICS</a><br>
+<a href="#SETUID INSTALLATION">SETUID INSTALLATION</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#HISTORY">HISTORY</a><br>
+<a href="#PROBLEMS">PROBLEMS</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">strace &minus;
+trace system calls and signals</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>strace</b>
+[<b>-CdffhiqrtttTvVxxy</b>] [<b>-I</b><i>n</i>]
+[<b>-b</b><i>execve</i>] [<b>-e</b><i>expr</i>]...
+[<b>-a</b><i>column</i>] [<b>-o</b><i>file</i>]
+[<b>-s</b><i>strsize</i>] [<b>-P</b><i>path</i>]...
+<b>-p</b><i>pid</i>... / [<b>-D</b>]
+[<b>-E</b><i>var</i>[=<i>val</i>]]...
+[<b>-u</b><i>username</i>] <i>command</i> [<i>args</i>]</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>strace
+-c</b>[<b>df</b>] [<b>-I</b><i>n</i>]
+[<b>-b</b><i>execve</i>] [<b>-e</b><i>expr</i>]...
+[<b>-O</b><i>overhead</i>] [<b>-S</b><i>sortby</i>]
+<b>-p</b><i>pid</i>... / [<b>-D</b>]
+[<b>-E</b><i>var</i>[=<i>val</i>]]...
+[<b>-u</b><i>username</i>] <i>command</i> [<i>args</i>]</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In the simplest
+case <b>strace</b> runs the specified <i>command</i> until
+it exits. It intercepts and records the system calls which
+are called by a process and the signals which are received
+by a process. The name of each system call, its arguments
+and its return value are printed on standard error or to the
+file specified with the <b>&minus;o</b> option.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>strace</b>
+is a useful diagnostic, instructional, and debugging tool.
+System administrators, diagnosticians and trouble-shooters
+will find it invaluable for solving problems with programs
+for which the source is not readily available since they do
+not need to be recompiled in order to trace them. Students,
+hackers and the overly-curious will find that a great deal
+can be learned about a system and its system calls by
+tracing even ordinary programs. And programmers will find
+that since system calls and signals are events that happen
+at the user/kernel interface, a close examination of this
+boundary is very useful for bug isolation, sanity checking
+and attempting to capture race conditions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Each line in
+the trace contains the system call name, followed by its
+arguments in parentheses and its return value. An example
+from stracing the command &lsquo;&lsquo;cat
+/dev/null&rsquo;&rsquo; is:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">open(&quot;/dev/null&quot;, O_RDONLY) = 3</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Errors
+(typically a return value of &minus;1) have the errno symbol
+and error string appended.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">open(&quot;/foo/bar&quot;, O_RDONLY) = -1 ENOENT (No such file or directory)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Signals are
+printed as a signal symbol and a signal string. An excerpt
+from stracing and interrupting the command
+&lsquo;&lsquo;sleep 666&rsquo;&rsquo; is:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">sigsuspend([] &lt;unfinished ...&gt;
+--- SIGINT (Interrupt) ---
++++ killed by SIGINT +++</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If a system
+call is being executed and meanwhile another one is being
+called from a different thread/process then <b>strace</b>
+will try to preserve the order of those events and mark the
+ongoing call as being <i>unfinished</i>. When the call
+returns it will be marked as <i>resumed</i>.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">[pid 28772] select(4, [3], NULL, NULL, NULL &lt;unfinished ...&gt;
+[pid 28779] clock_gettime(CLOCK_REALTIME, {1130322148, 939977000}) = 0
+[pid 28772] &lt;... select resumed&gt; )      = 1 (in [3])</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Interruption of
+a (restartable) system call by a signal delivery is
+processed differently as kernel terminates the system call
+and also arranges its immediate reexecution after the signal
+handler completes.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">read(0, 0x7ffff72cf5cf, 1)              = ? ERESTARTSYS (To be restarted)
+--- SIGALRM (Alarm clock) @ 0 (0) ---
+rt_sigreturn(0xe)                       = 0
+read(0, &quot;&quot;..., 1)                       = 0</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Arguments are
+printed in symbolic form with a passion. This example shows
+the shell performing
+&lsquo;&lsquo;&gt;&gt;xyzzy&rsquo;&rsquo; output
+redirection:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">open(&quot;xyzzy&quot;, O_WRONLY|O_APPEND|O_CREAT, 0666) = 3</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Here the third
+argument of open is decoded by breaking down the flag
+argument into its three bitwise-OR constituents and printing
+the mode value in octal by tradition. Where traditional or
+native usage differs from ANSI or POSIX, the latter forms
+are preferred. In some cases, <b>strace</b> output has
+proven to be more readable than the source.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Structure
+pointers are dereferenced and the members are displayed as
+appropriate. In all cases arguments are formatted in the
+most C-like fashion possible. For example, the essence of
+the command &lsquo;&lsquo;ls &minus;l
+/dev/null&rsquo;&rsquo; is captured as:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">lstat(&quot;/dev/null&quot;, {st_mode=S_IFCHR|0666, st_rdev=makedev(1, 3), ...}) = 0</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Notice how the
+&lsquo;struct stat&rsquo; argument is dereferenced and how
+each member is displayed symbolically. In particular,
+observe how the st_mode member is carefully decoded into a
+bitwise-OR of symbolic and numeric values. Also notice in
+this example that the first argument to lstat is an input to
+the system call and the second argument is an output. Since
+output arguments are not modified if the system call fails,
+arguments may not always be dereferenced. For example,
+retrying the &lsquo;&lsquo;ls &minus;l&rsquo;&rsquo; example
+with a non-existent file produces the following line:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">lstat(&quot;/foo/bar&quot;, 0xb004) = -1 ENOENT (No such file or directory)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In this case
+the porch light is on but nobody is home.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Character
+pointers are dereferenced and printed as C strings.
+Non-printing characters in strings are normally represented
+by ordinary C escape codes. Only the first <i>strsize</i>
+(32 by default) bytes of strings are printed; longer strings
+have an ellipsis appended following the closing quote. Here
+is a line from &lsquo;&lsquo;ls &minus;l&rsquo;&rsquo; where
+the <b>getpwuid</b> library routine is reading the password
+file:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">read(3, &quot;root::0:0:System Administrator:/&quot;..., 1024) = 422</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">While
+structures are annotated using curly braces, simple pointers
+and arrays are printed using square brackets with commas
+separating elements. Here is an example from the command
+&lsquo;&lsquo;id&rsquo;&rsquo; on a system with
+supplementary group ids:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">getgroups(32, [100, 0]) = 2</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">On the other
+hand, bit-sets are also shown using square brackets but set
+elements are separated only by a space. Here is the shell
+preparing to execute an external command:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">sigprocmask(SIG_BLOCK, [CHLD TTOU], []) = 0</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Here the second
+argument is a bit-set of two signals, SIGCHLD and SIGTTOU.
+In some cases the bit-set is so full that printing out the
+unset elements is more valuable. In that case, the bit-set
+is prefixed by a tilde like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">sigprocmask(SIG_UNBLOCK, ~[], NULL) = 0</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Here the second
+argument represents the full set of all signals.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p style="margin-top: 1em"><b>&minus;c</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p style="margin-top: 1em">Count time, calls, and errors
+for each system call and report a summary on program exit.
+On Linux, this attempts to show system time (CPU time spent
+running in the kernel) independent of wall clock time. If
+<b>&minus;c</b> is used with <b>&minus;f</b> or
+<b>&minus;F</b> (below), only aggregate totals for all
+traced processes are kept.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;C</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Like <b>&minus;c</b> but also print regular output while
+processes are running.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;D</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Run tracer process as a detached grandchild, not as
+parent of the tracee. This reduces the visible effect of
+<b>strace</b> by keeping the tracee a direct child of the
+calling process.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;d</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Show some debugging output of <b>strace</b> itself on
+the standard error.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;f</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Trace child processes as they are created by currently
+traced processes as a result of the <b>fork</b>(2),
+<b>vfork</b>(2) and <b>clone</b>(2) system calls. Note that
+<b>&minus;p</b> <i>PID</i> <b>&minus;f</b> will attach all
+threads of process PID if it is multi-threaded, not only
+thread with thread_id = PID.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;ff</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>If the <b>&minus;o</b> <i>filename</i> option is in
+effect, each processes trace is written to
+<i>filename.pid</i> where pid is the numeric process id of
+each process. This is incompatible with <b>&minus;c</b>,
+since no per-process counts are kept.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;F</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>This option is now obsolete and it has the same
+functionality as <b>&minus;f</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;h</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Print the help summary.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;i</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Print the instruction pointer at the time of the system
+call.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;q</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Suppress messages about attaching, detaching etc. This
+happens automatically when output is redirected to a file
+and the command is run directly instead of attaching.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;qq</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>If given twice, suppress messages about process exit
+status.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;r</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Print a relative timestamp upon entry to each system
+call. This records the time difference between the beginning
+of successive system calls.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;t</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Prefix each line of the trace with the time of day.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;tt</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>If given twice, the time printed will include the
+microseconds.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;ttt</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>If given thrice, the time printed will include the
+microseconds and the leading portion will be printed as the
+number of seconds since the epoch.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;T</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Show the time spent in system calls. This records the
+time difference between the beginning and the end of each
+system call.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;v</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Print unabbreviated versions of environment, stat,
+termios, etc. calls. These structures are very common in
+calls and so the default behavior displays a reasonable
+subset of structure members. Use this option to get all of
+the gory details.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;V</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Print the version number of <b>strace</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;x</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Print all non-ASCII strings in hexadecimal string
+format.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;xx</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Print all strings in hexadecimal string format.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;y</b></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Print paths associated with file descriptor
+arguments.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;a</b> <i>column</i></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Align return values in a specific column (default column
+40).</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;b</b> <i>syscall</i></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>If specified syscall is reached, detach from traced
+process. Currently, only <i>execve</i> syscall is supported.
+This option is useful if you want to trace multi-threaded
+process and therefore require -f, but don&rsquo;t want to
+trace its (potentially very complex) children.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;e</b> <i>expr</i></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>A qualifying expression which modifies which events to
+trace or how to trace them. The format of the expression
+is:</p> </td></tr>
+</table>
+
+
+<p style="margin-left:45%; margin-top: 1em">[<i>qualifier</i><b>=</b>][<b>!</b>]<i>value1</i>[<b>,</b><i>value2</i>]...</p>
+
+<p style="margin-left:29%; margin-top: 1em">where
+<i>qualifier</i> is one of <b>trace</b>, <b>abbrev</b>,
+<b>verbose</b>, <b>raw</b>, <b>signal</b>, <b>read</b>, or
+<b>write</b> and <i>value</i> is a qualifier-dependent
+symbol or number. The default qualifier is <b>trace</b>.
+Using an exclamation mark negates the set of values. For
+example, <b>&minus;e&nbsp;open</b> means literally
+<b>&minus;e&nbsp;trace</b>=<b>open</b> which in turn means
+trace only the <b>open</b> system call. By contrast,
+<b>&minus;e&nbsp;trace</b>=!<b>open</b> means to trace every
+system call except <b>open</b>. In addition, the special
+values <b>all</b> and <b>none</b> have the obvious
+meanings.</p>
+
+<p style="margin-left:29%; margin-top: 1em">Note that some
+shells use the exclamation point for history expansion even
+inside quoted arguments. If so, you must escape the
+exclamation point with a backslash.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;e&nbsp;trace</b>=<i>set</i></p>
+
+<p style="margin-left:29%;">Trace only the specified set of
+system calls. The <b>&minus;c</b> option is useful for
+determining which system calls might be useful to trace. For
+example, <b>trace</b>=<b>open,close,read,write</b> means to
+only trace those four system calls. Be careful when making
+inferences about the user/kernel boundary if only a subset
+of system calls are being monitored. The default is
+<b>trace</b>=<b>all</b>.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;e&nbsp;trace</b>=<b>file</b></p>
+
+<p style="margin-left:29%;">Trace all system calls which
+take a file name as an argument. You can think of this as an
+abbreviation for
+<b>&minus;e&nbsp;trace</b>=<b>open</b>,<b>stat</b>,<b>chmod</b>,<b>unlink</b>,...
+which is useful to seeing what files the process is
+referencing. Furthermore, using the abbreviation will ensure
+that you don&rsquo;t accidentally forget to include a call
+like <b>lstat</b> in the list. Betchya woulda forgot that
+one.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;e&nbsp;trace</b>=<b>process</b></p>
+
+<p style="margin-left:29%;">Trace all system calls which
+involve process management. This is useful for watching the
+fork, wait, and exec steps of a process.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;e&nbsp;trace</b>=<b>network</b></p>
+
+<p style="margin-left:29%;">Trace all the network related
+system calls.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;e&nbsp;trace</b>=<b>signal</b></p>
+
+<p style="margin-left:29%;">Trace all signal related system
+calls.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;e&nbsp;trace</b>=<b>ipc</b></p>
+
+<p style="margin-left:29%;">Trace all IPC related system
+calls.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;e&nbsp;trace</b>=<b>desc</b></p>
+
+<p style="margin-left:29%;">Trace all file descriptor
+related system calls.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;e&nbsp;trace</b>=<b>memory</b></p>
+
+<p style="margin-left:29%;">Trace all memory mapping
+related system calls.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;e&nbsp;abbrev</b>=<i>set</i></p>
+
+<p style="margin-left:29%;">Abbreviate the output from
+printing each member of large structures. The default is
+<b>abbrev</b>=<b>all</b>. The <b>&minus;v</b> option has the
+effect of <b>abbrev</b>=<b>none</b>.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;e&nbsp;verbose</b>=<i>set</i></p>
+
+<p style="margin-left:29%;">Dereference structures for the
+specified set of system calls. The default is
+<b>verbose</b>=<b>all</b>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p><b>&minus;e&nbsp;raw</b>=<i>set</i></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p>Print raw, undecoded arguments for the specified set of
+system calls. This option has the effect of causing all
+arguments to be printed in hexadecimal. This is mostly
+useful if you don&rsquo;t trust the decoding or you need to
+know the actual numeric value of an argument.</p></td></tr>
+</table>
+
+
+<p style="margin-left:11%;"><b>&minus;e&nbsp;signal</b>=<i>set</i></p>
+
+<p style="margin-left:29%;">Trace only the specified subset
+of signals. The default is <b>signal</b>=<b>all</b>. For
+example, <b>signal =! SIGIO</b> (or
+<b>signal</b>=!<b>io</b>) causes SIGIO signals not to be
+traced.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p><b>&minus;e&nbsp;read</b>=<i>set</i></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Perform a full hexadecimal and ASCII dump of all the
+data read from file descriptors listed in the specified set.
+For example, to see all input activity on file descriptors
+<i>3</i> and <i>5</i> use
+<b>&minus;e&nbsp;read</b>=<i>3</i>,<i>5</i>. Note that this
+is independent from the normal tracing of the <b>read</b>(2)
+system call which is controlled by the option
+<b>-e&nbsp;trace</b>=<b>read</b>.</p> </td></tr>
+</table>
+
+
+<p style="margin-left:11%;"><b>&minus;e&nbsp;write</b>=<i>set</i></p>
+
+<p style="margin-left:29%;">Perform a full hexadecimal and
+ASCII dump of all the data written to file descriptors
+listed in the specified set. For example, to see all output
+activity on file descriptors <i>3</i> and <i>5</i> use
+<b>&minus;e&nbsp;write</b>=<i>3</i>,<i>5</i>. Note that this
+is independent from the normal tracing of the
+<b>write</b>(2) system call which is controlled by the
+option <b>-e&nbsp;trace</b>=<b>write</b>.</p>
+
+<p style="margin-left:11%;"><b>&minus;I</b>
+<i>interruptible</i></p>
+
+<p style="margin-left:29%;">When strace can be interrupted
+by signals (such as pressing ^C). 1: no signals are blocked;
+2: fatal signals are blocked while decoding syscall
+(default); 3: fatal signals are always blocked (default if
+&rsquo;-o FILE PROG&rsquo;); 4: fatal signals and SIGTSTP
+(^Z) are always blocked (useful to make strace -o FILE PROG
+not stop on ^Z).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p><b>&minus;o</b> <i>filename</i></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Write the trace output to the file <i>filename</i>
+rather than to stderr. Use <i>filename.pid</i> if
+<b>&minus;ff</b> is used. If the argument begins with
+&lsquo;|&rsquo; or with &lsquo;!&rsquo; then the rest of the
+argument is treated as a command and all output is piped to
+it. This is convenient for piping the debugging output to a
+program without affecting the redirections of executed
+programs.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p><b>&minus;O</b> <i>overhead</i></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Set the overhead for tracing system calls to
+<i>overhead</i> microseconds. This is useful for overriding
+the default heuristic for guessing how much time is spent in
+mere measuring when timing system calls using the
+<b>&minus;c</b> option. The accuracy of the heuristic can be
+gauged by timing a given program run without tracing (using
+<b>time</b>(1)) and comparing the accumulated system call
+time to the total produced using <b>&minus;c</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p><b>&minus;p</b> <i>pid</i></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Attach to the process with the process <small>ID</small>
+<i>pid</i> and begin tracing. The trace may be terminated at
+any time by a keyboard interrupt signal (
+<small>CTRL</small> -C). <b>strace</b> will respond by
+detaching itself from the traced process(es) leaving it
+(them) to continue running. Multiple <b>&minus;p</b> options
+can be used to attach to many processes. -p
+&quot;&lsquo;pidof PROG&lsquo;&quot; syntax is
+supported.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p><b>&minus;P</b> <i>path</i></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Trace only system calls accessing <i>path.</i> Multiple
+<b>&minus;P</b> options can be used to specify several
+paths.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p><b>&minus;s</b> <i>strsize</i></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Specify the maximum string size to print (the default is
+32). Note that filenames are not considered strings and are
+always printed in full.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p><b>&minus;S</b> <i>sortby</i></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Sort the output of the histogram printed by the
+<b>&minus;c</b> option by the specified criterion. Legal
+values are <b>time</b>, <b>calls</b>, <b>name</b>, and
+<b>nothing</b> (default is <b>time</b>).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p><b>&minus;u</b> <i>username</i></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Run command with the user <small>ID</small> , group
+<small>ID</small> , and supplementary groups of
+<i>username</i>. This option is only useful when running as
+root and enables the correct execution of setuid and/or
+setgid binaries. Unless this option is used setuid and
+setgid programs are executed without effective
+privileges.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p><b>&minus;E&nbsp;</b><i>var</i>=<i>val</i></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Run command with <i>var</i>=<i>val</i> in its list of
+environment variables.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p><b>&minus;E</b> <i>var</i></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Remove <i>var</i> from the inherited list of environment
+variables before passing it on to the command.</p></td></tr>
+</table>
+
+<h2>DIAGNOSTICS
+<a name="DIAGNOSTICS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">When
+<i>command</i> exits, <b>strace</b> exits with the same exit
+status. If <i>command</i> is terminated by a signal,
+<b>strace</b> terminates itself with the same signal, so
+that <b>strace</b> can be used as a wrapper process
+transparent to the invoking parent process.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When using
+<b>&minus;p</b>, the exit status of <b>strace</b> is zero
+unless there was an unexpected error in doing the
+tracing.</p>
+
+<h2>SETUID INSTALLATION
+<a name="SETUID INSTALLATION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b>strace</b> is installed setuid to root then the invoking
+user will be able to attach to and trace processes owned by
+any user. In addition setuid and setgid programs will be
+executed and traced with the correct effective privileges.
+Since only users trusted with full root privileges should be
+allowed to do these things, it only makes sense to install
+<b>strace</b> as setuid to root when the users who can
+execute it are restricted to those users who have this
+trust. For example, it makes sense to install a special
+version of <b>strace</b> with mode &lsquo;rwsr-xr--&rsquo;,
+user <b>root</b> and group <b>trace</b>, where members of
+the <b>trace</b> group are trusted users. If you do use this
+feature, please remember to install a non-setuid version of
+<b>strace</b> for ordinary lusers to use.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>ltrace</b>(1),
+<b>time</b>(1), <b>ptrace</b>(2), <b>proc</b>(5)</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">It is a pity
+that so much tracing clutter is produced by systems
+employing shared libraries.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is
+instructive to think about system call inputs and outputs as
+data-flow across the user/kernel boundary. Because
+user-space and kernel-space are separate and
+address-protected, it is sometimes possible to make
+deductive inferences about process behavior using inputs and
+outputs as propositions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In some cases,
+a system call will differ from the documented behavior or
+have a different name. For example, on System V-derived
+systems the true <b>time</b>(2) system call does not take an
+argument and the <b>stat</b> function is called <b>xstat</b>
+and takes an extra leading argument. These discrepancies are
+normal but idiosyncratic characteristics of the system call
+interface and are accounted for by C library wrapper
+functions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On some
+platforms a process that has a system call trace applied to
+it with the <b>&minus;p</b> option will receive a
+<b><small>SIGSTOP</small></b> . This signal may interrupt a
+system call that is not restartable. This may have an
+unpredictable effect on the process if the process takes no
+action to restart the system call.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Programs that
+use the <i>setuid</i> bit do not have effective user
+<small>ID</small> privileges while being traced.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A traced
+process runs slowly.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Traced
+processes which are descended from <i>command</i> may be
+left running after an interrupt signal ( <small>CTRL</small>
+-C).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>&minus;i</b> option is weakly supported.</p>
+
+<h2>HISTORY
+<a name="HISTORY"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>strace</b>
+The original <b>strace</b> was written by Paul Kranenburg
+for SunOS and was inspired by its trace utility. The SunOS
+version of <b>strace</b> was ported to Linux and enhanced by
+Branko Lankester, who also wrote the Linux kernel support.
+Even though Paul released <b>strace</b> 2.5 in 1992,
+Branko&rsquo;s work was based on Paul&rsquo;s <b>strace</b>
+1.5 release from 1991. In 1993, Rick Sladkey merged
+<b>strace</b> 2.5 for SunOS and the second release of
+<b>strace</b> for Linux, added many of the features of
+<b>truss</b>(1) from SVR4, and produced an <b>strace</b>
+that worked on both platforms. In 1994 Rick ported
+<b>strace</b> to SVR4 and Solaris and wrote the automatic
+configuration support. In 1995 he ported <b>strace</b> to
+Irix and tired of writing about himself in the third
+person.</p>
+
+<h2>PROBLEMS
+<a name="PROBLEMS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Problems with
+<b>strace</b> should be reported to the <b>strace</b>
+mailing list at
+&lt;strace&minus;devel@lists.sourceforge.net&gt;.</p>
+<hr>
+</body>
+</html>

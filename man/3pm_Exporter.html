@@ -1,0 +1,692 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:32:48 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Exporter</title>
+
+</head>
+<body>
+
+<h1 align="center">Exporter</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#Advanced Features">Advanced Features</a><br>
+<a href="#Good Practices">Good Practices</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#LICENSE">LICENSE</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Exporter
+&minus; Implements default import method for modules</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In module
+<i>YourModule.pm</i>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  package YourModule;
+  require Exporter;
+  @ISA = qw(Exporter);
+  @EXPORT_OK = qw(munge frobnicate);  # symbols to export on request</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">or</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  package YourModule;
+  use Exporter 'import'; # gives you Exporter's import() method directly
+  @EXPORT_OK = qw(munge frobnicate);  # symbols to export on request</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In other files
+which wish to use <tt>&quot;YourModule&quot;</tt>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  use YourModule qw(frobnicate);      # import listed symbols
+  frobnicate ($left, $right)          # calls YourModule::frobnicate</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Take a look at
+&quot;Good Practices&quot; for some variants you will like
+to use in modern Perl code.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The Exporter
+module implements an <tt>&quot;import&quot;</tt> method
+which allows a module to export functions and variables to
+its users&rsquo; namespaces. Many modules use Exporter
+rather than implementing their own
+<tt>&quot;import&quot;</tt> method because Exporter provides
+a highly flexible interface, with an implementation
+optimised for the common case.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl
+automatically calls the <tt>&quot;import&quot;</tt> method
+when processing a <tt>&quot;use&quot;</tt> statement for a
+module. Modules and <tt>&quot;use&quot;</tt> are documented
+in perlfunc and perlmod. Understanding the concept of
+modules and how the <tt>&quot;use&quot;</tt> statement
+operates is important to understanding the Exporter.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How to
+Export</b> <br>
+The arrays <tt>@EXPORT</tt> and <tt>@EXPORT_OK</tt> in a
+module hold lists of symbols that are going to be exported
+into the users name space by default, or which they can
+request to be exported, respectively. The symbols can
+represent functions, scalars, arrays, hashes, or typeglobs.
+The symbols must be given by full name with the exception
+that the ampersand in front of a function is optional,
+e.g.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @EXPORT    = qw(afunc $scalar @array);   # afunc is a function
+    @EXPORT_OK = qw(&amp;bfunc %hash *typeglob); # explicit prefix on &amp;bfunc</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you are only
+exporting function names it is recommended to omit the
+ampersand, as the implementation is faster this way.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Selecting
+What to Export</b> <br>
+Do <b>not</b> export method names!</p>
+
+<p style="margin-left:11%; margin-top: 1em">Do <b>not</b>
+export anything else by default without a good reason!</p>
+
+<p style="margin-left:11%; margin-top: 1em">Exports pollute
+the namespace of the module user. If you must export try to
+use <tt>@EXPORT_OK</tt> in preference to <tt>@EXPORT</tt>
+and avoid short or common symbol names to reduce the risk of
+name clashes.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Generally
+anything not exported is still accessible from outside the
+module using the <tt>&quot;YourModule::item_name&quot;</tt>
+(or <tt>&quot;$blessed_ref&minus;&gt;method&quot;</tt>)
+syntax. By convention you can use a leading underscore on
+names to informally indicate that they are
+&rsquo;internal&rsquo; and not for public use.</p>
+
+<p style="margin-left:11%; margin-top: 1em">(It is actually
+possible to get private functions by saying:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  my $subref = sub { ... };
+  $subref&minus;&gt;(@args);            # Call it as a function
+  $obj&minus;&gt;$subref(@args);        # Use it as a method</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">However if you
+use them for methods it is up to you to figure out how to
+make inheritance work.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">As a general
+rule, if the module is trying to be object oriented then
+export nothing. If it&rsquo;s just a collection of functions
+then <tt>@EXPORT_OK</tt> anything but use <tt>@EXPORT</tt>
+with caution. For function and method names use barewords in
+preference to names prefixed with ampersands for the export
+lists.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Other module
+design guidelines can be found in perlmod.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How to
+Import</b> <br>
+In other files which wish to use your module there are three
+basic ways for them to load your module and import its
+symbols: <br>
+&quot;use YourModule;&quot;</p>
+
+<p style="margin-left:17%;">This imports all the symbols
+from YourModule&rsquo;s <tt>@EXPORT</tt> into the namespace
+of the <tt>&quot;use&quot;</tt> statement.</p>
+
+<p style="margin-left:11%;">&quot;use YourModule
+();&quot;</p>
+
+<p style="margin-left:17%;">This causes perl to load your
+module but does not import any symbols.</p>
+
+<p style="margin-left:11%;">&quot;use YourModule
+qw(...);&quot;</p>
+
+<p style="margin-left:17%;">This imports only the symbols
+listed by the caller into their namespace. All listed
+symbols must be in your <tt>@EXPORT</tt> or
+<tt>@EXPORT_OK</tt>, else an error occurs. The advanced
+export features of Exporter are accessed like this, but with
+list entries that are syntactically distinct from symbol
+names.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Unless you want
+to use its advanced features, this is probably all you need
+to know to use Exporter.</p>
+
+<h2>Advanced Features
+<a name="Advanced Features"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Specialised
+Import Lists</b> <br>
+If any of the entries in an import list begins with !, : or
+/ then the list is treated as a series of specifications
+which either add to or delete from the list of names to
+import. They are processed left to right. Specifications are
+in the form:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    [!]name         This name only
+    [!]:DEFAULT     All names in @EXPORT
+    [!]:tag         All names in $EXPORT_TAGS{tag} anonymous list
+    [!]/pattern/    All names in @EXPORT and @EXPORT_OK which match</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">A leading !
+indicates that matching names should be deleted from the
+list of names to import. If the first specification is a
+deletion it is treated as though preceded by :DEFAULT. If
+you just want to import extra names in addition to the
+default set you will still need to include :DEFAULT
+explicitly.</p>
+
+<p style="margin-left:11%; margin-top: 1em">e.g.,
+<i>Module.pm</i> defines:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @EXPORT      = qw(A1 A2 A3 A4 A5);
+    @EXPORT_OK   = qw(B1 B2 B3 B4 B5);
+    %EXPORT_TAGS = (T1 =&gt; [qw(A1 A2 B1 B2)], T2 =&gt; [qw(A1 A2 B3 B4)]);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Note that you
+cannot use tags in <tt>@EXPORT</tt> or
+<tt>@EXPORT_OK</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Names in
+<small>EXPORT_TAGS</small> must also appear in
+<tt>@EXPORT</tt> or <tt>@EXPORT_OK</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">An application
+using Module can say something like:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Module qw(:DEFAULT :T2 !B3 A3);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Other examples
+include:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Socket qw(!/^[AP]F_/ !SOMAXCONN !SOL_SOCKET);
+    use POSIX  qw(:errno_h :termios_h !TCSADRAIN !/^EXIT/);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Remember that
+most patterns (using //) will need to be anchored with a
+leading ^, e.g., <tt>&quot;/^EXIT/&quot;</tt> rather than
+<tt>&quot;/EXIT/&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can say
+<tt>&quot;BEGIN { $Exporter::Verbose=1 }&quot;</tt> to see
+how the specifications are being processed and what is
+actually being imported into modules.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Exporting
+Without Using Exporter&rsquo;s import Method</b> <br>
+Exporter has a special method, &rsquo;export_to_level&rsquo;
+which is used in situations where you can&rsquo;t directly
+call Exporter&rsquo;s import method. The export_to_level
+method looks like:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    MyPackage&minus;&gt;export_to_level(
+        $where_to_export, $package, @what_to_export
+    );</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">where
+<tt>$where_to_export</tt> is an integer telling how far up
+the calling stack to export your symbols, and
+<tt>@what_to_export</tt> is an array telling what symbols
+*to* export (usually this is <tt>@_</tt>). The
+<tt>$package</tt> argument is currently unused.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For example,
+suppose that you have a module, A, which already has an
+import function:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    package A;
+    @ISA = qw(Exporter);
+    @EXPORT_OK = qw ($b);
+    sub import
+    {
+        $A::b = 1;     # not a very useful import method
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">and you want to
+Export symbol <tt>$A::b</tt> back to the module that called
+package A. Since Exporter relies on the import method to
+work, via inheritance, as it stands
+<i>Exporter::import()</i> will never get called. Instead,
+say the following:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    package A;
+    @ISA = qw(Exporter);
+    @EXPORT_OK = qw ($b);
+    sub import
+    {
+        $A::b = 1;
+        A&minus;&gt;export_to_level(1, @_);
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This will
+export the symbols one level &rsquo;above&rsquo; the current
+package &minus; ie: to the program or module that used
+package A.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note: Be
+careful not to modify <tt>@_</tt> at all before you call
+export_to_level &minus; or people using your package will
+get very unexplained results!</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Exporting
+Without Inheriting from Exporter</b> <br>
+By including Exporter in your <tt>@ISA</tt> you inherit an
+Exporter&rsquo;s <i>import()</i> method but you also inherit
+several other helper methods which you probably don&rsquo;t
+want. To avoid this you can do</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  package YourModule;
+  use Exporter qw( import );</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">which will
+export Exporter&rsquo;s own <i>import()</i> method into
+YourModule. Everything will work as before but you
+won&rsquo;t need to include Exporter in
+<tt>@YourModule::ISA</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note: This
+feature was introduced in version 5.57 of Exporter, released
+with perl 5.8.3.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Module
+Version Checking</b> <br>
+The Exporter module will convert an attempt to import a
+number from a module into a call to
+<tt>&quot;$module_name&minus;&gt;VERSION($value)&quot;</tt>.
+This can be used to validate that the version of the module
+being used is greater than or equal to the required
+version.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For historical
+reasons, Exporter supplies a
+<tt>&quot;require_version&quot;</tt> method that simply
+delegates to <tt>&quot;VERSION&quot;</tt>. Originally,
+before <tt>&quot;UNIVERSAL::VERSION&quot;</tt> existed,
+Exporter would call
+<tt>&quot;require_version&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since the
+<tt>&quot;UNIVERSAL::VERSION&quot;</tt> method treats the
+<tt>$VERSION</tt> number as a simple numeric value it will
+regard version 1.10 as lower than 1.9. For this reason it is
+strongly recommended that you use numbers with at least two
+decimal places, e.g., 1.09.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Managing
+Unknown Symbols</b> <br>
+In some situations you may want to prevent certain symbols
+from being exported. Typically this applies to extensions
+which have functions or constants that may not exist on some
+systems.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The names of
+any symbols that cannot be exported should be listed in the
+<tt>@EXPORT_FAIL</tt> array.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If a module
+attempts to import any of these symbols the Exporter will
+give the module an opportunity to handle the situation
+before generating an error. The Exporter will call an
+export_fail method with a list of the failed symbols:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  @failed_symbols = $module_name&minus;&gt;export_fail(@failed_symbols);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If the
+<tt>&quot;export_fail&quot;</tt> method returns an empty
+list then no error is recorded and all the requested symbols
+are exported. If the returned list is not empty then an
+error is generated for each symbol and the export fails. The
+Exporter provides a default <tt>&quot;export_fail&quot;</tt>
+method which simply returns the list unchanged.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Uses for the
+<tt>&quot;export_fail&quot;</tt> method include giving
+better error messages for some symbols and performing lazy
+architectural checks (put more symbols into
+<tt>@EXPORT_FAIL</tt> by default and then take them out if
+someone actually tries to use them and an expensive check
+shows that they are usable on that platform).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tag Handling
+Utility Functions</b> <br>
+Since the symbols listed within <tt>%EXPORT_TAGS</tt> must
+also appear in either <tt>@EXPORT</tt> or
+<tt>@EXPORT_OK</tt>, two utility functions are provided
+which allow you to easily add tagged sets of symbols to
+<tt>@EXPORT</tt> or <tt>@EXPORT_OK</tt>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  %EXPORT_TAGS = (foo =&gt; [qw(aa bb cc)], bar =&gt; [qw(aa cc dd)]);
+  Exporter::export_tags('foo');     # add aa, bb and cc to @EXPORT
+  Exporter::export_ok_tags('bar');  # add aa, cc and dd to @EXPORT_OK</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Any names which
+are not tags are added to <tt>@EXPORT</tt> or
+<tt>@EXPORT_OK</tt> unchanged but will trigger a warning
+(with <tt>&quot;&minus;w&quot;</tt>) to avoid misspelt tags
+names being silently added to <tt>@EXPORT</tt> or
+<tt>@EXPORT_OK</tt>. Future versions may make this a fatal
+error.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Generating
+Combined Tags</b> <br>
+If several symbol categories exist in <tt>%EXPORT_TAGS</tt>,
+it&rsquo;s usually useful to create the utility
+&quot;:all&quot; to simplify &quot;use&quot; statements.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The simplest
+way to do this is:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  %EXPORT_TAGS = (foo =&gt; [qw(aa bb cc)], bar =&gt; [qw(aa cc dd)]);
+  # add all the other &quot;:class&quot; tags to the &quot;:all&quot; class,
+  # deleting duplicates
+  {
+    my %seen;
+    push @{$EXPORT_TAGS{all}},
+      grep {!$seen{$_}++} @{$EXPORT_TAGS{$_}} foreach keys %EXPORT_TAGS;
+  }</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i><small>CGI</small>
+.pm</i> creates an &quot;:all&quot; tag which contains some
+(but not really all) of its categories. That could be done
+with one small change:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  # add some of the other &quot;:class&quot; tags to the &quot;:all&quot; class,
+  # deleting duplicates
+  {
+    my %seen;
+    push @{$EXPORT_TAGS{all}},
+      grep {!$seen{$_}++} @{$EXPORT_TAGS{$_}}
+        foreach qw/html2 html3 netscape form cgi internal/;
+  }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Note that the
+tag names in <tt>%EXPORT_TAGS</tt> don&rsquo;t have the
+leading &rsquo;:&rsquo;.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;AUTOLOAD&quot;ed
+Constants</b> <br>
+Many modules make use of <tt>&quot;AUTOLOAD&quot;</tt>ing
+for constant subroutines to avoid having to compile and
+waste memory on rarely used values (see perlsub for details
+on constant subroutines). Calls to such constant subroutines
+are not optimized away at compile time because they
+can&rsquo;t be checked at compile time for constancy.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Even if a
+prototype is available at compile time, the body of the
+subroutine is not (it hasn&rsquo;t been
+<tt>&quot;AUTOLOAD&quot;</tt>ed yet). perl needs to examine
+both the <tt>&quot;()&quot;</tt> prototype and the body of a
+subroutine at compile time to detect that it can safely
+replace calls to that subroutine with the constant
+value.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A workaround
+for this is to call the constants once in a
+<tt>&quot;BEGIN&quot;</tt> block:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   package My ;
+   use Socket ;
+   foo( SO_LINGER );  ## SO_LINGER NOT optimized away; called at runtime
+   BEGIN { SO_LINGER }
+   foo( SO_LINGER );  ## SO_LINGER optimized away at compile time.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This forces the
+<tt>&quot;AUTOLOAD&quot;</tt> for
+<tt>&quot;SO_LINGER&quot;</tt> to take place before
+<small>SO_LINGER</small> is encountered later in
+<tt>&quot;My&quot;</tt> package.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you are
+writing a package that <tt>&quot;AUTOLOAD&quot;</tt>s,
+consider forcing an <tt>&quot;AUTOLOAD&quot;</tt> for any
+constants explicitly imported by other packages or which are
+usually used when your package is
+<tt>&quot;use&quot;</tt>d.</p>
+
+<h2>Good Practices
+<a name="Good Practices"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Declaring
+@EXPORT_OK and Friends</b> <br>
+When using <tt>&quot;Exporter&quot;</tt> with the standard
+<tt>&quot;strict&quot;</tt> and
+<tt>&quot;warnings&quot;</tt> pragmas, the
+<tt>&quot;our&quot;</tt> keyword is needed to declare the
+package variables <tt>@EXPORT_OK</tt>, <tt>@EXPORT</tt>,
+<tt>@ISA</tt>, etc.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  our @ISA = qw(Exporter);
+  our @EXPORT_OK = qw(munge frobnicate);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If backward
+compatibility for Perls under 5.6 is important, one must
+write instead a <tt>&quot;use vars&quot;</tt> statement.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  use vars qw(@ISA @EXPORT_OK);
+  @ISA = qw(Exporter);
+  @EXPORT_OK = qw(munge frobnicate);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Playing
+Safe</b> <br>
+There are some caveats with the use of runtime statements
+like <tt>&quot;require Exporter&quot;</tt> and the
+assignment to package variables, which can very subtle for
+the unaware programmer. This may happen for instance with
+mutually recursive modules, which are affected by the time
+the relevant constructions are executed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The ideal (but
+a bit ugly) way to never have to think about that is to use
+<tt>&quot;BEGIN&quot;</tt> blocks. So the first part of the
+&quot; <small>SYNOPSIS&quot;</small> code could be rewritten
+as:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  package YourModule;
+  use strict;
+  use warnings;
+  our (@ISA, @EXPORT_OK);
+  BEGIN {
+     require Exporter;
+     @ISA = qw(Exporter);
+     @EXPORT_OK = qw(munge frobnicate);  # symbols to export on request
+  }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;BEGIN&quot;</tt> will assure that the loading of
+<i>Exporter.pm</i> and the assignments to <tt>@ISA</tt> and
+<tt>@EXPORT_OK</tt> happen immediately, leaving no room for
+something to get awry or just plain wrong.</p>
+
+<p style="margin-left:11%; margin-top: 1em">With respect to
+loading <tt>&quot;Exporter&quot;</tt> and inheriting, there
+are alternatives with the use of modules like
+<tt>&quot;base&quot;</tt> and
+<tt>&quot;parent&quot;</tt>.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  use base qw( Exporter );
+  # or
+  use parent qw( Exporter );</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Any of these
+statements are nice replacements for <tt>&quot;BEGIN {
+require Exporter; @ISA = qw(Exporter); }&quot;</tt> with the
+same compile-time effect. The basic difference is that
+<tt>&quot;base&quot;</tt> code interacts with declared
+<tt>&quot;fields&quot;</tt> while
+<tt>&quot;parent&quot;</tt> is a streamlined version of the
+older <tt>&quot;base&quot;</tt> code to just establish the
+IS-A relationship.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For more
+details, see the documentation and code of base and
+parent.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Another
+thorough remedy to that runtime vs. compile-time trap is to
+use Exporter::Easy, which is a wrapper of Exporter that
+allows all boilerplate code at a single gulp in the use
+statement.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   use Exporter::Easy (
+       OK =&gt; [ qw(munge frobnicate) ],
+   );
+   # @ISA setup is automatic
+   # all assignments happen at compile time</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>What Not to
+Export</b> <br>
+You have been warned already in &quot;Selecting What to
+Export&quot; to not export:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>method names (because you don&rsquo;t need to and
+that&rsquo;s likely to not do what you want),</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>anything by default (because you don&rsquo;t want to
+surprise your users... badly)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>anything you don&rsquo;t need to (because less is
+more)</p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">There&rsquo;s
+one more item to add to this list. Do <b>not</b> export
+variable names. Just because <tt>&quot;Exporter&quot;</tt>
+lets you do that, it does not mean you should.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  @EXPORT_OK = qw( $svar @avar %hvar ); # DON'T!</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Exporting
+variables is not a good idea. They can change under the
+hood, provoking horrible effects at-a-distance, that are too
+hard to track and to fix. Trust me: they are not worth
+it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To provide the
+capability to set/get class-wide settings, it is best
+instead to provide accessors as subroutines or class methods
+instead.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;Exporter&quot;</tt>
+is definitely not the only module with symbol exporter
+capabilities. At <small>CPAN,</small> you may find a bunch
+of them. Some are lighter. Some provide improved APIs and
+features. Peek the one that fits your needs. The following
+is a sample list of such modules.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Exporter::Easy
+    Exporter::Lite
+    Exporter::Renaming
+    Exporter::Tidy
+    Sub::Exporter / Sub::Installer
+    Perl6::Export / Perl6::Export::Attrs</pre>
+
+
+<h2>LICENSE
+<a name="LICENSE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This library is
+free software. You can redistribute it and/or modify it
+under the same terms as Perl itself.</p>
+<hr>
+</body>
+</html>

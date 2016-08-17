@@ -1,0 +1,637 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:33:20 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>charnames</title>
+
+</head>
+<body>
+
+<h1 align="center">charnames</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#LOOSE MATCHES">LOOSE MATCHES</a><br>
+<a href="#ALIASES">ALIASES</a><br>
+<a href="#CUSTOM ALIASES">CUSTOM ALIASES</a><br>
+<a href="#charnames::string_vianame(name)">charnames::string_vianame(name)</a><br>
+<a href="#charnames::vianame(name)">charnames::vianame(name)</a><br>
+<a href="#charnames::viacode(code)">charnames::viacode(code)</a><br>
+<a href="#CUSTOM TRANSLATORS">CUSTOM TRANSLATORS</a><br>
+<a href="#BUGS">BUGS</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">charnames
+&minus; access to Unicode character names and named
+character sequences; also define character names</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> use charnames ':full';
+ print &quot;\N{GREEK SMALL LETTER SIGMA} is called sigma.\n&quot;;
+ print &quot;\N{LATIN CAPITAL LETTER E WITH VERTICAL LINE BELOW}&quot;,
+       &quot; is an officially named sequence of two Unicode characters\n&quot;;
+ use charnames ':loose';
+ print &quot;\N{Greek small&minus;letter  sigma}&quot;,
+        &quot;can be used to ignore case, underscores, most blanks,&quot;
+        &quot;and when you aren't sure if the official name has hyphens\n&quot;;
+ use charnames ':short';
+ print &quot;\N{greek:Sigma} is an upper&minus;case sigma.\n&quot;;
+ use charnames qw(cyrillic greek);
+ print &quot;\N{sigma} is Greek sigma, and \N{be} is Cyrillic b.\n&quot;;
+ use charnames &quot;:full&quot;, &quot;:alias&quot; =&gt; {
+   e_ACUTE =&gt; &quot;LATIN SMALL LETTER E WITH ACUTE&quot;,
+   mychar =&gt; 0xE8000,  # Private use area
+ };
+ print &quot;\N{e_ACUTE} is a small letter e with an acute.\n&quot;;
+ print &quot;\N{mychar} allows me to name private use characters.\n&quot;;
+ use charnames ();
+ print charnames::viacode(0x1234); # prints &quot;ETHIOPIC SYLLABLE SEE&quot;
+ printf &quot;%04X&quot;, charnames::vianame(&quot;GOTHIC LETTER AHSA&quot;); # prints
+                                                          # &quot;10330&quot;
+ print charnames::vianame(&quot;LATIN CAPITAL LETTER A&quot;); # prints 65 on
+                                                     # ASCII platforms;
+                                                     # 193 on EBCDIC
+ print charnames::string_vianame(&quot;LATIN CAPITAL LETTER A&quot;); # prints &quot;A&quot;</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pragma
+<tt>&quot;use charnames&quot;</tt> is used to gain access to
+the names of the Unicode characters and named character
+sequences, and to allow you to define your own character and
+character sequence names.</p>
+
+<p style="margin-left:11%; margin-top: 1em">All forms of
+the pragma enable use of the following 3 functions:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>&quot;charnames::string_vianame(<i>name</i>)&quot; for
+run-time lookup of a either a character name or a named
+character sequence, returning its string representation</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>&quot;charnames::vianame(<i>name</i>)&quot; for run-time
+lookup of a character name (but not a named character
+sequence) to get its ordinal value (code point)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>&quot;charnames::viacode(<i>code</i>)&quot; for run-time
+lookup of a code point to get its Unicode name.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Starting in
+Perl v5.16, any occurrence of
+<tt>&quot;\N{</tt><i>CHARNAME</i><tt>}&quot;</tt> sequences
+in a double-quotish string automatically loads this module
+with arguments <tt>&quot;:full&quot;</tt> and
+<tt>&quot;:short&quot;</tt> (described below) if it
+hasn&rsquo;t already been loaded with different arguments,
+in order to compile the named Unicode character into
+position in the string. Prior to v5.16, an explicit
+<tt>&quot;use&nbsp;charnames&quot;</tt> was required to
+enable this usage. (However, prior to v5.16, the form
+<tt>&quot;use&nbsp;charnames&nbsp;();&quot;</tt> did not
+enable
+<tt>&quot;\N{</tt><i>CHARNAME</i><tt>}&quot;</tt>.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+<tt>&quot;\N{U+</tt><i>...</i><tt>}&quot;</tt>, where the
+<i>...</i> is a hexadecimal number, also inserts a character
+into a string. The character it inserts is the one whose
+code point (ordinal value) is equal to the number. For
+example, <tt>&quot;\N{U+263a}&quot;</tt> is the Unicode
+(white background, black foreground) smiley face equivalent
+to <tt>&quot;\N{WHITE SMILING FACE}&quot;</tt>. Also note,
+<tt>&quot;\N{</tt><i>...</i><tt>}&quot;</tt> can mean a
+regex quantifier instead of a character name, when the
+<i>...</i> is a number (or comma separated pair of numbers
+(see &quot; <small>QUANTIFIERS</small> &quot; in perlreref),
+and is not related to this pragma.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;charnames&quot;</tt> pragma supports arguments
+<tt>&quot;:full&quot;</tt>, <tt>&quot;:loose&quot;</tt>,
+<tt>&quot;:short&quot;</tt>, script names and customized
+aliases.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<tt>&quot;:full&quot;</tt> is present, for expansion of
+<tt>&quot;\N{</tt><i>CHARNAME</i><tt>}&quot;</tt>, the
+string <i><small>CHARNAME</small></i> is first looked up in
+the list of standard Unicode character names.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;:loose&quot;</tt>
+is a variant of <tt>&quot;:full&quot;</tt> which allows
+<i><small>CHARNAME</small></i> to be less precisely
+specified. Details are in &quot; <small>LOOSE
+MATCHES</small> &quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<tt>&quot;:short&quot;</tt> is present, and
+<i><small>CHARNAME</small></i> has the form
+<tt>&quot;</tt><i>SCRIPT</i><tt>:</tt><i>CNAME</i><tt>&quot;</tt>,
+then <i><small>CNAME</small></i> is looked up as a letter in
+script <i><small>SCRIPT</small></i> , as described in the
+next paragraph. Or, if <tt>&quot;use charnames&quot;</tt> is
+used with script name arguments, then for
+<tt>&quot;\N{</tt><i>CHARNAME</i><tt>}&quot;</tt> the name
+<i><small>CHARNAME</small></i> is looked up as a letter in
+the given scripts (in the specified order). Customized
+aliases can override these, and are explained in &quot;
+<small>CUSTOM ALIASES</small> &quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For lookup of
+<i><small>CHARNAME</small></i> inside a given script
+<i><small>SCRIPTNAME</small></i> , this pragma looks in the
+table of standard Unicode names for the names</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  SCRIPTNAME CAPITAL LETTER CHARNAME
+  SCRIPTNAME SMALL LETTER CHARNAME
+  SCRIPTNAME LETTER CHARNAME</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If
+<i><small>CHARNAME</small></i> is all lowercase, then the
+<tt>&quot;CAPITAL&quot;</tt> variant is ignored, otherwise
+the <tt>&quot;SMALL&quot;</tt> variant is ignored, and both
+<i><small>CHARNAME</small></i> and
+<i><small>SCRIPTNAME</small></i> are converted to all
+uppercase for look-up. Other than that, both of them follow
+loose rules if <tt>&quot;:loose&quot;</tt> is also
+specified; strict otherwise.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+<tt>&quot;\N{...}&quot;</tt> is compile-time; it&rsquo;s a
+special form of string constant used inside double-quotish
+strings; this means that you cannot use variables inside the
+<tt>&quot;\N{...}&quot;</tt>. If you want similar run-time
+functionality, use <i>charnames::string_vianame()</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since Unicode
+6.0, it is deprecated to use <tt>&quot;BELL&quot;</tt>.
+Instead use <tt>&quot;ALERT&quot;</tt> (but
+<tt>&quot;BEL&quot;</tt> will continue to work).</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the input
+name is unknown, <tt>&quot;\N{NAME}&quot;</tt> raises a
+warning and substitutes the Unicode <small>REPLACEMENT
+CHARACTER</small> (U+FFFD).</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+<tt>&quot;\N{NAME}&quot;</tt>, it is a fatal error if
+<tt>&quot;use bytes&quot;</tt> is in effect and the input
+name is that of a character that won&rsquo;t fit into a byte
+(i.e., whose ordinal is above 255).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Otherwise, any
+string that includes a
+<tt>&quot;\N{</tt><i>charname</i><tt>}&quot;</tt> or
+<tt>&quot;\N{U+</tt><i>code&nbsp;point</i><tt>}&quot;</tt>
+will automatically have Unicode semantics (see &quot;Byte
+and Character Semantics&quot; in perlunicode).</p>
+
+<h2>LOOSE MATCHES
+<a name="LOOSE MATCHES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">By specifying
+<tt>&quot;:loose&quot;</tt>, Unicode&rsquo;s loose character
+name matching
+&lt;http://www.unicode.org/reports/tr44#Matching_Rules&gt;
+rules are selected instead of the strict exact match used
+otherwise. That means that <i><small>CHARNAME</small></i>
+doesn&rsquo;t have to be so precisely specified. Upper/lower
+case doesn&rsquo;t matter (except with scripts as mentioned
+above), nor do any underscores, and the only hyphens that
+matter are those at the beginning or end of a word in the
+name (with one exception: the hyphen in U+1180
+<tt>&quot;HANGUL JUNGSEONG O&minus;E&quot;</tt> does
+matter). Also, blanks not adjacent to hyphens don&rsquo;t
+matter. The official Unicode names are quite variable as to
+where they use hyphens versus spaces to separate word-like
+units, and this option allows you to not have to care as
+much. The reason non-medial hyphens matter is because of
+cases like U+0F60 <tt>&quot;TIBETAN LETTER
+&minus;A&quot;</tt> versus U+0F68 <tt>&quot;TIBETAN LETTER
+A&quot;</tt>. The hyphen here is significant, as is the
+space before it, and so both must be included.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;:loose&quot;</tt>
+slows down look-ups by a factor of 2 to 3 versus
+<tt>&quot;:full&quot;</tt>, but the trade-off may be worth
+it to you. Each individual look-up takes very little time,
+and the results are cached, so the speed difference would
+become a factor only in programs that do look-ups of many
+different spellings, and probably only when those look-ups
+are through <i>vianame()</i> and <i>string_vianame()</i>,
+since <tt>&quot;\N{...}&quot;</tt> look-ups are done at
+compile time.</p>
+
+<h2>ALIASES
+<a name="ALIASES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Starting in
+Unicode 6.1 and Perl v5.16, Unicode defines many
+abbreviations and names that were formerly Perl extensions,
+and some additional ones that Perl did not previously
+accept. The list is getting too long to reproduce here, but
+you can get the complete list from the Unicode web site:
+&lt;http://www.unicode.org/Public/UNIDATA/NameAliases.txt&gt;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Earlier
+versions of Perl accepted almost all the 6.1 names. These
+were most extensively documented in the v5.14 version of
+this pod:
+&lt;http://perldoc.perl.org/5.14.0/charnames.html#ALIASES&gt;.</p>
+
+<h2>CUSTOM ALIASES
+<a name="CUSTOM ALIASES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can add
+customized aliases to standard (<tt>&quot;:full&quot;</tt>)
+Unicode naming conventions. The aliases override any
+standard definitions, so, if you&rsquo;re twisted enough,
+you can change <tt>&quot;\N{LATIN CAPITAL LETTER
+A}&quot;</tt> to mean <tt>&quot;B&quot;</tt>, etc.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that an
+alias should not be something that is a legal curly
+brace-enclosed quantifier (see &quot;
+<small>QUANTIFIERS</small> &quot; in perlreref). For example
+<tt>&quot;\N{123}&quot;</tt> means to match 123 non-newline
+characters, and is not treated as a charnames alias. Aliases
+are discouraged from beginning with anything other than an
+alphabetic character and from containing anything other than
+alphanumerics, spaces, dashes, parentheses, and underscores.
+Currently they must be <small>ASCII</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">An alias can
+map to either an official Unicode character name (not a
+loose matched name) or to a numeric code point (ordinal).
+The latter is useful for assigning names to code points in
+Unicode private use areas such as U+E800 through U+F8FF. A
+numeric code point must be a non-negative integer or a
+string beginning with <tt>&quot;U+&quot;</tt> or
+<tt>&quot;0x&quot;</tt> with the remainder considered to be
+a hexadecimal integer. A literal numeric constant must be
+unsigned; it will be interpreted as hex if it has a leading
+zero or contains non-decimal hex digits; otherwise it will
+be interpreted as decimal.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Aliases are
+added either by the use of anonymous hashes:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use charnames &quot;:alias&quot; =&gt; {
+        e_ACUTE =&gt; &quot;LATIN SMALL LETTER E WITH ACUTE&quot;,
+        mychar1 =&gt; 0xE8000,
+        };
+    my $str = &quot;\N{e_ACUTE}&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">or by using a
+file containing aliases:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use charnames &quot;:alias&quot; =&gt; &quot;pro&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This will try
+to read <tt>&quot;unicore/pro_alias.pl&quot;</tt> from the
+<tt>@INC</tt> path. This file should return a list in plain
+perl:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    (
+    A_GRAVE         =&gt; &quot;LATIN CAPITAL LETTER A WITH GRAVE&quot;,
+    A_CIRCUM        =&gt; &quot;LATIN CAPITAL LETTER A WITH CIRCUMFLEX&quot;,
+    A_DIAERES       =&gt; &quot;LATIN CAPITAL LETTER A WITH DIAERESIS&quot;,
+    A_TILDE         =&gt; &quot;LATIN CAPITAL LETTER A WITH TILDE&quot;,
+    A_BREVE         =&gt; &quot;LATIN CAPITAL LETTER A WITH BREVE&quot;,
+    A_RING          =&gt; &quot;LATIN CAPITAL LETTER A WITH RING ABOVE&quot;,
+    A_MACRON        =&gt; &quot;LATIN CAPITAL LETTER A WITH MACRON&quot;,
+    mychar2         =&gt; &quot;U+E8001&quot;,
+    );</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Both these
+methods insert <tt>&quot;:full&quot;</tt> automatically as
+the first argument (if no other argument is given), and you
+can give the <tt>&quot;:full&quot;</tt> explicitly as well,
+like</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use charnames &quot;:full&quot;, &quot;:alias&quot; =&gt; &quot;pro&quot;;</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">&quot;:loose&quot;
+has no effect with these. Input names must match exactly,
+using <tt>&quot;:full&quot;</tt> rules.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also, both
+these methods currently allow only single characters to be
+named. To name a sequence of characters, use a custom
+translator (described below).</p>
+
+<h2>charnames::string_vianame(name)
+<a name="charnames::string_vianame(name)"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is a
+runtime equivalent to <tt>&quot;\N{...}&quot;</tt>.
+<i>name</i> can be any expression that evaluates to a name
+accepted by <tt>&quot;\N{...}&quot;</tt> under the
+<tt>&quot;:full&quot;</tt> option to
+<tt>&quot;charnames&quot;</tt>. In addition, any other
+options for the controlling <tt>&quot;use
+charnames&quot;</tt> in the same scope apply, like
+<tt>&quot;:loose&quot;</tt> or any script list,
+<tt>&quot;:short&quot;</tt> option, or custom aliases you
+may have defined.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The only
+difference is that if the input name is unknown,
+<tt>&quot;string_vianame&quot;</tt> returns
+<tt>&quot;undef&quot;</tt> instead of the <small>REPLACEMENT
+CHARACTER</small> and does not raise a warning message.</p>
+
+<h2>charnames::vianame(name)
+<a name="charnames::vianame(name)"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is similar
+to <tt>&quot;string_vianame&quot;</tt>. The main difference
+is that under most circumstances, vianame returns an ordinal
+code point, whereas <tt>&quot;string_vianame&quot;</tt>
+returns a string. For example,</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   printf &quot;U+%04X&quot;, charnames::vianame(&quot;FOUR TEARDROP&minus;SPOKED ASTERISK&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">prints
+&quot;U+2722&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This leads to
+the other two differences. Since a single code point is
+returned, the function can&rsquo;t handle named character
+sequences, as these are composed of multiple characters (it
+returns <tt>&quot;undef&quot;</tt> for these. And, the code
+point can be that of any character, even ones that
+aren&rsquo;t legal under the
+<tt>&quot;use&nbsp;bytes&quot;</tt> pragma,</p>
+
+<p style="margin-left:11%; margin-top: 1em">See &quot;
+<small>BUGS</small> &quot; for the circumstances in which
+the behavior differs from that described above.</p>
+
+<h2>charnames::viacode(code)
+<a name="charnames::viacode(code)"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Returns the
+full name of the character indicated by the numeric code.
+For example,</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    print charnames::viacode(0x2722);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">prints &quot;
+<small>FOUR</small> TEARDROP-SPOKED <small>ASTERISK</small>
+&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The name
+returned is the &quot;best&quot; (defined below) official
+name or alias for the code point, if available; otherwise
+your custom alias for it, if defined; otherwise
+<tt>&quot;undef&quot;</tt>. This means that your alias will
+only be returned for code points that don&rsquo;t have an
+official Unicode name (nor alias) such as private use code
+points.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you define
+more than one name for the code point, it is indeterminate
+which one will be returned.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As mentioned,
+the function returns <tt>&quot;undef&quot;</tt> if no name
+is known for the code point. In Unicode the proper name of
+these is the empty string, which <tt>&quot;undef&quot;</tt>
+stringifies to. (If you ask for a code point past the legal
+Unicode maximum of U+10FFFF that you haven&rsquo;t assigned
+an alias to, you get <tt>&quot;undef&quot;</tt> plus a
+warning.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">The input
+number must be a non-negative integer, or a string beginning
+with <tt>&quot;U+&quot;</tt> or <tt>&quot;0x&quot;</tt> with
+the remainder considered to be a hexadecimal integer. A
+literal numeric constant must be unsigned; it will be
+interpreted as hex if it has a leading zero or contains
+non-decimal hex digits; otherwise it will be interpreted as
+decimal.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As mentioned
+above under &quot; <small>ALIASES</small> &quot;, Unicode
+6.1 defines extra names (synonyms or aliases) for some code
+points, most of which were already available as Perl
+extensions. All these are accepted by
+<tt>&quot;\N{...}&quot;</tt> and the other functions in this
+module, but <tt>&quot;viacode&quot;</tt> has to choose which
+one name to return for a given input code point, so it
+returns the &quot;best&quot; name. To understand how this
+works, it is helpful to know more about the Unicode name
+properties. All code points actually have only a single
+name, which (starting in Unicode 2.0) can never change once
+a character has been assigned to the code point. But
+mistakes have been made in assigning names, for example
+sometimes a clerical error was made during the publishing of
+the Standard which caused words to be misspelled, and there
+was no way to correct those. The Name_Alias property was
+eventually created to handle these situations. If a name was
+wrong, a corrected synonym would be published for it, using
+Name_Alias. <tt>&quot;viacode&quot;</tt> will return that
+corrected synonym as the &quot;best&quot; name for a code
+point. (It is even possible, though it hasn&rsquo;t happened
+yet, that the correction itself will need to be corrected,
+and so another Name_Alias can be created for that code
+point; <tt>&quot;viacode&quot;</tt> will return the most
+recent correction.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">The Unicode
+name for each of the control characters (such as <small>LINE
+FEED</small> ) is the empty string. However almost all had
+names assigned by other standards, such as the
+<small>ASCII</small> Standard, or were in common use.
+<tt>&quot;viacode&quot;</tt> returns these names as the
+&quot;best&quot; ones available. Unicode 6.1 has created
+Name_Aliases for each of them, including alternate names,
+like <small>NEW LINE</small> . <tt>&quot;viacode&quot;</tt>
+uses the original name, &quot; <small>LINE FEED</small>
+&quot; in preference to the alternate. Similarly the name
+returned for U+FEFF is &quot; <small>ZERO WIDTH</small>
+NO-BREAK <small>SPACE</small> &quot;, not &quot; <small>BYTE
+ORDER MARK</small> &quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Until Unicode
+6.1, the 4 control characters U+0080, U+0081, U+0084, and
+U+0099 did not have names nor aliases. To preserve backwards
+compatibility, any alias you define for these code points
+will be returned by this function, in preference to the
+official name.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Some code
+points also have abbreviated names, such as &quot;
+<small>LF</small> &quot; or &quot; <small>NL</small> &quot;.
+<tt>&quot;viacode&quot;</tt> never returns these.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Because a name
+correction may be added in future Unicode releases, the name
+that <tt>&quot;viacode&quot;</tt> returns may change as a
+result. This is a rare event, but it does happen.</p>
+
+<h2>CUSTOM TRANSLATORS
+<a name="CUSTOM TRANSLATORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The mechanism
+of translation of <tt>&quot;\N{...}&quot;</tt> escapes is
+general and not hardwired into <i>charnames.pm</i>. A module
+can install custom translations (inside the scope which
+<tt>&quot;use&quot;</tt>s the module) with the following
+magic incantation:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sub import {
+        shift;
+        $^H{charnames} = \&amp;translator;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Here
+<i>translator()</i> is a subroutine which takes
+<i><small>CHARNAME</small></i> as an argument, and returns
+text to insert into the string instead of the
+<tt>&quot;\N{</tt><i>CHARNAME</i><tt>}&quot;</tt>
+escape.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is the
+only way you can create a custom named sequence of code
+points.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since the text
+to insert should be different in <tt>&quot;bytes&quot;</tt>
+mode and out of it, the function should check the current
+state of <tt>&quot;bytes&quot;</tt>&minus;flag as in:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use bytes ();                      # for $bytes::hint_bits
+    sub translator {
+        if ($^H &amp; $bytes::hint_bits) {
+            return bytes_translator(@_);
+        }
+        else {
+            return utf8_translator(@_);
+        }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">See &quot;
+<small>CUSTOM ALIASES</small> &quot; above for restrictions
+on <i><small>CHARNAME</small></i> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">Of course,
+<tt>&quot;vianame&quot;</tt>, <tt>&quot;viacode&quot;</tt>,
+and <tt>&quot;string_vianame&quot;</tt> would need to be
+overridden as well.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>vianame()</i>
+normally returns an ordinal code point, but when the input
+name is of the form <tt>&quot;U+...&quot;</tt>, it returns a
+chr instead. In this case, if <tt>&quot;use bytes&quot;</tt>
+is in effect and the character won&rsquo;t fit into a byte,
+it returns <tt>&quot;undef&quot;</tt> and raises a
+warning.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Names must be
+<small>ASCII</small> characters only, which means that you
+are out of luck if you want to create aliases in a language
+where some or all the characters of the desired aliases are
+non-ASCII.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since
+evaluation of the translation function (see &quot;
+<small>CUSTOM TRANSLATORS</small> &quot;) happens in the
+middle of compilation (of a string literal), the translation
+function should not do any <tt>&quot;eval&quot;</tt>s or
+<tt>&quot;require&quot;</tt>s. This restriction should be
+lifted (but is low priority) in a future version of
+Perl.</p>
+<hr>
+</body>
+</html>

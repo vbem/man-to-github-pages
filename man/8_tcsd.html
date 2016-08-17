@@ -1,0 +1,228 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:41:04 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>tcsd</title>
+
+</head>
+<body>
+
+<h1 align="center">tcsd</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#ACCESS CONTROL">ACCESS CONTROL</a><br>
+<a href="#DATA FILES">DATA FILES</a><br>
+<a href="#CONFIGURATION">CONFIGURATION</a><br>
+<a href="#DEBUG OUTPUT">DEBUG OUTPUT</a><br>
+<a href="#DEVICE DRIVERS">DEVICE DRIVERS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#REPORTING BUGS">REPORTING BUGS</a><br>
+
+<hr>
+
+
+<p align="center">TCG Software Stack</p>
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">tcsd &minus;
+daemon that manages Trusted Computing resources</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>tcsd</b>
+[<b>&minus;f</b>] [<b>&minus;e</b>]
+[<b>&minus;c&nbsp;&lt;configfile&gt;&nbsp;]</b>
+[<b>&minus;h</b>]</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Trousers is an
+open-source TCG Software Stack (TSS), released under the BSD
+License. Trousers aims to be compliant with the current
+(1.1b) and upcoming (1.2) TSS specifications available from
+the Trusted Computing Group website:
+http://www.trustedcomputinggroup.org.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>tcsd</b> is
+a user space daemon that should be (according to the TSS
+spec) the only portal to the TPM device driver. At boot
+time, <b>tcsd</b> should be started, it should open the TPM
+device driver and from that point on, all requests to the
+TPM should go through the TSS stack. The <b>tcsd</b> manages
+TPM resources and handles requests from TSP&rsquo;s both
+local and remote. <b><br>
+&minus;f,&nbsp;&minus;&minus;foreground</b></p>
+
+<p style="margin-left:22%;">run the daemon in the
+foreground</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>&minus;e</b></p></td>
+<td width="8%"></td>
+<td width="67%">
+
+
+<p>attempt to connect to software TPMs over TCP</p></td>
+<td width="11%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:11%;"><b>&minus;c,&nbsp;&minus;&minus;config
+&lt;configfile&gt;</b></p>
+
+<p style="margin-left:22%;">use the provided configuration
+file rather than the default configuration file</p>
+
+
+<p style="margin-left:11%;"><b>&minus;h,&nbsp;&minus;&minus;help</b></p>
+
+<p style="margin-left:22%;">display help message</p>
+
+<h2>ACCESS CONTROL
+<a name="ACCESS CONTROL"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">There are two
+types of access control for the <b>tcsd</b>, access to the
+daemon&rsquo;s socket itself and access to specific commands
+internal to the <b>tcsd</b>. Access to the
+<b>tcsd</b>&rsquo;s port should be controlled by the system
+administrator using firewall rules. If using iptables, the
+following rule will allow a specific host access to the
+tcsd:</p>
+
+<p style="margin-left:11%; margin-top: 1em"># iptables -A
+INPUT -s $IP_ADDRESS -p tcp --destination-port 30003 -j
+ACCEPT</p>
+
+<p style="margin-left:11%; margin-top: 1em">Access to
+individual commands internal to the tcsd is configured by
+the <b>tcsd</b> configuration file&rsquo;s
+&quot;remote_ops&quot; directive. Each function call in the
+TCS API is reachable by a unique ordinal. Each labeled
+&quot;remote op&quot; actually defines a set of ordinals
+(usually more than one) necessary to accomplish the
+operation. So, for example, the &quot;random&quot; operation
+enables the ordinals for opening and closing a context,
+calling TCS_StirRandom and TCS_GetRandom, as well as
+TCS_FreeMemory. By default, connections from localhost will
+allow any ordinals.</p>
+
+<h2>DATA FILES
+<a name="DATA FILES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">TSS
+applications have access to 2 different kinds of
+&rsquo;persistant&rsquo; storage. &rsquo;User&rsquo;
+persistant storage has the lifetime of that of the
+application using it and therefore is destroyed when an
+application exits. User PS is controlled by the TSP of the
+application. &rsquo;System&rsquo; persistent storage is
+controlled by the TCS and stays valid across application
+lifetimes, <b>tcsd</b> restarts and system resets. Data
+registered in system PS stays valid until an application
+requests that it be removed. User PS files are by default
+stored as /var/lib/tpm/user.{pid} and the system PS file by
+default is /var/lib/tpm/system.data. The system PS file is
+initially created when ownership of the TPM is first
+taken.</p>
+
+<h2>CONFIGURATION
+<a name="CONFIGURATION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>tcsd</b>
+configuration is stored by default in /etc/tcsd.conf</p>
+
+<h2>DEBUG OUTPUT
+<a name="DEBUG OUTPUT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If TrouSerS has
+been compiled with debugging enabled, the debugging output
+can be supressed by setting the TSS_DEBUG_OFF environment
+variable.</p>
+
+<h2>DEVICE DRIVERS
+<a name="DEVICE DRIVERS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>tcsd</b> is
+compatible with the IBM Research TPM device driver available
+from http://ibmswtpm.sourceforge.net/ and the TPM device
+driver available from http://sf.net/projects/tpmdd, which is
+also available in the upstream Linux kernel and many Linux
+distros.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>tcsd</b>
+conforms to the Trusted Computing Group Software
+Specification version 1.1 Golden</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>tcsd.conf</b>(5)</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Kent Yoder</p>
+
+<h2>REPORTING BUGS
+<a name="REPORTING BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Report bugs to
+&lt;trousers-tech@lists.sf.net&gt;</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,1132 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:39:14 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>IP</title>
+
+</head>
+<body>
+
+<h1 align="center">IP</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">ip &minus;
+Linux IPv4 protocol implementation</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;sys/socket.h&gt; <br>
+#include &lt;netinet/in.h&gt; <br>
+#include &lt;netinet/ip.h&gt;</b> /* superset of previous
+*/</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>tcp_socket</i>
+<b>= socket(AF_INET, SOCK_STREAM, 0);</b> <i><br>
+udp_socket</i> <b>= socket(AF_INET, SOCK_DGRAM, 0);</b>
+<i><br>
+raw_socket</i> <b>= socket(AF_INET, SOCK_RAW,</b>
+<i>protocol</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Linux
+implements the Internet Protocol, version 4, described in
+RFC&nbsp;791 and RFC&nbsp;1122. <b>ip</b> contains a level 2
+multicasting implementation conforming to RFC&nbsp;1112. It
+also contains an IP router including a packet filter.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The programming
+interface is BSD-sockets compatible. For more information on
+sockets, see <b>socket</b>(7).</p>
+
+<p style="margin-left:11%; margin-top: 1em">An IP socket is
+created by calling the <b>socket</b>(2) function as
+<b>socket(AF_INET,</b> <i>socket_type</i><b>,</b>
+<i>protocol</i><b>)</b>. Valid socket types are
+<b>SOCK_STREAM</b> to open a <b>tcp</b>(7) socket,
+<b>SOCK_DGRAM</b> to open a <b>udp</b>(7) socket, or
+<b>SOCK_RAW</b> to open a <b>raw</b>(7) socket to access the
+IP protocol directly. <i>protocol</i> is the IP protocol in
+the IP header to be received or sent. The only valid values
+for <i>protocol</i> are 0 and <b>IPPROTO_TCP</b> for TCP
+sockets, and 0 and <b>IPPROTO_UDP</b> for UDP sockets. For
+<b>SOCK_RAW</b> you may specify a valid IANA IP protocol
+defined in RFC&nbsp;1700 assigned numbers.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When a process
+wants to receive new incoming packets or connections, it
+should bind a socket to a local interface address using
+<b>bind</b>(2). In this case, only one IP socket may be
+bound to any given local (address, port) pair. When
+<b>INADDR_ANY</b> is specified in the bind call, the socket
+will be bound to <i>all</i> local interfaces. When
+<b>listen</b>(2) is called on an unbound socket, the socket
+is automatically bound to a random free port with the local
+address set to <b>INADDR_ANY</b>. When <b>connect</b>(2) is
+called on an unbound socket, the socket is automatically
+bound to a random free port or to a usable shared port with
+the local address set to <b>INADDR_ANY</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A TCP local
+socket address that has been bound is unavailable for some
+time after closing, unless the <b>SO_REUSEADDR</b> flag has
+been set. Care should be taken when using this flag as it
+makes TCP less reliable.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Address
+format</b> <br>
+An IP socket address is defined as a combination of an IP
+interface address and a 16-bit port number. The basic IP
+protocol does not supply port numbers, they are implemented
+by higher level protocols like <b>udp</b>(7) and
+<b>tcp</b>(7). On raw sockets <i>sin_port</i> is set to the
+IP protocol.</p>
+
+<p style="margin-left:17%; margin-top: 1em">struct
+sockaddr_in { <br>
+sa_family_t sin_family; /* address family: AF_INET */ <br>
+in_port_t sin_port; /* port in network byte order */ <br>
+struct in_addr sin_addr; /* internet address */ <br>
+};</p>
+
+<p style="margin-left:17%; margin-top: 1em">/* Internet
+address. */ <br>
+struct in_addr { <br>
+uint32_t s_addr; /* address in network byte order */ <br>
+};</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>sin_family</i>
+is always set to <b>AF_INET</b>. This is required; in Linux
+2.2 most networking functions return <b>EINVAL</b> when this
+setting is missing. <i>sin_port</i> contains the port in
+network byte order. The port numbers below 1024 are called
+<i>privileged ports</i> (or sometimes: <i>reserved
+ports</i>). Only privileged processes (i.e., those having
+the <b>CAP_NET_BIND_SERVICE</b> capability) may
+<b>bind</b>(2) to these sockets. Note that the raw IPv4
+protocol as such has no concept of a port, they are
+implemented only by higher protocols like <b>tcp</b>(7) and
+<b>udp</b>(7).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>sin_addr</i>
+is the IP host address. The <i>s_addr</i> member of
+<i>struct in_addr</i> contains the host interface address in
+network byte order. <i>in_addr</i> should be assigned one of
+the <b>INADDR_*</b> values (e.g., <b>INADDR_ANY</b>) or set
+using the <b>inet_aton</b>(3), <b>inet_addr</b>(3),
+<b>inet_makeaddr</b>(3) library functions or directly with
+the name resolver (see <b>gethostbyname</b>(3)).</p>
+
+<p style="margin-left:11%; margin-top: 1em">IPv4 addresses
+are divided into unicast, broadcast and multicast addresses.
+Unicast addresses specify a single interface of a host,
+broadcast addresses specify all hosts on a network and
+multicast addresses address all hosts in a multicast group.
+Datagrams to broadcast addresses can be sent or received
+only when the <b>SO_BROADCAST</b> socket flag is set. In the
+current implementation, connection-oriented sockets are
+allowed to use only unicast addresses.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that the
+address and the port are always stored in network byte
+order. In particular, this means that you need to call
+<b>htons</b>(3) on the number that is assigned to a port.
+All address/port manipulation functions in the standard
+library work in network byte order.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There are
+several special addresses: <b>INADDR_LOOPBACK</b>
+(127.0.0.1) always refers to the local host via the loopback
+device; <b>INADDR_ANY</b> (0.0.0.0) means any address for
+binding; <b>INADDR_BROADCAST</b> (255.255.255.255) means any
+host and has the same effect on bind as <b>INADDR_ANY</b>
+for historical reasons.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Socket
+options</b> <br>
+IP supports some protocol-specific socket options that can
+be set with <b>setsockopt</b>(2) and read with
+<b>getsockopt</b>(2). The socket option level for IP is
+<b>IPPROTO_IP</b>. A boolean integer flag is zero when it is
+false, otherwise true. <b><br>
+IP_ADD_MEMBERSHIP</b> (since Linux 1.2)</p>
+
+<p style="margin-left:22%;">Join a multicast group.
+Argument is an <i>ip_mreqn</i> structure.</p>
+
+<p style="margin-left:28%; margin-top: 1em">struct ip_mreqn
+{ <br>
+struct in_addr imr_multiaddr; /* IP multicast group <br>
+address */ <br>
+struct in_addr imr_address; /* IP address of local <br>
+interface */ <br>
+int imr_ifindex; /* interface index */ <br>
+};</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>imr_multiaddr</i>
+contains the address of the multicast group the application
+wants to join or leave. It must be a valid multicast address
+(or <b>setsockopt</b>(2) fails with the error
+<b>EINVAL</b>). <i>imr_address</i> is the address of the
+local interface with which the system should join the
+multicast group; if it is equal to <b>INADDR_ANY</b> an
+appropriate interface is chosen by the system.
+<i>imr_ifindex</i> is the interface index of the interface
+that should join/leave the <i>imr_multiaddr</i> group, or 0
+to indicate any interface.</p>
+
+<p style="margin-left:22%; margin-top: 1em">The
+<i>ip_mreqn</i> structure is available only since Linux 2.2.
+For compatibility, the old <i>ip_mreq</i> structure (present
+since Linux 1.2) is still supported; it differs from
+<i>ip_mreqn</i> only by not including the <i>imr_ifindex</i>
+field. Only valid as a <b>setsockopt</b>(2).</p>
+
+
+<p style="margin-left:11%;"><b>IP_ADD_SOURCE_MEMBERSHIP</b>
+(since Linux 2.4.22 / 2.5.68)</p>
+
+<p style="margin-left:22%;">Join a multicast group and
+allow receiving data only from a specified source. Argument
+is an <i>ip_mreq_source</i> structure.</p>
+
+<p style="margin-left:28%; margin-top: 1em">struct
+ip_mreq_source { <br>
+struct in_addr imr_multiaddr; /* IP multicast group <br>
+address */ <br>
+struct in_addr imr_interface; /* IP address of local <br>
+interface */ <br>
+struct in_addr imr_sourceaddr; /* IP address of <br>
+multicast source */ <br>
+};</p>
+
+<p style="margin-left:22%; margin-top: 1em">The
+<i>ip_mreq_source</i> structure is similar to
+<i>ip_mreqn</i> described under <b>IP_ADD_MEMBERSIP</b>. The
+<i>imr_multiaddr</i> field contains the address of the
+multicast group the application wants to join or leave. The
+<i>imr_interface</i> field is the address of the local
+interface with which the system should join the multicast
+group. Finally, the <i>imr_sourceaddr</i> field contains the
+address of the source the application wants to receive data
+from.</p>
+
+<p style="margin-left:22%; margin-top: 1em">This option can
+be used multiple times to allow receiving data from more
+than one source.</p>
+
+<p style="margin-left:11%;"><b>IP_BLOCK_SOURCE</b> (since
+Linux 2.4.22 / 2.5.68)</p>
+
+<p style="margin-left:22%;">Stop receiving multicast data
+from a specific source in a given group. This is valid only
+after the application has subscribed to the multicast group
+using either <b>IP_ADD_MEMBERSHIP</b> or
+<b>IP_ADD_SOURCE_MEMBERSHIP</b>.</p>
+
+<p style="margin-left:22%; margin-top: 1em">Argument is an
+<i>ip_mreq_source</i> structure as described under
+<b>IP_ADD_SOURCE_MEMBERSHIP</b>.</p>
+
+<p style="margin-left:11%;"><b>IP_DROP_MEMBERSHIP</b>
+(since Linux 1.2)</p>
+
+<p style="margin-left:22%;">Leave a multicast group.
+Argument is an <i>ip_mreqn</i> or <i>ip_mreq</i> structure
+similar to <b>IP_ADD_MEMBERSHIP</b>.</p>
+
+
+<p style="margin-left:11%;"><b>IP_DROP_SOURCE_MEMBERSHIP</b>
+(since Linux 2.4.22 / 2.5.68)</p>
+
+<p style="margin-left:22%;">Leave a source-specific
+group&mdash;that is, stop receiving data from a given
+multicast group that come from a given source. If the
+application has subscribed to multiple sources within the
+same group, data from the remaining sources will still be
+delivered. To stop receiving data from all sources at once,
+use <b>IP_LEAVE_GROUP</b>.</p>
+
+<p style="margin-left:22%; margin-top: 1em">Argument is an
+<i>ip_mreq_source</i> structure as described under
+<b>IP_ADD_SOURCE_MEMBERSHIP</b>.</p>
+
+<p style="margin-left:11%;"><b>IP_FREEBIND</b> (since Linux
+2.4)</p>
+
+<p style="margin-left:22%;">If enabled, this boolean option
+allows binding to an IP address that is nonlocal or does not
+(yet) exist. This permits listening on a socket, without
+requiring the underlying network interface or the specified
+dynamic IP address to be up at the time that the application
+is trying to bind to it. This option is the per-socket
+equivalent of the <i>ip_nonlocal_bind /proc</i> interface
+described below.</p>
+
+<p style="margin-left:11%;"><b>IP_HDRINCL</b> (since Linux
+2.0)</p>
+
+<p style="margin-left:22%;">If enabled, the user supplies
+an IP header in front of the user data. Only valid for
+<b>SOCK_RAW</b> sockets. See <b>raw</b>(7) for more
+information. When this flag is enabled the values set by
+<b>IP_OPTIONS</b>, <b>IP_TTL</b> and <b>IP_TOS</b> are
+ignored.</p>
+
+<p style="margin-left:11%;"><b>IP_MSFILTER</b> (since Linux
+2.4.22 / 2.5.68)</p>
+
+<p style="margin-left:22%;">This option provides access to
+the advanced full-state filtering API. Argument is an
+<i>ip_msfilter</i> structure.</p>
+
+<p style="margin-left:28%; margin-top: 1em">struct
+ip_msfilter { <br>
+struct in_addr imsf_multiaddr; /* IP multicast group <br>
+address */ <br>
+struct in_addr imsf_interface; /* IP address of local <br>
+interface */ <br>
+uint32_t imsf_fmode; /* Filter-mode */</p>
+
+<p style="margin-left:28%; margin-top: 1em">uint32_t
+imsf_numsrc; /* Number of sources in <br>
+the following array */ <br>
+struct in_addr imsf_slist[1]; /* Array of source <br>
+addresses */ <br>
+};</p>
+
+<p style="margin-left:22%; margin-top: 1em">There are two
+macros, <b>MCAST_INCLUDE</b> and <b>MCAST_EXCLUDE</b>, which
+can be used to specify the filtering mode. Additionally, the
+<b>IP_MSFILTER_SIZE</b>(n) macro exists to determine how
+much memory is needed to store <i>ip_msfilter</i> structure
+with <i>n</i> sources in the source list.</p>
+
+<p style="margin-left:22%; margin-top: 1em">For the full
+description of multicast source filtering refer to RFC
+3376.</p>
+
+<p style="margin-left:11%;"><b>IP_MTU</b> (since Linux
+2.2)</p>
+
+<p style="margin-left:22%;">Retrieve the current known path
+MTU of the current socket. Valid only when the socket has
+been connected. Returns an integer. Only valid as a
+<b>getsockopt</b>(2).</p>
+
+<p style="margin-left:11%;"><b>IP_MTU_DISCOVER</b> (since
+Linux 2.2)</p>
+
+<p style="margin-left:22%;">Set or receive the Path MTU
+Discovery setting for a socket. When enabled, Linux will
+perform Path MTU Discovery as defined in RFC&nbsp;1191 on
+<b>SOCK_STREAM</b> sockets. For non-<b>SOCK_STREAM</b>
+sockets, <b>IP_PMTUDISC_DO</b> forces the
+don&rsquo;t-fragment flag to be set on all outgoing packets.
+It is the user&rsquo;s responsibility to packetize the data
+in MTU-sized chunks and to do the retransmits if necessary.
+The kernel will reject (with <b>EMSGSIZE</b>) datagrams that
+are bigger than the known path MTU. <b>IP_PMTUDISC_WANT</b>
+will fragment a datagram if needed according to the path
+MTU, or will set the don&rsquo;t-fragment flag
+otherwise.</p>
+
+<p style="margin-left:22%; margin-top: 1em">The system-wide
+default can be toggled between <b>IP_PMTUDISC_WANT</b> and
+<b>IP_PMTUDISC_DONT</b> by writing (respectively, zero and
+nonzero values) to the
+<i>/proc/sys/net/ipv4/ip_no_pmtu_disc</i> file.</p>
+
+<p style="margin-left:22%; margin-top: 1em">When PMTU
+discovery is enabled, the kernel automatically keeps track
+of the path MTU per destination host. When it is connected
+to a specific peer with <b>connect</b>(2), the currently
+known path MTU can be retrieved conveniently using the
+<b>IP_MTU</b> socket option (e.g., after an <b>EMSGSIZE</b>
+error occurred). The path MTU may change over time. For
+connectionless sockets with many destinations, the new MTU
+for a given destination can also be accessed using the error
+queue (see <b>IP_RECVERR</b>). A new error will be queued
+for every incoming MTU update.</p>
+
+<p style="margin-left:22%; margin-top: 1em">While MTU
+discovery is in progress, initial packets from datagram
+sockets may be dropped. Applications using UDP should be
+aware of this and not take it into account for their packet
+retransmit strategy.</p>
+
+<p style="margin-left:22%; margin-top: 1em">To bootstrap
+the path MTU discovery process on unconnected sockets, it is
+possible to start with a big datagram size (up to
+64K-headers bytes long) and let it shrink by updates of the
+path MTU.</p>
+
+<p style="margin-left:22%; margin-top: 1em">To get an
+initial estimate of the path MTU, connect a datagram socket
+to the destination address using <b>connect</b>(2) and
+retrieve the MTU by calling <b>getsockopt</b>(2) with the
+<b>IP_MTU</b> option.</p>
+
+<p style="margin-left:22%; margin-top: 1em">It is possible
+to implement RFC 4821 MTU probing with <b>SOCK_DGRAM</b> or
+<b>SOCK_RAW</b> sockets by setting a value of
+<b>IP_PMTUDISC_PROBE</b> (available since Linux 2.6.22).
+This is also particularly useful for diagnostic tools such
+as <b>tracepath</b>(8) that wish to deliberately send probe
+packets larger than the observed Path MTU.</p>
+
+<p style="margin-left:11%;"><b>IP_MULTICAST_ALL</b> (since
+Linux 2.6.31)</p>
+
+<p style="margin-left:22%;">This option can be used to
+modify the delivery policy of multicast messages to sockets
+bound to the wildcard <b>INADDR_ANY</b> address. The
+argument is a boolean integer (defaults to 1). If set to 1,
+the socket will receive messages from all the groups that
+have been joined globally on the whole system. Otherwise, it
+will deliver messages only from the groups that have been
+explicitly joined (for example via the
+<b>IP_ADD_MEMBERSHIP</b> option) on this particular
+socket.</p>
+
+<p style="margin-left:11%;"><b>IP_MULTICAST_IF</b> (since
+Linux 1.2)</p>
+
+<p style="margin-left:22%;">Set the local device for a
+multicast socket. Argument is an <i>ip_mreqn</i> or
+<i>ip_mreq</i> structure similar to
+<b>IP_ADD_MEMBERSHIP</b>.</p>
+
+<p style="margin-left:22%; margin-top: 1em">When an invalid
+socket option is passed, <b>ENOPROTOOPT</b> is returned.</p>
+
+<p style="margin-left:11%;"><b>IP_MULTICAST_LOOP</b> (since
+Linux 1.2)</p>
+
+<p style="margin-left:22%;">Set or read a boolean integer
+argument that determines whether sent multicast packets
+should be looped back to the local sockets.</p>
+
+<p style="margin-left:11%;"><b>IP_MULTICAST_TTL</b> (since
+Linux 1.2)</p>
+
+<p style="margin-left:22%;">Set or read the time-to-live
+value of outgoing multicast packets for this socket. It is
+very important for multicast packets to set the smallest TTL
+possible. The default is 1 which means that multicast
+packets don&rsquo;t leave the local network unless the user
+program explicitly requests it. Argument is an integer.</p>
+
+<p style="margin-left:11%;"><b>IP_NODEFRAG</b> (since Linux
+2.6.36)</p>
+
+<p style="margin-left:22%;">If enabled (argument is
+nonzero), the reassembly of outgoing packets is disabled in
+the netfilter layer. This option is valid only for
+<b>SOCK_RAW</b> sockets. The argument is an integer.</p>
+
+<p style="margin-left:11%;"><b>IP_OPTIONS</b> (since Linux
+2.0)</p>
+
+<p style="margin-left:22%;">Set or get the IP options to be
+sent with every packet from this socket. The arguments are a
+pointer to a memory buffer containing the options and the
+option length. The <b>setsockopt</b>(2) call sets the IP
+options associated with a socket. The maximum option size
+for IPv4 is 40 bytes. See RFC&nbsp;791 for the allowed
+options. When the initial connection request packet for a
+<b>SOCK_STREAM</b> socket contains IP options, the IP
+options will be set automatically to the options from the
+initial packet with routing headers reversed. Incoming
+packets are not allowed to change options after the
+connection is established. The processing of all incoming
+source routing options is disabled by default and can be
+enabled by using the <i>accept_source_route /proc</i>
+interface. Other options like timestamps are still handled.
+For datagram sockets, IP options can be only set by the
+local user. Calling <b>getsockopt</b>(2) with
+<b>IP_OPTIONS</b> puts the current IP options used for
+sending into the supplied buffer.</p>
+
+<p style="margin-left:11%;"><b>IP_PKTINFO</b> (since Linux
+2.2)</p>
+
+<p style="margin-left:22%;">Pass an <b>IP_PKTINFO</b>
+ancillary message that contains a <i>pktinfo</i> structure
+that supplies some information about the incoming packet.
+This only works for datagram oriented sockets. The argument
+is a flag that tells the socket whether the
+<b>IP_PKTINFO</b> message should be passed or not. The
+message itself can only be sent/retrieved as control message
+with a packet using <b>recvmsg</b>(2) or
+<b>sendmsg</b>(2).</p>
+
+<p style="margin-left:28%; margin-top: 1em">struct
+in_pktinfo { <br>
+unsigned int ipi_ifindex; /* Interface index */ <br>
+struct in_addr ipi_spec_dst; /* Local address */ <br>
+struct in_addr ipi_addr; /* Header Destination <br>
+address */ <br>
+};</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>ipi_ifindex</i>
+is the unique index of the interface the packet was received
+on. <i>ipi_spec_dst</i> is the local address of the packet
+and <i>ipi_addr</i> is the destination address in the packet
+header. If <b>IP_PKTINFO</b> is passed to <b>sendmsg</b>(2)
+and <i>ipi_spec_dst</i> is not zero, then it is used as the
+local source address for the routing table lookup and for
+setting up IP source route options. When <i>ipi_ifindex</i>
+is not zero, the primary local address of the interface
+specified by the index overwrites <i>ipi_spec_dst</i> for
+the routing table lookup.</p>
+
+<p style="margin-left:11%;"><b>IP_RECVERR</b> (since Linux
+2.2)</p>
+
+<p style="margin-left:22%;">Enable extended reliable error
+message passing. When enabled on a datagram socket, all
+generated errors will be queued in a per-socket error queue.
+When the user receives an error from a socket operation, the
+errors can be received by calling <b>recvmsg</b>(2) with the
+<b>MSG_ERRQUEUE</b> flag set. The <i>sock_extended_err</i>
+structure describing the error will be passed in an
+ancillary message with the type <b>IP_RECVERR</b> and the
+level <b>IPPROTO_IP</b>. This is useful for reliable error
+handling on unconnected sockets. The received data portion
+of the error queue contains the error packet.</p>
+
+<p style="margin-left:22%; margin-top: 1em">The
+<b>IP_RECVERR</b> control message contains a
+<i>sock_extended_err</i> structure:</p>
+
+<p style="margin-left:28%; margin-top: 1em">#define
+SO_EE_ORIGIN_NONE 0 <br>
+#define SO_EE_ORIGIN_LOCAL 1 <br>
+#define SO_EE_ORIGIN_ICMP 2 <br>
+#define SO_EE_ORIGIN_ICMP6 3</p>
+
+<p style="margin-left:28%; margin-top: 1em">struct
+sock_extended_err { <br>
+uint32_t ee_errno; /* error number */ <br>
+uint8_t ee_origin; /* where the error originated */ <br>
+uint8_t ee_type; /* type */ <br>
+uint8_t ee_code; /* code */ <br>
+uint8_t ee_pad; <br>
+uint32_t ee_info; /* additional information */ <br>
+uint32_t ee_data; /* other data */ <br>
+/* More data may follow */ <br>
+};</p>
+
+<p style="margin-left:28%; margin-top: 1em">struct sockaddr
+*SO_EE_OFFENDER(struct sock_extended_err *);</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>ee_errno</i>
+contains the <i>errno</i> number of the queued error.
+<i>ee_origin</i> is the origin code of where the error
+originated. The other fields are protocol-specific. The
+macro <b>SO_EE_OFFENDER</b> returns a pointer to the address
+of the network object where the error originated from given
+a pointer to the ancillary message. If this address is not
+known, the <i>sa_family</i> member of the <i>sockaddr</i>
+contains <b>AF_UNSPEC</b> and the other fields of the
+<i>sockaddr</i> are undefined.</p>
+
+<p style="margin-left:22%; margin-top: 1em">IP uses the
+<i>sock_extended_err</i> structure as follows:
+<i>ee_origin</i> is set to <b>SO_EE_ORIGIN_ICMP</b> for
+errors received as an ICMP packet, or
+<b>SO_EE_ORIGIN_LOCAL</b> for locally generated errors.
+Unknown values should be ignored. <i>ee_type</i> and
+<i>ee_code</i> are set from the type and code fields of the
+ICMP header. <i>ee_info</i> contains the discovered MTU for
+<b>EMSGSIZE</b> errors. The message also contains the
+<i>sockaddr_in of the node</i> caused the error, which can
+be accessed with the <b>SO_EE_OFFENDER</b> macro. The
+<i>sin_family</i> field of the <b>SO_EE_OFFENDER</b> address
+is <b>AF_UNSPEC</b> when the source was unknown. When the
+error originated from the network, all IP options
+(<b>IP_OPTIONS</b>, <b>IP_TTL</b>, etc.) enabled on the
+socket and contained in the error packet are passed as
+control messages. The payload of the packet causing the
+error is returned as normal payload. Note that TCP has no
+error queue; <b>MSG_ERRQUEUE</b> is not permitted on
+<b>SOCK_STREAM</b> sockets. <b>IP_RECVERR</b> is valid for
+TCP, but all errors are returned by socket function return
+or <b>SO_ERROR</b> only.</p>
+
+<p style="margin-left:22%; margin-top: 1em">For raw
+sockets, <b>IP_RECVERR</b> enables passing of all received
+ICMP errors to the application, otherwise errors are only
+reported on connected sockets</p>
+
+<p style="margin-left:22%; margin-top: 1em">It sets or
+retrieves an integer boolean flag. <b>IP_RECVERR</b>
+defaults to off.</p>
+
+<p style="margin-left:11%;"><b>IP_RECVOPTS</b> (since Linux
+2.2)</p>
+
+<p style="margin-left:22%;">Pass all incoming IP options to
+the user in a <b>IP_OPTIONS</b> control message. The routing
+header and other options are already filled in for the local
+host. Not supported for <b>SOCK_STREAM</b> sockets.</p>
+
+<p style="margin-left:11%;"><b>IP_RECVORIGDSTADDR</b>
+(since Linux 2.6.29)</p>
+
+<p style="margin-left:22%;">This boolean option enables the
+<b>IP_ORIGDSTADDR</b> ancillary message in
+<b>recvmsg</b>(2), in which the kernel returns the original
+destination address of the datagram being received. The
+ancillary message contains a <i>struct sockaddr_in</i>.</p>
+
+<p style="margin-left:11%;"><b>IP_RECVTOS</b> (since Linux
+2.2)</p>
+
+<p style="margin-left:22%;">If enabled the <b>IP_TOS</b>
+ancillary message is passed with incoming packets. It
+contains a byte which specifies the Type of
+Service/Precedence field of the packet header. Expects a
+boolean integer flag.</p>
+
+<p style="margin-left:11%;"><b>IP_RECVTTL</b> (since Linux
+2.2)</p>
+
+<p style="margin-left:22%;">When this flag is set, pass a
+<b>IP_TTL</b> control message with the time to live field of
+the received packet as a byte. Not supported for
+<b>SOCK_STREAM</b> sockets.</p>
+
+<p style="margin-left:11%;"><b>IP_RETOPTS</b> (since Linux
+2.2)</p>
+
+<p style="margin-left:22%;">Identical to
+<b>IP_RECVOPTS</b>, but returns raw unprocessed options with
+timestamp and route record options not filled in for this
+hop.</p>
+
+<p style="margin-left:11%;"><b>IP_ROUTER_ALERT</b> (since
+Linux 2.2)</p>
+
+<p style="margin-left:22%;">Pass all to-be forwarded
+packets with the IP Router Alert option set to this socket.
+Only valid for raw sockets. This is useful, for instance,
+for user-space RSVP daemons. The tapped packets are not
+forwarded by the kernel; it is the user&rsquo;s
+responsibility to send them out again. Socket binding is
+ignored, such packets are only filtered by protocol. Expects
+an integer flag.</p>
+
+<p style="margin-left:11%;"><b>IP_TOS</b> (since Linux
+1.0)</p>
+
+<p style="margin-left:22%;">Set or receive the
+Type-Of-Service (TOS) field that is sent with every IP
+packet originating from this socket. It is used to
+prioritize packets on the network. TOS is a byte. There are
+some standard TOS flags defined: <b>IPTOS_LOWDELAY</b> to
+minimize delays for interactive traffic,
+<b>IPTOS_THROUGHPUT</b> to optimize throughput,
+<b>IPTOS_RELIABILITY</b> to optimize for reliability,
+<b>IPTOS_MINCOST</b> should be used for &quot;filler
+data&quot; where slow transmission doesn&rsquo;t matter. At
+most one of these TOS values can be specified. Other bits
+are invalid and shall be cleared. Linux sends
+<b>IPTOS_LOWDELAY</b> datagrams first by default, but the
+exact behavior depends on the configured queueing
+discipline. Some high priority levels may require superuser
+privileges (the <b>CAP_NET_ADMIN</b> capability). The
+priority can also be set in a protocol independent way by
+the (<b>SOL_SOCKET</b>, <b>SO_PRIORITY</b>) socket option
+(see <b>socket</b>(7)).</p>
+
+<p style="margin-left:11%;"><b>IP_TRANSPARENT</b> (since
+Linux 2.6.24)</p>
+
+<p style="margin-left:22%;">Setting this boolean option
+enables transparent proxying on this socket. This socket
+option allows the calling application to bind to a nonlocal
+IP address and operate both as a client and a server with
+the foreign address as the local endpoint. NOTE: this
+requires that routing be set up in a way that packets going
+to the foreign address are routed through the TProxy box.
+Enabling this socket option requires superuser privileges
+(the <b>CAP_NET_ADMIN</b> capability).</p>
+
+<p style="margin-left:22%; margin-top: 1em">TProxy
+redirection with the iptables TPROXY target also requires
+that this option be set on the redirected socket.</p>
+
+<p style="margin-left:11%;"><b>IP_TTL</b> (since Linux
+1.0)</p>
+
+<p style="margin-left:22%;">Set or retrieve the current
+time-to-live field that is used in every packet sent from
+this socket.</p>
+
+<p style="margin-left:11%;"><b>IP_UNBLOCK_SOURCE</b> (since
+Linux 2.4.22 / 2.5.68)</p>
+
+<p style="margin-left:22%;">Unblock previously blocked
+multicast source. Returns <b>EADDRNOTAVAIL</b> when given
+source is not being blocked.</p>
+
+<p style="margin-left:22%; margin-top: 1em">Argument is an
+<i>ip_mreq_source</i> structure as described under
+<b>IP_ADD_SOURCE_MEMBERSHIP</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>/proc
+interfaces</b> <br>
+The IP protocol supports a set of <i>/proc</i> interfaces to
+configure some global parameters. The parameters can be
+accessed by reading or writing files in the directory
+<i>/proc/sys/net/ipv4/</i>. Interfaces described as
+<i>Boolean</i> take an integer value, with a nonzero value
+(&quot;true&quot;) meaning that the corresponding option is
+enabled, and a zero value (&quot;false&quot;) meaning that
+the option is disabled. <i><br>
+ip_always_defrag</i> (Boolean; since Linux 2.2.13)</p>
+
+<p style="margin-left:22%;">[New with kernel 2.2.13; in
+earlier kernel versions this feature was controlled at
+compile time by the <b>CONFIG_IP_ALWAYS_DEFRAG</b> option;
+this option is not present in 2.4.x and later]</p>
+
+<p style="margin-left:22%; margin-top: 1em">When this
+boolean flag is enabled (not equal 0), incoming fragments
+(parts of IP packets that arose when some host between
+origin and destination decided that the packets were too
+large and cut them into pieces) will be reassembled
+(defragmented) before being processed, even if they are
+about to be forwarded.</p>
+
+<p style="margin-left:22%; margin-top: 1em">Only enable if
+running either a firewall that is the sole link to your
+network or a transparent proxy; never ever use it for a
+normal router or host. Otherwise fragmented communication
+can be disturbed if the fragments travel over different
+links. Defragmentation also has a large memory and CPU time
+cost.</p>
+
+<p style="margin-left:22%; margin-top: 1em">This is
+automagically turned on when masquerading or transparent
+proxying are configured.</p>
+
+<p style="margin-left:11%;"><i>ip_autoconfig</i> (since
+Linux 2.2 to 2.6.17)</p>
+
+<p style="margin-left:22%;">Not documented.</p>
+
+<p style="margin-left:11%;"><i>ip_default_ttl</i> (integer;
+default: 64; since Linux 2.2)</p>
+
+<p style="margin-left:22%;">Set the default time-to-live
+value of outgoing packets. This can be changed per socket
+with the <b>IP_TTL</b> option.</p>
+
+<p style="margin-left:11%;"><i>ip_dynaddr</i> (Boolean;
+default: disabled; since Linux 2.0.31)</p>
+
+<p style="margin-left:22%;">Enable dynamic socket address
+and masquerading entry rewriting on interface address
+change. This is useful for dialup interface with changing IP
+addresses. 0 means no rewriting, 1 turns it on and 2 enables
+verbose mode.</p>
+
+<p style="margin-left:11%;"><i>ip_forward</i> (Boolean;
+default: disabled; since Linux 1.2)</p>
+
+<p style="margin-left:22%;">Enable IP forwarding with a
+boolean flag. IP forwarding can be also set on a
+per-interface basis.</p>
+
+<p style="margin-left:11%;"><i>ip_local_port_range</i>
+(since Linux 2.2)</p>
+
+<p style="margin-left:22%;">Contains two integers that
+define the default local port range allocated to sockets.
+Allocation starts with the first number and ends with the
+second number. Note that these should not conflict with the
+ports used by masquerading (although the case is handled).
+Also arbitrary choices may cause problems with some firewall
+packet filters that make assumptions about the local ports
+in use. First number should be at least greater than 1024,
+or better, greater than 4096, to avoid clashes with well
+known ports and to minimize firewall problems.</p>
+
+<p style="margin-left:11%;"><i>ip_no_pmtu_disc</i>
+(Boolean; default: disabled; since Linux 2.2)</p>
+
+<p style="margin-left:22%;">If enabled, don&rsquo;t do Path
+MTU Discovery for TCP sockets by default. Path MTU discovery
+may fail if misconfigured firewalls (that drop all ICMP
+packets) or misconfigured interfaces (e.g., a point-to-point
+link where the both ends don&rsquo;t agree on the MTU) are
+on the path. It is better to fix the broken routers on the
+path than to turn off Path MTU Discovery globally, because
+not doing it incurs a high cost to the network.</p>
+
+<p style="margin-left:11%;"><i>ip_nonlocal_bind</i>
+(Boolean; default: disabled; since Linux 2.4)</p>
+
+<p style="margin-left:22%;">If set, allows processes to
+<b>bind</b>(2) to nonlocal IP addresses, which can be quite
+useful, but may break some applications.</p>
+
+<p style="margin-left:11%;"><i>ip6frag_time</i> (integer;
+default: 30)</p>
+
+<p style="margin-left:22%;">Time in seconds to keep an IPv6
+fragment in memory.</p>
+
+<p style="margin-left:11%;"><i>ip6frag_secret_interval</i>
+(integer; default: 600)</p>
+
+<p style="margin-left:22%;">Regeneration interval (in
+seconds) of the hash secret (or lifetime for the hash
+secret) for IPv6 fragments.</p>
+
+<p style="margin-left:11%;"><i>ipfrag_high_thresh</i>
+(integer), <i>ipfrag_low_thresh</i> (integer)</p>
+
+<p style="margin-left:22%;">If the amount of queued IP
+fragments reaches <i>ipfrag_high_thresh</i>, the queue is
+pruned down to <i>ipfrag_low_thresh</i>. Contains an integer
+with the number of bytes.</p>
+
+<p style="margin-left:11%;"><i>neigh/*</i></p>
+
+<p style="margin-left:22%;">See <b>arp</b>(7).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Ioctls</b>
+<br>
+All ioctls described in <b>socket</b>(7) apply to
+<b>ip</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Ioctls to
+configure generic device parameters are described in
+<b>netdevice</b>(7).</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EACCES</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">The user tried to execute an
+operation without the necessary permissions. These include:
+sending a packet to a broadcast address without having the
+<b>SO_BROADCAST</b> flag set; sending a packet via a
+<i>prohibit</i> route; modifying firewall settings without
+superuser privileges (the <b>CAP_NET_ADMIN</b> capability);
+binding to a privileged port without superuser privileges
+(the <b>CAP_NET_BIND_SERVICE</b> capability).</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>EADDRINUSE</b></p>
+
+<p style="margin-left:22%;">Tried to bind to an address
+already in use.</p>
+
+<p style="margin-left:11%;"><b>EADDRNOTAVAIL</b></p>
+
+<p style="margin-left:22%;">A nonexistent interface was
+requested or the requested source address was not local.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EAGAIN</b></p></td>
+<td width="2%"></td>
+<td width="70%">
+
+
+<p>Operation on a nonblocking socket would block.</p></td>
+<td width="8%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>EALREADY</b></p>
+
+<p style="margin-left:22%;">An connection operation on a
+nonblocking socket is already in progress.</p>
+
+<p style="margin-left:11%;"><b>ECONNABORTED</b></p>
+
+<p style="margin-left:22%;">A connection was closed during
+an <b>accept</b>(2).</p>
+
+<p style="margin-left:11%;"><b>EHOSTUNREACH</b></p>
+
+<p style="margin-left:22%;">No valid routing table entry
+matches the destination address. This error can be caused by
+a ICMP message from a remote router or for the local routing
+table.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Invalid argument passed. For send operations this can be
+caused by sending to a <i>blackhole</i> route.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>EISCONN</b></p>
+
+<p style="margin-left:22%;"><b>connect</b>(2) was called on
+an already connected socket.</p>
+
+<p style="margin-left:11%;"><b>EMSGSIZE</b></p>
+
+<p style="margin-left:22%;">Datagram is bigger than an MTU
+on the path and it cannot be fragmented.</p>
+
+<p style="margin-left:11%;"><b>ENOBUFS</b>,
+<b>ENOMEM</b></p>
+
+<p style="margin-left:22%;">Not enough free memory. This
+often means that the memory allocation is limited by the
+socket buffer limits, not by the system memory, but this is
+not 100% consistent.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOENT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><b>SIOCGSTAMP</b> was called on a socket where no packet
+arrived.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOPKG</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>A kernel subsystem was not configured.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>ENOPROTOOPT</b> and
+<b>EOPNOTSUPP</b></p>
+
+<p style="margin-left:22%;">Invalid socket option
+passed.</p>
+
+<p style="margin-left:11%;"><b>ENOTCONN</b></p>
+
+<p style="margin-left:22%;">The operation is defined only
+on a connected socket, but the socket wasn&rsquo;t
+connected.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>EPERM</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>User doesn&rsquo;t have permission to set high priority,
+change configuration, or send signals to the requested
+process or group.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>EPIPE</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>The connection was unexpectedly closed or shut down by
+the other end.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>ESOCKTNOSUPPORT</b></p>
+
+<p style="margin-left:22%;">The socket is not configured or
+an unknown socket type was requested.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Other errors
+may be generated by the overlaying protocols; see
+<b>tcp</b>(7), <b>raw</b>(7), <b>udp</b>(7) and
+<b>socket</b>(7).</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>IP_FREEBIND</b>,
+<b>IP_MSFILTER</b>, <b>IP_MTU</b>, <b>IP_MTU_DISCOVER</b>,
+<b>IP_RECVORIGDSTADDR</b>, <b>IP_PKTINFO</b>,
+<b>IP_RECVERR</b>, <b>IP_ROUTER_ALERT</b>, and
+<b>IP_TRANSPARENT</b> are Linux-specific.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Be very careful
+with the <b>SO_BROADCAST</b> option &minus; it is not
+privileged in Linux. It is easy to overload the network with
+careless broadcasts. For new application protocols it is
+better to use a multicast group instead of broadcasting.
+Broadcasting is discouraged.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Some other BSD
+sockets implementations provide <b>IP_RCVDSTADDR</b> and
+<b>IP_RECVIF</b> socket options to get the destination
+address and the interface of received datagrams. Linux has
+the more general <b>IP_PKTINFO</b> for the same task.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Some BSD
+sockets implementations also provide an <b>IP_RECVTTL</b>
+option, but an ancillary message with type <b>IP_RECVTTL</b>
+is passed with the incoming packet. This is different from
+the <b>IP_TTL</b> option used in Linux.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Using
+<b>SOL_IP</b> socket options level isn&rsquo;t portable,
+BSD-based stacks use <b>IPPROTO_IP</b> level.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Compatibility</b>
+<br>
+For compatibility with Linux 2.0, the obsolete
+<b>socket(AF_INET, SOCK_PACKET,</b> <i>protocol</i><b>)</b>
+syntax is still supported to open a <b>packet</b>(7) socket.
+This is deprecated and should be replaced by
+<b>socket(AF_PACKET, SOCK_RAW,</b> <i>protocol</i><b>)</b>
+instead. The main difference is the new <i>sockaddr_ll</i>
+address structure for generic link layer information instead
+of the old <b>sockaddr_pkt</b>.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">There are too
+many inconsistent error values.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The ioctls to
+configure IP-specific interface options and ARP tables are
+not described.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Some versions
+of glibc forget to declare <i>in_pktinfo</i>. Workaround
+currently is to copy it into your program from this man
+page.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Receiving the
+original destination address with <b>MSG_ERRQUEUE</b> in
+<i>msg_name</i> by <b>recvmsg</b>(2) does not work in some
+2.2 kernels.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>recvmsg</b>(2),
+<b>sendmsg</b>(2), <b>byteorder</b>(3), <b>ipfw</b>(4),
+<b>capabilities</b>(7), <b>icmp</b>(7), <b>ipv6</b>(7),
+<b>netlink</b>(7), <b>raw</b>(7), <b>socket</b>(7),
+<b>tcp</b>(7), <b>udp</b>(7)</p>
+
+<p style="margin-left:11%; margin-top: 1em">RFC&nbsp;791
+for the original IP specification. RFC&nbsp;1122 for the
+IPv4 host requirements. RFC&nbsp;1812 for the IPv4 router
+requirements.</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

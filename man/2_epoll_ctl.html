@@ -1,0 +1,341 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:13 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>EPOLL_CTL</title>
+
+</head>
+<body>
+
+<h1 align="center">EPOLL_CTL</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">epoll_ctl
+&minus; control interface for an epoll descriptor</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;sys/epoll.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+epoll_ctl(int</b> <i>epfd</i><b>, int</b> <i>op</i><b>,
+int</b> <i>fd</i><b>, struct epoll_event
+*</b><i>event</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This system
+call performs control operations on the <b>epoll</b>(7)
+instance referred to by the file descriptor <i>epfd</i>. It
+requests that the operation <i>op</i> be performed for the
+target file descriptor, <i>fd</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Valid values
+for the <i>op</i> argument are : <b><br>
+EPOLL_CTL_ADD</b></p>
+
+<p style="margin-left:22%;">Register the target file
+descriptor <i>fd</i> on the <b>epoll</b> instance referred
+to by the file descriptor <i>epfd</i> and associate the
+event <i>event</i> with the internal file linked to
+<i>fd</i>.</p>
+
+<p style="margin-left:11%;"><b>EPOLL_CTL_MOD</b></p>
+
+<p style="margin-left:22%;">Change the event <i>event</i>
+associated with the target file descriptor <i>fd</i>.</p>
+
+<p style="margin-left:11%;"><b>EPOLL_CTL_DEL</b></p>
+
+<p style="margin-left:22%;">Remove (deregister) the target
+file descriptor <i>fd</i> from the <b>epoll</b> instance
+referred to by <i>epfd</i>. The <i>event</i> is ignored and
+can be NULL (but see BUGS below).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>event</i> argument describes the object linked to the
+file descriptor <i>fd</i>. The <i>struct epoll_event</i> is
+defined as :</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef union
+epoll_data { <br>
+void *ptr; <br>
+int fd; <br>
+uint32_t u32; <br>
+uint64_t u64; <br>
+} epoll_data_t;</p>
+
+<p style="margin-left:17%; margin-top: 1em">struct
+epoll_event { <br>
+uint32_t events; /* Epoll events */ <br>
+epoll_data_t data; /* User data variable */ <br>
+};</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>events</i> member is a bit set composed using the
+following available event types: <b><br>
+EPOLLIN</b></p>
+
+<p style="margin-left:22%;">The associated file is
+available for <b>read</b>(2) operations.</p>
+
+<p style="margin-left:11%;"><b>EPOLLOUT</b></p>
+
+<p style="margin-left:22%;">The associated file is
+available for <b>write</b>(2) operations.</p>
+
+<p style="margin-left:11%;"><b>EPOLLRDHUP</b> (since Linux
+2.6.17)</p>
+
+<p style="margin-left:22%;">Stream socket peer closed
+connection, or shut down writing half of connection. (This
+flag is especially useful for writing simple code to detect
+peer shutdown when using Edge Triggered monitoring.)</p>
+
+<p style="margin-left:11%;"><b>EPOLLPRI</b></p>
+
+<p style="margin-left:22%;">There is urgent data available
+for <b>read</b>(2) operations.</p>
+
+<p style="margin-left:11%;"><b>EPOLLERR</b></p>
+
+<p style="margin-left:22%;">Error condition happened on the
+associated file descriptor. <b>epoll_wait</b>(2) will always
+wait for this event; it is not necessary to set it in
+<i>events</i>.</p>
+
+<p style="margin-left:11%;"><b>EPOLLHUP</b></p>
+
+<p style="margin-left:22%;">Hang up happened on the
+associated file descriptor. <b>epoll_wait</b>(2) will always
+wait for this event; it is not necessary to set it in
+<i>events</i>.</p>
+
+<p style="margin-left:11%;"><b>EPOLLET</b></p>
+
+<p style="margin-left:22%;">Sets the Edge Triggered
+behavior for the associated file descriptor. The default
+behavior for <b>epoll</b> is Level Triggered. See
+<b>epoll</b>(7) for more detailed information about Edge and
+Level Triggered event distribution architectures.</p>
+
+<p style="margin-left:11%;"><b>EPOLLONESHOT</b> (since
+Linux 2.6.2)</p>
+
+<p style="margin-left:22%;">Sets the one-shot behavior for
+the associated file descriptor. This means that after an
+event is pulled out with <b>epoll_wait</b>(2) the associated
+file descriptor is internally disabled and no other events
+will be reported by the <b>epoll</b> interface. The user
+must call <b>epoll_ctl</b>() with <b>EPOLL_CTL_MOD</b> to
+rearm the file descriptor with a new event mask.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">When
+successful, <b>epoll_ctl</b>() returns zero. When an error
+occurs, <b>epoll_ctl</b>() returns &minus;1 and <i>errno</i>
+is set appropriately.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EBADF</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em"><i>epfd</i> or <i>fd</i> is not
+a valid file descriptor.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EEXIST</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>op</i> was <b>EPOLL_CTL_ADD</b>, and the supplied
+file descriptor <i>fd</i> is already registered with this
+epoll instance.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>epfd</i> is not an <b>epoll</b> file descriptor, or
+<i>fd</i> is the same as <i>epfd</i>, or the requested
+operation <i>op</i> is not supported by this interface.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOENT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>op</i> was <b>EPOLL_CTL_MOD</b> or
+<b>EPOLL_CTL_DEL</b>, and <i>fd</i> is not registered with
+this epoll instance.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>There was insufficient memory to handle the requested
+<i>op</i> control operation.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOSPC</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The limit imposed by
+<i>/proc/sys/fs/epoll/max_user_watches</i> was encountered
+while trying to register (<b>EPOLL_CTL_ADD</b>) a new file
+descriptor on an epoll instance. See <b>epoll</b>(7) for
+further details.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EPERM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The target file <i>fd</i> does not support
+<b>epoll</b>.</p> </td></tr>
+</table>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>epoll_ctl</b>()
+was added to the kernel in version 2.6.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>epoll_ctl</b>()
+is Linux-specific. Library support is provided in glibc
+starting with version 2.3.2.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>epoll</b> interface supports all file descriptors that
+support <b>poll</b>(2).</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In kernel
+versions before 2.6.9, the <b>EPOLL_CTL_DEL</b> operation
+required a non-NULL pointer in <i>event</i>, even though
+this argument is ignored. Since Linux 2.6.9, <i>event</i>
+can be specified as NULL when using <b>EPOLL_CTL_DEL</b>.
+Applications that need to be portable to kernels before
+2.6.9 should specify a non-NULL pointer in <i>event</i>.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>epoll_create</b>(2),
+<b>epoll_wait</b>(2), <b>poll</b>(2), <b>epoll</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

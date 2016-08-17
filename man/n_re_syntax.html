@@ -1,0 +1,1617 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:41:29 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>re_syntax</title>
+
+</head>
+<body>
+
+<h1 align="center">re_syntax</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#DIFFERENT FLAVORS OF REs">DIFFERENT FLAVORS OF REs</a><br>
+<a href="#REGULAR EXPRESSION SYNTAX">REGULAR EXPRESSION SYNTAX</a><br>
+<a href="#BRACKET EXPRESSIONS">BRACKET EXPRESSIONS</a><br>
+<a href="#ESCAPES">ESCAPES</a><br>
+<a href="#METASYNTAX">METASYNTAX</a><br>
+<a href="#MATCHING">MATCHING</a><br>
+<a href="#LIMITS AND COMPATIBILITY">LIMITS AND COMPATIBILITY</a><br>
+<a href="#BASIC REGULAR EXPRESSIONS">BASIC REGULAR EXPRESSIONS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#KEYWORDS">KEYWORDS</a><br>
+
+<hr>
+
+
+
+<p>______________________________________________________________________________</p>
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">re_syntax
+&minus; Syntax of Tcl regular expressions
+_________________________________________________________________</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">A <i>regular
+expression</i> describes strings of characters. It&rsquo;s a
+pattern that matches certain strings and does not match
+others.</p>
+
+<h2>DIFFERENT FLAVORS OF REs
+<a name="DIFFERENT FLAVORS OF REs"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Regular
+expressions (&ldquo;RE&rdquo;s), as defined by POSIX, come
+in two flavors: <i>extended</i> REs (&ldquo;ERE&rdquo;s) and
+<i>basic</i> REs (&ldquo;BRE&rdquo;s). EREs are roughly
+those of the traditional <i>egrep</i>, while BREs are
+roughly those of the traditional <i>ed</i>. This
+implementation adds a third flavor, <i>advanced</i> REs
+(&ldquo;ARE&rdquo;s), basically EREs with some significant
+extensions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This manual
+page primarily describes AREs. BREs mostly exist for
+backward compatibility in some old programs; they will be
+discussed at the end. POSIX EREs are almost an exact subset
+of AREs. Features of AREs that are not present in EREs will
+be indicated.</p>
+
+<h2>REGULAR EXPRESSION SYNTAX
+<a name="REGULAR EXPRESSION SYNTAX"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Tcl regular
+expressions are implemented using the package written by
+Henry Spencer, based on the 1003.2 spec and some (not quite
+all) of the Perl5 extensions (thanks, Henry!). Much of the
+description of regular expressions below is copied verbatim
+from his manual entry.</p>
+
+<p style="margin-left:11%; margin-top: 1em">An ARE is one
+or more <i>branches</i>, separated by
+&ldquo;<b>|</b>&rdquo;, matching anything that matches any
+of the branches.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A branch is
+zero or more <i>constraints</i> or <i>quantified atoms</i>,
+concatenated. It matches a match for the first, followed by
+a match for the second, etc; an empty branch matches the
+empty string.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>QUANTIFIERS</b>
+<br>
+A quantified atom is an <i>atom</i> possibly followed by a
+single <i>quantifier</i>. Without a quantifier, it matches a
+single match for the atom. The quantifiers, and what a
+so-quantified atom matches, are:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="8%">
+
+
+<p><b>*</b></p></td>
+<td width="1%"></td>
+<td width="77%">
+
+
+<p>a sequence of 0 or more matches of the atom</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="8%">
+
+
+<p><b>+</b></p></td>
+<td width="1%"></td>
+<td width="77%">
+
+
+<p>a sequence of 1 or more matches of the atom</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="8%">
+
+
+<p><b>?</b></p></td>
+<td width="1%"></td>
+<td width="77%">
+
+
+<p>a sequence of 0 or 1 matches of the atom</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="8%">
+
+
+<p><b>{</b><i>m</i><b>}</b></p></td>
+<td width="1%"></td>
+<td width="77%">
+
+
+<p>a sequence of exactly <i>m</i> matches of the atom</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="8%">
+
+
+<p><b>{</b><i>m</i><b>,}</b></p></td>
+<td width="1%"></td>
+<td width="77%">
+
+
+<p>a sequence of <i>m</i> or more matches of the atom</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="8%">
+
+
+<p><b>{</b><i>m</i><b>,</b><i>n</i><b>}</b></p></td>
+<td width="1%"></td>
+<td width="77%">
+
+
+<p>a sequence of <i>m</i> through <i>n</i> (inclusive)
+matches of the atom; <i>m</i> may not exceed <i>n</i></p></td></tr>
+</table>
+
+<p style="margin-left:14%;"><b>*? +? ?? {</b><i>m</i><b>}?
+{</b><i>m</i><b>,}?
+{</b><i>m</i><b>,</b><i>n</i><b>}?</b></p>
+
+<p style="margin-left:23%;"><i>non-greedy</i> quantifiers,
+which match the same possibilities, but prefer the smallest
+number rather than the largest number of matches (see
+<b>MATCHING</b>)</p>
+
+<p style="margin-left:11%; margin-top: 1em">The forms using
+<b>{</b> and <b>}</b> are known as <i>bound</i>s. The
+numbers <i>m</i> and <i>n</i> are unsigned decimal integers
+with permissible values from 0 to 255 inclusive.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>ATOMS</b>
+<br>
+An atom is one of:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="6%">
+
+
+<p><b>(</b><i>re</i><b>)</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>matches a match for <i>re</i> (<i>re</i> is any regular
+expression) with the match noted for possible reporting</p></td></tr>
+</table>
+
+
+<p style="margin-left:14%;"><b>(?:</b><i>re</i><b>)</b></p>
+
+<p style="margin-left:23%;">as previous, but does no
+reporting (a &ldquo;non-capturing&rdquo; set of
+parentheses)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="6%">
+
+
+<p><b>()</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>matches an empty string, noted for possible
+reporting</p> </td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="6%">
+
+
+<p><b>(?:)</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>matches an empty string, without reporting</p></td></tr>
+</table>
+
+
+<p style="margin-left:14%;"><b>[</b><i>chars</i><b>]</b></p>
+
+<p style="margin-left:23%;">a <i>bracket expression</i>,
+matching any one of the <i>chars</i> (see <b>BRACKET
+EXPRESSIONS</b> for more detail)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="3%">
+
+
+<p><b>.</b></p></td>
+<td width="6%"></td>
+<td width="77%">
+
+
+<p>matches any single character</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="3%">
+
+
+<p><b>\</b><i>k</i></p></td>
+<td width="6%"></td>
+<td width="77%">
+
+
+<p>matches the non-alphanumeric character <i>k</i> taken as
+an ordinary character, e.g. <b>\\</b> matches a backslash
+character</p> </td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="3%">
+
+
+<p><b>\</b><i>c</i></p></td>
+<td width="6%"></td>
+<td width="77%">
+
+
+<p>where <i>c</i> is alphanumeric (possibly followed by
+other characters), an <i>escape</i> (AREs only), see
+<b>ESCAPES</b> below</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="3%">
+
+
+<p><b>{</b></p></td>
+<td width="6%"></td>
+<td width="77%">
+
+
+<p>when followed by a character other than a digit, matches
+the left-brace character &ldquo;<b>{</b>&rdquo;; when
+followed by a digit, it is the beginning of a <i>bound</i>
+(see above)</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="3%">
+
+
+<p><i>x</i></p></td>
+<td width="6%"></td>
+<td width="77%">
+
+
+<p>where <i>x</i> is a single character with no other
+significance, matches that character.</p></td></tr>
+</table>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>CONSTRAINTS</b>
+<br>
+A <i>constraint</i> matches an empty string when specific
+conditions are met. A constraint may not be followed by a
+quantifier. The simple constraints are as follows; some more
+constraints are described later, under <b>ESCAPES</b>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>^</b></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p style="margin-top: 1em">matches at the beginning of a
+line</p> </td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="9%">
+
+
+<p><b>$</b></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>matches at the end of a line</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="9%">
+
+
+<p><b>(?=</b><i>re</i><b>)</b></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p><i>positive lookahead</i> (AREs only), matches at any
+point where a substring matching <i>re</i> begins</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="9%">
+
+
+<p><b>(?!</b><i>re</i><b>)</b></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p><i>negative lookahead</i> (AREs only), matches at any
+point where no substring matching <i>re</i> begins</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The lookahead
+constraints may not contain back references (see later), and
+all parentheses within them are considered
+non-capturing.</p>
+
+<p style="margin-left:11%; margin-top: 1em">An RE may not
+end with &ldquo;<b>\</b>&rdquo;.</p>
+
+<h2>BRACKET EXPRESSIONS
+<a name="BRACKET EXPRESSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">A <i>bracket
+expression</i> is a list of characters enclosed in
+&ldquo;<b>[]</b>&rdquo;. It normally matches any single
+character from the list (but see below). If the list begins
+with &ldquo;<b>^</b>&rdquo;, it matches any single character
+(but see below) <i>not</i> from the rest of the list.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If two
+characters in the list are separated by
+&ldquo;<b>&minus;</b>&rdquo;, this is shorthand for the full
+<i>range</i> of characters between those two (inclusive) in
+the collating sequence, e.g.
+&ldquo;<b>[0&minus;9]</b>&rdquo; in Unicode matches any
+conventional decimal digit. Two ranges may not share an
+endpoint, so e.g. &ldquo;<b>a&minus;c&minus;e</b>&rdquo; is
+illegal. Ranges in Tcl always use the Unicode collating
+sequence, but other programs may use other collating
+sequences and this can be a source of incompatability
+between programs.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To include a
+literal <b>]</b> or <b>&minus;</b> in the list, the simplest
+method is to enclose it in <b>[.</b> and <b>.]</b> to make
+it a collating element (see below). Alternatively, make it
+the first character (following a possible
+&ldquo;<b>^</b>&rdquo;), or (AREs only) precede it with
+&ldquo;<b>\</b>&rdquo;. Alternatively, for
+&ldquo;<b>&minus;</b>&rdquo;, make it the last character, or
+the second endpoint of a range. To use a literal
+<b>&minus;</b> as the first endpoint of a range, make it a
+collating element or (AREs only) precede it with
+&ldquo;<b>\</b>&rdquo;. With the exception of these, some
+combinations using <b>[</b> (see next paragraphs), and
+escapes, all other special characters lose their special
+significance within a bracket expression.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>CHARACTER
+CLASSES</b> <br>
+Within a bracket expression, the name of a <i>character
+class</i> enclosed in <b>[:</b> and <b>:]</b> stands for the
+list of all characters (not all collating elements!)
+belonging to that class. Standard character classes are:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>alpha</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">A letter.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>upper</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>An upper-case letter.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>lower</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>A lower-case letter.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>digit</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>A decimal digit.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>xdigit</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>A hexadecimal digit.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>alnum</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>An alphanumeric (letter or digit).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>print</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>A &quot;printable&quot; (same as graph, except also
+including space).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>blank</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>A space or tab character.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>space</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>A character producing white space in displayed text.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>punct</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>A punctuation character.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>graph</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>A character with a visible representation (includes both
+alnum and punct).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>cntrl</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>A control character.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">A locale may
+provide others. A character class may not be used as an
+endpoint of a range.</p>
+
+<p style="margin-left:22%; margin-top: 1em">(<i>Note:</i>
+the current Tcl implementation has only one locale, the
+Unicode locale, which supports exactly the above
+classes.)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>BRACKETED
+CONSTRAINTS</b> <br>
+There are two special cases of bracket expressions: the
+bracket expressions &ldquo;<b>[[:&lt;:]]</b>&rdquo; and
+&ldquo;<b>[[:&gt;:]]</b>&rdquo; are constraints, matching
+empty strings at the beginning and end of a word
+respectively. A word is defined as a sequence of word
+characters that is neither preceded nor followed by word
+characters. A word character is an <i>alnum</i> character or
+an underscore (&ldquo;<b>_</b>&rdquo;). These special
+bracket expressions are deprecated; users of AREs should use
+constraint escapes instead (see below).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>COLLATING
+ELEMENTS</b> <br>
+Within a bracket expression, a collating element (a
+character, a multi-character sequence that collates as if it
+were a single character, or a collating-sequence name for
+either) enclosed in <b>[.</b> and <b>.]</b> stands for the
+sequence of characters of that collating element. The
+sequence is a single element of the bracket
+expression&rsquo;s list. A bracket expression in a locale
+that has multi-character collating elements can thus match
+more than one character. So (insidiously), a bracket
+expression that starts with <b>^</b> can match
+multi-character collating elements even if none of them
+appear in the bracket expression!</p>
+
+<p style="margin-left:22%; margin-top: 1em">(<i>Note:</i>
+Tcl has no multi-character collating elements. This
+information is only for illustration.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">For example,
+assume the collating sequence includes a <b>ch</b>
+multi-character collating element. Then the RE
+&ldquo;<b>[[.ch.]]*c</b>&rdquo; (zero or more
+&ldquo;<b>ch</b>s&rdquo; followed by &ldquo;<b>c</b>&rdquo;)
+matches the first five characters of
+&ldquo;<b>chchcc</b>&rdquo;. Also, the RE
+&ldquo;<b>[^c]b</b>&rdquo; matches all of
+&ldquo;<b>chb</b>&rdquo; (because &ldquo;<b>[^c]</b>&rdquo;
+matches the multi-character &ldquo;<b>ch</b>&rdquo;).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>EQUIVALENCE
+CLASSES</b> <br>
+Within a bracket expression, a collating element enclosed in
+<b>[=</b> and <b>=]</b> is an equivalence class, standing
+for the sequences of characters of all collating elements
+equivalent to that one, including itself. (If there are no
+other equivalent collating elements, the treatment is as if
+the enclosing delimiters were &ldquo;<b>[.</b>&rdquo; and
+&ldquo;<b>.]</b>&rdquo;.) For example, if <b>o</b> and
+<b>&ocirc;</b> are the members of an equivalence class, then
+&ldquo;<b>[[=o=]]</b>&rdquo;,
+&ldquo;<b>[[=&ocirc;=]]</b>&rdquo;, and
+&ldquo;<b>[o&ocirc;]</b>&rdquo; are all synonymous. An
+equivalence class may not be an endpoint of a range.</p>
+
+<p style="margin-left:22%; margin-top: 1em">(<i>Note:</i>
+Tcl implements only the Unicode locale. It does not define
+any equivalence classes. The examples above are just
+illustrations.)</p>
+
+<h2>ESCAPES
+<a name="ESCAPES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Escapes (AREs
+only), which begin with a <b>\</b> followed by an
+alphanumeric character, come in several varieties: character
+entry, class shorthands, constraint escapes, and back
+references. A <b>\</b> followed by an alphanumeric character
+but not constituting a valid escape is illegal in AREs. In
+EREs, there are no escapes: outside a bracket expression, a
+<b>\</b> followed by an alphanumeric character merely stands
+for that character as an ordinary character, and inside a
+bracket expression, <b>\</b> is an ordinary character. (The
+latter is the one actual incompatibility between EREs and
+AREs.)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>CHARACTER-ENTRY
+ESCAPES</b> <br>
+Character-entry escapes (AREs only) exist to make it easier
+to specify non-printing and otherwise inconvenient
+characters in REs:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="4%">
+
+
+<p style="margin-top: 1em"><b>\a</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">alert (bell) character, as in
+C</p> </td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="4%">
+
+
+<p><b>\b</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>backspace, as in C</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="4%">
+
+
+<p><b>\B</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>synonym for <b>\</b> to help reduce backslash doubling
+in some applications where there are multiple levels of
+backslash processing</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="4%">
+
+
+<p><b>\c</b><i>X</i></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>(where <i>X</i> is any character) the character whose
+low-order 5 bits are the same as those of <i>X</i>, and
+whose other bits are all zero</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="4%">
+
+
+<p><b>\e</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>the character whose collating-sequence name is
+&ldquo;<b>ESC</b>&rdquo;, or failing that, the character
+with octal value 033</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="4%">
+
+
+<p><b>\f</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>formfeed, as in C</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="4%">
+
+
+<p><b>\n</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>newline, as in C</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="4%">
+
+
+<p><b>\r</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>carriage return, as in C</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="4%">
+
+
+<p><b>\t</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>horizontal tab, as in C</p></td></tr>
+</table>
+
+<p style="margin-left:14%;"><b>\u</b><i>wxyz</i></p>
+
+<p style="margin-left:22%;">(where <i>wxyz</i> is exactly
+four hexadecimal digits) the Unicode character
+<b>U+</b><i>wxyz</i> in the local byte ordering</p>
+
+<p style="margin-left:14%;"><b>\U</b><i>stuvwxyz</i></p>
+
+<p style="margin-left:22%;">(where <i>stuvwxyz</i> is
+exactly eight hexadecimal digits) reserved for a
+somewhat-hypothetical Unicode extension to 32 bits</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="3%">
+
+
+<p><b>\v</b></p></td>
+<td width="5%"></td>
+<td width="61%">
+
+
+<p>vertical tab, as in C are all available.</p></td>
+<td width="17%">
+</td></tr>
+</table>
+
+<p style="margin-left:14%;"><b>\x</b><i>hhh</i></p>
+
+<p style="margin-left:22%;">(where <i>hhh</i> is any
+sequence of hexadecimal digits) the character whose
+hexadecimal value is <b>0x</b><i>hhh</i> (a single character
+no matter how many hexadecimal digits are used).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="6%">
+
+
+<p><b>\0</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>the character whose value is <b>0</b></p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="6%">
+
+
+<p><b>\</b><i>xy</i></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>(where <i>xy</i> is exactly two octal digits, and is not
+a <i>back reference</i> (see below)) the character whose
+octal value is <b>0</b><i>xy</i></p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="6%">
+
+
+<p><b>\</b><i>xyz</i></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>(where <i>xyz</i> is exactly three octal digits, and is
+not a back reference (see below)) the character whose octal
+value is <b>0</b><i>xyz</i></p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Hexadecimal
+digits are
+&ldquo;<b>0</b>&rdquo;&minus;&ldquo;<b>9</b>&rdquo;,
+&ldquo;<b>a</b>&rdquo;&minus;&ldquo;<b>f</b>&rdquo;, and
+&ldquo;<b>A</b>&rdquo;&minus;&ldquo;<b>F</b>&rdquo;. Octal
+digits are
+&ldquo;<b>0</b>&rdquo;&minus;&ldquo;<b>7</b>&rdquo;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+character-entry escapes are always taken as ordinary
+characters. For example, <b>\135</b> is <b>]</b> in Unicode,
+but <b>\135</b> does not terminate a bracket expression.
+Beware, however, that some applications (e.g., C compilers
+and the Tcl interpreter if the regular expression is not
+quoted with braces) interpret such sequences themselves
+before the regular-expression package gets to see them,
+which may require doubling (quadrupling, etc.) the
+&ldquo;<b>\</b>&rdquo;.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>CLASS-SHORTHAND
+ESCAPES</b> <br>
+Class-shorthand escapes (AREs only) provide shorthands for
+certain commonly-used character classes:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em"><b>\d</b></p></td>
+<td width="12%"></td>
+<td width="48%">
+
+
+<p style="margin-top: 1em"><b>[[:digit:]]</b></p></td>
+<td width="23%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="3%">
+
+
+<p><b>\s</b></p></td>
+<td width="12%"></td>
+<td width="48%">
+
+
+<p><b>[[:space:]]</b></p></td>
+<td width="23%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="3%">
+
+
+<p><b>\w</b></p></td>
+<td width="12%"></td>
+<td width="48%">
+
+
+<p><b>[[:alnum:]_]</b> (note underscore)</p></td>
+<td width="23%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="3%">
+
+
+<p><b>\D</b></p></td>
+<td width="12%"></td>
+<td width="48%">
+
+
+<p><b>[^[:digit:]]</b></p></td>
+<td width="23%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="3%">
+
+
+<p><b>\S</b></p></td>
+<td width="12%"></td>
+<td width="48%">
+
+
+<p><b>[^[:space:]]</b></p></td>
+<td width="23%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="3%">
+
+
+<p><b>\W</b></p></td>
+<td width="12%"></td>
+<td width="48%">
+
+
+<p><b>[^[:alnum:]_]</b> (note underscore)</p></td>
+<td width="23%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Within bracket
+expressions, &ldquo;<b>\d</b>&rdquo;,
+&ldquo;<b>\s</b>&rdquo;, and &ldquo;<b>\w</b>&rdquo; lose
+their outer brackets, and &ldquo;<b>\D</b>&rdquo;,
+&ldquo;<b>\S</b>&rdquo;, and &ldquo;<b>\W</b>&rdquo; are
+illegal. (So, for example, &ldquo;<b>[a-c\d]</b>&rdquo; is
+equivalent to &ldquo;<b>[a-c[:digit:]]</b>&rdquo;. Also,
+&ldquo;<b>[a-c\D]</b>&rdquo;, which is equivalent to
+&ldquo;<b>[a-c^[:digit:]]</b>&rdquo;, is illegal.)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>CONSTRAINT
+ESCAPES</b> <br>
+A constraint escape (AREs only) is a constraint, matching
+the empty string if specific conditions are met, written as
+an escape:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="6%">
+
+
+<p style="margin-top: 1em"><b>\A</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p style="margin-top: 1em">matches only at the beginning of
+the string (see <b>MATCHING</b>, below, for how this differs
+from &ldquo;<b>^</b>&rdquo;)</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="6%">
+
+
+<p><b>\m</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>matches only at the beginning of a word</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="6%">
+
+
+<p><b>\M</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>matches only at the end of a word</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="6%">
+
+
+<p><b>\y</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>matches only at the beginning or end of a word</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="6%">
+
+
+<p><b>\Y</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>matches only at a point that is not the beginning or end
+of a word</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="6%">
+
+
+<p><b>\Z</b></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>matches only at the end of the string (see
+<b>MATCHING</b>, below, for how this differs from
+&ldquo;<b>$</b>&rdquo;)</p> </td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="6%">
+
+
+<p><b>\</b><i>m</i></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>(where <i>m</i> is a nonzero digit) a <i>back
+reference</i>, see below</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="6%">
+
+
+<p><b>\</b><i>mnn</i></p></td>
+<td width="3%"></td>
+<td width="77%">
+
+
+<p>(where <i>m</i> is a nonzero digit, and <i>nn</i> is
+some more digits, and the decimal value <i>mnn</i> is not
+greater than the number of closing capturing parentheses
+seen so far) a <i>back reference</i>, see below</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">A word is
+defined as in the specification of
+&ldquo;<b>[[:&lt;:]]</b>&rdquo; and
+&ldquo;<b>[[:&gt;:]]</b>&rdquo; above. Constraint escapes
+are illegal within bracket expressions.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>BACK
+REFERENCES</b> <br>
+A back reference (AREs only) matches the same string matched
+by the parenthesized subexpression specified by the number,
+so that (e.g.) &ldquo;<b>([bc])\1</b>&rdquo; matches
+&ldquo;<b>bb</b>&rdquo; or &ldquo;<b>cc</b>&rdquo; but not
+&ldquo;<b>bc</b>&rdquo;. The subexpression must entirely
+precede the back reference in the RE. Subexpressions are
+numbered in the order of their leading parentheses.
+Non-capturing parentheses do not define subexpressions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is an
+inherent historical ambiguity between octal character-entry
+escapes and back references, which is resolved by
+heuristics, as hinted at above. A leading zero always
+indicates an octal escape. A single non-zero digit, not
+followed by another digit, is always taken as a back
+reference. A multi-digit sequence not starting with a zero
+is taken as a back reference if it comes after a suitable
+subexpression (i.e. the number is in the legal range for a
+back reference), and otherwise is taken as octal.</p>
+
+<h2>METASYNTAX
+<a name="METASYNTAX"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In addition to
+the main syntax described above, there are some special
+forms and miscellaneous syntactic facilities available.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Normally the
+flavor of RE being used is specified by
+application-dependent means. However, this can be overridden
+by a <i>director</i>. If an RE of any flavor begins with
+&ldquo;<b>***:</b>&rdquo;, the rest of the RE is an ARE. If
+an RE of any flavor begins with &ldquo;<b>***=</b>&rdquo;,
+the rest of the RE is taken to be a literal string, with all
+characters considered ordinary characters.</p>
+
+<p style="margin-left:11%; margin-top: 1em">An ARE may
+begin with <i>embedded options</i>: a sequence
+<b>(?</b><i>xyz</i><b>)</b> (where <i>xyz</i> is one or more
+alphabetic characters) specifies options affecting the rest
+of the RE. These supplement, and can override, any options
+specified by the application. The available option letters
+are:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em"><b>b</b></p></td>
+<td width="3%"></td>
+<td width="82%">
+
+
+<p style="margin-top: 1em">rest of RE is a BRE</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><b>c</b></p></td>
+<td width="3%"></td>
+<td width="82%">
+
+
+<p>case-sensitive matching (usual default)</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><b>e</b></p></td>
+<td width="3%"></td>
+<td width="82%">
+
+
+<p>rest of RE is an ERE</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><b>i</b></p></td>
+<td width="3%"></td>
+<td width="82%">
+
+
+<p>case-insensitive matching (see <b>MATCHING</b>,
+below)</p> </td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><b>m</b></p></td>
+<td width="3%"></td>
+<td width="82%">
+
+
+<p>historical synonym for <b>n</b></p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><b>n</b></p></td>
+<td width="3%"></td>
+<td width="82%">
+
+
+<p>newline-sensitive matching (see <b>MATCHING</b>,
+below)</p> </td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><b>p</b></p></td>
+<td width="3%"></td>
+<td width="82%">
+
+
+<p>partial newline-sensitive matching (see <b>MATCHING</b>,
+below)</p> </td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><b>q</b></p></td>
+<td width="3%"></td>
+<td width="82%">
+
+
+<p>rest of RE is a literal (&ldquo;quoted&rdquo;) string,
+all ordinary characters</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><b>s</b></p></td>
+<td width="3%"></td>
+<td width="82%">
+
+
+<p>non-newline-sensitive matching (usual default)</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><b>t</b></p></td>
+<td width="3%"></td>
+<td width="82%">
+
+
+<p>tight syntax (usual default; see below)</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><b>w</b></p></td>
+<td width="3%"></td>
+<td width="82%">
+
+
+<p>inverse partial newline-sensitive (&ldquo;weird&rdquo;)
+matching (see <b>MATCHING</b>, below)</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><b>x</b></p></td>
+<td width="3%"></td>
+<td width="82%">
+
+
+<p>expanded syntax (see below)</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Embedded
+options take effect at the <b>)</b> terminating the
+sequence. They are available only at the start of an ARE,
+and may not be used later within it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In addition to
+the usual (<i>tight</i>) RE syntax, in which all characters
+are significant, there is an <i>expanded</i> syntax,
+available in all flavors of RE with the
+<b>&minus;expanded</b> switch, or in AREs with the embedded
+x option. In the expanded syntax, white-space characters are
+ignored and all characters between a <b>#</b> and the
+following newline (or the end of the RE) are ignored,
+permitting paragraphing and commenting a complex RE. There
+are three exceptions to that basic rule:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p style="margin-top: 1em">a white-space character or
+&ldquo;<b>#</b>&rdquo; preceded by &ldquo;<b>\</b>&rdquo; is
+retained</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>white space or &ldquo;<b>#</b>&rdquo; within a bracket
+expression is retained</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>white space and comments are illegal within
+multi-character symbols like the ARE
+&ldquo;<b>(?:</b>&rdquo; or the BRE
+&ldquo;<b>\(</b>&rdquo;</p> </td></tr>
+</table>
+
+
+<p style="margin-left:11%; margin-top: 1em">Expanded-syntax
+white-space characters are blank, tab, newline, and any
+character that belongs to the <i>space</i> character
+class.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Finally, in an
+ARE, outside bracket expressions, the sequence
+&ldquo;<b>(?#</b><i>ttt</i><b>)</b>&rdquo; (where <i>ttt</i>
+is any text not containing a &ldquo;<b>)</b>&rdquo;) is a
+comment, completely ignored. Again, this is not allowed
+between the characters of multi-character symbols like
+&ldquo;<b>(?:</b>&rdquo;. Such comments are more a
+historical artifact than a useful facility, and their use is
+deprecated; use the expanded syntax instead.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>None</i> of
+these metasyntax extensions is available if the application
+(or an initial &ldquo;<b>***=</b>&rdquo; director) has
+specified that the user&rsquo;s input be treated as a
+literal string rather than as an RE.</p>
+
+<h2>MATCHING
+<a name="MATCHING"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In the event
+that an RE could match more than one substring of a given
+string, the RE matches the one starting earliest in the
+string. If the RE could match more than one substring
+starting at that point, its choice is determined by its
+<i>preference</i>: either the longest substring, or the
+shortest.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Most atoms, and
+all constraints, have no preference. A parenthesized RE has
+the same preference (possibly none) as the RE. A quantified
+atom with quantifier <b>{</b><i>m</i><b>}</b> or
+<b>{</b><i>m</i><b>}?</b> has the same preference (possibly
+none) as the atom itself. A quantified atom with other
+normal quantifiers (including
+<b>{</b><i>m</i><b>,</b><i>n</i><b>}</b> with <i>m</i> equal
+to <i>n</i>) prefers longest match. A quantified atom with
+other non-greedy quantifiers (including
+<b>{</b><i>m</i><b>,</b><i>n</i><b>}?</b> with <i>m</i>
+equal to <i>n</i>) prefers shortest match. A branch has the
+same preference as the first quantified atom in it which has
+a preference. An RE consisting of two or more branches
+connected by the <b>|</b> operator prefers longest
+match.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Subject to the
+constraints imposed by the rules for matching the whole RE,
+subexpressions also match the longest or shortest possible
+substrings, based on their preferences, with subexpressions
+starting earlier in the RE taking priority over ones
+starting later. Note that outer subexpressions thus take
+priority over their component subexpressions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that the
+quantifiers <b>{1,1}</b> and <b>{1,1}?</b> can be used to
+force longest and shortest preference, respectively, on a
+subexpression or a whole RE.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Match lengths
+are measured in characters, not collating elements. An empty
+string is considered longer than no match at all. For
+example, &ldquo;<b>bb*</b>&rdquo; matches the three middle
+characters of &ldquo;<b>abbbc</b>&rdquo;,
+&ldquo;<b>(week|wee)(night|knights)</b>&rdquo; matches all
+ten characters of &ldquo;<b>weeknights</b>&rdquo;, when
+&ldquo;<b>(.*).*</b>&rdquo; is matched against
+&ldquo;<b>abc</b>&rdquo; the parenthesized subexpression
+matches all three characters, and when
+&ldquo;<b>(a*)*</b>&rdquo; is matched against
+&ldquo;<b>bc</b>&rdquo; both the whole RE and the
+parenthesized subexpression match an empty string.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+case-independent matching is specified, the effect is much
+as if all case distinctions had vanished from the alphabet.
+When an alphabetic that exists in multiple cases appears as
+an ordinary character outside a bracket expression, it is
+effectively transformed into a bracket expression containing
+both cases, so that <b>x</b> becomes
+&ldquo;<b>[xX]</b>&rdquo;. When it appears inside a bracket
+expression, all case counterparts of it are added to the
+bracket expression, so that &ldquo;<b>[x]</b>&rdquo; becomes
+&ldquo;<b>[xX]</b>&rdquo; and &ldquo;<b>[^x]</b>&rdquo;
+becomes &ldquo;<b>[^xX]</b>&rdquo;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+newline-sensitive matching is specified, <b>.</b> and
+bracket expressions using <b>^</b> will never match the
+newline character (so that matches will never cross newlines
+unless the RE explicitly arranges it) and <b>^</b> and
+<b>$</b> will match the empty string after and before a
+newline respectively, in addition to matching at beginning
+and end of string respectively. ARE <b>\A</b> and <b>\Z</b>
+continue to match beginning or end of string
+<i>only</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If partial
+newline-sensitive matching is specified, this affects
+<b>.</b> and bracket expressions as with newline-sensitive
+matching, but not <b>^</b> and <b>$</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If inverse
+partial newline-sensitive matching is specified, this
+affects <b>^</b> and <b>$</b> as with newline-sensitive
+matching, but not <b>.</b> and bracket expressions. This is
+not very useful but is provided for symmetry.</p>
+
+<h2>LIMITS AND COMPATIBILITY
+<a name="LIMITS AND COMPATIBILITY"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">No particular
+limit is imposed on the length of REs. Programs intended to
+be highly portable should not employ REs longer than 256
+bytes, as a POSIX-compliant implementation can refuse to
+accept such REs.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The only
+feature of AREs that is actually incompatible with POSIX
+EREs is that <b>\</b> does not lose its special significance
+inside bracket expressions. All other ARE features use
+syntax which is illegal or has undefined or unspecified
+effects in POSIX EREs; the <b>***</b> syntax of directors
+likewise is outside the POSIX syntax for both BREs and
+EREs.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Many of the ARE
+extensions are borrowed from Perl, but some have been
+changed to clean them up, and a few Perl extensions are not
+present. Incompatibilities of note include
+&ldquo;<b>\b</b>&rdquo;, &ldquo;<b>\B</b>&rdquo;, the lack
+of special treatment for a trailing newline, the addition of
+complemented bracket expressions to the things affected by
+newline-sensitive matching, the restrictions on parentheses
+and back references in lookahead constraints, and the
+longest/shortest-match (rather than first-match) matching
+semantics.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The matching
+rules for REs containing both normal and non-greedy
+quantifiers have changed since early beta-test versions of
+this package. (The new rules are much simpler and cleaner,
+but do not work as hard at guessing the user&rsquo;s real
+intentions.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Henry
+Spencer&rsquo;s original 1986 <i>regexp</i> package, still
+in widespread use (e.g., in pre-8.1 releases of Tcl),
+implemented an early version of today&rsquo;s EREs. There
+are four incompatibilities between <i>regexp</i>&rsquo;s
+near-EREs (&ldquo;RREs&rdquo; for short) and AREs. In
+roughly increasing order of significance:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p style="margin-top: 1em">In AREs, <b>\</b> followed by an
+alphanumeric character is either an escape or an error,
+while in RREs, it was just another way of writing the
+alphanumeric. This should not be a problem because there was
+no reason to write such a sequence in RREs.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p><b>{</b> followed by a digit in an ARE is the beginning
+of a bound, while in RREs, <b>{</b> was always an ordinary
+character. Such sequences should be rare, and will often
+result in an error because following characters will not
+look like a valid bound.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>In AREs, <b>\</b> remains a special character within
+&ldquo;<b>[]</b>&rdquo;, so a literal <b>\</b> within
+<b>[]</b> must be written &ldquo;<b>\\</b>&rdquo;. <b>\\</b>
+also gives a literal <b>\</b> within <b>[]</b> in RREs, but
+only truly paranoid programmers routinely doubled the
+backslash.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>AREs report the longest/shortest match for the RE,
+rather than the first found in a specified search order.
+This may affect some RREs which were written in the
+expectation that the first match would be reported. (The
+careful crafting of RREs to optimize the search order for
+fast matching is obsolete (AREs examine all possible matches
+in parallel, and their performance is largely insensitive to
+their complexity) but cases where the search order was
+exploited to deliberately find a match which was <i>not</i>
+the longest/shortest will need rewriting.)</p></td></tr>
+</table>
+
+<h2>BASIC REGULAR EXPRESSIONS
+<a name="BASIC REGULAR EXPRESSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">BREs differ
+from EREs in several respects. &ldquo;<b>|</b>&rdquo;,
+&ldquo;<b>+</b>&rdquo;, and <b>?</b> are ordinary characters
+and there is no equivalent for their functionality. The
+delimiters for bounds are <b>\{</b> and
+&ldquo;<b>\}</b>&rdquo;, with <b>{</b> and <b>}</b> by
+themselves ordinary characters. The parentheses for nested
+subexpressions are <b>\(</b> and &ldquo;<b>\)</b>&rdquo;,
+with <b>(</b> and <b>)</b> by themselves ordinary
+characters. <b>^</b> is an ordinary character except at the
+beginning of the RE or the beginning of a parenthesized
+subexpression, <b>$</b> is an ordinary character except at
+the end of the RE or the end of a parenthesized
+subexpression, and <b>*</b> is an ordinary character if it
+appears at the beginning of the RE or the beginning of a
+parenthesized subexpression (after a possible leading
+&ldquo;<b>^</b>&rdquo;). Finally, single-digit back
+references are available, and <b>\&lt;</b> and <b>\&gt;</b>
+are synonyms for &ldquo;<b>[[:&lt;:]]</b>&rdquo; and
+&ldquo;<b>[[:&gt;:]]</b>&rdquo; respectively; no other
+escapes are available.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">RegExp(3),
+regexp(n), regsub(n), lsearch(n), switch(n), text(n)</p>
+
+<h2>KEYWORDS
+<a name="KEYWORDS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">match, regular
+expression, string</p>
+<hr>
+</body>
+</html>

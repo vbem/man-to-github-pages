@@ -1,0 +1,740 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:38:25 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>dhcp-eval</title>
+
+</head>
+<body>
+
+<h1 align="center">dhcp-eval</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#REFERENCE: CONDITIONAL BEHAVIOUR">REFERENCE: CONDITIONAL BEHAVIOUR</a><br>
+<a href="#BOOLEAN EXPRESSIONS">BOOLEAN EXPRESSIONS</a><br>
+<a href="#DATA EXPRESSIONS">DATA EXPRESSIONS</a><br>
+<a href="#NUMERIC EXPRESSIONS">NUMERIC EXPRESSIONS</a><br>
+<a href="#REFERENCE: ACTION EXPRESSIONS">REFERENCE: ACTION EXPRESSIONS</a><br>
+<a href="#REFERENCE: DYNAMIC DNS UPDATES">REFERENCE: DYNAMIC DNS UPDATES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">dhcp-eval - ISC
+DHCP conditional evaluation</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The Internet
+Systems Consortium DHCP client and server both provide the
+ability to perform conditional behavior depending on the
+contents of packets they receive. The syntax for specifying
+this conditional behaviour is documented here.</p>
+
+<h2>REFERENCE: CONDITIONAL BEHAVIOUR
+<a name="REFERENCE: CONDITIONAL BEHAVIOUR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Conditional
+behaviour is specified using the if statement and the else
+or elsif statements. A conditional statement can appear
+anywhere that a regular statement (e.g., an option
+statement) can appear, and can enclose one or more such
+statements. A typical conditional statement in a server
+might be:</p>
+
+<p style="margin-left:11%; margin-top: 1em">if option
+dhcp-user-class = &quot;accounting&quot; { <br>
+max-lease-time 17600; <br>
+option domain-name &quot;accounting.example.org&quot;; <br>
+option domain-name-servers ns1.accounting.example.org,</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="8%"></td>
+<td width="7%">
+</td>
+<td width="8%">
+</td>
+<td width="8%">
+</td>
+<td width="69%">
+
+
+<p>ns2.accounting.example.org;</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">} elsif option dhcp-user-class
+= &quot;sales&quot; { <br>
+max-lease-time 17600; <br>
+option domain-name &quot;sales.example.org&quot;; <br>
+option domain-name-servers ns1.sales.example.org,</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="8%"></td>
+<td width="7%">
+</td>
+<td width="8%">
+</td>
+<td width="8%">
+</td>
+<td width="69%">
+
+
+<p>ns2.sales.example.org;</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">} elsif option dhcp-user-class
+= &quot;engineering&quot; { <br>
+max-lease-time 17600; <br>
+option domain-name &quot;engineering.example.org&quot;; <br>
+option domain-name-servers ns1.engineering.example.org,</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="8%"></td>
+<td width="7%">
+</td>
+<td width="8%">
+</td>
+<td width="8%">
+</td>
+<td width="69%">
+
+
+<p>ns2.engineering.example.org;</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">} else { <br>
+max-lease-time 600; <br>
+option domain-name &quot;misc.example.org&quot;; <br>
+option domain-name-servers ns1.misc.example.org,</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="8%"></td>
+<td width="7%">
+</td>
+<td width="8%">
+</td>
+<td width="8%">
+</td>
+<td width="69%">
+
+
+<p>ns2.misc.example.org;</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">}</p>
+
+<p style="margin-left:11%; margin-top: 1em">On the client
+side, an example of conditional evaluation might be:</p>
+
+<p style="margin-left:11%; margin-top: 1em"># example.org
+filters DNS at its firewall, so we have to use their DNS
+<br>
+# servers when we connect to their network. If we are not at
+<br>
+# example.org, prefer our own DNS server. <br>
+if not option domain-name = &quot;example.org&quot; { <br>
+prepend domain-name-servers 127.0.0.1; <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <b>if</b>
+statement and the <b>elsif</b> continuation statement both
+take boolean expressions as their arguments. That is, they
+take expressions that, when evaluated, produce a boolean
+result. If the expression evaluates to true, then the
+statements enclosed in braces following the <b>if</b>
+statement are executed, and all subsequent <b>elsif</b> and
+<b>else</b> clauses are skipped. Otherwise, each subsequent
+<b>elsif</b> clause&rsquo;s expression is checked, until an
+elsif clause is encountered whose test evaluates to true. If
+such a clause is found, the statements in braces following
+it are executed, and then any subsequent <b>elsif</b> and
+<b>else</b> clauses are skipped. If all the <b>if</b> and
+<b>elsif</b> clauses are checked but none of their
+expressions evaluate true, then if there is an <b>else</b>
+clause, the statements enclosed in braces following the
+<b>else</b> are evaluated. Boolean expressions that evaluate
+to null are treated as false in conditionals.</p>
+
+<h2>BOOLEAN EXPRESSIONS
+<a name="BOOLEAN EXPRESSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+is the current list of boolean expressions that are
+supported by the DHCP distribution.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>data-expression-1</i>
+<b>=</b> <i>data-expression-2</i></p>
+
+<p style="margin-left:14%; margin-top: 1em">The <b>=</b>
+operator compares the values of two data expressions,
+returning true if they are the same, false if they are not.
+If either the left-hand side or the right-hand side are
+null, the result is also null.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>data-expression-1</i>
+<b>~=</b> <i>data-expression-2 data-expression-1</i>
+<b>~~</b> <i>data-expression-2</i></p>
+
+<p style="margin-left:14%; margin-top: 1em">The <b>~=</b>
+and <b>~~</b> operators (not available on all systems)
+perform extended regex(7) matching of the values of two data
+expressions, returning true if <i>data-expression-1</i>
+matches against the regular expression evaluated by
+<i>data-expression-2</i>, or false if it does not match or
+encounters some error. If either the left-hand side or the
+right-hand side are null or empty strings, the result is
+also false. The <b>~~</b> operator differs from the
+<b>~=</b> operator in that it is case-insensitive.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>boolean-expression-1</i>
+<b>and</b> <i>boolean-expression-2</i></p>
+
+<p style="margin-left:14%; margin-top: 1em">The <b>and</b>
+operator evaluates to true if the boolean expression on the
+left-hand side and the boolean expression on the right-hand
+side both evaluate to true. Otherwise, it evaluates to
+false. If either the expression on the left-hand side or the
+expression on the right-hand side are null, the result is
+null.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>boolean-expression-1</i>
+<b>or</b> <i>boolean-expression-2</i></p>
+
+<p style="margin-left:14%; margin-top: 1em">The <b>or</b>
+operator evaluates to true if either the boolean expression
+on the left-hand side or the boolean expression on the
+right-hand side evaluate to true. Otherwise, it evaluates to
+false. If either the expression on the left-hand side or the
+expression on the right-hand side are null, the result is
+null.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>not</b>
+<i>boolean-expression</i></p>
+
+<p style="margin-left:14%; margin-top: 1em">The <b>not</b>
+operator evaluates to true if <i>boolean-expression</i>
+evaluates to false, and returns false if
+<i>boolean-expression</i> evaluates to true. If
+<i>boolean-expression</i> evaluates to null, the result is
+also null.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>exists</b>
+<i>option-name</i></p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+<b>exists</b> expression returns true if the specified
+option exists in the incoming DHCP packet being
+processed.</p>
+
+<p style="margin-left:11%;"><b>known</b></p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+<b>known</b> expression returns true if the client whose
+request is currently being processed is known - that is, if
+there&rsquo;s a host declaration for it.</p>
+
+<p style="margin-left:11%;"><b>static</b></p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+<b>static</b> expression returns true if the lease assigned
+to the client whose request is currently being processed is
+derived from a static address assignment.</p>
+
+<h2>DATA EXPRESSIONS
+<a name="DATA EXPRESSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Several of the
+boolean expressions above depend on the results of
+evaluating data expressions. A list of these expressions is
+provided here.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>substring
+(</b><i>data-expr</i><b>,</b> <i>offset</i><b>,</b>
+<i>length</i><b>)</b></p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+<b>substring</b> operator evaluates the data expression and
+returns the substring of the result of that evaluation that
+starts <i>offset</i> bytes from the beginning, continuing
+for <i>length</i> bytes. <i>Offset</i> and <i>length</i> are
+both numeric expressions. If <i>data-expr</i>, <i>offset</i>
+or <i>length</i> evaluate to null, then the result is also
+null. If <i>offset</i> is greater than or equal to the
+length of the evaluated data, then a zero-length data string
+is returned. If <i>length is greater then the remaining
+length of the evaluated data after offset</i>, then a data
+string containing all data from <i>offset</i> to the end of
+the evaluated data is returned.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>suffix
+(</b><i>data-expr</i><b>,</b> <i>length</i><b>)</b></p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+<b>suffix</b> operator evaluates <i>data-expr</i> and
+returns the last <i>length</i> bytes of the result of that
+evaluation. <i>Length</i> is a numeric expression. If
+<i>data-expr</i> or <i>length</i> evaluate to null, then the
+result is also null. If <i>suffix</i> evaluates to a number
+greater than the length of the evaluated data, then the
+evaluated data is returned.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>lcase
+(</b><i>data-expr</i><b>)</b></p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+<b>lcase</b> function returns the result of evaluating
+<i>data-expr</i> converted to lower case. If
+<i>data-expr</i> evaluates to null, then the result is also
+null.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>ucase
+(</b><i>data-expr</i><b>)</b></p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+<b>ucase</b> function returns the result of evaluating
+<i>data-expr</i> converted to upper case. If
+<i>data-expr</i> evaluates to null, then the result is also
+null.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>option</b>
+<i>option-name</i></p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+<b>option</b> operator returns the contents of the specified
+option in the packet to which the server is responding.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>config-option</b>
+<i>option-name</i></p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+<b>config-option</b> operator returns the value for the
+specified option that the DHCP client or server has been
+configured to send.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>gethostname()</b></p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+<b>gethostname()</b> function returns a data string whose
+contents are a character string, the results of calling
+gethostname() on the local system with a size limit of 255
+bytes (not including NULL terminator). This can be used for
+example to configure dhclient to send the local hostname
+without knowing the local hostname at the time dhclient.conf
+is written.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>hardware</b></p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+<b>hardware</b> operator returns a data string whose first
+element is the type of network interface indicated in packet
+being considered, and whose subsequent elements are
+client&rsquo;s link-layer address. If there is no packet, or
+if the RFC2131 <i>hlen</i> field is invalid, then the result
+is null. Hardware types include ethernet (1), token-ring
+(6), and fddi (8). Hardware types are specified by the IETF,
+and details on how the type numbers are defined can be found
+in RFC2131 (in the ISC DHCP distribution, this is included
+in the doc/ subdirectory).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>packet
+(</b><i>offset</i><b>,</b> <i>length</i><b>)</b></p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+<b>packet</b> operator returns the specified portion of the
+packet being considered, or null in contexts where no packet
+is being considered. <i>Offset</i> and <i>length</i> are
+applied to the contents packet as in the <b>substring</b>
+operator.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>string</i></p>
+
+<p style="margin-left:14%; margin-top: 1em">A string,
+enclosed in quotes, may be specified as a data expression,
+and returns the text between the quotes, encoded in ASCII.
+The backslash (&rsquo;\&rsquo;) character is treated
+specially, as in C programming: &rsquo;\t&rsquo; means TAB,
+&rsquo;\r&rsquo; means carriage return, &rsquo;\n&rsquo;
+means newline, and &rsquo;\b&rsquo; means bell. Any octal
+value can be specified with &rsquo;\nnn&rsquo;, where nnn is
+any positive octal number less than 0400. Any hexadecimal
+value can be specified with &rsquo;\xnn&rsquo;, where nn is
+any positive hexadecimal number less than or equal to
+0xff.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>colon-separated
+hexadecimal list</i></p>
+
+<p style="margin-left:14%; margin-top: 1em">A list of
+hexadecimal octet values, separated by colons, may be
+specified as a data expression.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>concat
+(</b><i>data-expr1</i><b>, ...,</b>
+<i>data-exprN</i><b>)</b></p>
+
+<p style="margin-left:14%;">The expressions are evaluated,
+and the results of each evaluation are concatenated in the
+sequence that the subexpressions are listed. If any
+subexpression evaluates to null, the result of the
+concatenation is null.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>reverse
+(</b><i>numeric-expr1</i><b>,</b>
+<i>data-expr2</i><b>)</b></p>
+
+<p style="margin-left:14%;">The two expressions are
+evaluated, and then the result of evaluating the data
+expression is reversed in place, using hunks of the size
+specified in the numeric expression. For example, if the
+numeric expression evaluates to four, and the data
+expression evaluates to twelve bytes of data, then the
+reverse expression will evaluate to twelve bytes of data,
+consisting of the last four bytes of the the input data,
+followed by the middle four bytes, followed by the first
+four bytes.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>leased-address</b></p>
+
+<p style="margin-left:14%;">In any context where the client
+whose request is being processed has been assigned an IP
+address, this data expression returns that IP address. In
+any context where the client whose request is being
+processed has not been assigned an ip address, if this data
+expression is found in executable statements executed on
+that client&rsquo;s behalf, a log message indicating
+&quot;there is no lease associated with this client&quot; is
+syslogged to the debug level (this is considered dhcpd.conf
+debugging information).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>binary-to-ascii
+(</b><i>numeric-expr1</i><b>,</b>
+<i>numeric-expr2</i><b>,</b> <i>data-expr1</i><b>,</b>
+<i>data-expr2</i><b>)</b></p>
+
+<p style="margin-left:14%;">Converts the result of
+evaluating data-expr2 into a text string containing one
+number for each element of the result of evaluating
+data-expr2. Each number is separated from the other by the
+result of evaluating data-expr1. The result of evaluating
+numeric-expr1 specifies the base (2 through 16) into which
+the numbers should be converted. The result of evaluating
+numeric-expr2 specifies the width in bits of each number,
+which may be either 8, 16 or 32.</p>
+
+<p style="margin-left:14%; margin-top: 1em">As an example
+of the preceding three types of expressions, to produce the
+name of a PTR record for the IP address being assigned to a
+client, one could write the following expression:</p>
+
+<p style="margin-left:11%; margin-top: 1em">concat
+(binary-to-ascii (10, 8, &quot;.&quot;, <br>
+reverse (1, leased-address)), <br>
+&quot;.in-addr.arpa.&quot;);</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>encode-int
+(</b><i>numeric-expr</i><b>,</b> <i>width</i><b>)</b></p>
+
+<p style="margin-left:14%;">Numeric-expr is evaluated and
+encoded as a data string of the specified width, in network
+byte order (most significant byte first). If the numeric
+expression evaluates to the null value, the result is also
+null.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>pick-first-value
+(</b><i>data-expr1</i> [ ... <i>expr</i>n ] <b>)</b></p>
+
+<p style="margin-left:14%;">The pick-first-value function
+takes any number of data expressions as its arguments. Each
+expression is evaluated, starting with the first in the
+list, until an expression is found that does not evaluate to
+a null value. That expression is returned, and none of the
+subsequent expressions are evaluated. If all expressions
+evaluate to a null value, the null value is returned.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>host-decl-name</b></p>
+
+<p style="margin-left:14%;">The host-decl-name function
+returns the name of the host declaration that matched the
+client whose request is currently being processed, if any.
+If no host declaration matched, the result is the null
+value.</p>
+
+<h2>NUMERIC EXPRESSIONS
+<a name="NUMERIC EXPRESSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Numeric
+expressions are expressions that evaluate to an integer. In
+general, the maximum size of such an integer should not be
+assumed to be representable in fewer than 32 bits, but the
+precision of such integers may be more than 32 bits.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>extract-int
+(</b><i>data-expr</i><b>,</b> <i>width</i><b>)</b></p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+<b>extract-int</b> operator extracts an integer value in
+network byte order from the result of evaluating the
+specified data expression. Width is the width in bits of the
+integer to extract. Currently, the only supported widths are
+8, 16 and 32. If the evaluation of the data expression
+doesn&rsquo;t provide sufficient bits to extract an integer
+of the specified size, the null value is returned.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>lease-time</b></p>
+
+<p style="margin-left:14%; margin-top: 1em">The duration of
+the current lease - that is, the difference between the
+current time and the time that the lease expires.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>number</i></p>
+
+<p style="margin-left:14%; margin-top: 1em">Any number
+between zero and the maximum representable size may be
+specified as a numeric expression.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>client-state</b></p>
+
+<p style="margin-left:14%; margin-top: 1em">The current
+state of the client instance being processed. This is only
+useful in DHCP client configuration files. Possible values
+are:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><i>&bull;</i></p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p>Booting - DHCP client is in the INIT state, and does not
+yet have an IP address. The next message transmitted will be
+a DHCPDISCOVER, which will be broadcast.</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><i>&bull;</i></p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p>Reboot - DHCP client is in the INIT-REBOOT state. It has
+an IP address, but is not yet using it. The next message to
+be transmitted will be a DHCPREQUEST, which will be
+broadcast. If no response is heard, the client will bind to
+its address and move to the BOUND state.</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><i>&bull;</i></p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p>Select - DHCP client is in the SELECTING state - it has
+received at least one DHCPOFFER message, but is waiting to
+see if it may receive other DHCPOFFER messages from other
+servers. No messages are sent in the SELECTING state.</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><i>&bull;</i></p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p>Request - DHCP client is in the REQUESTING state - it
+has received at least one DHCPOFFER message, and has chosen
+which one it will request. The next message to be sent will
+be a DHCPREQUEST message, which will be broadcast.</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><i>&bull;</i></p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p>Bound - DHCP client is in the BOUND state - it has an IP
+address. No messages are transmitted in this state.</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><i>&bull;</i></p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p>Renew - DHCP client is in the RENEWING state - it has an
+IP address, and is trying to contact the server to renew it.
+The next message to be sent will be a DHCPREQUEST message,
+which will be unicast directly to the server.</p></td></tr>
+<tr valign="top" align="left">
+<td width="14%"></td>
+<td width="1%">
+
+
+<p><i>&bull;</i></p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p>Rebind - DHCP client is in the REBINDING state - it has
+an IP address, and is trying to contact any server to renew
+it. The next message to be sent will be a DHCPREQUEST, which
+will be broadcast.</p></td></tr>
+</table>
+
+<h2>REFERENCE: ACTION EXPRESSIONS
+<a name="REFERENCE: ACTION EXPRESSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>log
+(</b><i>priority</i><b>,</b> <i>data-expr</i><b>)</b></p>
+
+<p style="margin-left:14%; margin-top: 1em">Logging
+statements may be used to send information to the standard
+logging channels. A logging statement includes an optional
+priority (<b>fatal</b>, <b>error</b>, <b>info</b>, or
+<b>debug</b>), and a data expression.</p>
+
+<p style="margin-left:14%; margin-top: 1em">Logging
+statements take only a single data expression argument, so
+if you want to output multiple data values, you will need to
+use the <b>concat</b> operator to concatenate them.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>execute
+(</b><i>command-path</i> <b>[,</b> <i>data-expr1</i><b>,
+...</b> <i>data-exprN</i><b>]);</b></p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+<b>execute</b> statement runs an external command. The first
+argument is a string literal containing the name or path of
+the command to run. The other arguments, if present, are
+either string literals or data- expressions which evaluate
+to text strings, to be passed as command-line arguments to
+the command.</p>
+
+<p style="margin-left:14%; margin-top: 1em"><b>execute</b>
+is synchronous; the program will block until the external
+command being run has finished. Please note that lengthy
+program execution (for example, in an &quot;on commit&quot;
+in dhcpd.conf) may result in bad performance and timeouts.
+Only external applications with very short execution times
+are suitable for use.</p>
+
+<p style="margin-left:14%; margin-top: 1em">Passing
+user-supplied data to an external application might be
+dangerous. Make sure the external application checks input
+buffers for validity. Non-printable ASCII characters will be
+converted into dhcpd.conf language octal escapes
+(&quot;\nnn&quot;), make sure your external command handles
+them as such.</p>
+
+<p style="margin-left:14%; margin-top: 1em">It is possible
+to use the execute statement in any context, not only on
+events. If you put it in a regular scope in the
+configuration file you will execute that command every time
+a scope is evaluated.</p>
+
+<h2>REFERENCE: DYNAMIC DNS UPDATES
+<a name="REFERENCE: DYNAMIC DNS UPDATES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">See the
+dhcpd.conf and dhclient.conf man pages for more information
+about DDNS.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">dhcpd.conf(5),
+dhcpd.leases(5), dhclient.conf(5), dhcp-options(5),
+dhcpd(8), dhclient(8), RFC2132, RFC2131.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The Internet
+Systems Consortium DHCP Distribution was written by Ted
+Lemon under a contract with Vixie Labs. Funding for this
+project was provided through Internet Systems Consortium.
+Information about Internet Systems Consortium can be found
+at <b>https://www.isc.org.</b></p>
+<hr>
+</body>
+</html>

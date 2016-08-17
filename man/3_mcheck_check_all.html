@@ -1,0 +1,264 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:24:25 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>MCHECK</title>
+
+</head>
+<body>
+
+<h1 align="center">MCHECK</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mcheck,
+mcheck_check_all, mcheck_pedantic, mprobe &minus; heap
+consistency checking</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;mcheck.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+mcheck(void (*</b><i>abortfunc</i><b>)(enum
+mcheck_status</b> <i>mstatus</i><b>));</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+mcheck_pedantic(void (*</b><i>abortfunc</i><b>)(enum
+mcheck_status</b> <i>mstatus</i><b>));</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>void
+mcheck_check_all(void);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>enum
+mcheck_status mprobe(void *</b><i>ptr</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>mcheck</b>() function installs a set of debugging hooks
+for the <b>malloc</b>(3) family of memory-allocation
+functions. These hooks cause certain consistency checks to
+be performed on the state of the heap. The checks can detect
+application errors such as freeing a block of memory more
+than once or corrupting the bookkeeping data structures that
+immediately precede a block of allocated memory.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To be
+effective, the <b>mcheck</b>() function must be called
+before the first call to <b>malloc</b>(3) or a related
+function. In cases where this is difficult to ensure,
+linking the program with <i>&minus;mcheck</i> inserts an
+implicit call to <b>mcheck</b>() (with a NULL argument)
+before the first call to a memory-allocation function.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>mcheck_pedantic</b>() function is similar to
+<b>mcheck</b>(), but performs checks on all allocated blocks
+whenever one of the memory-allocation functions is called.
+This can be very slow!</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>mcheck_check_all</b>() function causes an immediate check
+on all allocated blocks. This call is effective only if
+<b>mcheck</b>() is called beforehand.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the system
+detects an inconsistency in the heap, the caller-supplied
+function pointed to by <i>abortfunc</i> is invoked with a
+single argument argument, <i>mstatus</i>, that indicates
+what type of inconsistency was detected. If <i>abortfunc</i>
+is NULL, a default function prints an error message on
+<i>stderr</i> and calls <b>abort</b>(3).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>mprobe</b>() function performs a consistency check on the
+block of allocated memory pointed to by <i>ptr</i>. The
+<b>mcheck</b>() function should be called beforehand
+(otherwise <b>mprobe</b>() returns
+<b>MCHECK_DISABLED</b>).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+list describes the values returned by <b>mprobe</b>() or
+passed as the <i>mstatus</i> argument when <i>abortfunc</i>
+is invoked: <b><br>
+MCHECK_DISABLED</b> (<b>mprobe</b>() only)</p>
+
+<p style="margin-left:22%;"><b>mcheck</b>() was not called
+before the first memory allocation function was called.
+Consistency checking is not possible.</p>
+
+<p style="margin-left:11%;"><b>MCHECK_OK</b>
+(<b>mprobe</b>() only)</p>
+
+<p style="margin-left:22%;">No inconsistency detected.</p>
+
+<p style="margin-left:11%;"><b>MCHECK_HEAD</b></p>
+
+<p style="margin-left:22%;">Memory preceding an allocated
+block was clobbered.</p>
+
+<p style="margin-left:11%;"><b>MCHECK_TAIL</b></p>
+
+<p style="margin-left:22%;">Memory following an allocated
+block was clobbered.</p>
+
+<p style="margin-left:11%;"><b>MCHECK_FREE</b></p>
+
+<p style="margin-left:22%;">A block of memory was freed
+twice.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mcheck</b>()
+and <b>mcheck_pedantic</b>() return 0 on success, or
+&minus;1 on error.</p>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>mcheck_pedantic</b>() and <b>mcheck_check_all</b>()
+functions are available since glibc 2.2. The <b>mcheck</b>()
+and <b>mprobe</b>() functions are present since at least
+glibc 2.0</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These functions
+are GNU extensions.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Linking a
+program with <i>&minus;lmcheck</i> and using the
+<b>MALLOC_CHECK_</b> environment variable (described in
+<b>mallopt</b>(3)) cause the same kinds of errors to be
+detected. But, using <b>MALLOC_CHECK_</b> does not require
+the application to be relinked.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The program
+below calls <b>mcheck</b>() with a NULL argument and then
+frees the same block of memory twice. The following shell
+session demonstrates what happens when running the
+program:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$
+<b>./a.out</b> <br>
+About to free</p>
+
+<p style="margin-left:17%; margin-top: 1em">About to free a
+second time <br>
+block freed twice <br>
+Aborted (core dumped)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Program
+source</b> <br>
+#include &lt;stdlib.h&gt; <br>
+#include &lt;stdio.h&gt; <br>
+#include &lt;mcheck.h&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">int <br>
+main(int argc, char *argv[]) <br>
+{ <br>
+char *p;</p>
+
+<p style="margin-left:11%; margin-top: 1em">if
+(mcheck(NULL) != 0) { <br>
+fprintf(stderr, &quot;mcheck() failed\n&quot;);</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">exit(EXIT_FAILURE);
+<br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">p =
+malloc(1000);</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">fprintf(stderr,
+&quot;About to free\n&quot;); <br>
+free(p); <br>
+fprintf(stderr, &quot;\nAbout to free a second
+time\n&quot;); <br>
+free(p);</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">exit(EXIT_SUCCESS);
+<br>
+}</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>malloc</b>(3),
+<b>mallopt</b>(3), <b>mtrace</b>(3)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

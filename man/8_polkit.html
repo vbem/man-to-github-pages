@@ -1,0 +1,1279 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:40:39 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>POLKIT</title>
+
+</head>
+<body>
+
+<h1 align="center">POLKIT</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#OVERVIEW">OVERVIEW</a><br>
+<a href="#SYSTEM ARCHITECTURE">SYSTEM ARCHITECTURE</a><br>
+<a href="#AUTHENTICATION AGENTS">AUTHENTICATION AGENTS</a><br>
+<a href="#DECLARING ACTIONS">DECLARING ACTIONS</a><br>
+<a href="#AUTHORIZATION RULES">AUTHORIZATION RULES</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#NOTES">NOTES</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">polkit &minus;
+Authorization Manager</p>
+
+<h2>OVERVIEW
+<a name="OVERVIEW"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">polkit provides
+an authorization API intended to be used by privileged
+programs (&ldquo;MECHANISMS&rdquo;) offering service to
+unprivileged programs (&ldquo;SUBJECTS&rdquo;) often through
+some form of inter&minus;process communication mechanism. In
+this scenario, the mechanism typically treats the subject as
+untrusted. For every request from a subject, the mechanism
+needs to determine if the request is authorized or if it
+should refuse to service the subject. Using the polkit APIs,
+a mechanism can offload this decision to a trusted party:
+The polkit authority.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The polkit
+authority is implemented as an system daemon,
+<b>polkitd</b>(8), which itself has little privilege as it
+is running as the <i>polkitd</i> system user. Mechanisms,
+subjects and authentication agents communicate with the
+authority using the system message bus.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In addition to
+acting as an authority, polkit allows users to obtain
+temporary authorization through authenticating either an
+administrative user or the owner of the session the client
+belongs to. This is useful for scenarios where a mechanism
+needs to verify that the operator of the system really is
+the user or really is an administrative user.</p>
+
+<h2>SYSTEM ARCHITECTURE
+<a name="SYSTEM ARCHITECTURE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The system
+architecture of polkit is comprised of the <i>Authority</i>
+(implemented as a service on the system message bus) and an
+<i>Authentication Agent</i> per user session (provided and
+started by the user's graphical environment). <i>Actions</i>
+are defined by applications. Vendors, sites and system
+administrators can control authorization policy through
+<i>Authorization Rules</i>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">[IMAGE]
+<small>[1]</small></p>
+
+
+<p style="margin-left:23%; margin-top: 1em">+&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
+<br>
+| Authentication | <br>
+| Agent | <br>
+
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
+<br>
+| libpolkit&minus;agent&minus;1 | <br>
+
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
+<br>
+^
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
+<br>
+| | Subject | <br>
+
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
+<br>
+| ^ <br>
+| | <br>
+User Session | | <br>
+
+=======================|========================|=============
+<br>
+System Context | | <br>
+| | <br>
+| +&minus;&minus;&minus;+ <br>
+V | <br>
+
+/&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;\
+| <br>
+| System Bus | | <br>
+
+\&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;/
+| <br>
+^ ^ V <br>
+| |
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
+<br>
+
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
+| | Mechanism | <br>
+| |
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
+<br>
+V +&minus;&minus;&minus;&minus;&gt; |
+libpolkit&minus;gobject&minus;1 | <br>
+
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
+<br>
+| polkitd(8) | <br>
+
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
+<br>
+| org.freedesktop. | <br>
+| PolicyKit1
+|&lt;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
+<br>
+
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
+| <br>
+^ | <br>
+|
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
+<br>
+| | /usr/share/polkit&minus;1/actions/*.policy | <br>
+|
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
+<br>
+| <br>
+
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
+<br>
+| /etc/polkit&minus;1/rules.d/*.rules | <br>
+| /usr/share/polkit&minus;1/rules.d/*.rules | <br>
+
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+convenience, the libpolkit&minus;gobject&minus;1 library
+wraps the polkit D&minus;Bus API and is usable from any
+C/C++ program as well as higher&minus;level languages
+supporting
+<b><font color="#0000FF">GObjectIntrospection</font></b>
+<small><font color="#000000">[2]</font></small>
+<font color="#000000">such as Javascript and Python. A
+mechanism can also use the D&minus;Bus API or the
+<b>pkcheck</b>(1) command to check authorizations. The
+libpolkit&minus;agent&minus;1 library provides an
+abstraction of the native authentication system, e.g.
+<b>pam</b>(8) and also facilities registration and
+communication with the polkit D&minus;Bus
+service.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">See
+the</font> <b><font color="#0000FF">developer
+documentation</font></b>
+<small><font color="#000000">[3]</font></small>
+<font color="#000000">for more information about writing
+polkit applications.</font></p>
+
+<h2>AUTHENTICATION AGENTS
+<a name="AUTHENTICATION AGENTS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">An
+authentication agent is used to make the user of a session
+prove that the user of the session really is the user (by
+authenticating as the user) or an administrative user (by
+authenticating as a administrator). In order to integrate
+well with the rest of the user session (e.g. match the look
+and feel), authentication agents are meant to be provided by
+the user session that the user uses. For example, an
+authentication agent may look like this:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">[IMAGE]
+<small>[4]</small></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">+&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
+<br>
+| | <br>
+| [Icon] Authentication required | <br>
+| | <br>
+| Authentication is required to format INTEL | <br>
+| SSDSA2MH080G1GC (/dev/sda) | <br>
+| | <br>
+| Administrator | <br>
+| | <br>
+| Password: [__________________________________] | <br>
+| | <br>
+| [Cancel] [Authenticate] | <br>
+
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">If
+the system is configured without a <i>root</i> account it
+may prompt for a specific user designated as the
+administrative user:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">[IMAGE]
+<small>[5]</small></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000">+&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+
+<br>
+| | <br>
+| [Icon] Authentication required | <br>
+| | <br>
+| Authentication is required to format INTEL | <br>
+| SSDSA2MH080G1GC (/dev/sda) | <br>
+| | <br>
+| [Icon] David Zeuthen | <br>
+| | <br>
+| Password: [__________________________________] | <br>
+| | <br>
+| [Cancel] [Authenticate] | <br>
+
++&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;+</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Applications
+that do not run under a desktop environment (for example, if
+launched from a <b>ssh</b>(1) login) may not have have an
+authentication agent associated with them. Such applications
+may use the PolkitAgentTextListener type or the
+<b>pkttyagent</b>(1) helper so the user can authenticate
+using a textual interface.</font></p>
+
+<h2>DECLARING ACTIONS
+<a name="DECLARING ACTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">A
+mechanism need to declare a set of <i>actions</i> in order
+to use polkit. Actions correspond to operations that clients
+can request the mechanism to carry out and are defined in
+XML files that the mechanism installs into the
+/usr/share/polkit&minus;1/actions directory.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">polkit
+actions are namespaced and can only contain the characters
+[A&minus;Z][a&minus;z][0&minus;9].&minus; e.g. ASCII,
+digits, period and hyphen. Each XML file can contain more
+than one action but all actions need to be in the same
+namespace and the file needs to be named after the namespace
+and have the extension .policy.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+XML file must have the following doctype
+declaration</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&lt;?xml
+version=&quot;1.0&quot;
+encoding=&quot;UTF&minus;8&quot;?&gt; <br>
+&lt;!DOCTYPE policyconfig PUBLIC
+&quot;&minus;//freedesktop//DTD polkit Policy Configuration
+1.0//EN&quot; <br>
+
+&quot;http://www.freedesktop.org/software/polkit/policyconfig&minus;1.dtd&quot;&gt;</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+<i>policyconfig</i> element must be present exactly once.
+Elements that can be used inside <i>policyconfig</i>
+includes:</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>vendor</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">The name
+of the project or vendor that is supplying the actions in
+the XML document. Optional.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>vendor_url</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">A URL to
+the project or vendor that is supplying the actions in the
+XML document. Optional.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>icon_name</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">An icon
+representing the project or vendor that is supplying the
+actions in the XML document. The icon name must adhere to
+the</font> <b><font color="#0000FF">Freedesktop.org Icon
+Naming Specification</font></b>
+<small><font color="#000000">[6]</font></small>
+<font color="#000000">. Optional.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>action</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Declares
+an action. The action name is specified using the id
+attribute and can only contain the characters
+[A&minus;Z][a&minus;z][0&minus;9].&minus; e.g. ASCII,
+digits, period and hyphen.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Elements
+that can be used inside <i>action</i> include:</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>description</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">A human
+readable description of the action, e.g. &ldquo;Install
+unsigned software&rdquo;.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>message</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">A human
+readable message displayed to the user when asking for
+credentials when authentication is needed, e.g.
+&ldquo;Installing unsigned software requires
+authentication&rdquo;.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>defaults</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">This
+element is used to specify implicit authorizations for
+clients. Elements that can be used inside <i>defaults</i>
+include:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><i>allow_any</i></font></p>
+
+<p style="margin-left:23%;"><font color="#000000">Implicit
+authorizations that apply to any client.
+Optional.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><i>allow_inactive</i></font></p>
+
+<p style="margin-left:23%;"><font color="#000000">Implicit
+authorizations that apply to clients in inactive sessions on
+local consoles. Optional.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><i>allow_active</i></font></p>
+
+<p style="margin-left:23%;"><font color="#000000">Implicit
+authorizations that apply to clients in active sessions on
+local consoles. Optional.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">Each
+of the <i>allow_any</i>, <i>allow_inactive</i> and
+<i>allow_active</i> elements can contain the following
+values:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">no</font></p>
+
+<p style="margin-left:23%;"><font color="#000000">Not
+authorized.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">yes</font></p>
+
+
+<p style="margin-left:23%;"><font color="#000000">Authorized.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">auth_self</font></p>
+
+
+<p style="margin-left:23%;"><font color="#000000">Authentication
+by the owner of the session that the client originates from
+is required. Note that this is not restrictive enough for
+most uses on multi&minus;user systems; auth_admin* is
+generally recommended.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">auth_admin</font></p>
+
+
+<p style="margin-left:23%;"><font color="#000000">Authentication
+by an administrative user is required.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">auth_self_keep</font></p>
+
+<p style="margin-left:23%;"><font color="#000000">Like
+auth_self but the authorization is kept for a brief period
+(e.g. five minutes). The warning about auth_self above
+applies likewise.</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">auth_admin_keep</font></p>
+
+<p style="margin-left:23%;"><font color="#000000">Like
+auth_admin but the authorization is kept for a brief period
+(e.g. five minutes).</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>annotate</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Used for
+annotating an action with a key/value pair. The key is
+specified using the the key attribute and the value is
+specified using the value attribute. This element may appear
+zero or more times. See below for known
+annotations.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>vendor</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Used for
+overriding the vendor on a per&minus;action basis.
+Optional.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>vendor_url</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Used for
+overriding the vendor URL on a per&minus;action basis.
+Optional.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>icon_name</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Used for
+overriding the icon name on a per&minus;action basis.
+Optional.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">For
+localization, <i>description</i> and <i>message</i> elements
+may occur multiple times with different xml:lang
+attributes.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">To
+list installed polkit actions, use the <b>pkaction</b>(1)
+command.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>Known
+annotations</b> <br>
+The org.freedesktop.policykit.exec.path annotation is used
+by the <b>pkexec</b> program shipped with polkit &minus; see
+the <b>pkexec</b>(1) man page for details.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+org.freedesktop.policykit.imply annotation (its value is a
+string containing a space separated list of action
+identifiers) can be used to define <i>meta actions</i>. The
+way it works is that if a subject is authorized for an
+action with this annotation, then it is also authorized for
+any action specified by the annotation. A typical use of
+this annotation is when defining an UI shell with a single
+lock button that should unlock multiple actions from
+distinct mechanisms.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+org.freedesktop.policykit.owner annotation can be used to
+define a set of users who can query whether a client is
+authorized to perform this action. If this annotation is not
+specified then only root can query whether a client running
+as a different user is authorized for an action. The value
+of this annotation is a string containing a space separated
+list of PolkitIdentity entries, for example
+&quot;unix&minus;user:42 unix&minus;user:colord&quot;. A
+typical use of this annotation is for a daemon process that
+runs as a system user rather than root.</font></p>
+
+<h2>AUTHORIZATION RULES
+<a name="AUTHORIZATION RULES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>polkitd</b>
+reads .rules files from the /etc/polkit&minus;1/rules.d and
+/usr/share/polkit&minus;1/rules.d directories by sorting the
+files in lexical order based on the basename on each file
+(if there's a tie, files in /etc are processed before files
+in /usr). For example, for the following four files, the
+order is</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+/etc/polkit&minus;1/rules.d/10&minus;auth.rules</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+/usr/share/polkit&minus;1/rules.d/10&minus;auth.rules</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+/etc/polkit&minus;1/rules.d/15&minus;auth.rules</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+/usr/share/polkit&minus;1/rules.d/20&minus;auth.rules</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Both
+directories are monitored so if a rules file is changed,
+added or removed, existing rules are purged and all files
+are read and processed again. Rules files are written in
+the</font> <b><font color="#0000FF">JavaScript</font></b>
+<small><font color="#000000">[7]</font></small>
+<font color="#000000">programming language and interface
+with <b>polkitd</b> through the global polkit object (of
+type <b>Polkit</b>).</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">While
+the JavaScript interpreter used in particular versions of
+polkit may support non&minus;standard features (such as the
+<i>let</i> keyword), authorization rules must conform
+to</font> <b><font color="#0000FF">ECMA&minus;262 edition
+5</font></b> <small><font color="#000000">[8]</font></small>
+<font color="#000000">(in other words, the JavaScript
+interpreter used may change in future versions of
+polkit).</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Authorization
+rules are intended for two specific audiences</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+System Administrators</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">&bull;
+Special&minus;purpose Operating Systems /
+Environments</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">and
+those audiences only. In particular, applications,
+mechanisms and general&minus;purpose operating systems must
+never include any authorization rules.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>The
+Polkit type</b> <br>
+The following methods are available on the polkit
+object:</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="89%">
+
+
+<p style="margin-top: 1em"><font color="#000000"><b>void
+addRule(polkit.Result&nbsp;function(</b><i>action</i><b>,&nbsp;</b><i>subject</i><b>)&nbsp;{...});</b></font></p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="89%">
+
+
+<p style="margin-top: 1em"><font color="#000000"><b>void
+addAdminRule(string[]&nbsp;function(</b><i>action</i><b>,&nbsp;</b><i>subject</i><b>)&nbsp;{...});</b></font></p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="89%">
+
+
+<p style="margin-top: 1em"><font color="#000000"><b>void
+log(string&nbsp;</b><i>message</i><b>);</b></font></p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="89%">
+
+
+<p style="margin-top: 1em"><font color="#000000"><b>string
+spawn(string[]&nbsp;</b><i>argv</i><b>);</b></font></p> </td></tr>
+</table>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+<b>addRule()</b> method is used for adding a function that
+may be called whenever an authorization check for
+<i>action</i> and <i>subject</i> is performed. Functions are
+called in the order they have been added until one of the
+functions returns a value. Hence, to add an authorization
+rule that is processed before other rules, put it in a file
+in /etc/polkit&minus;1/rules.d with a name that sorts before
+other rules files, for example
+00&minus;early&minus;checks.rules. Each function should
+return a value from polkit.Result</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">polkit.Result
+= { <br>
+NO : &quot;no&quot;, <br>
+YES : &quot;yes&quot;, <br>
+AUTH_SELF : &quot;auth_self&quot;, <br>
+AUTH_SELF_KEEP : &quot;auth_self_keep&quot;, <br>
+AUTH_ADMIN : &quot;auth_admin&quot;, <br>
+AUTH_ADMIN_KEEP : &quot;auth_admin_keep&quot;, <br>
+NOT_HANDLED : null <br>
+};</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">corresponding
+to the values that can be used as defaults. If the function
+returns <b>polkit.Result.NOT_HANDLED</b>, <b>null</b>,
+<b>undefined</b> or does not return a value at all, the next
+user function is tried.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Keep
+in mind that if <b>polkit.Result.AUTH_SELF_KEEP</b> or
+<b>polkit.Result.AUTH_ADMIN_KEEP</b> is returned,
+authorization checks for the same action identifier and
+subject will succeed (that is, return
+<b>polkit.Result.YES</b>) for the next brief period (e.g.
+five minutes) <i>even</i> if the variables passed along with
+the check are different. Therefore, if the result of an
+authorization rule depend on such variables, it should not
+use the <b>&quot;*_KEEP&quot;</b> constants (if similar
+functionality is required, the authorization rule can easily
+implement temporary authorizations using the</font>
+<b><font color="#0000FF">Date</font></b>
+<small><font color="#000000">[9]</font></small>
+<font color="#000000">type for timestamps).</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+<b>addAdminRule()</b> method is used for adding a function
+may be called whenever administrator authentication is
+required. The function is used to specify what identies may
+be used for administrator authentication for the
+authorization check identified by <i>action</i> and
+<i>subject</i>. Functions added are called in the order they
+have been added until one of the functions returns a value.
+Each function should return an array of strings where each
+string is of the form
+&quot;unix&minus;group:&lt;group&gt;&quot;,
+&quot;unix&minus;netgroup:&lt;netgroup&gt;&quot; or
+&quot;unix&minus;user:&lt;user&gt;&quot;. If the function
+returns <b>null</b>, <b>undefined</b> or does not return a
+value at all, the next function is tried.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">There
+is no guarantee that a function registered with
+<b>addRule()</b> or <b>addAdminRule()</b> is ever called
+&minus; for example an early rules file could register a
+function that always return a value, hence ensuring that
+functions added later are never called.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">If
+user&minus;provided code takes a long time to execute an
+exception will be thrown which normally results in the
+function being terminated (the current limit is 15 seconds).
+This is used to catch runaway scripts.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+<b>spawn()</b> method spawns an external helper identified
+by the argument vector <i>argv</i> and waits for it to
+terminate. If an error occurs or the helper doesn't exit
+normally with exit code 0, an exception is thrown. If the
+helper does not exit within 10 seconds it is killed.
+Otherwise, the program's <i>standard output</i> is returned
+as a string. The <b>spawn()</b> method should be used
+sparingly as helpers may take a very long or indeterminate
+amount of time to complete and no other authorization check
+can be handled while the helper is running. Note that the
+spawned programs will run as the unprivileged <i>polkitd</i>
+system user.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+<b>log()</b> method writes the given <i>message</i> to the
+system logger prefixed with the JavaScript filename and line
+number. Log entries are emitted using the
+<b>LOG_AUTHPRIV</b> flag meaning that the log entries
+usually ends up in the file /var/log/secure. The
+<b>log()</b> method is usually only used when debugging
+rules. The <b>Action</b> and <b>Subject</b> types has
+suitable <b>toString()</b> methods defined for easy logging,
+for example,</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">polkit.addRule(function(action,
+subject) { <br>
+if (action.id == &quot;org.freedesktop.policykit.exec&quot;)
+{ <br>
+polkit.log(&quot;action=&quot; + action); <br>
+polkit.log(&quot;subject=&quot; + subject); <br>
+} <br>
+});</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">will
+produce the following when the user runs 'pkexec &minus;u
+bateman bash &minus;i' from a shell:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">May
+24 14:28:50 thinkpad polkitd[32217]:
+/etc/polkit&minus;1/rules.d/10&minus;test.rules:3:
+action=[Action id='org.freedesktop.policykit.exec'
+command_line='/usr/bin/bash &minus;i'
+program='/usr/bin/bash' user='bateman' user.gecos='Patrick
+Bateman' user.display='Patrick Bateman (bateman)'] <br>
+May 24 14:28:50 thinkpad polkitd[32217]:
+/etc/polkit&minus;1/rules.d/10&minus;test.rules:4:
+subject=[Subject pid=1352 user='davidz' groups=davidz,wheel,
+seat='seat0' session='1' local=true active=true]</font></p>
+
+<p><font color="#000000"><b>The Action type</b></font></p></table>
+
+<p style="margin-left:11%;"><font color="#000000">The
+<i>action</i> parameter passed to user functions is an
+object with information about the action being checked. It
+is of type <b>Action</b> and has the following
+attribute:</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>string</b>
+id</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">The
+action identifier, for example
+<i>org.freedesktop.policykit.exec</i>.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+following methods are available on the <b>Action</b>
+type:</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="40%">
+
+
+<p style="margin-top: 1em"><font color="#000000"><b>string
+lookup(string&nbsp;</b><i>key</i><b>);</b></font></p> </td>
+<td width="49%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+<b>lookup()</b> method is used to lookup the polkit
+variables passed from the mechanism. For example, the
+<b>pkexec</b>(1) mechanism sets the variable <i>program</i>
+which can be obtained in Javascript using the expression
+action.lookup(&quot;program&quot;). If there is no value for
+the given <i>key</i>, then <b>undefined</b> is
+returned.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Consult
+the documentation for each mechanism for what variables are
+available for each action.</font></p>
+
+<p><font color="#000000"><b>The Subject type</b></font></p></table>
+
+<p style="margin-left:11%;"><font color="#000000">The
+<i>subject</i> parameter passed to user functions is an
+object with information about the process being checked. It
+is of type <b>Subject</b> and has the following
+attributes</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>int</b>
+pid</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">The
+process id.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>string</b>
+user</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">The user
+name.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>string[]</b>
+groups</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Array of
+groups that <i>user</i> user belongs to.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>string</b>
+seat</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">The seat
+that the subject is associated with &minus; blank if not on
+a local seat.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>string</b>
+session</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">The
+session that the subject is associated with.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>boolean</b>
+local</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Set to
+<b>true</b> only if seat is local.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>boolean</b>
+active</font></p>
+
+<p style="margin-left:17%;"><font color="#000000">Set to
+<b>true</b> only if the session is active.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+following methods are available on the <b>Subject</b>
+type:</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="64%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000"><b>boolean
+isInGroup(string&nbsp;</b><i>groupName</i><b>);</b></font></p> </td>
+<td width="25%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="64%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000"><b>boolean
+isInNetGroup(string&nbsp;</b><i>netGroupName</i><b>);</b></font></p> </td>
+<td width="25%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+<b>isInGroup()</b> method can be used to check if the
+subject is in a given group and <b>isInNetGroup()</b> can be
+used to check if the subject is in a given
+netgroup.</font></p>
+
+<p><font color="#000000"><b>Authorization Rules
+Examples</b></font></p> </table>
+
+<p style="margin-left:11%;"><font color="#000000">Allow all
+users in the admin group to perform user administration
+without changing policy for other users:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">polkit.addRule(function(action,
+subject) { <br>
+if (action.id ==
+&quot;org.freedesktop.accounts.user&minus;administration&quot;
+&amp;&amp; <br>
+subject.isInGroup(&quot;admin&quot;)) { <br>
+return polkit.Result.YES; <br>
+} <br>
+});</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Define
+administrative users to be the users in the wheel
+group:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">polkit.addAdminRule(function(action,
+subject) { <br>
+return [&quot;unix&minus;group:wheel&quot;]; <br>
+});</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Forbid
+users in group children to change hostname configuration
+(that is, any action with an identifier starting with
+org.freedesktop.hostname1.) and allow anyone else to do it
+after authenticating as themselves:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">polkit.addRule(function(action,
+subject) { <br>
+if
+(action.id.indexOf(&quot;org.freedesktop.hostname1.&quot;)
+== 0) { <br>
+if (subject.isInGroup(&quot;children&quot;)) { <br>
+return polkit.Result.NO; <br>
+} else { <br>
+return polkit.Result.AUTH_SELF_KEEP; <br>
+} <br>
+} <br>
+});</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Run
+an external helper to determine if the current user may
+reboot the system:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">polkit.addRule(function(action,
+subject) { <br>
+if
+(action.id.indexOf(&quot;org.freedesktop.login1.reboot&quot;)
+== 0) { <br>
+try { <br>
+// user&minus;may&minus;reboot exits with succeess (exit
+code 0) <br>
+// only if the passed username is authorized <br>
+
+polkit.spawn([&quot;/opt/company/bin/user&minus;may&minus;reboot&quot;,
+<br>
+subject.user]); <br>
+return polkit.Result.YES; <br>
+} catch (error) { <br>
+// Nope, but do allow admin authentication <br>
+return polkit.Result.AUTH_ADMIN; <br>
+} <br>
+} <br>
+});</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+following example shows how the authorization decision can
+depend on variables passed by the <b>pkexec</b>(1)
+mechanism:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">polkit.addRule(function(action,
+subject) { <br>
+if (action.id == &quot;org.freedesktop.policykit.exec&quot;
+&amp;&amp; <br>
+action.lookup(&quot;program&quot;) ==
+&quot;/usr/bin/cat&quot;) { <br>
+return polkit.Result.AUTH_ADMIN; <br>
+} <br>
+});</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+following example shows another use of variables passed from
+the mechanism. In this case, the mechanism is</font>
+<b><font color="#0000FF">UDisks</font></b>
+<small><font color="#000000">[10]</font></small>
+<font color="#000000">which defines a set of</font>
+<b><font color="#0000FF">actions and variables</font></b>
+<small><font color="#000000">[11]</font></small>
+<font color="#000000">that is used to match on:</font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">//
+Allow users in group 'engineers' to perform any operation on
+<br>
+// some drives without having to authenticate <br>
+// <br>
+polkit.addRule(function(action, subject) { <br>
+if (action.id.indexOf(&quot;org.freedesktop.udisks2.&quot;)
+== 0 &amp;&amp; <br>
+action.lookup(&quot;drive.vendor&quot;) ==
+&quot;SEAGATE&quot; &amp;&amp; <br>
+action.lookup(&quot;drive.model&quot;) ==
+&quot;ST3300657SS&quot; &amp;&amp; <br>
+subject.isInGroup(&quot;engineers&quot;)) { <br>
+return polkit.Result.YES; <br>
+} <br>
+} <br>
+});</font></p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Written
+by David Zeuthen &lt;davidz@redhat.com&gt; with a lot of
+help from many others.</font></p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Please
+send bug reports to either the distribution or the
+polkit&minus;devel mailing list, see the link</font>
+<b><font color="#0000FF">http://lists.freedesktop.org/mailman/listinfo/polkit-devel</font></b>
+<font color="#000000">on how to subscribe.</font></p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>polkitd</b>(8),
+<b>pkaction</b>(1), <b>pkcheck</b>(1), <b>pkexec</b>(1),
+<b>pkttyagent</b>(1)</font></p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">1.</font></p> </td>
+<td width="2%"></td>
+<td width="83%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">/usr/share/gtk-doc/html/polkit-1/polkit-architecture.png</font></p> </td></tr>
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+<p><font color="#000000">2.</font></p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p><font color="#000000">GObjectIntrospection</font></p></td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">https://live.gnome.org/GObjectIntrospection</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">3.</font></p> </td>
+<td width="2%"></td>
+<td width="35%">
+
+
+<p style="margin-top: 1em"><font color="#000000">developer
+documentation</font></p> </td>
+<td width="48%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">http://www.freedesktop.org/software/polkit/docs/latest/</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">4.</font></p> </td>
+<td width="2%"></td>
+<td width="83%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">/usr/share/gtk-doc/html/polkit-1/polkit-authentication-agent-example.png</font></p> </td></tr>
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+<p><font color="#000000">5.</font></p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+
+<p><font color="#000000">/usr/share/gtk-doc/html/polkit-1/polkit-authentication-agent-example-wheel.png</font></p> </td></tr>
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+<p><font color="#000000">6.</font></p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p><font color="#000000">Freedesktop.org Icon Naming
+Specification</font></p> </td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">http://standards.freedesktop.org/icon-naming-spec/icon-naming-spec-latest.html</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">7.</font></p> </td>
+<td width="2%"></td>
+<td width="15%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">JavaScript</font></p> </td>
+<td width="68%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">http://en.wikipedia.org/wiki/JavaScript</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">8.</font></p> </td>
+<td width="2%"></td>
+<td width="28%">
+
+
+<p style="margin-top: 1em"><font color="#000000">ECMA-262
+edition 5</font></p></td>
+<td width="55%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">http://en.wikipedia.org/wiki/ECMAScript#ECMAScript.2C_5th_Edition</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">9.</font></p> </td>
+<td width="2%"></td>
+<td width="6%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000"><b>Date</b></font></p> </td>
+<td width="77%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Date</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">10.</font></p> </td>
+<td width="2%"></td>
+<td width="9%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">UDisks</font></p> </td>
+<td width="74%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">http://udisks.freedesktop.org/docs/latest/udisks.8.html</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">11.</font></p> </td>
+<td width="2%"></td>
+<td width="32%">
+
+
+<p style="margin-top: 1em"><font color="#000000">actions
+and variables</font></p></td>
+<td width="51%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">http://udisks.freedesktop.org/docs/latest/udisks-polkit-actions.html</font></p>
+<hr>
+</body>
+</html>

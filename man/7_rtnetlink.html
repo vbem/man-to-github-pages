@@ -1,0 +1,335 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:39:47 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>RTNETLINK</title>
+
+</head>
+<body>
+
+<h1 align="center">RTNETLINK</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">rtnetlink
+&minus; Linux IPv4 routing socket</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;asm/types.h&gt; <br>
+#include &lt;linux/netlink.h&gt; <br>
+#include &lt;linux/rtnetlink.h&gt; <br>
+#include &lt;sys/socket.h&gt;</b></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>rtnetlink_socket
+= socket(AF_NETLINK, int</b> <i>socket_type</i><b>,
+NETLINK_ROUTE);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Rtnetlink
+allows the kernel&rsquo;s routing tables to be read and
+altered. It is used within the kernel to communicate between
+various subsystems, though this usage is not documented
+here, and for communication with user-space programs.
+Network routes, IP addresses, link parameters, neighbor
+setups, queueing disciplines, traffic classes and packet
+classifiers may all be controlled through
+<b>NETLINK_ROUTE</b> sockets. It is based on netlink
+messages; see <b>netlink</b>(7) for more information.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Routing
+attributes</b> <br>
+Some rtnetlink messages have optional attributes after the
+initial header:</p>
+
+<p style="margin-left:17%; margin-top: 1em">struct rtattr {
+<br>
+unsigned short rta_len; /* Length of option */ <br>
+unsigned short rta_type; /* Type of option */ <br>
+/* Data follows */ <br>
+};</p>
+
+<p style="margin-left:11%; margin-top: 1em">These
+attributes should be manipulated using only the RTA_* macros
+or libnetlink, see <b>rtnetlink</b>(3).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Messages</b>
+<br>
+Rtnetlink consists of these message types (in addition to
+standard netlink messages): <b><br>
+RTM_NEWLINK</b>, <b>RTM_DELLINK</b>, <b>RTM_GETLINK</b></p>
+
+<p style="margin-left:22%;">Create, remove or get
+information about a specific network interface. These
+messages contain an <i>ifinfomsg</i> structure followed by a
+series of <i>rtattr</i> structures.</p>
+
+<p style="margin-left:22%; margin-top: 1em">struct
+ifinfomsg { <br>
+unsigned char ifi_family; /* AF_UNSPEC */ <br>
+unsigned short ifi_type; /* Device type */ <br>
+int ifi_index; /* Interface index */ <br>
+unsigned int ifi_flags; /* Device flags */ <br>
+unsigned int ifi_change; /* change mask */ <br>
+};</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>ifi_flags</i>
+contains the device flags, see <b>netdevice</b>(7);
+<i>ifi_index</i> is the unique interface index (since Linux
+3.7, it is possible to feed a nonzero value with the
+<b>RTM_NEWLINK</b> message, thus creating a link with the
+given <i>ifindex</i>); <i>ifi_change</i> is reserved for
+future use and should be always set to 0xFFFFFFFF.</p>
+
+<p style="margin-left:22%; margin-top: 1em">The value type
+for <b>IFLA_STATS</b> is <i>struct rtnl_link_stats</i>
+(<i>struct net_device_stats</i> in Linux 2.4 and
+earlier).</p>
+
+<p style="margin-left:11%;"><b>RTM_NEWADDR</b>,
+<b>RTM_DELADDR</b>, <b>RTM_GETADDR</b></p>
+
+<p style="margin-left:22%;">Add, remove or receive
+information about an IP address associated with an
+interface. In Linux 2.2, an interface can carry multiple IP
+addresses, this replaces the alias device concept in 2.0. In
+Linux 2.2, these messages support IPv4 and IPv6 addresses.
+They contain an <i>ifaddrmsg</i> structure, optionally
+followed by <i>rtattr</i> routing attributes.</p>
+
+<p style="margin-left:22%; margin-top: 1em">struct
+ifaddrmsg { <br>
+unsigned char ifa_family; /* Address type */ <br>
+unsigned char ifa_prefixlen; /* Prefixlength of address */
+<br>
+unsigned char ifa_flags; /* Address flags */ <br>
+unsigned char ifa_scope; /* Address scope */ <br>
+int ifa_index; /* Interface index */ <br>
+};</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>ifa_family</i>
+is the address family type (currently <b>AF_INET</b> or
+<b>AF_INET6</b>), <i>ifa_prefixlen</i> is the length of the
+address mask of the address if defined for the family (like
+for IPv4), <i>ifa_scope</i> is the address scope,
+<i>ifa_index</i> is the interface index of the interface the
+address is associated with. <i>ifa_flags</i> is a flag word
+of <b>IFA_F_SECONDARY</b> for secondary address (old alias
+interface), <b>IFA_F_PERMANENT</b> for a permanent address
+set by the user and other undocumented flags.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>RTM_NEWROUTE</b>,
+<b>RTM_DELROUTE</b>, <b>RTM_GETROUTE</b></p>
+
+<p style="margin-left:22%;">Create, remove or receive
+information about a network route. These messages contain an
+<i>rtmsg</i> structure with an optional sequence of
+<i>rtattr</i> structures following. For <b>RTM_GETROUTE</b>,
+setting <i>rtm_dst_len</i> and <i>rtm_src_len</i> to 0 means
+you get all entries for the specified routing table. For the
+other fields, except <i>rtm_table</i> and
+<i>rtm_protocol</i>, 0 is the wildcard.</p>
+
+<p style="margin-left:22%; margin-top: 1em">struct rtmsg {
+<br>
+unsigned char rtm_family; /* Address family of route */ <br>
+unsigned char rtm_dst_len; /* Length of destination */ <br>
+unsigned char rtm_src_len; /* Length of source */ <br>
+unsigned char rtm_tos; /* TOS filter */</p>
+
+<p style="margin-left:22%; margin-top: 1em">unsigned char
+rtm_table; /* Routing table ID */ <br>
+unsigned char rtm_protocol; /* Routing protocol; see below
+*/ <br>
+unsigned char rtm_scope; /* See below */ <br>
+unsigned char rtm_type; /* See below */</p>
+
+<p style="margin-left:22%; margin-top: 1em">unsigned int
+rtm_flags; <br>
+};</p>
+
+<p style="margin-left:22%; margin-top: 1em">Values larger
+than <b>RTPROT_STATIC</b> are not interpreted by the kernel,
+they are just for user information. They may be used to tag
+the source of a routing information or to distinguish
+between multiple routing daemons. See
+<i>&lt;linux/rtnetlink.h&gt;</i> for the routing daemon
+identifiers which are already assigned.</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>rtm_scope</i>
+is the distance to the destination:</p>
+
+<p style="margin-left:22%; margin-top: 1em">The values
+between <b>RT_SCOPE_UNIVERSE</b> and <b>RT_SCOPE_SITE</b>
+are available to the user.</p>
+
+<p style="margin-left:22%; margin-top: 1em">The
+<i>rtm_flags</i> have the following meanings:</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>rtm_table</i>
+specifies the routing table</p>
+
+<p style="margin-left:22%; margin-top: 1em">The user may
+assign arbitrary values between <b>RT_TABLE_UNSPEC</b> and
+<b>RT_TABLE_DEFAULT</b>.</p>
+
+<p style="margin-top: 1em"><b>Fill these values in!</b></p>
+
+<p style="margin-left:11%;"><b>RTM_NEWNEIGH</b>,
+<b>RTM_DELNEIGH</b>, <b>RTM_GETNEIGH</b></p>
+
+<p style="margin-left:22%;">Add, remove or receive
+information about a neighbor table entry (e.g., an ARP
+entry). The message contains an <i>ndmsg</i> structure.</p>
+
+<p style="margin-left:22%; margin-top: 1em">struct ndmsg {
+<br>
+unsigned char ndm_family; <br>
+int ndm_ifindex; /* Interface index */ <br>
+__u16 ndm_state; /* State */ <br>
+__u8 ndm_flags; /* Flags */ <br>
+__u8 ndm_type; <br>
+};</p>
+
+<p style="margin-left:22%; margin-top: 1em">struct
+nda_cacheinfo { <br>
+__u32 ndm_confirmed; <br>
+__u32 ndm_used; <br>
+__u32 ndm_updated; <br>
+__u32 ndm_refcnt; <br>
+};</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>ndm_state</i>
+is a bit mask of the following states:</p>
+
+<p style="margin-left:22%; margin-top: 1em">Valid
+<i>ndm_flags</i> are:</p>
+
+<p style="margin-left:22%; margin-top: 1em">The
+<i>rtattr</i> struct has the following meanings for the
+<i>rta_type</i> field:</p>
+
+<p style="margin-left:22%; margin-top: 1em">If the
+<i>rta_type</i> field is <b>NDA_CACHEINFO</b> then a
+<i>struct nda_cacheinfo</i> header follows</p>
+
+<p style="margin-left:11%;"><b>RTM_NEWRULE</b>,
+<b>RTM_DELRULE</b>, <b>RTM_GETRULE</b></p>
+
+<p style="margin-left:22%;">Add, delete or retrieve a
+routing rule. Carries a <i>struct rtmsg</i></p>
+
+<p style="margin-left:11%;"><b>RTM_NEWQDISC</b>,
+<b>RTM_DELQDISC</b>, <b>RTM_GETQDISC</b></p>
+
+<p style="margin-left:22%;">Add, remove or get a queueing
+discipline. The message contains a <i>struct tcmsg</i> and
+may be followed by a series of attributes.</p>
+
+<p style="margin-left:22%; margin-top: 1em">struct tcmsg {
+<br>
+unsigned char tcm_family; <br>
+int tcm_ifindex; /* interface index */ <br>
+__u32 tcm_handle; /* Qdisc handle */ <br>
+__u32 tcm_parent; /* Parent qdisc */ <br>
+__u32 tcm_info; <br>
+};</p>
+
+<p style="margin-left:22%; margin-top: 1em">In addition
+various other qdisc module specific attributes are allowed.
+For more information see the appropriate include files.</p>
+
+<p style="margin-left:11%;"><b>RTM_NEWTCLASS</b>,
+<b>RTM_DELTCLASS</b>, <b>RTM_GETTCLASS</b></p>
+
+<p style="margin-left:22%;">Add, remove or get a traffic
+class. These messages contain a <i>struct tcmsg</i> as
+described above.</p>
+
+<p style="margin-left:11%;"><b>RTM_NEWTFILTER</b>,
+<b>RTM_DELTFILTER</b>, <b>RTM_GETTFILTER</b></p>
+
+<p style="margin-left:22%;">Add, remove or receive
+information about a traffic filter. These messages contain a
+<i>struct tcmsg</i> as described above.</p>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>rtnetlink</b>
+is a new feature of Linux 2.2.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This manual
+page is incomplete.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>cmsg</b>(3),
+<b>rtnetlink</b>(3), <b>ip</b>(7), <b>netlink</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

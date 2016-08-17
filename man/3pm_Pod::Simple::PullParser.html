@@ -1,0 +1,420 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:33:08 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Pod::Simple::PullParser</title>
+
+</head>
+<body>
+
+<h1 align="center">Pod::Simple::PullParser</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#METHODS">METHODS</a><br>
+<a href="#NOTE">NOTE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#SUPPORT">SUPPORT</a><br>
+<a href="#COPYRIGHT AND DISCLAIMERS">COPYRIGHT AND DISCLAIMERS</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple::PullParser
+&minus;&minus; a pull&minus;parser interface to parsing
+Pod</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> my $parser = SomePodProcessor&minus;&gt;new;
+ $parser&minus;&gt;set_source( &quot;whatever.pod&quot; );
+ $parser&minus;&gt;run;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Or:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> my $parser = SomePodProcessor&minus;&gt;new;
+ $parser&minus;&gt;set_source( $some_filehandle_object );
+ $parser&minus;&gt;run;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Or:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> my $parser = SomePodProcessor&minus;&gt;new;
+ $parser&minus;&gt;set_source( \$document_source );
+ $parser&minus;&gt;run;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Or:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> my $parser = SomePodProcessor&minus;&gt;new;
+ $parser&minus;&gt;set_source( \@document_lines );
+ $parser&minus;&gt;run;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">And
+elsewhere:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> require 5;
+ package SomePodProcessor;
+ use strict;
+ use base qw(Pod::Simple::PullParser);
+ sub run {
+   my $self = shift;
+  Token:
+   while(my $token = $self&minus;&gt;get_token) {
+     ...process each token...
+   }
+ }</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This class is
+for using Pod::Simple to build a Pod processor -- but one
+that uses an interface based on a stream of token objects,
+instead of based on events.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is a
+subclass of Pod::Simple and inherits all its methods.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A subclass of
+Pod::Simple::PullParser should define a
+<tt>&quot;run&quot;</tt> method that calls <tt>&quot;$token
+= $parser&minus;&gt;get_token&quot;</tt> to pull tokens.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See the source
+for Pod::Simple::RTF for an example of a formatter that uses
+Pod::Simple::PullParser.</p>
+
+<h2>METHODS
+<a name="METHODS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">my $token =
+$parser&minus;&gt;get_token</p>
+
+<p style="margin-left:17%;">This returns the next token
+object (which will be of a subclass of
+Pod::Simple::PullParserToken), or undef if the parser-stream
+has hit the end of the document.</p>
+
+<p style="margin-left:11%;">$parser&minus;&gt;unget_token(
+$token ) <br>
+$parser&minus;&gt;unget_token( $token1, $token2, ... )</p>
+
+<p style="margin-left:17%;">This restores the token
+object(s) to the front of the parser stream.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The source has
+to be set before you can parse anything. The lowest-level
+way is to call <tt>&quot;set_source&quot;</tt>: <br>
+$parser&minus;&gt;set_source( $filename ) <br>
+$parser&minus;&gt;set_source( $filehandle_object ) <br>
+$parser&minus;&gt;set_source( \$document_source ) <br>
+$parser&minus;&gt;set_source( \@document_lines )</p>
+
+<p style="margin-left:11%; margin-top: 1em">Or you can call
+these methods, which Pod::Simple::PullParser has defined to
+work just like Pod::Simple&rsquo;s same-named methods: <br>
+$parser&minus;&gt;parse_file(...) <br>
+$parser&minus;&gt;parse_string_document(...) <br>
+$parser&minus;&gt;filter(...) <br>
+$parser&minus;&gt;parse_from_file(...)</p>
+
+<p style="margin-left:11%; margin-top: 1em">For those to
+work, the Pod-processing subclass of Pod::Simple::PullParser
+has to have defined a <tt>$parser</tt>&minus;&gt;run method
+-- so it is advised that all Pod::Simple::PullParser
+subclasses do so. See the Synopsis above, or the source for
+Pod::Simple::RTF.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Authors of
+formatter subclasses might find these methods useful to call
+on a parser object that you haven&rsquo;t started pulling
+tokens from yet: <br>
+my $title_string = $parser&minus;&gt;get_title</p>
+
+<p style="margin-left:17%;">This tries to get the title
+string out of <tt>$parser</tt>, by getting some tokens, and
+scanning them for the title, and then ungetting them so that
+you can process the token-stream from the beginning.</p>
+
+<p style="margin-left:17%; margin-top: 1em">For example,
+suppose you have a document that starts out:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =head1 NAME
+  Hoo::Boy::Wowza &minus;&minus; Stuff B&lt;wow&gt; yeah!</pre>
+
+
+
+<p style="margin-left:17%; margin-top: 1em">$parser&minus;&gt;get_title
+on that document will return &quot;Hoo::Boy::Wowza -- Stuff
+wow yeah!&quot;. If the document starts with:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =head1 Name
+  Hoo::Boy::W00t &minus;&minus; Stuff B&lt;w00t&gt; yeah!</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Then
+you&rsquo;ll need to pass the <tt>&quot;nocase&quot;</tt>
+option in order to recognize &quot;Name&quot;:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  $parser&minus;&gt;get_title(nocase =&gt; 1);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">In cases where
+get_title can&rsquo;t find the title, it will return
+empty-string (&quot;&quot;).</p>
+
+<p style="margin-left:11%;">my $title_string =
+$parser&minus;&gt;get_short_title</p>
+
+<p style="margin-left:17%;">This is just like get_title,
+except that it returns just the modulename, if the title
+seems to be of the form &quot;SomeModuleName --
+description&quot;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">For example,
+suppose you have a document that starts out:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =head1 NAME
+  Hoo::Boy::Wowza &minus;&minus; Stuff B&lt;wow&gt; yeah!</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">then
+<tt>$parser</tt>&minus;&gt;get_short_title on that document
+will return &quot;Hoo::Boy::Wowza&quot;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">But if the
+document starts out:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =head1 NAME
+  Hooboy, stuff B&lt;wow&gt; yeah!</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">then
+<tt>$parser</tt>&minus;&gt;get_short_title on that document
+will return &quot;Hooboy, stuff wow yeah!&quot;. If the
+document starts with:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  =head1 Name
+  Hoo::Boy::W00t &minus;&minus; Stuff B&lt;w00t&gt; yeah!</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Then
+you&rsquo;ll need to pass the <tt>&quot;nocase&quot;</tt>
+option in order to recognize &quot;Name&quot;:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  $parser&minus;&gt;get_short_title(nocase =&gt; 1);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">If the title
+can&rsquo;t be found, then get_short_title returns
+empty-string (&quot;&quot;).</p>
+
+<p style="margin-left:11%;">$author_name =
+$parser&minus;&gt;get_author</p>
+
+<p style="margin-left:17%;">This works like get_title
+except that it returns the contents of the &quot;=head1
+AUTHOR\n\nParagraph...\n&quot; section, assuming that that
+section isn&rsquo;t terribly long. To recognize a
+&quot;=head1 Author\n\nParagraph\n&quot; section, pass the
+<tt>&quot;nocase&quot;</tt> otpion:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  $parser&minus;&gt;get_author(nocase =&gt; 1);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">(This method
+tolerates &quot; <small>AUTHORS&quot;</small> instead of
+&quot; <small>AUTHOR&quot;</small> too.)</p>
+
+<p style="margin-left:11%;">$description_name =
+$parser&minus;&gt;get_description</p>
+
+<p style="margin-left:17%;">This works like get_title
+except that it returns the contents of the &quot;=head1
+DESCRIPTION\n\nParagraph...\n&quot; section, assuming that
+that section isn&rsquo;t terribly long. To recognize a
+&quot;=head1 Description\n\nParagraph\n&quot; section, pass
+the <tt>&quot;nocase&quot;</tt> otpion:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  $parser&minus;&gt;get_description(nocase =&gt; 1);</pre>
+
+
+<p style="margin-left:11%;">$version_block =
+$parser&minus;&gt;get_version</p>
+
+<p style="margin-left:17%;">This works like get_title
+except that it returns the contents of the &quot;=head1
+VERSION\n\n[ <small>BIG BLOCK</small> ]\n&quot; block. Note
+that this does <small>NOT</small> return the module&rsquo;s
+<tt>$VERSION</tt>!! To recognize a &quot;=head1 Version\n\n[
+<small>BIG BLOCK</small> ]\n&quot; section, pass the
+<tt>&quot;nocase&quot;</tt> otpion:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">  $parser&minus;&gt;get_version(nocase =&gt; 1);</pre>
+
+
+<h2>NOTE
+<a name="NOTE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">You don&rsquo;t
+actually <i>have</i> to define a <tt>&quot;run&quot;</tt>
+method. If you&rsquo;re writing a Pod-formatter class, you
+should define a <tt>&quot;run&quot;</tt> just so that users
+can call <tt>&quot;parse_file&quot;</tt> etc, but you
+don&rsquo;t <i>have</i> to.</p>
+
+<p style="margin-left:11%; margin-top: 1em">And if
+you&rsquo;re not writing a formatter class, but are instead
+just writing a program that does something simple with a
+Pod::PullParser object (and not an object of a subclass),
+then there&rsquo;s no reason to bother subclassing to add a
+<tt>&quot;run&quot;</tt> method.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple::PullParserToken
+-- and its subclasses Pod::Simple::PullParserStartToken,
+Pod::Simple::PullParserTextToken, and
+Pod::Simple::PullParserEndToken.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">HTML::TokeParser,
+which inspired this.</p>
+
+<h2>SUPPORT
+<a name="SUPPORT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Questions or
+discussion about <small>POD</small> and Pod::Simple should
+be sent to the pod&minus;people@perl.org mail list. Send an
+empty email to pod&minus;people&minus;subscribe@perl.org to
+subscribe.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This module is
+managed in an open GitHub repository,
+&lt;https://github.com/theory/pod&minus;simple/&gt;. Feel
+free to fork and contribute, or to clone
+&lt;git://github.com/theory/pod&minus;simple.git&gt; and
+send patches!</p>
+
+<p style="margin-left:11%; margin-top: 1em">Patches against
+Pod::Simple are welcome. Please send bug reports to
+&lt;bug&minus;pod&minus;simple@rt.cpan.org&gt;.</p>
+
+<h2>COPYRIGHT AND DISCLAIMERS
+<a name="COPYRIGHT AND DISCLAIMERS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (c)
+2002 Sean M. Burke.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This library is
+free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This program is
+distributed in the hope that it will be useful, but without
+any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple was
+created by Sean M. Burke &lt;sburke@cpan.org&gt;. But
+don&rsquo;t bother him, he&rsquo;s retired.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Pod::Simple is
+maintained by:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="55%">
+
+
+<p>Allison Randal <tt>&quot;allison@perl.org&quot;</tt></p></td>
+<td width="28%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="55%">
+
+
+<p>Hans Dieter Pearcey
+<tt>&quot;hdp@cpan.org&quot;</tt></p> </td>
+<td width="28%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="55%">
+
+
+<p>David E. Wheeler
+<tt>&quot;dwheeler@cpan.org&quot;</tt></p> </td>
+<td width="28%">
+</td></tr>
+ </table>
+<hr>
+</body>
+</html>

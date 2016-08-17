@@ -1,0 +1,235 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:34:58 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PKCS7_sign</title>
+
+</head>
+<body>
+
+<h1 align="center">PKCS7_sign</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#RETURN VALUES">RETURN VALUES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#HISTORY">HISTORY</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">PKCS7_sign
+&minus; create a PKCS#7 signedData structure</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> #include &lt;openssl/pkcs7.h&gt;
+ PKCS7 *PKCS7_sign(X509 *signcert, EVP_PKEY *pkey, STACK_OF(X509) *certs, BIO *data, int flags);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>PKCS7_sign()</i>
+creates and returns a PKCS#7 signedData structure.
+<b>signcert</b> is the certificate to sign with, <b>pkey</b>
+is the corresponsding private key. <b>certs</b> is an
+optional additional set of certificates to include in the
+PKCS#7 structure (for example any intermediate CAs in the
+chain).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The data to be
+signed is read from <small>BIO</small> <b>data</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>flags</b> is
+an optional set of flags.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Any of the
+following flags (ored together) can be passed in the
+<b>flags</b> parameter.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Many S/MIME
+clients expect the signed content to include valid
+<small>MIME</small> headers. If the
+<b><small>PKCS7_TEXT</small></b> flag is set
+<small>MIME</small> headers for type <b>text/plain</b> are
+prepended to the data.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b><small>PKCS7_NOCERTS</small></b> is set the
+signer&rsquo;s certificate will not be included in the
+<small>PKCS7</small> structure, the signer&rsquo;s
+certificate must still be supplied in the <b>signcert</b>
+parameter though. This can reduce the size of the signature
+if the signers certificate can be obtained by other means:
+for example a previously signed message.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The data being
+signed is included in the <small>PKCS7</small> structure,
+unless <b><small>PKCS7_DETACHED</small></b> is set in which
+case it is omitted. This is used for <small>PKCS7</small>
+detached signatures which are used in S/MIME plaintext
+signed messages for example.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Normally the
+supplied content is translated into <small>MIME</small>
+canonical format (as required by the S/MIME specifications)
+if <b><small>PKCS7_BINARY</small></b> is set no translation
+occurs. This option should be used if the supplied data is
+in binary format otherwise the translation will corrupt
+it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The signedData
+structure includes several PKCS#7 autenticatedAttributes
+including the signing time, the PKCS#7 content type and the
+supported list of ciphers in an SMIMECapabilities attribute.
+If <b><small>PKCS7_NOATTR</small></b> is set then no
+authenticatedAttributes will be used. If
+<b><small>PKCS7_NOSMIMECAP</small></b> is set then just the
+SMIMECapabilities are omitted.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If present the
+SMIMECapabilities attribute indicates support for the
+following algorithms: triple <small>DES, 128</small> bit
+<small>RC2, 64</small> bit <small>RC2, DES</small> and 40
+bit <small>RC2.</small> If any of these algorithms is
+disabled then it will not be included.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the flags
+<b><small>PKCS7_STREAM</small></b> is set then the returned
+<b><small>PKCS7</small></b> structure is just initialized
+ready to perform the signing operation. The signing is
+however <b>not</b> performed and the data to be signed is
+not read from the <b>data</b> parameter. Signing is deferred
+until after the data has been written. In this way data can
+be signed in a single pass.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+<b><small>PKCS7_PARTIAL</small></b> flag is set a partial
+<b><small>PKCS7</small></b> structure is output to which
+additional signers and capabilities can be added before
+finalization.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If the flag
+<b><small>PKCS7_STREAM</small></b> is set the returned
+<b><small>PKCS7</small></b> structure is <b>not</b> complete
+and outputting its contents via a function that does not
+properly finalize the <b><small>PKCS7</small></b> structure
+will give unpredictable results.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Several
+functions including <i>SMIME_write_PKCS7()</i>,
+<i>i2d_PKCS7_bio_stream()</i>,
+<i>PEM_write_bio_PKCS7_stream()</i> finalize the structure.
+Alternatively finalization can be performed by obtaining the
+streaming <small>ASN1 <b>BIO</b></small> directly using
+<i>BIO_new_PKCS7()</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If a signer is
+specified it will use the default digest for the signing
+algorithm. This is <b><small>SHA1</small></b> for both
+<small>RSA</small> and <small>DSA</small> keys.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In OpenSSL
+1.0.0 the <b>certs</b>, <b>signcert</b> and <b>pkey</b>
+parameters can all be <b><small>NULL</small></b> if the
+<b><small>PKCS7_PARTIAL</small></b> flag is set. One or more
+signers can be added using the function
+<b><i>PKCS7_sign_add_signer()</i></b>.
+<b><i>PKCS7_final()</i></b> must also be called to finalize
+the structure if streaming is not enabled. Alternative
+signing digests can also be specified using this method.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In OpenSSL
+1.0.0 if <b>signcert</b> and <b>pkey</b> are
+<small>NULL</small> then a certificates only PKCS#7
+structure is output.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In versions of
+OpenSSL before 1.0.0 the <b>signcert</b> and <b>pkey</b>
+parameters must <b><small>NOT</small></b> be
+<small>NULL.</small></p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Some advanced
+attributes such as counter signatures are not supported.</p>
+
+<h2>RETURN VALUES
+<a name="RETURN VALUES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>PKCS7_sign()</i>
+returns either a valid <small>PKCS7</small> structure or
+<small>NULL</small> if an error occurred. The error can be
+obtained from <i>ERR_get_error</i>(3).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>ERR_get_error</i>(3),
+<i>PKCS7_verify</i>(3)</p>
+
+<h2>HISTORY
+<a name="HISTORY"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>PKCS7_sign()</i>
+was added to OpenSSL 0.9.5</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b><small>PKCS7_PARTIAL</small></b> flag was added in
+OpenSSL 1.0.0</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b><small>PKCS7_STREAM</small></b> flag was added in OpenSSL
+1.0.0</p>
+<hr>
+</body>
+</html>

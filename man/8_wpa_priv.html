@@ -1,0 +1,205 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:41:08 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>WPA_PRIV</title>
+
+</head>
+<body>
+
+<h1 align="center">WPA_PRIV</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#OVERVIEW">OVERVIEW</a><br>
+<a href="#EXAMPLE CONFIGURATION">EXAMPLE CONFIGURATION</a><br>
+<a href="#COMMAND ARGUMENTS">COMMAND ARGUMENTS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#LEGAL">LEGAL</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">wpa_priv
+&minus; wpa_supplicant privilege separation helper</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>wpa_priv</b>
+[ <b>-c</b> <i>ctrl path</i> ] [ <b>-Bdd</b> ] [ <b>-P</b>
+<i>pid file</i> ] [ <b>driver:ifname</b> <i>[driver:ifname
+...]</i> ]</p>
+
+<h2>OVERVIEW
+<a name="OVERVIEW"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>wpa_priv</b>
+is a privilege separation helper that minimizes the size of
+<b>wpa_supplicant</b> code that needs to be run with root
+privileges.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If enabled,
+privileged operations are done in the wpa_priv process while
+leaving rest of the code (e.g., EAP authentication and WPA
+handshakes) to operate in an unprivileged process
+(wpa_supplicant) that can be run as non-root user. Privilege
+separation restricts the effects of potential software
+errors by containing the majority of the code in an
+unprivileged process to avoid the possibility of a full
+system compromise.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>wpa_priv</b>
+needs to be run with network admin privileges (usually, root
+user). It opens a UNIX domain socket for each interface that
+is included on the command line; any other interface will be
+off limits for <b>wpa_supplicant</b> in this kind of
+configuration. After this, <b>wpa_supplicant</b> can be run
+as a non-root user (e.g., all standard users on a laptop or
+as a special non-privileged user account created just for
+this purpose to limit access to user files even
+further).</p>
+
+<h2>EXAMPLE CONFIGURATION
+<a name="EXAMPLE CONFIGURATION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+steps are an example of how to configure <b>wpa_priv</b> to
+allow users in the <b>wpapriv</b> group to communicate with
+<b>wpa_supplicant</b> with privilege separation:</p>
+
+<p style="margin-left:11%; margin-top: 1em">Create user
+group (e.g., wpapriv) and assign users that should be able
+to use wpa_supplicant into that group.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Create
+/var/run/wpa_priv directory for UNIX domain sockets and
+control user access by setting it accessible only for the
+wpapriv group:</p>
+
+<p style="margin-left:22%; margin-top: 1em">mkdir
+/var/run/wpa_priv <br>
+chown root:wpapriv /var/run/wpa_priv <br>
+chmod 0750 /var/run/wpa_priv</p>
+
+<p style="margin-left:11%; margin-top: 1em">Start
+<b>wpa_priv</b> as root (e.g., from system startup scripts)
+with the enabled interfaces configured on the command
+line:</p>
+
+<p style="margin-left:22%; margin-top: 1em">wpa_priv -B -c
+/var/run/wpa_priv -P /var/run/wpa_priv.pid wext:wlan0</p>
+
+<p style="margin-left:11%; margin-top: 1em">Run
+<b>wpa_supplicant</b> as non-root with a user that is in the
+wpapriv group:</p>
+
+<p style="margin-left:22%; margin-top: 1em">wpa_supplicant
+-i ath0 -c wpa_supplicant.conf</p>
+
+<h2>COMMAND ARGUMENTS
+<a name="COMMAND ARGUMENTS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>-c ctrl
+path</b></p>
+
+<p style="margin-left:22%;">Specify the path to wpa_priv
+control directory (Default: /var/run/wpa_priv/).</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>-B</b></p></td>
+<td width="8%"></td>
+<td width="52%">
+
+
+<p>Run as a daemon in the background.</p></td>
+<td width="26%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>-P file</b></p>
+
+<p style="margin-left:22%;">Set the location of the PID
+file.</p>
+
+<p style="margin-left:11%;"><b>driver:ifname [driver:ifname
+...]</b></p>
+
+<p style="margin-left:22%;">The &lt;driver&gt; string
+dictates which of the supported <b>wpa_supplicant</b> driver
+backends is to be used. To get a list of supported driver
+types see wpa_supplicant help (e.g, wpa_supplicant -h). The
+driver backend supported by most good drivers is
+<b>wext</b>.</p>
+
+<p style="margin-left:22%; margin-top: 1em">The
+&lt;ifname&gt; string specifies which network interface is
+to be managed by <b>wpa_supplicant</b> (e.g., wlan0 or
+ath0).</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><b>wpa_priv</b>
+does not use the network interface before
+<b>wpa_supplicant</b> is started, so it is fine to include
+network interfaces that are not available at the time
+wpa_priv is started. wpa_priv can control multiple
+interfaces with one process, but it is also possible to run
+multiple <b>wpa_priv</b> processes at the same time, if
+desired.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>wpa_supplicant</b>(8)</p>
+
+<h2>LEGAL
+<a name="LEGAL"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">wpa_supplicant
+is copyright (c) 2003-2012, Jouni Malinen &lt;j@w1.fi&gt;
+and contributors. All Rights Reserved.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This program is
+licensed under the BSD license (the one with advertisement
+clause removed).</p>
+<hr>
+</body>
+</html>

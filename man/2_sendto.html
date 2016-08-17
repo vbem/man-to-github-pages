@@ -1,0 +1,498 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:49 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SEND</title>
+
+</head>
+<body>
+
+<h1 align="center">SEND</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">send, sendto,
+sendmsg &minus; send a message on a socket</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;sys/types.h&gt; <br>
+#include &lt;sys/socket.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>ssize_t
+send(int</b> <i>sockfd</i><b>, const void
+*</b><i>buf</i><b>, size_t</b> <i>len</i><b>, int</b>
+<i>flags</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>ssize_t
+sendto(int</b> <i>sockfd</i><b>, const void
+*</b><i>buf</i><b>, size_t</b> <i>len</i><b>, int</b>
+<i>flags</i><b>, <br>
+const struct sockaddr *</b><i>dest_addr</i><b>,
+socklen_t</b> <i>addrlen</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>ssize_t
+sendmsg(int</b> <i>sockfd</i><b>, const struct msghdr
+*</b><i>msg</i><b>, int</b> <i>flags</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The system
+calls <b>send</b>(), <b>sendto</b>(), and <b>sendmsg</b>()
+are used to transmit a message to another socket.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>send</b>() call may be used only when the socket is in a
+<i>connected</i> state (so that the intended recipient is
+known). The only difference between <b>send</b>() and
+<b>write</b>(2) is the presence of <i>flags</i>. With a zero
+<i>flags</i> argument, <b>send</b>() is equivalent to
+<b>write</b>(2). Also, the following call</p>
+
+<p style="margin-left:11%; margin-top: 1em">send(sockfd,
+buf, len, flags);</p>
+
+<p style="margin-left:11%; margin-top: 1em">is equivalent
+to</p>
+
+<p style="margin-left:11%; margin-top: 1em">sendto(sockfd,
+buf, len, flags, NULL, 0);</p>
+
+<p style="margin-left:11%; margin-top: 1em">The argument
+<i>sockfd</i> is the file descriptor of the sending
+socket.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b>sendto</b>() is used on a connection-mode
+(<b>SOCK_STREAM</b>, <b>SOCK_SEQPACKET</b>) socket, the
+arguments <i>dest_addr</i> and <i>addrlen</i> are ignored
+(and the error <b>EISCONN</b> may be returned when they are
+not NULL and 0), and the error <b>ENOTCONN</b> is returned
+when the socket was not actually connected. Otherwise, the
+address of the target is given by <i>dest_addr</i> with
+<i>addrlen</i> specifying its size. For <b>sendmsg</b>(),
+the address of the target is given by <i>msg.msg_name</i>,
+with <i>msg.msg_namelen</i> specifying its size.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+<b>send</b>() and <b>sendto</b>(), the message is found in
+<i>buf</i> and has length <i>len</i>. For <b>sendmsg</b>(),
+the message is pointed to by the elements of the array
+<i>msg.msg_iov</i>. The <b>sendmsg</b>() call also allows
+sending ancillary data (also known as control
+information).</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the message
+is too long to pass atomically through the underlying
+protocol, the error <b>EMSGSIZE</b> is returned, and the
+message is not transmitted.</p>
+
+<p style="margin-left:11%; margin-top: 1em">No indication
+of failure to deliver is implicit in a <b>send</b>().
+Locally detected errors are indicated by a return value of
+&minus;1.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When the
+message does not fit into the send buffer of the socket,
+<b>send</b>() normally blocks, unless the socket has been
+placed in nonblocking I/O mode. In nonblocking mode it would
+fail with the error <b>EAGAIN</b> or <b>EWOULDBLOCK</b> in
+this case. The <b>select</b>(2) call may be used to
+determine when it is possible to send more data.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>flags</i> argument is the bitwise OR of zero or more of
+the following flags. <b><br>
+MSG_CONFIRM</b> (Since Linux 2.3.15)</p>
+
+<p style="margin-left:22%;">Tell the link layer that
+forward progress happened: you got a successful reply from
+the other side. If the link layer doesn&rsquo;t get this it
+will regularly reprobe the neighbor (e.g., via a unicast
+ARP). Only valid on <b>SOCK_DGRAM</b> and <b>SOCK_RAW</b>
+sockets and currently implemented only for IPv4 and IPv6.
+See <b>arp</b>(7) for details.</p>
+
+<p style="margin-left:11%;"><b>MSG_DONTROUTE</b></p>
+
+<p style="margin-left:22%;">Don&rsquo;t use a gateway to
+send out the packet, send to hosts only on directly
+connected networks. This is usually used only by diagnostic
+or routing programs. This is defined only for protocol
+families that route; packet sockets don&rsquo;t.</p>
+
+<p style="margin-left:11%;"><b>MSG_DONTWAIT</b> (since
+Linux 2.2)</p>
+
+<p style="margin-left:22%;">Enables nonblocking operation;
+if the operation would block, <b>EAGAIN</b> or
+<b>EWOULDBLOCK</b> is returned (this can also be enabled
+using the <b>O_NONBLOCK</b> flag with the <b>F_SETFL
+fcntl</b>(2)).</p>
+
+<p style="margin-left:11%;"><b>MSG_EOR</b> (since Linux
+2.2)</p>
+
+<p style="margin-left:22%;">Terminates a record (when this
+notion is supported, as for sockets of type
+<b>SOCK_SEQPACKET</b>).</p>
+
+<p style="margin-left:11%;"><b>MSG_MORE</b> (Since Linux
+2.4.4)</p>
+
+<p style="margin-left:22%;">The caller has more data to
+send. This flag is used with TCP sockets to obtain the same
+effect as the <b>TCP_CORK</b> socket option (see
+<b>tcp</b>(7)), with the difference that this flag can be
+set on a per-call basis.</p>
+
+<p style="margin-left:22%; margin-top: 1em">Since Linux
+2.6, this flag is also supported for UDP sockets, and
+informs the kernel to package all of the data sent in calls
+with this flag set into a single datagram which is
+transmitted only when a call is performed that does not
+specify this flag. (See also the <b>UDP_CORK</b> socket
+option described in <b>udp</b>(7).)</p>
+
+<p style="margin-left:11%;"><b>MSG_NOSIGNAL</b> (since
+Linux 2.2)</p>
+
+<p style="margin-left:22%;">Requests not to send
+<b>SIGPIPE</b> on errors on stream oriented sockets when the
+other end breaks the connection. The <b>EPIPE</b> error is
+still returned.</p>
+
+<p style="margin-left:11%;"><b>MSG_OOB</b></p>
+
+<p style="margin-left:22%;">Sends <i>out-of-band</i> data
+on sockets that support this notion (e.g., of type
+<b>SOCK_STREAM</b>); the underlying protocol must also
+support <i>out-of-band</i> data.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The definition
+of the <i>msghdr</i> structure follows. See <b>recv</b>(2)
+and below for an exact description of its fields.</p>
+
+<p style="margin-left:17%; margin-top: 1em">struct msghdr {
+<br>
+void *msg_name; /* optional address */ <br>
+socklen_t msg_namelen; /* size of address */ <br>
+struct iovec *msg_iov; /* scatter/gather array */ <br>
+size_t msg_iovlen; /* # elements in msg_iov */ <br>
+void *msg_control; /* ancillary data, see below */ <br>
+size_t msg_controllen; /* ancillary data buffer len */ <br>
+int msg_flags; /* flags on received message */ <br>
+};</p>
+
+<p style="margin-left:11%; margin-top: 1em">You may send
+control information using the <i>msg_control</i> and
+<i>msg_controllen</i> members. The maximum control buffer
+length the kernel can process is limited per socket by the
+value in <i>/proc/sys/net/core/optmem_max</i>; see
+<b>socket</b>(7).</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success,
+these calls return the number of characters sent. On error,
+&minus;1 is returned, and <i>errno</i> is set
+appropriately.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These are some
+standard errors generated by the socket layer. Additional
+errors may be generated and returned from the underlying
+protocol modules; see their respective manual pages.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EACCES</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>(For UNIX domain sockets, which are identified by
+pathname) Write permission is denied on the destination
+socket file, or search permission is denied for one of the
+directories the path prefix. (See
+<b>path_resolution</b>(7).)</p> </td></tr>
+</table>
+
+<p style="margin-left:22%; margin-top: 1em">(For UDP
+sockets) An attempt was made to send to a network/broadcast
+address as though it was a unicast address.</p>
+
+<p style="margin-left:11%;"><b>EAGAIN</b> or
+<b>EWOULDBLOCK</b></p>
+
+<p style="margin-left:22%;">The socket is marked
+nonblocking and the requested operation would block.
+POSIX.1-2001 allows either error to be returned for this
+case, and does not require these constants to have the same
+value, so a portable application should check for both
+possibilities.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>EBADF</b></p></td>
+<td width="4%"></td>
+<td width="55%">
+
+
+<p>An invalid descriptor was specified.</p></td>
+<td width="23%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>ECONNRESET</b></p>
+
+<p style="margin-left:22%;">Connection reset by peer.</p>
+
+<p style="margin-left:11%;"><b>EDESTADDRREQ</b></p>
+
+<p style="margin-left:22%;">The socket is not
+connection-mode, and no peer address is set.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>An invalid user space address was specified for an
+argument.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINTR</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>A signal occurred before any data was transmitted; see
+<b>signal</b>(7).</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Invalid argument passed.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>EISCONN</b></p>
+
+<p style="margin-left:22%;">The connection-mode socket was
+connected already but a recipient was specified. (Now either
+this error is returned, or the recipient specification is
+ignored.)</p>
+
+<p style="margin-left:11%;"><b>EMSGSIZE</b></p>
+
+<p style="margin-left:22%;">The socket type requires that
+message be sent atomically, and the size of the message to
+be sent made this impossible.</p>
+
+<p style="margin-left:11%;"><b>ENOBUFS</b></p>
+
+<p style="margin-left:22%;">The output queue for a network
+interface was full. This generally indicates that the
+interface has stopped sending, but may be caused by
+transient congestion. (Normally, this does not occur in
+Linux. Packets are just silently dropped when a device queue
+overflows.)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="30%">
+
+
+<p>No memory available.</p></td>
+<td width="48%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>ENOTCONN</b></p>
+
+<p style="margin-left:22%;">The socket is not connected,
+and no target has been given.</p>
+
+<p style="margin-left:11%;"><b>ENOTSOCK</b></p>
+
+<p style="margin-left:22%;">The argument <i>sockfd</i> is
+not a socket.</p>
+
+<p style="margin-left:11%;"><b>EOPNOTSUPP</b></p>
+
+<p style="margin-left:22%;">Some bit in the <i>flags</i>
+argument is inappropriate for the socket type.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>EPIPE</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>The local end has been shut down on a connection
+oriented socket. In this case the process will also receive
+a <b>SIGPIPE</b> unless <b>MSG_NOSIGNAL</b> is set.</p></td></tr>
+</table>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">4.4BSD, SVr4,
+POSIX.1-2001. These function calls appeared in 4.2BSD.</p>
+
+<p style="margin-left:11%; margin-top: 1em">POSIX.1-2001
+describes only the <b>MSG_OOB</b> and <b>MSG_EOR</b> flags.
+POSIX.1-2008 adds a specification of <b>MSG_NOSIGNAL</b>.
+The <b>MSG_CONFIRM</b> flag is a Linux extension.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The prototypes
+given above follow the Single UNIX Specification, as glibc2
+also does; the <i>flags</i> argument was <i>int</i> in 4.x
+BSD, but <i>unsigned int</i> in libc4 and libc5; the
+<i>len</i> argument was <i>int</i> in 4.x BSD and libc4, but
+<i>size_t</i> in libc5; the <i>addrlen</i> argument was
+<i>int</i> in 4.x BSD and libc4 and libc5. See also
+<b>accept</b>(2).</p>
+
+<p style="margin-left:11%; margin-top: 1em">According to
+POSIX.1-2001, the <i>msg_controllen</i> field of the
+<i>msghdr</i> structure should be typed as <i>socklen_t</i>,
+but glibc currently types it as <i>size_t</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See
+<b>sendmmsg</b>(2) for information about a Linux-specific
+system call that can be used to transmit multiple datagrams
+in a single call.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Linux may
+return <b>EPIPE</b> instead of <b>ENOTCONN</b>.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">An example of
+the use of <b>sendto</b>() is shown in
+<b>getaddrinfo</b>(3).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>fcntl</b>(2),
+<b>getsockopt</b>(2), <b>recv</b>(2), <b>select</b>(2),
+<b>sendfile</b>(2), <b>sendmmsg</b>(2), <b>shutdown</b>(2),
+<b>socket</b>(2), <b>write</b>(2), <b>cmsg</b>(3),
+<b>ip</b>(7), <b>socket</b>(7), <b>tcp</b>(7),
+<b>udp</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

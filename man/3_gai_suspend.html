@@ -1,0 +1,690 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:23:38 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>GETADDRINFO_A</title>
+
+</head>
+<body>
+
+<h1 align="center">GETADDRINFO_A</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">getaddrinfo_a,
+gai_suspend, gai_error, gai_cancel &minus; asynchronous
+network address and service translation</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#define
+_GNU_SOURCE</b> /* See feature_test_macros(7) */ <b><br>
+#include &lt;netdb.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+getaddrinfo_a(int</b> <i>mode</i><b>, struct gaicb
+*</b><i>list[]</i><b>, <br>
+int</b> <i>nitems</i><b>, struct sigevent
+*</b><i>sevp</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+gai_suspend(struct gaicb *</b><i>list[]</i><b>, int</b>
+<i>nitems</i><b>, <br>
+struct timespec *</b><i>timeout</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+gai_error(struct gaicb *</b><i>req</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+gai_cancel(struct gaicb *</b><i>req</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">Link with
+<i>&minus;lanl</i>.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>getaddrinfo_a</b>() function performs the same task as
+<b>getaddrinfo</b>(3), but allows multiple name look-ups to
+be performed asynchronously, with optional notification on
+completion of look-up operations.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>mode</i>
+argument has one of the following values: <b><br>
+GAI_WAIT</b></p>
+
+<p style="margin-left:22%;">Perform the look-ups
+synchronously. The call blocks until the look-ups have
+completed.</p>
+
+<p style="margin-left:11%;"><b>GAI_NOWAIT</b></p>
+
+<p style="margin-left:22%;">Perform the look-ups
+asynchronously. The call returns immediately, and the
+requests are resolved in the background. See the discussion
+of the <i>sevp</i> argument below.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The array
+<i>list</i> specifies the look-up requests to process. The
+<i>nitems</i> argument specifies the number of elements in
+<i>list</i>. The requested look-up operations are started in
+parallel. NULL elements in <i>list</i> are ignored. Each
+request is described by a <i>gaicb</i> structure, defined as
+follows:</p>
+
+<p style="margin-left:17%; margin-top: 1em">struct gaicb {
+<br>
+const char *ar_name; <br>
+const char *ar_service; <br>
+const struct addrinfo *ar_request; <br>
+struct addrinfo *ar_result; <br>
+};</p>
+
+<p style="margin-left:11%; margin-top: 1em">The elements of
+this structure correspond to the arguments of
+<b>getaddrinfo</b>(3). Thus, <i>ar_name</i> corresponds to
+the <i>node</i> argument and <i>ar_service</i> to the
+<i>service</i> argument, identifying an Internet host and a
+service. The <i>ar_request</i> element corresponds to the
+<i>hints</i> argument, specifying the criteria for selecting
+the returned socket address structures. Finally,
+<i>ar_result</i> corresponds to the <i>res</i> argument; you
+do not need to initialize this element, it will be
+automatically set when the request is resolved. The
+<i>addrinfo</i> structure referenced by the last two
+elements is described in <b>getaddrinfo</b>(3).</p>
+
+<p style="margin-left:11%; margin-top: 1em">When
+<i>mode</i> is specified as <b>GAI_NOWAIT</b>, notifications
+about resolved requests can be obtained by employing the
+<i>sigevent</i> structure pointed to by the <i>sevp</i>
+argument. For the definition and general details of this
+structure, see <b>sigevent</b>(7). The
+<i>sevp&minus;&gt;sigev_notify</i> field can have the
+following values: <b><br>
+SIGEV_NONE</b></p>
+
+<p style="margin-left:22%;">Don&rsquo;t provide any
+notification.</p>
+
+<p style="margin-left:11%;"><b>SIGEV_SIGNAL</b></p>
+
+<p style="margin-left:22%;">When a look-up completes,
+generate the signal <i>sigev_signo</i> for the process. See
+<b>sigevent</b>(7) for general details. The <i>si_code</i>
+field of the <i>siginfo_t</i> structure will be set to
+<b>SI_ASYNCNL</b>.</p>
+
+<p style="margin-left:11%;"><b>SIGEV_THREAD</b></p>
+
+<p style="margin-left:22%;">When a look-up completes,
+invoke <i>sigev_notify_function</i> as if it were the start
+function of a new thread. See <b>sigevent</b>(7) for
+details.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+<b>SIGEV_SIGNAL</b> and <b>SIGEV_THREAD</b>, it may be
+useful to point <i>sevp&minus;&gt;sigev_value.sival_ptr</i>
+to <i>list</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>gai_suspend</b>() function suspends execution of the
+calling thread, waiting for the completion of one or more
+requests in the array <i>list</i>. The <i>nitems</i>
+argument specifies the size of the array <i>list</i>. The
+call blocks until one of the following occurs:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>One or more of the operations in <i>list</i>
+completes.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>The call is interrupted by a signal that is caught.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>The time interval specified in <i>timeout</i> elapses.
+This argument specifies a timeout in seconds plus
+nanoseconds (see <b>nanosleep</b>(2) for details of the
+<i>timespec</i> structure). If <i>timeout</i> is NULL, then
+the call blocks indefinitely (until one of the events above
+occurs).</p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">No explicit
+indication of which request was completed is given; you must
+determine which request(s) have completed by iterating with
+<b>gai_error</b>() over the list of requests.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>gai_error</b>() function returns the status of the
+request <i>req</i>: either <b>EAI_INPROGRESS</b> if the
+request was not completed yet, 0 if it was handled
+successfully, or an error code if the request could not be
+resolved.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>gai_cancel</b>() function cancels the request <i>req</i>.
+If the request has been canceled successfully, the error
+status of the request will be set to <b>EAI_CANCELLED</b>
+and normal asynchronous notification will be performed. The
+request cannot be canceled if it is currently being
+processed; in that case, it will be handled as if
+<b>gai_cancel</b>() has never been called. If <i>req</i> is
+NULL, an attempt is made to cancel all outstanding requests
+that the process has made.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>getaddrinfo_a</b>() function returns 0 if all of the
+requests have been enqueued successfully, or one of the
+following nonzero error codes: <b><br>
+EAI_AGAIN</b></p>
+
+<p style="margin-left:22%;">The resources necessary to
+enqueue the look-up requests were not available. The
+application may check the error status of each request to
+determine which ones failed.</p>
+
+<p style="margin-left:11%;"><b>EAI_MEMORY</b></p>
+
+<p style="margin-left:22%;">Out of memory.</p>
+
+<p style="margin-left:11%;"><b>EAI_SYSTEM</b></p>
+
+<p style="margin-left:22%;"><i>mode</i> is invalid.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>gai_suspend</b>() function returns 0 if at least one of
+the listed requests has been completed. Otherwise, it
+returns one of the following nonzero error codes: <b><br>
+EAI_AGAIN</b></p>
+
+<p style="margin-left:22%;">The given timeout expired
+before any of the requests could be completed.</p>
+
+<p style="margin-left:11%;"><b>EAI_ALLDONE</b></p>
+
+<p style="margin-left:22%;">There were no actual requests
+given to the function.</p>
+
+<p style="margin-left:11%;"><b>EAI_INTR</b></p>
+
+<p style="margin-left:22%;">A signal has interrupted the
+function. Note that this interruption might have been caused
+by signal notification of some completed look-up
+request.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>gai_error</b>() function can return <b>EAI_INPROGRESS</b>
+for an unfinished look-up request, 0 for a successfully
+completed look-up (as described above), one of the error
+codes that could be returned by <b>getaddrinfo</b>(3), or
+the error code <b>EAI_CANCELLED</b> if the request has been
+canceled explicitly before it could be finished.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>gai_cancel</b>() function can return one of these values:
+<b><br>
+EAI_CANCELLED</b></p>
+
+<p style="margin-left:22%;">The request has been canceled
+successfully.</p>
+
+<p style="margin-left:11%;"><b>EAI_NOTCANCELLED</b></p>
+
+<p style="margin-left:22%;">The request has not been
+canceled.</p>
+
+<p style="margin-left:11%;"><b>EAI_ALLDONE</b></p>
+
+<p style="margin-left:22%;">The request has already
+completed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>gai_strerror</b>(3) function translates these error codes
+to a human readable string, suitable for error
+reporting.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These functions
+are GNU extensions; they first appeared in glibc in version
+2.2.3.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The interface
+of <b>getaddrinfo_a</b>() was modeled after the
+<b>lio_listio</b>(3) interface.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Two examples
+are provided: a simple example that resolves several
+requests in parallel synchronously, and a complex example
+showing some of the asynchronous capabilities.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Synchronous
+example</b> <br>
+The program below simply resolves several hostnames in
+parallel, giving a speed-up compared to resolving the
+hostnames sequentially using <b>getaddrinfo</b>(3). The
+program might be used like this:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ <b>./a.out
+ftp.us.kernel.org enoent.linuxfoundation.org gnu.cz</b> <br>
+ftp.us.kernel.org: 128.30.2.36 <br>
+enoent.linuxfoundation.org: Name or service not known <br>
+gnu.cz: 87.236.197.13</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here is the
+program source code</p>
+
+<p style="margin-left:11%; margin-top: 1em">#define
+_GNU_SOURCE <br>
+#include &lt;netdb.h&gt; <br>
+#include &lt;stdio.h&gt; <br>
+#include &lt;stdlib.h&gt; <br>
+#include &lt;string.h&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">int <br>
+main(int argc, char *argv[]) <br>
+{ <br>
+int i, ret; <br>
+struct gaicb *reqs[argc &minus; 1]; <br>
+char host[NI_MAXHOST]; <br>
+struct addrinfo *res;</p>
+
+<p style="margin-left:11%; margin-top: 1em">if (argc &lt;
+2) { <br>
+fprintf(stderr, &quot;Usage: %s HOST...\n&quot;, argv[0]);
+<br>
+exit(EXIT_FAILURE); <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">for (i = 0; i
+&lt; argc &minus; 1; i++) { <br>
+reqs[i] = malloc(sizeof(*reqs[0])); <br>
+if (reqs[i] == NULL) { <br>
+perror(&quot;malloc&quot;); <br>
+exit(EXIT_FAILURE); <br>
+} <br>
+memset(reqs[i], 0, sizeof(*reqs[0])); <br>
+reqs[i]&minus;&gt;ar_name = argv[i + 1]; <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">ret =
+getaddrinfo_a(GAI_WAIT, reqs, argc &minus; 1, NULL); <br>
+if (ret != 0) { <br>
+fprintf(stderr, &quot;getaddrinfo_a() failed: %s\n&quot;,
+<br>
+gai_strerror(ret)); <br>
+exit(EXIT_FAILURE); <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">for (i = 0; i
+&lt; argc &minus; 1; i++) { <br>
+printf(&quot;%s: &quot;, reqs[i]&minus;&gt;ar_name); <br>
+ret = gai_error(reqs[i]); <br>
+if (ret == 0) { <br>
+res = reqs[i]&minus;&gt;ar_result;</p>
+
+<p style="margin-left:11%; margin-top: 1em">ret =
+getnameinfo(res&minus;&gt;ai_addr, res&minus;&gt;ai_addrlen,
+<br>
+host, sizeof(host), <br>
+NULL, 0, NI_NUMERICHOST); <br>
+if (ret != 0) { <br>
+fprintf(stderr, &quot;getnameinfo() failed: %s\n&quot;, <br>
+gai_strerror(ret)); <br>
+exit(EXIT_FAILURE); <br>
+} <br>
+puts(host);</p>
+
+<p style="margin-left:11%; margin-top: 1em">} else { <br>
+puts(gai_strerror(ret)); <br>
+} <br>
+} <br>
+exit(EXIT_SUCCESS); <br>
+}</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Asynchronous
+example</b> <br>
+This example shows a simple interactive
+<b>getaddrinfo_a</b>() front-end. The notification facility
+is not demonstrated.</p>
+
+<p style="margin-left:11%; margin-top: 1em">An example
+session might look like this:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$
+<b>./a.out</b> <br>
+&gt; a ftp.us.kernel.org enoent.linuxfoundation.org gnu.cz
+<br>
+&gt; c 2 <br>
+[2] gnu.cz: Request not canceled <br>
+&gt; w 0 1 <br>
+[00] ftp.us.kernel.org: Finished <br>
+&gt; l <br>
+[00] ftp.us.kernel.org: 216.165.129.139 <br>
+[01] enoent.linuxfoundation.org: Processing request in
+progress <br>
+[02] gnu.cz: 87.236.197.13 <br>
+&gt; l <br>
+[00] ftp.us.kernel.org: 216.165.129.139 <br>
+[01] enoent.linuxfoundation.org: Name or service not known
+<br>
+[02] gnu.cz: 87.236.197.13</p>
+
+<p style="margin-left:11%; margin-top: 1em">The program
+source is as follows:</p>
+
+<p style="margin-left:11%; margin-top: 1em">#define
+_GNU_SOURCE <br>
+#include &lt;netdb.h&gt; <br>
+#include &lt;stdio.h&gt; <br>
+#include &lt;stdlib.h&gt; <br>
+#include &lt;string.h&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">static struct
+gaicb **reqs = NULL; <br>
+static int nreqs = 0;</p>
+
+<p style="margin-left:11%; margin-top: 1em">static char *
+<br>
+getcmd(void) <br>
+{ <br>
+static char buf[256];</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">fputs(&quot;&gt;
+&quot;, stdout); fflush(stdout); <br>
+if (fgets(buf, sizeof(buf), stdin) == NULL) <br>
+return NULL;</p>
+
+<p style="margin-left:11%; margin-top: 1em">if
+(buf[strlen(buf) &minus; 1] == '\n') <br>
+buf[strlen(buf) &minus; 1] = 0;</p>
+
+<p style="margin-left:11%; margin-top: 1em">return buf;
+<br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* Add requests
+for specified hostnames */ <br>
+static void <br>
+add_requests(void) <br>
+{ <br>
+int nreqs_base = nreqs; <br>
+char *host; <br>
+int ret;</p>
+
+<p style="margin-left:11%; margin-top: 1em">while ((host =
+strtok(NULL, &quot; &quot;))) { <br>
+nreqs++; <br>
+reqs = realloc(reqs, nreqs * sizeof(reqs[0]));</p>
+
+<p style="margin-left:11%; margin-top: 1em">reqs[nreqs
+&minus; 1] = calloc(1, sizeof(*reqs[0])); <br>
+reqs[nreqs &minus; 1]&minus;&gt;ar_name = strdup(host); <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* Queue
+nreqs_base..nreqs requests. */</p>
+
+<p style="margin-left:11%; margin-top: 1em">ret =
+getaddrinfo_a(GAI_NOWAIT, &amp;reqs[nreqs_base], <br>
+nreqs &minus; nreqs_base, NULL); <br>
+if (ret) { <br>
+fprintf(stderr, &quot;getaddrinfo_a() failed: %s\n&quot;,
+<br>
+gai_strerror(ret)); <br>
+exit(EXIT_FAILURE); <br>
+} <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* Wait until
+at least one of specified requests completes */ <br>
+static void <br>
+wait_requests(void) <br>
+{ <br>
+char *id; <br>
+int i, ret, n; <br>
+struct gaicb const **wait_reqs = calloc(nreqs,
+sizeof(*wait_reqs)); <br>
+/* NULL elements are ignored by gai_suspend(). */</p>
+
+<p style="margin-left:11%; margin-top: 1em">while ((id =
+strtok(NULL, &quot; &quot;)) != NULL) { <br>
+n = atoi(id);</p>
+
+<p style="margin-left:11%; margin-top: 1em">if (n &gt;=
+nreqs) { <br>
+printf(&quot;Bad request number: %s\n&quot;, id); <br>
+return; <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">wait_reqs[n] =
+reqs[n]; <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">ret =
+gai_suspend(wait_reqs, nreqs, NULL); <br>
+if (ret) { <br>
+printf(&quot;gai_suspend(): %s\n&quot;, gai_strerror(ret));
+<br>
+return; <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">for (i = 0; i
+&lt; nreqs; i++) { <br>
+if (wait_reqs[i] == NULL) <br>
+continue;</p>
+
+<p style="margin-left:11%; margin-top: 1em">ret =
+gai_error(reqs[i]); <br>
+if (ret == EAI_INPROGRESS) <br>
+continue;</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">printf(&quot;[%02d]
+%s: %s\n&quot;, i, reqs[i]&minus;&gt;ar_name, <br>
+ret == 0 ? &quot;Finished&quot; : gai_strerror(ret)); <br>
+} <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* Cancel
+specified requests */ <br>
+static void <br>
+cancel_requests(void) <br>
+{ <br>
+char *id; <br>
+int ret, n;</p>
+
+<p style="margin-left:11%; margin-top: 1em">while ((id =
+strtok(NULL, &quot; &quot;)) != NULL) { <br>
+n = atoi(id);</p>
+
+<p style="margin-left:11%; margin-top: 1em">if (n &gt;=
+nreqs) { <br>
+printf(&quot;Bad request number: %s\n&quot;, id); <br>
+return; <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">ret =
+gai_cancel(reqs[n]); <br>
+printf(&quot;[%s] %s: %s\n&quot;, id,
+reqs[atoi(id)]&minus;&gt;ar_name, <br>
+gai_strerror(ret)); <br>
+} <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* List all
+requests */ <br>
+static void <br>
+list_requests(void) <br>
+{ <br>
+int i, ret; <br>
+char host[NI_MAXHOST]; <br>
+struct addrinfo *res;</p>
+
+<p style="margin-left:11%; margin-top: 1em">for (i = 0; i
+&lt; nreqs; i++) { <br>
+printf(&quot;[%02d] %s: &quot;, i,
+reqs[i]&minus;&gt;ar_name); <br>
+ret = gai_error(reqs[i]);</p>
+
+<p style="margin-left:11%; margin-top: 1em">if (!ret) {
+<br>
+res = reqs[i]&minus;&gt;ar_result;</p>
+
+<p style="margin-left:11%; margin-top: 1em">ret =
+getnameinfo(res&minus;&gt;ai_addr, res&minus;&gt;ai_addrlen,
+<br>
+host, sizeof(host), <br>
+NULL, 0, NI_NUMERICHOST); <br>
+if (ret) { <br>
+fprintf(stderr, &quot;getnameinfo() failed: %s\n&quot;, <br>
+gai_strerror(ret)); <br>
+exit(EXIT_FAILURE); <br>
+} <br>
+puts(host); <br>
+} else { <br>
+puts(gai_strerror(ret)); <br>
+} <br>
+} <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">int <br>
+main(int argc, char *argv[]) <br>
+{ <br>
+char *cmdline; <br>
+char *cmd;</p>
+
+<p style="margin-left:11%; margin-top: 1em">while ((cmdline
+= getcmd()) != NULL) { <br>
+cmd = strtok(cmdline, &quot; &quot;);</p>
+
+<p style="margin-left:11%; margin-top: 1em">if (cmd ==
+NULL) { <br>
+list_requests(); <br>
+} else { <br>
+switch (cmd[0]) { <br>
+case 'a': <br>
+add_requests(); <br>
+break; <br>
+case 'w': <br>
+wait_requests(); <br>
+break; <br>
+case 'c': <br>
+cancel_requests(); <br>
+break; <br>
+case 'l': <br>
+list_requests(); <br>
+break; <br>
+default: <br>
+fprintf(stderr, &quot;Bad command: %c\n&quot;, cmd[0]); <br>
+break; <br>
+} <br>
+} <br>
+} <br>
+exit(EXIT_SUCCESS); <br>
+}</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>getaddrinfo</b>(3),
+<b>inet</b>(3), <b>lio_listio</b>(3), <b>hostname</b>(7),
+<b>ip</b>(7), <b>sigevent</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

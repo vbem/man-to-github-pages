@@ -1,0 +1,240 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:35:28 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SSL_shutdown</title>
+
+</head>
+<body>
+
+<h1 align="center">SSL_shutdown</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#RETURN VALUES">RETURN VALUES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">SSL_shutdown
+&minus; shut down a TLS/SSL connection</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> #include &lt;openssl/ssl.h&gt;
+ int SSL_shutdown(SSL *ssl);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>SSL_shutdown()</i>
+shuts down an active <small>TLS/SSL</small> connection. It
+sends the &quot;close notify&quot; shutdown alert to the
+peer.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>SSL_shutdown()</i>
+tries to send the &quot;close notify&quot; shutdown alert to
+the peer. Whether the operation succeeds or not, the
+<small>SSL_SENT_SHUTDOWN</small> flag is set and a currently
+open session is considered closed and good and will be kept
+in the session cache for further reuse.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The shutdown
+procedure consists of 2 steps: the sending of the
+&quot;close notify&quot; shutdown alert and the reception of
+the peer&rsquo;s &quot;close notify&quot; shutdown alert.
+According to the <small>TLS</small> standard, it is
+acceptable for an application to only send its shutdown
+alert and then close the underlying connection without
+waiting for the peer&rsquo;s response (this way resources
+can be saved, as the process can already terminate or serve
+another connection). When the underlying connection shall be
+used for more communications, the complete shutdown
+procedure (bidirectional &quot;close notify&quot; alerts)
+must be performed, so that the peers stay synchronized.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>SSL_shutdown()</i>
+supports both uni&minus; and bidirectional shutdown by its 2
+step behaviour. <br>
+When the application is the first party to send the
+&quot;close notify&quot; <br>
+alert, <i>SSL_shutdown()</i> will only send the alert and
+then set the <small><br>
+SSL_SENT_SHUTDOWN</small> flag (so that the session is
+considered good and will <br>
+be kept in cache). <i>SSL_shutdown()</i> will then return
+with 0. If a <br>
+unidirectional shutdown is enough (the underlying connection
+shall be <br>
+closed anyway), this first call to <i>SSL_shutdown()</i> is
+sufficient. In <br>
+order to complete the bidirectional shutdown handshake,
+<i>SSL_shutdown()</i> <br>
+must be called again. The second call will make
+<i>SSL_shutdown()</i> wait for <br>
+the peer&rsquo;s &quot;close notify&quot; shutdown alert. On
+success, the second call <br>
+to <i>SSL_shutdown()</i> will return with 1. <br>
+If the peer already sent the &quot;close notify&quot; alert
+<b>and</b> it was already <br>
+processed implicitly inside another function
+(<i>SSL_read</i>(3)), the <small><br>
+SSL_RECEIVED_SHUTDOWN</small> flag is set.
+<i>SSL_shutdown()</i> will send the &quot;close <br>
+notify&quot; alert, set the <small>SSL_SENT_SHUTDOWN</small>
+flag and will immediately <br>
+return with 1. Whether <small>SSL_RECEIVED_SHUTDOWN</small>
+is already set can be <br>
+checked using the <i>SSL_get_shutdown()</i> (see also
+<i>SSL_set_shutdown</i>(3) <br>
+call.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is therefore
+recommended, to check the return value of
+<i>SSL_shutdown()</i> and call <i>SSL_shutdown()</i> again,
+if the bidirectional shutdown is not yet complete (return
+value of the first call is 0). As the shutdown is not
+specially handled in the SSLv2 protocol,
+<i>SSL_shutdown()</i> will succeed on the first call.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The behaviour
+of <i>SSL_shutdown()</i> additionally depends on the
+underlying <small>BIO.</small></p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+underlying <small>BIO</small> is <b>blocking</b>,
+<i>SSL_shutdown()</i> will only return once the handshake
+step has been finished or an error occurred.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+underlying <small>BIO</small> is <b>non-blocking</b>,
+<i>SSL_shutdown()</i> will also return when the underlying
+<small>BIO</small> could not satisfy the needs of
+<i>SSL_shutdown()</i> to continue the handshake. In this
+case a call to <i>SSL_get_error()</i> with the return value
+of <i>SSL_shutdown()</i> will yield
+<b><small>SSL_ERROR_WANT_READ</small></b> or
+<b><small>SSL_ERROR_WANT_WRITE</small></b> . The calling
+process then must repeat the call after taking appropriate
+action to satisfy the needs of <i>SSL_shutdown()</i>. The
+action depends on the underlying <small>BIO.</small> When
+using a non-blocking socket, nothing is to be done, but
+<i>select()</i> can be used to check for the required
+condition. When using a buffering <small>BIO,</small> like a
+<small>BIO</small> pair, data must be written into or
+retrieved out of the <small>BIO</small> before being able to
+continue.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>SSL_shutdown()</i>
+can be modified to only set the connection to
+&quot;shutdown&quot; state but not actually send the
+&quot;close notify&quot; alert messages, see
+<i>SSL_CTX_set_quiet_shutdown</i>(3). When &quot;quiet
+shutdown&quot; is enabled, <i>SSL_shutdown()</i> will always
+succeed and return 1.</p>
+
+<h2>RETURN VALUES
+<a name="RETURN VALUES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+return values can occur:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>0</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>The shutdown is not yet finished. Call
+<i>SSL_shutdown()</i> for a second time, if a bidirectional
+shutdown shall be performed. The output of
+<i>SSL_get_error</i>(3) may be misleading, as an erroneous
+<small>SSL_ERROR_SYSCALL</small> may be flagged even though
+no error occurred.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>1</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>The shutdown was successfully completed. The &quot;close
+notify&quot; alert was sent and the peer&rsquo;s &quot;close
+notify&quot; alert was received.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>&minus;1</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>The shutdown was not successful because a fatal error
+occurred either at the protocol level or a connection
+failure occurred. It can also occur if action is need to
+continue the operation for non-blocking BIOs. Call
+<i>SSL_get_error</i>(3) with the return value <b>ret</b> to
+find out the reason.</p></td></tr>
+</table>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>SSL_get_error</i>(3),
+<i>SSL_connect</i>(3), <i>SSL_accept</i>(3),
+<i>SSL_set_shutdown</i>(3),
+<i>SSL_CTX_set_quiet_shutdown</i>(3), <i>SSL_clear</i>(3),
+<i>SSL_free</i>(3), <i>ssl</i>(3), <i>bio</i>(3)</p>
+<hr>
+</body>
+</html>

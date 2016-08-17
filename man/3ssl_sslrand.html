@@ -1,0 +1,309 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:35:58 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>rand</title>
+
+</head>
+<body>
+
+<h1 align="center">rand</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#INTERNALS">INTERNALS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">rand &minus;
+pseudo&minus;random number generator</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> #include &lt;openssl/rand.h&gt;
+ int  RAND_set_rand_engine(ENGINE *engine);
+ int  RAND_bytes(unsigned char *buf, int num);
+ int  RAND_pseudo_bytes(unsigned char *buf, int num);
+ void RAND_seed(const void *buf, int num);
+ void RAND_add(const void *buf, int num, int entropy);
+ int  RAND_status(void);
+ int  RAND_load_file(const char *file, long max_bytes);
+ int  RAND_write_file(const char *file);
+ const char *RAND_file_name(char *file, size_t num);
+ int  RAND_egd(const char *path);
+ void RAND_set_rand_method(const RAND_METHOD *meth);
+ const RAND_METHOD *RAND_get_rand_method(void);
+ RAND_METHOD *RAND_SSLeay(void);
+ void RAND_cleanup(void);
+ /* For Win32 only */
+ void RAND_screen(void);
+ int RAND_event(UINT, WPARAM, LPARAM);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Since the
+introduction of the <small>ENGINE API,</small> the
+recommended way of controlling default implementations is by
+using the <small>ENGINE API</small> functions. The default
+<b><small>RAND_METHOD</small></b> , as set by
+<i>RAND_set_rand_method()</i> and returned by
+<i>RAND_get_rand_method()</i>, is only used if no
+<small>ENGINE</small> has been set as the default
+&quot;rand&quot; implementation. Hence, these two functions
+are no longer the recommened way to control defaults.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If an
+alternative <b><small>RAND_METHOD</small></b> implementation
+is being used (either set directly or as provided by an
+<small>ENGINE</small> module), then it is entirely
+responsible for the generation and management of a
+cryptographically secure <small>PRNG</small> stream. The
+mechanisms described below relate solely to the software
+<small>PRNG</small> implementation built in to OpenSSL and
+used by default.</p>
+
+<p style="margin-left:11%; margin-top: 1em">These functions
+implement a cryptographically secure pseudo-random number
+generator ( <small>PRNG</small> ). It is used by other
+library functions for example to generate random keys, and
+applications can use it when they need randomness.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A cryptographic
+<small>PRNG</small> must be seeded with unpredictable data
+such as mouse movements or keys pressed at random by the
+user. This is described in <i>RAND_add</i>(3). Its state can
+be saved in a seed file (see <i>RAND_load_file</i>(3)) to
+avoid having to go through the seeding process whenever the
+application is started.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>RAND_bytes</i>(3)
+describes how to obtain random data from the
+<small>PRNG.</small></p>
+
+<h2>INTERNALS
+<a name="INTERNALS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>RAND_SSLeay()</i> method implements a <small>PRNG</small>
+based on a cryptographic hash function.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+description of its design is based on the SSLeay
+documentation:</p>
+
+<p style="margin-left:11%; margin-top: 1em">First up I will
+state the things I believe I need for a good
+<small>RNG.</small></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>1.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>A good hashing algorithm to mix things up and to convert
+the <small>RNG</small> &rsquo;state&rsquo; to random
+numbers.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>2.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>An initial source of random &rsquo;state&rsquo;.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>3.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>The state should be very large. If the
+<small>RNG</small> is being used to generate 4096 bit
+<small>RSA</small> keys, 2 2048 bit random strings are
+required (at a minimum). If your <small>RNG</small> state
+only has 128 bits, you are obviously limiting the search
+space to 128 bits, not 2048. I&rsquo;m probably getting a
+little carried away on this last point but it does indicate
+that it may not be a bad idea to keep quite a lot of
+<small>RNG</small> state. It should be easier to break a
+cipher than guess the <small>RNG</small> seed data.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>4.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>Any <small>RNG</small> seed data should influence all
+subsequent random numbers generated. This implies that any
+random seed data entered will have an influence on all
+subsequent random numbers generated.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>5.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>When using data to seed the <small>RNG</small> state,
+the data used should not be extractable from the
+<small>RNG</small> state. I believe this should be a
+requirement because one possible source of
+&rsquo;secret&rsquo; semi random data would be a private key
+or a password. This data must not be disclosed by either
+subsequent random numbers or a &rsquo;core&rsquo; dump left
+by a program crash.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>6.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>Given the same initial &rsquo;state&rsquo;, 2 systems
+should deviate in their <small>RNG</small> state (and hence
+the random numbers generated) over time if at all
+possible.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>7.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>Given the random number output stream, it should not be
+possible to determine the <small>RNG</small> state or the
+next random number.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The algorithm
+is as follows.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is global
+state made up of a 1023 byte buffer (the
+&rsquo;state&rsquo;), a working hash value
+(&rsquo;md&rsquo;), and a counter (&rsquo;count&rsquo;).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Whenever seed
+data is added, it is inserted into the &rsquo;state&rsquo;
+as follows.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The input is
+chopped up into units of 20 bytes (or less for the last
+block). Each of these blocks is run through the hash
+function as follows: The data passed to the hash function is
+the current &rsquo;md&rsquo;, the same number of bytes from
+the &rsquo;state&rsquo; (the location determined by in
+incremented looping index) as the current
+&rsquo;block&rsquo;, the new key data &rsquo;block&rsquo;,
+and &rsquo;count&rsquo; (which is incremented after each
+use). The result of this is kept in &rsquo;md&rsquo; and
+also xored into the &rsquo;state&rsquo; at the same
+locations that were used as input into the hash function. I
+believe this system addresses points 1 (hash function;
+currently <small>SHA&minus;1</small> ), 3 (the
+&rsquo;state&rsquo;), 4 (via the &rsquo;md&rsquo;), 5 (by
+the use of a hash function and xor).</p>
+
+<p style="margin-left:11%; margin-top: 1em">When bytes are
+extracted from the <small>RNG,</small> the following process
+is used. For each group of 10 bytes (or less), we do the
+following:</p>
+
+<p style="margin-left:11%; margin-top: 1em">Input into the
+hash function the local &rsquo;md&rsquo; (which is
+initialized from the global &rsquo;md&rsquo; before any
+bytes are generated), the bytes that are to be overwritten
+by the random bytes, and bytes from the &rsquo;state&rsquo;
+(incrementing looping index). From this digest output (which
+is kept in &rsquo;md&rsquo;), the top (up to) 10 bytes are
+returned to the caller and the bottom 10 bytes are xored
+into the &rsquo;state&rsquo;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Finally, after
+we have finished &rsquo;num&rsquo; random bytes for the
+caller, &rsquo;count&rsquo; (which is incremented) and the
+local and global &rsquo;md&rsquo; are fed into the hash
+function and the results are kept in the global
+&rsquo;md&rsquo;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">I believe the
+above addressed points 1 (use of <small>SHA&minus;1</small>
+), 6 (by hashing into the &rsquo;state&rsquo; the
+&rsquo;old&rsquo; data from the caller that is about to be
+overwritten) and 7 (by not using the 10 bytes given to the
+caller to update the &rsquo;state&rsquo;, but they are used
+to update &rsquo;md&rsquo;).</p>
+
+<p style="margin-left:11%; margin-top: 1em">So of the
+points raised, only 2 is not addressed (but see
+<i>RAND_add</i>(3)).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_rand</i>(3),
+<i>RAND_add</i>(3), <i>RAND_load_file</i>(3),
+<i>RAND_egd</i>(3), <i>RAND_bytes</i>(3),
+<i>RAND_set_rand_method</i>(3), <i>RAND_cleanup</i>(3)</p>
+<hr>
+</body>
+</html>

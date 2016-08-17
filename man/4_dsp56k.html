@@ -1,0 +1,180 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:38:17 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>DSP56K</title>
+
+</head>
+<body>
+
+<h1 align="center">DSP56K</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#CONFIGURATION">CONFIGURATION</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#FILES">FILES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">dsp56k &minus;
+DSP56001 interface device</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">#include
+&lt;asm/dsp56k.h&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>ssize_t
+read(int</b> <i>fd</i><b>, void *</b><i>data</i><b>,
+size_t</b> <i>length</i><b>); <br>
+ssize_t write(int</b> <i>fd</i><b>, void
+*</b><i>data</i><b>, size_t</b> <i>length</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+ioctl(int</b> <i>fd</i><b>, DSP56K_UPLOAD, struct
+dsp56k_upload *</b><i>program</i><b>); <br>
+int ioctl(int</b> <i>fd</i><b>, DSP56K_SET_TX_WSIZE, int</b>
+<i>wsize</i><b>); <br>
+int ioctl(int</b> <i>fd</i><b>, DSP56K_SET_RX_WSIZE, int</b>
+<i>wsize</i><b>); <br>
+int ioctl(int</b> <i>fd</i><b>, DSP56K_HOST_FLAGS, struct
+dsp56k_host_flags *</b><i>flags</i><b>); <br>
+int ioctl(int</b> <i>fd</i><b>, DSP56K_HOST_CMD, int</b>
+<i>cmd</i><b>);</b></p>
+
+<h2>CONFIGURATION
+<a name="CONFIGURATION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The dsp56k
+device is a character device with major number 55 and minor
+number 0.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The Motorola
+DSP56001 is a fully programmable 24-bit digital signal
+processor found in Atari Falcon030-compatible computers. The
+<i>dsp56k</i> special file is used to control the DSP56001,
+and to send and receive data using the bidirectional
+handshaked host port.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To send a data
+stream to the signal processor, use <b>write</b>(2) to the
+device, and <b>read</b>(2) to receive processed data. The
+data can be sent or received in 8, 16, 24, or 32-bit
+quantities on the host side, but will always be seen as
+24-bit quantities in the DSP56001.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+<b>ioctl</b>(2) calls are used to control the <i>dsp56k</i>
+device: <b><br>
+DSP56K_UPLOAD</b></p>
+
+<p style="margin-left:22%;">resets the DSP56001 and uploads
+a program. The third <b>ioctl</b>(2) argument must be a
+pointer to a <i>struct dsp56k_binary</i> with members
+<i>bin</i> pointing to a DSP56001 binary program, and
+<i>len</i> set to the length of the program, counted in
+24-bit words.</p>
+
+<p style="margin-left:11%;"><b>DSP56K_SET_TX_WSIZE</b></p>
+
+<p style="margin-left:22%;">sets the transmit word size.
+Allowed values are in the range 1 to 4, and is the number of
+bytes that will be sent at a time to the DSP56001. These
+data quantities will either be padded with zero bytes, or
+truncated to fit the native 24-bit data format of the
+DSP56001.</p>
+
+<p style="margin-left:11%;"><b>DSP56K_SET_RX_WSIZE</b></p>
+
+<p style="margin-left:22%;">sets the receive word size.
+Allowed values are in the range 1 to 4, and is the number of
+bytes that will be received at a time from the DSP56001.
+These data quantities will either truncated, or padded with
+a null byte ('\0') to fit the native 24-bit data format of
+the DSP56001.</p>
+
+<p style="margin-left:11%;"><b>DSP56K_HOST_FLAGS</b></p>
+
+<p style="margin-left:22%;">read and write the host flags.
+The host flags are four general-purpose bits that can be
+read by both the hosting computer and the DSP56001. Bits 0
+and 1 can be written by the host, and bits 2 and 3 can be
+written by the DSP56001.</p>
+
+<p style="margin-left:22%; margin-top: 1em">To access the
+host flags, the third <b>ioctl</b>(2) argument must be a
+pointer to a <i>struct dsp56k_host_flags</i>. If bit 0 or 1
+is set in the <i>dir</i> member, the corresponding bit in
+<i>out</i> will be written to the host flags. The state of
+all host flags will be returned in the lower four bits of
+the <i>status</i> member.</p>
+
+<p style="margin-left:11%;"><b>DSP56K_HOST_CMD</b></p>
+
+<p style="margin-left:22%;">sends a host command. Allowed
+values are in the range 0 to 31, and is a user-defined
+command handled by the program running in the DSP56001.</p>
+
+<h2>FILES
+<a name="FILES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">/dev/dsp56k</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>linux/include/asm-m68k/dsp56k.h</i>,
+<i>linux/drivers/char/dsp56k.c</i>,
+<a href="http://dsp56k.nocrew.org/">http://dsp56k.nocrew.org/</a>,
+DSP56000/DSP56001 Digital Signal Processor User&rsquo;s
+Manual</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

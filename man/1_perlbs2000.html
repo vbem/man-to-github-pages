@@ -1,0 +1,361 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:14:44 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERLBS2000</title>
+
+</head>
+<body>
+
+<h1 align="center">PERLBS2000</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#HISTORY">HISTORY</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlbs2000
+&minus; building and installing Perl for BS2000.</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+will help you Configure, build, test and install Perl on
+<small>BS2000</small> in the <small>POSIX</small>
+subsystem.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is a
+ported perl for the <small>POSIX</small> subsystem in
+<small>BS2000 VERSION OSD</small> V3.1A or later. It may
+work on other versions, but we started porting and testing
+it with 3.1A and are currently using Version V4.0A.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You may need
+the following <small>GNU</small> programs in order to
+install perl:</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>gzip on
+<small>BS2000</small></b> <br>
+We used version 1.2.4, which could be installed out of the
+box with one failure during &rsquo;make check&rsquo;.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>bison on
+<small>BS2000</small></b> <br>
+The yacc coming with <small>BS2000 POSIX</small>
+didn&rsquo;t work for us. So we had to use bison. We had to
+make a few changes to perl in order to use the pure
+(reentrant) parser of bison. We used version 1.25, but we
+had to add a few changes due to <small>EBCDIC</small> . See
+below for more details concerning yacc.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Unpacking
+Perl Distribution on <small>BS2000</small></b> <br>
+To extract an <small>ASCII</small> tar archive on
+<small>BS2000 POSIX</small> you need an <small>ASCII</small>
+filesystem (we used the mountpoint /usr/local/ascii for
+this). Now you extract the archive in the
+<small>ASCII</small> filesystem without
+I/O&minus;conversion:</p>
+
+<p style="margin-left:11%; margin-top: 1em">cd
+/usr/local/ascii export IO_CONVERSION=NO gunzip &lt;
+/usr/local/src/perl.tar.gz | pax &minus;r</p>
+
+<p style="margin-left:11%; margin-top: 1em">You may ignore
+the error message for the first element of the archive (this
+doesn&rsquo;t look like a tar archive / skipping to next
+file...), it&rsquo;s only the directory which will be
+created automatically anyway.</p>
+
+<p style="margin-left:11%; margin-top: 1em">After
+extracting the archive you copy the whole directory tree to
+your <small>EBCDIC</small> filesystem. <b>This time you use
+I/O&minus;conversion</b>:</p>
+
+<p style="margin-left:11%; margin-top: 1em">cd
+/usr/local/src IO_CONVERSION=YES cp &minus;r
+/usr/local/ascii/perl5.005_02 ./</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Compiling
+Perl on <small>BS2000</small></b> <br>
+There is a &quot;hints&quot; file for <small>BS2000</small>
+called hints.posix&minus;bc (because posix-bc is the
+<small>OS</small> name given by &lsquo;uname&lsquo;) that
+specifies the correct values for most things. The major
+problem is (of course) the <small>EBCDIC</small> character
+set. We have german <small>EBCDIC</small> version.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Because of our
+problems with the native yacc we used <small>GNU</small>
+bison to generate a pure (=reentrant) parser for perly.y. So
+our yacc is really the following script:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;&minus;&minus;&minus;8&lt;&minus;&minus;&minus;&minus;&minus;/usr/local/bin/yacc&minus;&minus;&minus;&minus;&minus;8&lt;&minus;&minus;&minus;&minus;&minus;
+#! /usr/bin/sh</p>
+
+<p style="margin-left:11%; margin-top: 1em"># Bison as a
+reentrant yacc:</p>
+
+<p style="margin-left:11%; margin-top: 1em"># save
+parameters: params=&quot;&quot; while [[ $# &minus;gt 1 ]];
+do <br>
+params=&quot;$params <tt>$1</tt>&quot; <br>
+shift done</p>
+
+<p style="margin-left:11%; margin-top: 1em"># add flag
+<tt>%pure_parser:</tt></p>
+
+
+<p style="margin-left:11%; margin-top: 1em">tmpfile=/tmp/bison.$$.y
+echo <tt>%pure_parser</tt> &gt; <tt>$tmpfile</tt> cat
+<tt>$1</tt> &gt;&gt; <tt>$tmpfile</tt></p>
+
+<p style="margin-left:11%; margin-top: 1em"># call
+bison:</p>
+
+<p style="margin-left:11%; margin-top: 1em">echo
+&quot;/usr/local/bin/bison &minus;&minus;yacc <tt>$params
+$1</tt>\t\t\t(Pure Parser)&quot; /usr/local/bin/bison
+&minus;&minus;yacc <tt>$params $tmpfile</tt></p>
+
+<p style="margin-left:11%; margin-top: 1em"># cleanup:</p>
+
+<p style="margin-left:11%; margin-top: 1em">rm &minus;f
+<tt>$tmpfile</tt>
+&minus;&minus;&minus;&minus;&minus;8&lt;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;8&lt;&minus;&minus;&minus;&minus;&minus;</p>
+
+<p style="margin-left:11%; margin-top: 1em">We still use
+the normal yacc for a2p.y though!!! We made a softlink
+called byacc to distinguish between the two versions:</p>
+
+<p style="margin-left:11%; margin-top: 1em">ln &minus;s
+/usr/bin/yacc /usr/local/bin/byacc</p>
+
+<p style="margin-left:11%; margin-top: 1em">We build perl
+using <small>GNU</small> make. We tried the native make once
+and it worked too.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Testing Perl
+on <small>BS2000</small></b> <br>
+We still got a few errors during <tt>&quot;make
+test&quot;</tt>. Some of them are the result of using bison.
+Bison prints <i>parser error</i> instead of <i>syntax
+error</i>, so we may ignore them. The following list shows
+our errors, your results may differ:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">op/numconvert.......FAILED
+tests 1409&minus;1440 op/regexp...........FAILED tests 483,
+496 op/regexp_noamp.....FAILED tests 483, 496
+pragma/overload.....FAILED tests 152&minus;153,
+170&minus;171 pragma/warnings.....FAILED tests 14, 82, 129,
+155, 192, 205, 207 lib/bigfloat........FAILED tests
+351&minus;352, 355 lib/bigfltpm........FAILED tests
+354&minus;355, 358 lib/complex.........FAILED tests 267, 487
+lib/dumper..........FAILED tests 43, 45 Failed 11/231 test
+scripts, 95.24% okay. 57/10595 subtests failed, 99.46%
+okay.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Installing
+Perl on <small>BS2000</small></b> <br>
+We have no nroff on <small>BS2000 POSIX</small> (yet), so we
+ignored any errors while installing the documentation.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Using Perl
+in the Posix-Shell of <small>BS2000</small></b> <small><br>
+BS2000 POSIX</small> doesn&rsquo;t support the shebang
+notation (<tt>&quot;#!/usr/local/bin/perl&quot;</tt>), so
+you have to use the following lines instead:</p>
+
+<p style="margin-left:11%; margin-top: 1em">: # use perl
+<br>
+eval &rsquo;exec /usr/local/bin/perl &minus;S <tt>$0</tt>
+${1+&quot;$@&quot;}&rsquo; <br>
+if <tt>$running_under_some_shell</tt>;</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Using Perl
+in &quot;native&quot; <small>BS2000</small></b> <br>
+We don&rsquo;t have much experience with this yet, but try
+the following:</p>
+
+<p style="margin-left:11%; margin-top: 1em">Copy your Perl
+executable to a <small>BS2000 LLM</small> using bs2cp:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;bs2cp
+/usr/local/bin/perl 'bs2:perl(perl,l)'&quot;</tt></p>
+
+<p style="margin-left:11%; margin-top: 1em">Now you can
+start it with the following ( <small>SDF</small> )
+command:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;/START&minus;PROG
+FROM&minus;FILE=*MODULE(PERL,PERL),PROG&minus;MODE=*ANY,RUN&minus;MODE=*ADV&quot;</tt></p>
+
+<p style="margin-left:11%; margin-top: 1em">First you get
+the <small>BS2000</small> commandline prompt
+(&rsquo;*&rsquo;). Here you may enter your parameters, e.g.
+<tt>&quot;&minus;e 'print &quot;Hello
+World!\\n&quot;;'&quot;</tt> (note the double backslash!) or
+<tt>&quot;&minus;w&quot;</tt> and the name of your Perl
+script. Filenames starting with <tt>&quot;/&quot;</tt> are
+searched in the Posix filesystem, others are searched in the
+<small>BS2000</small> filesystem. You may even use wildcards
+if you put a <tt>&quot;%&quot;</tt> in front of your
+filename (e.g. <tt>&quot;&minus;w checkfiles.pl
+%*.c&quot;</tt>). Read your C/C <small>++</small> manual for
+additional possibilities of the commandline prompt (look for
+PARAMETER-PROMPTING).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Floating
+point anomalies on <small>BS2000</small></b> <br>
+There appears to be a bug in the floating point
+implementation on <small>BS2000 POSIX</small> systems such
+that calling <i>int()</i> on the product of a number and a
+small magnitude number is not the same as calling
+<i>int()</i> on the quotient of that number and a large
+magnitude number. For example, in the following Perl
+code:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my $x = 100000.0;
+    my $y = int($x * 1e&minus;5) * 1e5; # '0'
+    my $z = int($x / 1e+5) * 1e5;  # '100000'
+    print &quot;\$y is $y and \$z is $z\n&quot;; # $y is 0 and $z is 100000</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Although one
+would expect the quantities <tt>$y</tt> and <tt>$z</tt> to
+be the same and equal to 100000 they will differ and instead
+will be 0 and 100000 respectively.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Using PerlIO
+and different encodings on <small>ASCII</small> and
+<small>EBCDIC</small> partitions</b> <br>
+Since version 5.8 Perl uses the new PerlIO on
+<small>BS2000</small> . This enables you using different
+encodings per <small>IO</small> channel. For example you may
+use</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Encode;
+    open($f, &quot;&gt;:encoding(ascii)&quot;, &quot;test.ascii&quot;);
+    print $f &quot;Hello World!\n&quot;;
+    open($f, &quot;&gt;:encoding(posix&minus;bc)&quot;, &quot;test.ebcdic&quot;);
+    print $f &quot;Hello World!\n&quot;;
+    open($f, &quot;&gt;:encoding(latin1)&quot;, &quot;test.latin1&quot;);
+    print $f &quot;Hello World!\n&quot;;
+    open($f, &quot;&gt;:encoding(utf8)&quot;, &quot;test.utf8&quot;);
+    print $f &quot;Hello World!\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">to get two
+files containing &quot;Hello World!\n&quot; in
+<small>ASCII</small> , <small>EBCDIC</small> ,
+<small>ISO</small> Latin&minus;1 (in this example identical
+to <small>ASCII</small> ) respective UTF-EBCDIC (in this
+example identical to normal <small>EBCDIC</small> ). See the
+documentation of Encode::PerlIO for details.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As the PerlIO
+layer uses raw <small>IO</small> internally, all this
+totally ignores the type of your filesystem (
+<small>ASCII</small> or <small>EBCDIC</small> ) and the
+<small>IO_CONVERSION</small> environment variable. If you
+want to get the old behavior, that the <small>BS2000
+IO</small> functions determine conversion depending on the
+filesystem PerlIO still is your friend. You use
+<small>IO_CONVERSION</small> as usual and tell Perl, that it
+should use the native <small>IO</small> layer:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    export IO_CONVERSION=YES
+    export PERLIO=stdio</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Now your
+<small>IO</small> would be <small>ASCII</small> on
+<small>ASCII</small> partitions and <small>EBCDIC</small> on
+<small>EBCDIC</small> partitions. See the documentation of
+PerlIO (without <tt>&quot;Encode::&quot;</tt>!) for further
+possibilities.</p>
+
+<h2>AUTHORS
+<a name="AUTHORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Thomas
+Dorner</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>INSTALL</small>
+, perlport.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Mailing
+list</b> <br>
+If you are interested in the <small>VM/ESA</small> , z/OS
+(formerly known as <small>OS/390</small> ) and POSIX-BC (
+<small>BS2000</small> ) ports of Perl then see the perl-mvs
+mailing list. To subscribe, send an empty message to
+perl&minus;mvs&minus;subscribe@perl.org.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See also:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    http://lists.perl.org/list/perl&minus;mvs.html</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">There are web
+archives of the mailing list at:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    http://www.xray.mpe.mpg.de/mailing&minus;lists/perl&minus;mvs/
+    http://archive.develooper.com/perl&minus;mvs@perl.org/</pre>
+
+
+<h2>HISTORY
+<a name="HISTORY"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+was originally written by Thomas Dorner for the 5.005
+release of Perl.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This document
+was podified for the 5.6 release of perl 11 July 2000.</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,330 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:59 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SYNC_FILE_RANGE</title>
+
+</head>
+<body>
+
+<h1 align="center">SYNC_FILE_RANGE</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">sync_file_range
+&minus; sync a file segment with disk</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#define
+_GNU_SOURCE</b> /* See feature_test_macros(7) */ <b><br>
+#include &lt;fcntl.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+sync_file_range(int</b> <i>fd</i><b>, off64_t</b>
+<i>offset</i><b>, off64_t</b> <i>nbytes</i><b>, <br>
+unsigned int</b> <i>flags</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>sync_file_range</b>()
+permits fine control when synchronizing the open file
+referred to by the file descriptor <i>fd</i> with disk.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>offset</i>
+is the starting byte of the file range to be synchronized.
+<i>nbytes</i> specifies the length of the range to be
+synchronized, in bytes; if <i>nbytes</i> is zero, then all
+bytes from <i>offset</i> through to the end of file are
+synchronized. Synchronization is in units of the system page
+size: <i>offset</i> is rounded down to a page boundary;
+<i>(offset+nbytes-1)</i> is rounded up to a page
+boundary.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>flags</i> bit-mask argument can include any of the
+following values: <b><br>
+SYNC_FILE_RANGE_WAIT_BEFORE</b></p>
+
+<p style="margin-left:22%;">Wait upon write-out of all
+pages in the specified range that have already been
+submitted to the device driver for write-out before
+performing any write.</p>
+
+
+<p style="margin-left:11%;"><b>SYNC_FILE_RANGE_WRITE</b></p>
+
+<p style="margin-left:22%;">Initiate write-out of all dirty
+pages in the specified range which are not presently
+submitted write-out. Note that even this may block if you
+attempt to write more than request queue size.</p>
+
+
+<p style="margin-left:11%;"><b>SYNC_FILE_RANGE_WAIT_AFTER</b></p>
+
+<p style="margin-left:22%;">Wait upon write-out of all
+pages in the range after performing any write.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Specifying
+<i>flags</i> as 0 is permitted, as a no-op.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Warning</b>
+<br>
+This system call is extremely dangerous and should not be
+used in portable programs. None of these operations writes
+out the file&rsquo;s metadata. Therefore, unless the
+application is strictly performing overwrites of
+already-instantiated disk blocks, there are no guarantees
+that the data will be available after a crash. There is no
+user interface to know if a write is purely an overwrite. On
+file systems using copy-on-write semantics (e.g.,
+<i>btrfs</i>) an overwrite of existing allocated blocks is
+impossible. When writing into preallocated space, many file
+systems also require calls into the block allocator, which
+this system call does not sync out to disk. This system call
+does not flush disk write caches and thus does not provide
+any data integrity on systems with volatile disk write
+caches.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Some details
+<br>
+SYNC_FILE_RANGE_WAIT_BEFORE</b> and
+<b>SYNC_FILE_RANGE_WAIT_AFTER</b> will detect any I/O errors
+or <b>ENOSPC</b> conditions and will return these to the
+caller.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Useful
+combinations of the <i>flags</i> bits are: <b><br>
+SYNC_FILE_RANGE_WAIT_BEFORE | SYNC_FILE_RANGE_WRITE</b></p>
+
+<p style="margin-left:22%;">Ensures that all pages in the
+specified range which were dirty when
+<b>sync_file_range</b>() was called are placed under
+write-out. This is a start-write-for-data-integrity
+operation.</p>
+
+
+<p style="margin-left:11%;"><b>SYNC_FILE_RANGE_WRITE</b></p>
+
+<p style="margin-left:22%;">Start write-out of all dirty
+pages in the specified range which are not presently under
+write-out. This is an asynchronous flush-to-disk operation.
+This is not suitable for data integrity operations.</p>
+
+
+<p style="margin-left:11%;"><b>SYNC_FILE_RANGE_WAIT_BEFORE</b>
+(or <b>SYNC_FILE_RANGE_WAIT_AFTER</b>)</p>
+
+<p style="margin-left:22%;">Wait for completion of
+write-out of all pages in the specified range. This can be
+used after an earlier <b>SYNC_FILE_RANGE_WAIT_BEFORE |
+SYNC_FILE_RANGE_WRITE</b> operation to wait for completion
+of that operation, and obtain its result.</p>
+
+<p style="margin-left:11%;"><b>SYNC_FILE_RANGE_WAIT_BEFORE
+| SYNC_FILE_RANGE_WRITE | <br>
+SYNC_FILE_RANGE_WAIT_AFTER</b></p>
+
+<p style="margin-left:22%;">This is a
+write-for-data-integrity operation that will ensure that all
+pages in the specified range which were dirty when
+<b>sync_file_range</b>() was called are committed to
+disk.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success,
+<b>sync_file_range</b>() returns 0; on failure &minus;1 is
+returned and <i>errno</i> is set to indicate the error.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EBADF</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em"><i>fd</i> is not a valid file
+descriptor.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>flags</i> specifies an invalid bit; or <i>offset</i>
+or <i>nbytes</i> is invalid.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EIO</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>I/O error.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Out of memory.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOSPC</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Out of disk space.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ESPIPE</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>fd</i> refers to something other than a regular file,
+a block device, a directory, or a symbolic link.</p></td></tr>
+</table>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>sync_file_range</b>()
+appeared on Linux in kernel 2.6.17.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This system
+call is Linux-specific, and should be avoided in portable
+programs.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Some
+architectures (e.g., PowerPC, ARM) need 64-bit arguments to
+be aligned in a suitable pair of registers. On such
+architectures, the call signature of
+<b>sync_file_range</b>() shown in the SYNOPSIS would force a
+register to be wasted as padding between the <i>fd</i> and
+<i>offset</i> arguments. (See <b>syscall</b>(2) for
+details.) Therefore, these architectures define a different
+system call that orders the arguments suitably:</p>
+
+<p style="margin-left:17%; margin-top: 1em"><b>int
+sync_file_range2(int</b> <i>fd</i><b>, unsigned int</b>
+<i>flags</i><b>, <br>
+off64_t</b> <i>offset</i><b>, off64_t</b>
+<i>nbytes</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">The behavior of
+this system call is otherwise exactly the same as
+<b>sync_file_range</b>().</p>
+
+<p style="margin-left:11%; margin-top: 1em">A system call
+with this signature first appeared on the ARM architecture
+in Linux 2.6.20, with the name <b>arm_sync_file_range</b>().
+It was renamed in Linux 2.6.22, when the analogous system
+call was added for PowerPC. On architectures where glibc
+support is provided, glibc transparently wraps
+<b>sync_file_range2</b>() under the name
+<b>sync_file_range</b>().</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>fdatasync</b>(2),
+<b>fsync</b>(2), <b>msync</b>(2), <b>sync</b>(2)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:24:30 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>MTRACE</title>
+
+</head>
+<body>
+
+<h1 align="center">MTRACE</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mtrace,
+muntrace &minus; malloc tracing</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;mcheck.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>void
+mtrace(void);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>void
+muntrace(void);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>mtrace</b>() function installs hook functions for the
+memory-allocation functions (<b>malloc</b>(3),
+<b>realloc</b>(3) <b>memalign</b>(3), <b>free</b>(3)). These
+hook functions record tracing information about memory
+allocation and deallocation. The tracing information can be
+used to discover memory leaks and attempts to free
+nonallocated memory in a program.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>muntrace</b>() function disables the hook functions
+installed by <b>mtrace</b>(), so that tracing information is
+no longer recorded for the memory-allocation functions. If
+no hook functions were successfully installed by
+<b>mtrace</b>(), <b>muntrace</b>() does nothing.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When
+<b>mtrace</b>() is called, it checks the value of the
+environment variable <b>MALLOC_TRACE</b>, which should
+contain the pathname of a file in which the tracing
+information is to be recorded. If the pathname is
+successfully opened, it is truncated to zero length.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b>MALLOC_TRACE</b> is not set, or the pathname it specifies
+is invalid or not writable, then no hook functions are
+installed, and <b>mtrace</b>() has no effect. In set-user-ID
+and set-group-ID programs, <b>MALLOC_TRACE</b> is ignored,
+and <b>mtrace</b>() has no effect.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These functions
+are GNU extensions.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In normal
+usage, <b>mtrace</b>() is called once at the start of
+execution of a program, and <b>muntrace</b>() is never
+called.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The tracing
+output produced after a call to <b>mtrace</b>() is textual,
+but not designed to be human readable. The GNU C library
+provides a Perl script, <b>mtrace</b>(1), that interprets
+the trace log and produces human-readable output. For best
+results, the traced program should be compiled with
+debugging enabled, so that line-number information is
+recorded in the executable.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The tracing
+performed by <b>mtrace</b>() incurs a performance penalty
+(if <b>MALLOC_TRACE</b> points to a valid, writable
+pathname).</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The line-number
+information produced by <b>mtrace</b>(1) is not always
+precise: the line number references may refer to the
+previous or following (non-blank) line of the source
+code.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The shell
+session below demonstrates the use of the <b>mtrace</b>()
+function and the <b>mtrace</b>(1) command in a program that
+has memory leaks at two different locations. The
+demonstration uses the following program:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ <b>cat
+t_mtrace.c</b> <br>
+#include &lt;mcheck.h&gt; <br>
+#include &lt;stdlib.h&gt; <br>
+#include &lt;stdio.h&gt;</p>
+
+<p style="margin-left:17%; margin-top: 1em">int <br>
+main(int argc, char *argv[]) <br>
+{ <br>
+int j;</p>
+
+<p style="margin-left:17%; margin-top: 1em">mtrace();</p>
+
+<p style="margin-left:17%; margin-top: 1em">for (j = 0; j
+&lt; 2; j++) <br>
+malloc(100); /* Never freed&minus;&minus;a memory leak
+*/</p>
+
+<p style="margin-left:17%; margin-top: 1em">calloc(16, 16);
+/* Never freed&minus;&minus;a memory leak */ <br>
+exit(EXIT_SUCCESS); <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">When we run the
+program as follows, we see that <b>mtrace</b>() diagnosed
+memory leaks at two different locations in the program:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ <b>cc
+&minus;g t_mtrace.c &minus;o t_mtrace</b> <br>
+$ <b>export MALLOC_TRACE=/tmp/t</b> <br>
+$ <b>./t_mtrace</b> <br>
+$ <b>mtrace ./t_mtrace $MALLOC_TRACE</b> <br>
+Memory not freed: <br>
+----------------- <br>
+Address Size Caller <br>
+0x084c9378 0x64 at /home/cecilia/t_mtrace.c:12 <br>
+0x084c93e0 0x64 at /home/cecilia/t_mtrace.c:12 <br>
+0x084c9448 0x100 at /home/cecilia/t_mtrace.c:16</p>
+
+<p style="margin-left:11%; margin-top: 1em">The first two
+messages about unfreed memory correspond to the two
+<b>malloc</b>(3) calls inside the <i>for</i> loop. The final
+message corresponds to the call to <b>calloc</b>(3) (which
+in turn calls <b>malloc</b>(3)).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mtrace</b>(1),
+<b>malloc</b>(3), <b>malloc_hook</b>(3),
+<b>mcheck</b>(3)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

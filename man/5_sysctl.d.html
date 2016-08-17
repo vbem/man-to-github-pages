@@ -1,0 +1,215 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:38:53 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SYSCTL.D</title>
+
+</head>
+<body>
+
+<h1 align="center">SYSCTL.D</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#CONFIGURATION FORMAT">CONFIGURATION FORMAT</a><br>
+<a href="#CONFIGURATION DIRECTORIES AND PRECEDENCE">CONFIGURATION DIRECTORIES AND PRECEDENCE</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">sysctl.d
+&minus; Configure kernel parameters at boot</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">/etc/sysctl.d/*.conf</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">/run/sysctl.d/*.conf</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">/usr/lib/sysctl.d/*.conf</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">At boot,
+<b>systemd-sysctl.service</b>(8) reads configuration files
+from the above directories to configure <b>sysctl</b>(8)
+kernel parameters.</p>
+
+<h2>CONFIGURATION FORMAT
+<a name="CONFIGURATION FORMAT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+configuration files contain a list of variable assignments,
+separated by newlines. Empty lines and lines whose first
+non&minus;whitespace character is &quot;#&quot; or
+&quot;;&quot; are ignored.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+either &quot;/&quot; or &quot;.&quot; may be used as
+separators within sysctl variable names. If the first
+separator is a slash, remaining slashes and dots are left
+intact. If the first separator is a dot, dots and slashes
+are interchanged. &quot;kernel.domainname=foo&quot; and
+&quot;kernel/domainname=foo&quot; are equivalent and will
+cause &quot;foo&quot; to be written to
+/proc/sys/kernel/domainname. Either
+&quot;net.ipv4.conf.enp3s0/200.forwarding&quot; or
+&quot;net/ipv4/conf/enp3s0.200/forwarding&quot; may be used
+to refer to
+/proc/sys/net/ipv4/conf/enp3s0.200/forwarding.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The settings
+configured with sysctl.d files will be applied early on
+boot. The network interface&minus;specific options will also
+be applied individually for each network interface as it
+shows up in the system. (More specifically, net.ipv4.conf.*,
+net.ipv6.conf.*, net.ipv4.neigh.* and net.ipv6.neigh.*).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Many sysctl
+parameters only become available when certain kernel modules
+are loaded. Modules are usually loaded on demand, e.g. when
+certain hardware is plugged in or network brought up. This
+means that <b>systemd-sysctl.service</b>(8) which runs
+during early boot will not configure such parameters if they
+become available after it has run. To set such parameters,
+it is recommended to add an <b>udev</b>(7) rule to set those
+parameters when they become available. Alternatively, a
+slightly simpler and less efficient option is to add the
+module to <b>modules-load.d</b>(5), causing it to be loaded
+statically before sysctl settings are applied (see example
+below).</p>
+
+<h2>CONFIGURATION DIRECTORIES AND PRECEDENCE
+<a name="CONFIGURATION DIRECTORIES AND PRECEDENCE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Configuration
+files are read from directories in /etc/, /run/, and
+/usr/lib/, in order of precedence. Each configuration file
+in these configuration directories shall be named in the
+style of <i>filename</i>.conf. Files in /etc/ override files
+with the same name in /run/ and /usr/lib/. Files in /run/
+override files with the same name in /usr/lib/.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Packages should
+install their configuration files in /usr/lib/. Files in
+/etc/ are reserved for the local administrator, who may use
+this logic to override the configuration files installed by
+vendor packages. All configuration files are sorted by their
+filename in lexicographic order, regardless of which of the
+directories they reside in. If multiple files specify the
+same option, the entry in the file with the
+lexicographically latest name will take precedence. It is
+recommended to prefix all filenames with a two&minus;digit
+number and a dash, to simplify the ordering of the
+files.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+administrator wants to disable a configuration file supplied
+by the vendor, the recommended way is to place a symlink to
+/dev/null in the configuration directory in /etc/, with the
+same filename as the vendor configuration file.</p>
+
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;1.&nbsp;Set
+kernel YP domain name</b></p>
+
+
+<p style="margin-left:11%; margin-top: 1em">/etc/sysctl.d/domain&minus;name.conf:</p>
+
+
+<p style="margin-left:17%; margin-top: 1em">kernel.domainname=example.com</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;2.&nbsp;Disable
+packet filter on bridged packets (method one)</b></p>
+
+
+<p style="margin-left:11%; margin-top: 1em">/etc/udev/rules.d/99&minus;bridge.rules:</p>
+
+
+<p style="margin-left:17%; margin-top: 1em">ACTION==&quot;add&quot;,
+SUBSYSTEM==&quot;module&quot;, KERNEL==&quot;bridge&quot;,
+RUN+=&quot;/usr/lib/systemd/systemd&minus;sysctl
+&minus;&minus;prefix=/net/bridge&quot;</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">/etc/sysctl.d/bridge.conf:</p>
+
+
+<p style="margin-left:17%; margin-top: 1em">net.bridge.bridge&minus;nf&minus;call&minus;ip6tables
+= 0 <br>
+net.bridge.bridge&minus;nf&minus;call&minus;iptables = 0
+<br>
+net.bridge.bridge&minus;nf&minus;call&minus;arptables =
+0</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Example&nbsp;3.&nbsp;Disable
+packet filter on bridged packets (method two)</b></p>
+
+
+<p style="margin-left:11%; margin-top: 1em">/etc/modules&minus;load.d/bridge.conf:</p>
+
+<p style="margin-left:17%; margin-top: 1em">bridge</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">/etc/sysctl.d/bridge.conf:</p>
+
+
+<p style="margin-left:17%; margin-top: 1em">net.bridge.bridge&minus;nf&minus;call&minus;ip6tables
+= 0 <br>
+net.bridge.bridge&minus;nf&minus;call&minus;iptables = 0
+<br>
+net.bridge.bridge&minus;nf&minus;call&minus;arptables =
+0</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>systemd</b>(1),
+<b>systemd-sysctl.service</b>(8), <b>systemd-delta</b>(1),
+<b>sysctl</b>(8), <b>sysctl.conf</b>(5),
+<b>modprobe</b>(8)</p>
+<hr>
+</body>
+</html>

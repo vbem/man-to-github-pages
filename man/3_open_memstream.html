@@ -1,0 +1,383 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:24:33 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>FMEMOPEN</title>
+
+</head>
+<body>
+
+<h1 align="center">FMEMOPEN</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">fmemopen,
+open_memstream, open_wmemstream &minus; open memory as
+stream</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;stdio.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>FILE
+*fmemopen(void *</b><i>buf</i><b>, size_t</b>
+<i>size</i><b>, const char *</b><i>mode</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>FILE
+*open_memstream(char **</b><i>ptr</i><b>, size_t
+*</b><i>sizeloc</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;wchar.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>FILE
+*open_wmemstream(wchar_t **</b><i>ptr</i><b>, size_t
+*</b><i>sizeloc</i><b>);</b></p>
+
+<p style="margin-left:5%; margin-top: 1em">Feature Test
+Macro Requirements for glibc (see
+<b>feature_test_macros</b>(7)):</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>fmemopen</b>(),
+<b>open_memstream</b>(), <b>open_wmemstream</b>():</p>
+
+<p style="margin-left:17%;">Since glibc 2.10:</p>
+
+
+<p style="margin-left:23%;">_XOPEN_SOURCE&nbsp;&gt;=&nbsp;700
+|| _POSIX_C_SOURCE&nbsp;&gt;=&nbsp;200809L</p>
+
+<p style="margin-left:17%;">Before glibc 2.10:</p>
+
+<p style="margin-left:23%;">_GNU_SOURCE</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>fmemopen</b>() function opens a stream that permits the
+access specified by <i>mode</i>. The stream allows I/O to be
+performed on the string or memory buffer pointed to by
+<i>buf</i>. This buffer must be at least <i>size</i> bytes
+long.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The argument
+<i>mode</i> is the same as for <b>fopen</b>(3). If
+<i>mode</i> specifies an append mode, then the initial file
+position is set to the location of the first null byte
+('\0') in the buffer; otherwise the initial file position is
+set to the start of the buffer. Since glibc 2.9, the letter
+'b' may be specified as the second character in <i>mode</i>.
+This provides &quot;binary&quot; mode: writes don&rsquo;t
+implicitly add a terminating null byte, and <b>fseek</b>(3)
+<b>SEEK_END</b> is relative to the end of the buffer (i.e.,
+the value specified by the <i>size</i> argument), rather
+than the current string length.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When a stream
+that has been opened for writing is flushed
+(<b>fflush</b>(3)) or closed (<b>fclose</b>(3)), a null byte
+is written at the end of the buffer if there is space. The
+caller should ensure that an extra byte is available in the
+buffer (and that <i>size</i> counts that byte) to allow for
+this.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Attempts to
+write more than <i>size</i> bytes to the buffer result in an
+error. (By default, such errors will be visible only when
+the <i>stdio</i> buffer is flushed. Disabling buffering with
+<i>setbuf(fp,&nbsp;NULL)</i> may be useful to detect errors
+at the time of an output operation. Alternatively, the
+caller can explicitly set <i>buf</i> as the stdio stream
+buffer, at the same time informing stdio of the
+buffer&rsquo;s size, using <i>setbuffer(fp, buf,
+size)</i>.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">In a stream
+opened for reading, null bytes ('\0') in the buffer do not
+cause read operations to return an end-of-file indication. A
+read from the buffer will only indicate end-of-file when the
+file pointer advances <i>size</i> bytes past the start of
+the buffer.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If <i>buf</i>
+is specified as NULL, then <b>fmemopen</b>() dynamically
+allocates a buffer <i>size</i> bytes long. This is useful
+for an application that wants to write data to a temporary
+buffer and then read it back again. The buffer is
+automatically freed when the stream is closed. Note that the
+caller has no way to obtain a pointer to the temporary
+buffer allocated by this call (but see
+<b>open_memstream</b>() below).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>open_memstream</b>() function opens a stream for writing
+to a buffer. The buffer is dynamically allocated (as with
+<b>malloc</b>(3)), and automatically grows as required.
+After closing the stream, the caller should <b>free</b>(3)
+this buffer.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When the stream
+is closed (<b>fclose</b>(3)) or flushed (<b>fflush</b>(3)),
+the locations pointed to by <i>ptr</i> and <i>sizeloc</i>
+are updated to contain, respectively, a pointer to the
+buffer and the current size of the buffer. These values
+remain valid only as long as the caller performs no further
+output on the stream. If further output is performed, then
+the stream must again be flushed before trying to access
+these variables.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A null byte is
+maintained at the end of the buffer. This byte is <i>not</i>
+included in the size value stored at <i>sizeloc</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+stream&rsquo;s file position can be changed with
+<b>fseek</b>(3) or <b>fseeko</b>(3). Moving the file
+position past the end of the data already written fills the
+intervening space with zeros.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>open_wmemstream</b>() is similar to
+<b>open_memstream</b>(), but operates on wide characters
+instead of bytes.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Upon successful
+completion <b>fmemopen</b>(), <b>open_memstream</b>() and
+<b>open_wmemstream</b>() return a <i>FILE</i> pointer.
+Otherwise, NULL is returned and <i>errno</i> is set to
+indicate the error.</p>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>fmemopen</b>()
+and <b>open_memstream</b>() were already available in glibc
+1.0.x. <b>open_wmemstream</b>() is available since glibc
+2.4.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">POSIX.1-2008.
+These functions are not specified in POSIX.1-2001, and are
+not widely available on other systems.</p>
+
+<p style="margin-left:11%; margin-top: 1em">POSIX.1-2008
+specifies that 'b' in <i>mode</i> shall be ignored. However,
+Technical Corrigendum 1 adjusts the standard to allow
+implementation-specific treatment for this case, thus
+permitting the glibc treatment of 'b'.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">There is no
+file descriptor associated with the file stream returned by
+these functions (i.e., <b>fileno</b>(3) will return an error
+if called on the returned stream).</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In glibc before
+version 2.7, seeking past the end of a stream created by
+<b>open_memstream</b>() does not enlarge the buffer; instead
+the <b>fseek</b>(3) call fails, returning &minus;1.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If <i>size</i>
+is specified as zero, <b>fmemopen</b>() fails with the error
+<b>EINVAL</b>. It would be more consistent if this case
+successfully created a stream that then returned end of file
+on the first attempt at reading. Furthermore, POSIX.1-2008
+does not specify a failure for this case.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Specifying
+append mode (&quot;a&quot; or &quot;a+&quot;) for
+<b>fmemopen</b>() sets the initial file position to the
+first null byte, but (if the file offset is reset to a
+location other than the end of the stream) does not force
+subsequent writes to append at the end of the stream.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+<i>mode</i> argument to <b>fmemopen</b>() specifies append
+(&quot;a&quot; or &quot;a+&quot;), and the <i>size</i>
+argument does not cover a null byte in <i>buf</i> then,
+according to POSIX.1-2008, the initial file position should
+be set to the next byte after the end of the buffer.
+However, in this case the glibc <b>fmemopen</b>() sets the
+file position to &minus;1.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To specify
+binary mode for <b>fmemopen</b>() the 'b' must be the
+<i>second</i> character in <i>mode</i>. Thus, for example,
+&quot;wb+&quot; has the desired effect, but &quot;w+b&quot;
+does not. This is inconsistent with the treatment of
+<i>mode</i> by <b>fopen</b>(3).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The glibc 2.9
+addition of &quot;binary&quot; mode for <b>fmemopen</b>()
+silently changed the ABI: previously, <b>fmemopen</b>()
+ignored 'b' in <i>mode</i>.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The program
+below uses <b>fmemopen</b>() to open an input buffer, and
+<b>open_memstream</b>() to open a dynamically sized output
+buffer. The program scans its input string (taken from the
+program&rsquo;s first command-line argument) reading
+integers, and writes the squares of these integers to the
+output buffer. An example of the output produced by this
+program is the following:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ <b>./a.out '1
+23 43'</b> <br>
+size=11; ptr=1 529 1849</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Program
+source</b> <br>
+#define _GNU_SOURCE <br>
+#include &lt;string.h&gt; <br>
+#include &lt;stdio.h&gt; <br>
+#include &lt;stdlib.h&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">#define
+handle_error(msg) \ <br>
+do { perror(msg); exit(EXIT_FAILURE); } while (0)</p>
+
+<p style="margin-left:11%; margin-top: 1em">int <br>
+main(int argc, char *argv[]) <br>
+{ <br>
+FILE *out, *in; <br>
+int v, s; <br>
+size_t size; <br>
+char *ptr;</p>
+
+<p style="margin-left:11%; margin-top: 1em">if (argc != 2)
+{</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="8%"></td>
+<td width="7%"></td>
+<td width="85%">
+
+
+<p>fprintf(stderr, &quot;Usage: %s &lt;file&gt;\n&quot;,
+argv[0]);</p> </td></tr>
+<tr valign="top" align="left">
+<td width="8%"></td>
+<td width="7%"></td>
+<td width="85%">
+
+
+<p>exit(EXIT_FAILURE);</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">}</p>
+
+<p style="margin-left:11%; margin-top: 1em">in =
+fmemopen(argv[1], strlen(argv[1]), &quot;r&quot;); <br>
+if (in == NULL) <br>
+handle_error(&quot;fmemopen&quot;);</p>
+
+<p style="margin-left:11%; margin-top: 1em">out =
+open_memstream(&amp;ptr, &amp;size); <br>
+if (out == NULL) <br>
+handle_error(&quot;open_memstream&quot;);</p>
+
+<p style="margin-left:11%; margin-top: 1em">for (;;) { <br>
+s = fscanf(in, &quot;%d&quot;, &amp;v); <br>
+if (s &lt;= 0) <br>
+break;</p>
+
+<p style="margin-left:11%; margin-top: 1em">s =
+fprintf(out, &quot;%d &quot;, v * v); <br>
+if (s == &minus;1) <br>
+handle_error(&quot;fprintf&quot;); <br>
+} <br>
+fclose(in); <br>
+fclose(out); <br>
+printf(&quot;size=%ld; ptr=%s\n&quot;, (long) size, ptr);
+<br>
+free(ptr); <br>
+exit(EXIT_SUCCESS); <br>
+}</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>fopen</b>(3),
+<b>fopencookie</b>(3)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

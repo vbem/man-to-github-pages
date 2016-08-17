@@ -1,0 +1,209 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:09 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>ADJTIMEX</title>
+
+</head>
+<body>
+
+<h1 align="center">ADJTIMEX</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">adjtimex
+&minus; tune kernel clock</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;sys/timex.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+adjtimex(struct timex *</b><i>buf</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Linux uses
+David L. Mills&rsquo; clock adjustment algorithm (see
+RFC&nbsp;1305). The system call <b>adjtimex</b>() reads and
+optionally sets adjustment parameters for this algorithm. It
+takes a pointer to a <i>timex</i> structure, updates kernel
+parameters from field values, and returns the same structure
+with current kernel values. This structure is declared as
+follows:</p>
+
+<p style="margin-left:17%; margin-top: 1em">struct timex {
+<br>
+int modes; /* mode selector */ <br>
+long offset; /* time offset (usec) */ <br>
+long freq; /* frequency offset (scaled ppm) */ <br>
+long maxerror; /* maximum error (usec) */ <br>
+long esterror; /* estimated error (usec) */ <br>
+int status; /* clock command/status */ <br>
+long constant; /* pll time constant */ <br>
+long precision; /* clock precision (usec) (read-only) */
+<br>
+long tolerance; /* clock frequency tolerance (ppm) <br>
+(read-only) */ <br>
+struct timeval time; /* current time (read-only) */ <br>
+long tick; /* usecs between clock ticks */ <br>
+};</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>modes</i> field determines which parameters, if any, to
+set. It may contain a bitwise-<i>or</i> combination of zero
+or more of the following bits:</p>
+
+<p style="margin-left:17%; margin-top: 1em">#define
+ADJ_OFFSET 0x0001 /* time offset */ <br>
+#define ADJ_FREQUENCY 0x0002 /* frequency offset */ <br>
+#define ADJ_MAXERROR 0x0004 /* maximum time error */ <br>
+#define ADJ_ESTERROR 0x0008 /* estimated time error */ <br>
+#define ADJ_STATUS 0x0010 /* clock status */ <br>
+#define ADJ_TIMECONST 0x0020 /* pll time constant */ <br>
+#define ADJ_TICK 0x4000 /* tick value */ <br>
+#define ADJ_OFFSET_SINGLESHOT 0x8001 /* old-fashioned
+adjtime() */</p>
+
+<p style="margin-left:11%; margin-top: 1em">Ordinary users
+are restricted to a zero value for <i>mode</i>. Only the
+superuser may set any parameters.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success,
+<b>adjtimex</b>() returns the clock state:</p>
+
+<p style="margin-left:17%; margin-top: 1em">#define TIME_OK
+0 /* clock synchronized */ <br>
+#define TIME_INS 1 /* insert leap second */ <br>
+#define TIME_DEL 2 /* delete leap second */ <br>
+#define TIME_OOP 3 /* leap second in progress */ <br>
+#define TIME_WAIT 4 /* leap second has occurred */ <br>
+#define TIME_BAD 5 /* clock not synchronized */</p>
+
+<p style="margin-left:11%; margin-top: 1em">On failure,
+<b>adjtimex</b>() returns &minus;1 and sets
+<i>errno</i>.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em"><i>buf</i> does not point to
+writable memory.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>An attempt is made to set <i>buf.offset</i> to a value
+outside the range &minus;131071 to +131071, or to set
+<i>buf.status</i> to a value other than those listed above,
+or to set <i>buf.tick</i> to a value outside the range
+900000/<b>HZ</b> to 1100000/<b>HZ</b>, where <b>HZ</b> is
+the system timer interrupt frequency.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EPERM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>buf.mode</i> is nonzero and the caller does not have
+sufficient privilege. Under Linux the <b>CAP_SYS_TIME</b>
+capability is required.</p></td></tr>
+</table>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>adjtimex</b>()
+is Linux-specific and should not be used in programs
+intended to be portable. See <b>adjtime</b>(3) for a more
+portable, but less flexible, method of adjusting the system
+clock.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>settimeofday</b>(2),
+<b>adjtime</b>(3), <b>capabilities</b>(7),
+<b>time</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

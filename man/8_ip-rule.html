@@ -1,0 +1,312 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:40:18 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>IP&minus;RULE</title>
+
+</head>
+<body>
+
+<h1 align="center">IP&minus;RULE</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">ip-rule &minus;
+routing policy database management</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:23%; margin-top: 1em"><b>ip</b> [
+<i>OPTIONS</i> ] <b>rule</b> { <i>COMMAND</i> | <b>help</b>
+}</p>
+
+<p style="margin-left:23%; margin-top: 1em"><b>ip rule</b>
+[ <b>list</b> | <b>add</b> | <b>del</b> | <b>flush</b> ]
+<i>SELECTOR ACTION</i></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><i>SELECTOR</i>
+:= [ <b>from</b> <i>PREFIX</i> ] [ <b>to</b> <i>PREFIX</i> ]
+[ <b>tos</b> <i>TOS</i> ] [ <b>fwmark</b>
+<i>FWMARK[/MASK]</i> ] [ <b>iif</b> <i>STRING</i> ] [
+<b>oif</b> <i>STRING</i> ] [ <b>pref</b> <i>NUMBER</i> ]</p>
+
+<p style="margin-left:23%; margin-top: 1em"><i>ACTION</i>
+:= [ <b>table</b> <i>TABLE_ID</i> ] [ <b>nat</b>
+<i>ADDRESS</i> ] [ <b>prohibit</b> | <b>unreachable</b> ] [
+<b>realms</b> [<i>SRCREALM</i>/]<i>DSTREALM</i> ]</p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><i>TABLE_ID</i>
+:= [ <b>local</b> | <b>main</b> | <b>default</b> |
+<i>NUMBER</i> ]</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>ip rule</i>
+manipulates rules in the routing policy database control the
+route selection algorithm.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Classic routing
+algorithms used in the Internet make routing decisions based
+only on the destination address of packets (and in theory,
+but not in practice, on the TOS field).</p>
+
+<p style="margin-left:11%; margin-top: 1em">In some
+circumstances we want to route packets differently depending
+not only on destination addresses, but also on other packet
+fields: source address, IP protocol, transport protocol
+ports or even packet payload. This task is called
+&rsquo;policy routing&rsquo;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To solve this
+task, the conventional destination based routing table,
+ordered according to the longest match rule, is replaced
+with a &rsquo;routing policy database&rsquo; (or RPDB),
+which selects routes by executing some set of rules.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Each policy
+routing rule consists of a <b>selector</b> and an <b>action
+predicate.</b> The RPDB is scanned in order of decreasing
+priority. The selector of each rule is applied to {source
+address, destination address, incoming interface, tos,
+fwmark} and, if the selector matches the packet, the action
+is performed. The action predicate may return with success.
+In this case, it will either give a route or failure
+indication and the RPDB lookup is terminated. Otherwise, the
+RPDB program continues with the next rule.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Semantically,
+the natural action is to select the nexthop and the output
+device.</p>
+
+<p style="margin-left:11%; margin-top: 1em">At startup time
+the kernel configures the default RPDB consisting of three
+rules:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>1.</p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>Priority: 0, Selector: match anything, Action: lookup
+routing table <b>local</b> (ID 255). The <b>local</b> table
+is a special routing table containing high priority control
+routes for local and broadcast addresses.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>2.</p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>Priority: 32766, Selector: match anything, Action:
+lookup routing table <b>main</b> (ID 254). The <b>main</b>
+table is the normal routing table containing all non-policy
+routes. This rule may be deleted and/or overridden with
+other ones by the administrator.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>3.</p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>Priority: 32767, Selector: match anything, Action:
+lookup routing table <b>default</b> (ID 253). The
+<b>default</b> table is empty. It is reserved for some
+post-processing if no previous default rules selected the
+packet. This rule may also be deleted.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Each RPDB entry
+has additional attributes. F.e. each rule has a pointer to
+some routing table. NAT and masquerading rules have an
+attribute to select new IP address to translate/masquerade.
+Besides that, rules have some optional attributes, which
+routes have, namely <b>realms</b>. These values do not
+override those contained in the routing tables. They are
+only used if the route did not select any attributes.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The RPDB may
+contain rules of the following types:</p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>unicast</b>
+- the rule prescribes to return the route found in the
+routing table referenced by the rule.</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><b>blackhole</b>
+- the rule prescribes to silently drop the packet.</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><b>unreachable</b>
+- the rule prescribes to generate a &rsquo;Network is
+unreachable&rsquo; error.</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><b>prohibit</b>
+- the rule prescribes to generate &rsquo;Communication is
+administratively prohibited&rsquo; error.</p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>nat</b> -
+the rule prescribes to translate the source address of the
+IP packet into some other value.</p>
+
+<p style="margin-left:11%;"><b>ip rule add - insert a new
+rule <br>
+ip rule delete - delete a rule</b></p>
+
+<p style="margin-left:22%;"><b>type</b> <i>TYPE</i>
+<b>(default)</b></p>
+
+<p style="margin-left:32%;">the type of this rule. The list
+of valid types was given in the previous subsection.</p>
+
+<p style="margin-left:22%;"><b>from</b> <i>PREFIX</i></p>
+
+<p style="margin-left:32%;">select the source prefix to
+match.</p>
+
+<p style="margin-left:22%;"><b>to</b> <i>PREFIX</i></p>
+
+<p style="margin-left:32%;">select the destination prefix
+to match.</p>
+
+<p style="margin-left:22%;"><b>iif</b> <i>NAME</i></p>
+
+<p style="margin-left:32%;">select the incoming device to
+match. If the interface is loopback, the rule only matches
+packets originating from this host. This means that you may
+create separate routing tables for forwarded and local
+packets and, hence, completely segregate them.</p>
+
+<p style="margin-left:22%;"><b>oif</b> <i>NAME</i></p>
+
+<p style="margin-left:32%;">select the outgoing device to
+match. The outgoing interface is only available for packets
+originating from local sockets that are bound to a
+device.</p>
+
+<p style="margin-left:22%;"><b>tos</b> <i>TOS</i> <b><br>
+dsfield</b> <i>TOS</i></p>
+
+<p style="margin-left:32%;">select the TOS value to
+match.</p>
+
+<p style="margin-left:22%;"><b>fwmark</b> <i>MARK</i></p>
+
+<p style="margin-left:32%;">select the <b>fwmark</b> value
+to match.</p>
+
+<p style="margin-left:22%;"><b>priority</b>
+<i>PREFERENCE</i></p>
+
+<p style="margin-left:32%;">the priority of this rule. Each
+rule should have an explicitly set <i>unique</i> priority
+value. The options preference and order are synonyms with
+priority.</p>
+
+<p style="margin-left:22%;"><b>table</b> <i>TABLEID</i></p>
+
+<p style="margin-left:32%;">the routing table identifier to
+lookup if the rule selector matches. It is also possible to
+use lookup instead of table.</p>
+
+<p style="margin-left:22%;"><b>realms</b>
+<i>FROM/TO</i></p>
+
+<p style="margin-left:32%;">Realms to select if the rule
+matched and the routing table lookup succeeded. Realm
+<i>TO</i> is only used if the route did not select any
+realm.</p>
+
+<p style="margin-left:22%;"><b>nat</b> <i>ADDRESS</i></p>
+
+<p style="margin-left:32%;">The base of the IP address
+block to translate (for source addresses). The
+<i>ADDRESS</i> may be either the start of the block of NAT
+addresses (selected by NAT routes) or a local host address
+(or even zero). In the last case the router does not
+translate the packets, but masquerades them to this address.
+Using map-to instead of nat means the same thing.</p>
+
+
+<p style="margin-left:32%; margin-top: 1em"><b>Warning:</b>
+Changes to the RPDB made with these commands do not become
+active immediately. It is assumed that after a script
+finishes a batch of updates, it flushes the routing cache
+with <b>ip route flush cache</b>.</p>
+
+<p style="margin-left:11%;"><b>ip rule flush - also dumps
+all the deleted rules.</b></p>
+
+<p style="margin-left:22%;">This command has no
+arguments.</p>
+
+<p style="margin-left:11%;"><b>ip rule show - list
+rules</b></p>
+
+<p style="margin-left:22%;">This command has no arguments.
+The options list or lst are synonyms with show.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>ip</b>(8)</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Original
+Manpage by Michail Litvak &lt;mci@owl.openwall.com&gt;</p>
+<hr>
+</body>
+</html>

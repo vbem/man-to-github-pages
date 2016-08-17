@@ -1,0 +1,421 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:24:24 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>MATHERR</title>
+
+</head>
+<body>
+
+<h1 align="center">MATHERR</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">matherr &minus;
+SVID math library exception handling</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#define
+_SVID_SOURCE</b> /* See feature_test_macros(7) */ <b><br>
+#include &lt;math.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+matherr(struct exception *</b><i>exc</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>extern
+_LIB_VERSION_TYPE _LIB_VERSION;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">Link with
+<i>&minus;lm</i>.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The System V
+Interface Definition (SVID) specifies that various math
+functions should invoke a function called <b>matherr</b>()
+if a math exception is detected. This function is called
+before the math function returns; after <b>matherr</b>()
+returns, the system then returns to the math function, which
+in turn returns to the caller.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>matherr</b>() mechanism is supported by glibc, but is now
+obsolete: new applications should use the techniques
+described in <b>math_error</b>(7) and <b>fenv</b>(3). This
+page documents the glibc <b>matherr</b>() mechanism as an
+aid for maintaining and porting older applications.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To employ
+<b>matherr</b>(), the programmer must define the
+<b>_SVID_SOURCE</b> feature test macro (before including
+<i>any</i> header files), and assign the value <b>_SVID_</b>
+to the external variable <b>_LIB_VERSION</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The system
+provides a default version of <b>matherr</b>(). This version
+does nothing, and returns zero (see below for the
+significance of this). The default <b>matherr</b>() can be
+overridden by a programmer-defined version, which will be
+invoked when an exception occurs. The function is invoked
+with one argument, a pointer to an <i>exception</i>
+structure, defined as follows:</p>
+
+<p style="margin-left:17%; margin-top: 1em">struct
+exception { <br>
+int type; /* Exception type */ <br>
+char *name; /* Name of function causing exception */ <br>
+double arg1; /* 1st argument to function */ <br>
+double arg2; /* 2nd argument to function */ <br>
+double retval; /* Function return value */ <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>type</i>
+field has one of the following values:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><b>DOMAIN</b></p></td>
+<td width="4%"></td>
+<td width="71%">
+
+
+<p>A domain error occurred (the function argument was
+outside the range for which the function is defined). The
+return value depends on the function; <i>errno</i> is set to
+<b>EDOM</b>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><b>SING</b></p></td>
+<td width="4%"></td>
+<td width="71%">
+
+
+<p>A pole error occurred (the function result is an
+infinity). The return value in most cases is <b>HUGE</b>
+(the largest single precision floating-point number),
+appropriately signed. In most cases, <i>errno</i> is set to
+<b>EDOM</b>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><b>OVERFLOW</b></p></td>
+<td width="4%"></td>
+<td width="71%">
+
+
+<p>An overflow occurred. In most cases, the value
+<b>HUGE</b> is returned, and <i>errno</i> is set to
+<b>ERANGE</b>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><b>UNDERFLOW</b></p></td>
+<td width="4%"></td>
+<td width="71%">
+
+
+<p>An underflow occurred. 0.0 is returned, and <i>errno</i>
+is set to <b>ERANGE</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><b>TLOSS</b></p></td>
+<td width="4%"></td>
+<td width="71%">
+
+
+<p>Total loss of significance. 0.0 is returned, and
+<i>errno</i> is set to <b>ERANGE</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><b>PLOSS</b></p></td>
+<td width="4%"></td>
+<td width="71%">
+
+
+<p>Partial loss of significance. This value is unused on
+glibc (and many other systems).</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>arg1</i>
+and <i>arg2</i> fields are the arguments supplied to the
+function (<i>arg2</i> is undefined for functions that take
+only one argument).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>retval</i> field specifies the return value that the math
+function will return to its caller. The programmer-defined
+<b>matherr</b>() can modify this field to change the return
+value of the math function.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+<b>matherr</b>() function returns zero, then the system sets
+<i>errno</i> as described above, and may print an error
+message on standard error (see below).</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+<b>matherr</b>() function returns a nonzero value, then the
+system does not set <i>errno</i>, and doesn&rsquo;t print an
+error message.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Math
+functions that employ matherr()</b> <br>
+The table below lists the functions and circumstances in
+which <b>matherr</b>() is called. The &quot;Type&quot;
+column indicates the value assigned to
+<i>exc&minus;&gt;type</i> when calling <b>matherr</b>(). The
+&quot;Result&quot; column is the default return value
+assigned to <i>exc&minus;&gt;retval</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+&quot;Msg?&quot; and &quot;errno&quot; columns describe the
+default behavior if <b>matherr</b>() returns zero. If the
+&quot;Msg?&quot; columns contains &quot;y&quot;, then the
+system prints an error message on standard error.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The table uses
+the following notations and abbreviations:</p>
+
+<p style="margin-left:22%; margin-top: 1em">x first
+argument to function <br>
+y second argument to function <br>
+fin finite value for argument <br>
+neg negative value for argument <br>
+int integral value for argument <br>
+o/f result overflowed <br>
+u/f result underflowed <br>
+|x| absolute value of x <br>
+X_TLOSS is a constant defined in <i>&lt;math.h&gt;</i></p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>&nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp;&nbsp;</i></p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The example
+program demonstrates the use of <b>matherr</b>() when
+calling <b>log</b>(3). The program takes up to three
+command-line arguments. The first argument is the
+floating-point number to be given to <b>log</b>(3). If the
+optional second argument is provided, then
+<b>_LIB_VERSION</b> is set to <b>_SVID_</b> so that
+<b>matherr</b>() is called, and the integer supplied in the
+command-line argument is used as the return value from
+<b>matherr</b>(). If the optional third command-line
+argument is supplied, then it specifies an alternative
+return value that <b>matherr</b>() should assign as the
+return value of the math function.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+example run, where <b>log</b>(3) is given an argument of
+0.0, does not use <b>matherr</b>():</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ <b>./a.out
+0.0</b> <br>
+errno: Numerical result out of range <br>
+x=-inf</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the
+following run, <b>matherr</b>() is called, and returns
+0:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ <b>./a.out
+0.0 0</b> <br>
+matherr SING exception in log() function <br>
+args: 0.000000, 0.000000 <br>
+retval:
+&minus;340282346638528859811704183484516925440.000000 <br>
+log: SING error <br>
+errno: Numerical argument out of domain <br>
+x=-340282346638528859811704183484516925440.000000</p>
+
+<p style="margin-left:11%; margin-top: 1em">The message
+&quot;log: SING error&quot; was printed by the C
+library.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the
+following run, <b>matherr</b>() is called, and returns a
+nonzero value:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ <b>./a.out
+0.0 1</b> <br>
+matherr SING exception in log() function <br>
+args: 0.000000, 0.000000 <br>
+retval:
+&minus;340282346638528859811704183484516925440.000000 <br>
+x=-340282346638528859811704183484516925440.000000</p>
+
+<p style="margin-left:11%; margin-top: 1em">In this case,
+the C library did not print a message, and <i>errno</i> was
+not set.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the
+following run, <b>matherr</b>() is called, changes the
+return value of the math function, and returns a nonzero
+value:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ <b>./a.out
+0.0 1 12345.0</b> <br>
+matherr SING exception in log() function <br>
+args: 0.000000, 0.000000 <br>
+retval:
+&minus;340282346638528859811704183484516925440.000000 <br>
+x=12345.000000</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Program
+source</b> <br>
+#define _SVID_SOURCE <br>
+#include &lt;errno.h&gt; <br>
+#include &lt;math.h&gt; <br>
+#include &lt;stdio.h&gt; <br>
+#include &lt;stdlib.h&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">static int
+matherr_ret = 0; /* Value that matherr() <br>
+should return */ <br>
+static int change_retval = 0; /* Should matherr() change
+<br>
+function's return value? */ <br>
+static double new_retval; /* New function return value
+*/</p>
+
+<p style="margin-left:11%; margin-top: 1em">int <br>
+matherr(struct exception *exc) <br>
+{ <br>
+fprintf(stderr, &quot;matherr %s exception in %s()
+function\n&quot;, <br>
+(exc&minus;&gt;type == DOMAIN) ? &quot;DOMAIN&quot; : <br>
+(exc&minus;&gt;type == OVERFLOW) ? &quot;OVERFLOW&quot; :
+<br>
+(exc&minus;&gt;type == UNDERFLOW) ? &quot;UNDERFLOW&quot; :
+<br>
+(exc&minus;&gt;type == SING) ? &quot;SING&quot; : <br>
+(exc&minus;&gt;type == TLOSS) ? &quot;TLOSS&quot; : <br>
+(exc&minus;&gt;type == PLOSS) ? &quot;PLOSS&quot; :
+&quot;???&quot;, <br>
+exc&minus;&gt;name); <br>
+fprintf(stderr, &quot; args: %f, %f\n&quot;, <br>
+exc&minus;&gt;arg1, exc&minus;&gt;arg2); <br>
+fprintf(stderr, &quot; retval: %f\n&quot;,
+exc&minus;&gt;retval);</p>
+
+<p style="margin-left:11%; margin-top: 1em">if
+(change_retval) <br>
+exc&minus;&gt;retval = new_retval;</p>
+
+<p style="margin-left:11%; margin-top: 1em">return
+matherr_ret; <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">int <br>
+main(int argc, char *argv[]) <br>
+{ <br>
+double x;</p>
+
+<p style="margin-left:11%; margin-top: 1em">if (argc &lt;
+2) { <br>
+fprintf(stderr, &quot;Usage: %s &lt;argval&gt;&quot; <br>
+&quot; [&lt;matherr&minus;ret&gt;
+[&lt;new&minus;func&minus;retval&gt;]]\n&quot;, argv[0]);
+<br>
+exit(EXIT_FAILURE); <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">if (argc &gt;
+2) { <br>
+_LIB_VERSION = _SVID_; <br>
+matherr_ret = atoi(argv[2]); <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">if (argc &gt;
+3) { <br>
+change_retval = 1; <br>
+new_retval = atof(argv[3]); <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">x =
+log(atof(argv[1])); <br>
+if (errno != 0) <br>
+perror(&quot;errno&quot;);</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">printf(&quot;x=%f\n&quot;,
+x); <br>
+exit(EXIT_SUCCESS); <br>
+}</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>fenv</b>(3),
+<b>math_error</b>(7), <b>standards</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

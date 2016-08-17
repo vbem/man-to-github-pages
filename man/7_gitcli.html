@@ -1,0 +1,304 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:39:10 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>GITCLI</title>
+
+</head>
+<body>
+
+<h1 align="center">GITCLI</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#ENHANCED OPTION PARSER">ENHANCED OPTION PARSER</a><br>
+<a href="#NOTES ON FREQUENTLY CONFUSED OPTIONS">NOTES ON FREQUENTLY CONFUSED OPTIONS</a><br>
+<a href="#GIT">GIT</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">gitcli &minus;
+Git command line interface and conventions</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">gitcli</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This manual
+describes the convention used throughout Git CLI.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Many commands
+take revisions (most often &quot;commits&quot;, but
+sometimes &quot;tree&minus;ish&quot;, depending on the
+context and command) and paths as their arguments. Here are
+the rules:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+Revisions come first and then paths. E.g. in git diff v1.0
+v2.0 arch/x86 include/asm&minus;x86, v1.0 and v2.0 are
+revisions and arch/x86 and include/asm&minus;x86 are
+paths.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; When an
+argument can be misunderstood as either a revision or a
+path, they can be disambiguated by placing &minus;&minus;
+between them. E.g. git diff &minus;&minus; HEAD is, &quot;I
+have a file called HEAD in my work tree. Please show changes
+between the version I staged in the index and what I have in
+the work tree for that file&quot;. not &quot;show difference
+between the HEAD commit and the work tree as a whole&quot;.
+You can say git diff HEAD &minus;&minus; to ask for the
+latter.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; Without
+disambiguating &minus;&minus;, Git makes a reasonable guess,
+but errors out and asking you to disambiguate when
+ambiguous. E.g. if you have a file called HEAD in your work
+tree, git diff HEAD is ambiguous, and you have to say either
+git diff HEAD &minus;&minus; or git diff &minus;&minus; HEAD
+to disambiguate.</p>
+
+<p style="margin-left:17%; margin-top: 1em">When writing a
+script that is expected to handle random user&minus;input,
+it is a good practice to make it explicit which arguments
+are which by placing disambiguating &minus;&minus; at
+appropriate places.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; Many
+commands allow wildcards in paths, but you need to protect
+them from getting globbed by the shell. These two mean
+different things:</p>
+
+<p style="margin-left:23%; margin-top: 1em">$ git checkout
+&minus;&minus; *.c <br>
+$ git checkout &minus;&minus; \*.c</p>
+
+<p style="margin-left:17%; margin-top: 1em">The former lets
+your shell expand the fileglob, and you are asking the
+dot&minus;C files in your working tree to be overwritten
+with the version in the index. The latter passes the *.c to
+Git, and you are asking the paths in the index that match
+the pattern to be checked out to your working tree. After
+running git add hello.c; rm hello.c, you will <i>not</i> see
+hello.c in your working tree with the former, but with the
+latter you will.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here are the
+rules regarding the &quot;flags&quot; that you should follow
+when you are scripting Git:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+it&rsquo;s preferred to use the non dashed form of Git
+commands, which means that you should prefer git foo to
+git&minus;foo.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+splitting short options to separate words (prefer git foo
+&minus;a &minus;b to git foo &minus;ab, the latter may not
+even work).</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; when a
+command line option takes an argument, use the
+<i>sticked</i> form. In other words, write git foo
+&minus;oArg instead of git foo &minus;o Arg for short
+options, and git foo &minus;&minus;long&minus;opt=Arg
+instead of git foo &minus;&minus;long&minus;opt Arg for long
+options. An option that takes optional option&minus;argument
+must be written in the <i>sticked</i> form.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; when you
+give a revision parameter to a command, make sure the
+parameter is not ambiguous with a name of a file in the work
+tree. E.g. do not write git log &minus;1 HEAD but write git
+log &minus;1 HEAD &minus;&minus;; the former will not work
+if you happen to have a file called HEAD in the work
+tree.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; many
+commands allow a long option
+&quot;&minus;&minus;option&quot; to be abbreviated only to
+their unique prefix (e.g. if there is no other option whose
+name begins with &quot;opt&quot;, you may be able to spell
+&quot;&minus;&minus;opt&quot; to invoke the
+&quot;&minus;&minus;option&quot; flag), but you should fully
+spell them out when writing your scripts; later versions of
+Git may introduce a new option whose name shares the same
+prefix, e.g. &quot;&minus;&minus;optimize&quot;, to make a
+short prefix that used to be unique no longer unique.</p>
+
+<h2>ENHANCED OPTION PARSER
+<a name="ENHANCED OPTION PARSER"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">From the Git
+1.5.4 series and further, many Git commands (not all of them
+at the time of the writing though) come with an enhanced
+option parser.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here is a list
+of the facilities provided by this option parser.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Magic
+Options</b> <br>
+Commands which have the enhanced option parser activated all
+understand a couple of magic command line options:</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;h</p>
+
+<p style="margin-left:17%;">gives a pretty printed usage of
+the command.</p>
+
+<p style="margin-left:23%; margin-top: 1em">$ git describe
+&minus;h <br>
+usage: git describe [options] &lt;committish&gt;* <br>
+or: git describe [options] &minus;&minus;dirty</p>
+
+
+<p style="margin-left:23%; margin-top: 1em">&minus;&minus;contains
+find the tag that comes after the commit <br>
+&minus;&minus;debug debug search strategy on stderr <br>
+&minus;&minus;all use any ref <br>
+&minus;&minus;tags use any tag, even unannotated <br>
+&minus;&minus;long always use long format <br>
+&minus;&minus;abbrev[=&lt;n&gt;] use &lt;n&gt; digits to
+display SHA&minus;1s</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;help&minus;all</p>
+
+<p style="margin-left:17%;">Some Git commands take options
+that are only used for plumbing or that are deprecated, and
+such options are hidden from the default usage. This option
+gives the full list of options.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Negating
+options</b> <br>
+Options with long option names can be negated by prefixing
+&minus;&minus;no&minus;. For example, git branch has the
+option &minus;&minus;track which is <i>on</i> by default.
+You can use &minus;&minus;no&minus;track to override that
+behaviour. The same goes for &minus;&minus;color and
+&minus;&minus;no&minus;color.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Aggregating
+short options</b> <br>
+Commands that support the enhanced option parser allow you
+to aggregate short options. This means that you can for
+example use git rm &minus;rf or git clean &minus;fdx.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Abbreviating
+long options</b> <br>
+Commands that support the enhanced option parser accepts
+unique prefix of a long option as if it is fully spelled
+out, but use this with a caution. For example, git commit
+&minus;&minus;amen behaves as if you typed git commit
+&minus;&minus;amend, but that is true only until a later
+version of Git introduces another option that shares the
+same prefix, e.g &lsquo;git commit
+&minus;&minus;amenity&quot; option.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Separating
+argument from the option</b> <br>
+You can write the mandatory option parameter to an option as
+a separate word on the command line. That means that all the
+following uses work:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git foo
+&minus;&minus;long&minus;opt=Arg <br>
+$ git foo &minus;&minus;long&minus;opt Arg <br>
+$ git foo &minus;oArg <br>
+$ git foo &minus;o Arg</p>
+
+<p style="margin-left:11%; margin-top: 1em">However, this
+is <b>NOT</b> allowed for switches with an optional value,
+where the <i>sticked</i> form must be used:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git describe
+&minus;&minus;abbrev HEAD # correct <br>
+$ git describe &minus;&minus;abbrev=10 HEAD # correct <br>
+$ git describe &minus;&minus;abbrev 10 HEAD # NOT WHAT YOU
+MEANT</p>
+
+<h2>NOTES ON FREQUENTLY CONFUSED OPTIONS
+<a name="NOTES ON FREQUENTLY CONFUSED OPTIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Many commands
+that can work on files in the working tree and/or in the
+index can take &minus;&minus;cached and/or
+&minus;&minus;index options. Sometimes people incorrectly
+think that, because the index was originally called cache,
+these two are synonyms. They are <b>not</b> &mdash; these
+two options mean very different things.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; The
+&minus;&minus;cached option is used to ask a command that
+usually works on files in the working tree to <b>only</b>
+work with the index. For example, git grep, when used
+without a commit to specify from which commit to look for
+strings in, usually works on files in the working tree, but
+with the &minus;&minus;cached option, it looks for strings
+in the index.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; The
+&minus;&minus;index option is used to ask a command that
+usually works on files in the working tree to <b>also</b>
+affect the index. For example, git stash apply usually
+merges changes recorded in a stash to the working tree, but
+with the &minus;&minus;index option, it also merges changes
+to the index as well.</p>
+
+<p style="margin-left:11%; margin-top: 1em">git apply
+command can be used with &minus;&minus;cached and
+&minus;&minus;index (but not at the same time). Usually the
+command only affects the files in the working tree, but with
+&minus;&minus;index, it patches both the files and their
+index entries, and with &minus;&minus;cached, it modifies
+only the index entries.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See also
+<b><font color="#0000FF">http://marc.info/?l=git&amp;m=116563135620359</font></b>
+<font color="#000000">and</font>
+<b><font color="#0000FF">http://marc.info/?l=git&amp;m=119150393620273</font></b>
+<font color="#000000">for further information.</font></p>
+
+<h2>GIT
+<a name="GIT"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Part
+of the <b>git</b>(1) suite</font></p>
+<hr>
+</body>
+</html>

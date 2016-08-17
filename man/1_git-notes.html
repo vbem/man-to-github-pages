@@ -1,0 +1,661 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:13:45 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>GIT&minus;NOTES</title>
+
+</head>
+<body>
+
+<h1 align="center">GIT&minus;NOTES</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#SUBCOMMANDS">SUBCOMMANDS</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#DISCUSSION">DISCUSSION</a><br>
+<a href="#NOTES MERGE STRATEGIES">NOTES MERGE STRATEGIES</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
+<a href="#CONFIGURATION">CONFIGURATION</a><br>
+<a href="#ENVIRONMENT">ENVIRONMENT</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#DOCUMENTATION">DOCUMENTATION</a><br>
+<a href="#GIT">GIT</a><br>
+<a href="#NOTES">NOTES</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">git-notes
+&minus; Add or inspect object notes</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>git
+notes</i> [list [&lt;object&gt;]] <i><br>
+git notes</i> add [&minus;f] [&minus;F &lt;file&gt; |
+&minus;m &lt;msg&gt; | (&minus;c | &minus;C) &lt;object&gt;]
+[&lt;object&gt;] <i><br>
+git notes</i> copy [&minus;f] ( &minus;&minus;stdin |
+&lt;from&minus;object&gt; &lt;to&minus;object&gt; ) <i><br>
+git notes</i> append [&minus;F &lt;file&gt; | &minus;m
+&lt;msg&gt; | (&minus;c | &minus;C) &lt;object&gt;]
+[&lt;object&gt;] <i><br>
+git notes</i> edit [&lt;object&gt;] <i><br>
+git notes</i> show [&lt;object&gt;] <i><br>
+git notes</i> merge [&minus;v | &minus;q] [&minus;s
+&lt;strategy&gt; ] &lt;notes_ref&gt; <i><br>
+git notes</i> merge &minus;&minus;commit [&minus;v |
+&minus;q] <i><br>
+git notes</i> merge &minus;&minus;abort [&minus;v |
+&minus;q] <i><br>
+git notes</i> remove [&minus;&minus;ignore&minus;missing]
+[&minus;&minus;stdin] [&lt;object&gt;...] <i><br>
+git notes</i> prune [&minus;n | &minus;v] <i><br>
+git notes</i> get&minus;ref</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Adds, removes,
+or reads notes attached to objects, without touching the
+objects themselves.</p>
+
+<p style="margin-left:11%; margin-top: 1em">By default,
+notes are saved to and read from refs/notes/commits, but
+this default can be overridden. See the OPTIONS,
+CONFIGURATION, and ENVIRONMENT sections below. If this ref
+does not exist, it will be quietly created when it is first
+needed to store a note.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A typical use
+of notes is to supplement a commit message without changing
+the commit itself. Notes can be shown by <i>git log</i>
+along with the original commit message. To distinguish these
+notes from the message stored in the commit object, the
+notes are indented like the message, after an unindented
+line saying &quot;Notes (&lt;refname&gt;):&quot; (or
+&quot;Notes:&quot; for refs/notes/commits).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Notes can also
+be added to patches prepared with git format&minus;patch by
+using the &minus;&minus;notes option. Such notes are added
+as a patch commentary after a three dash separator line.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To change which
+notes are shown by <i>git log</i>, see the
+&quot;notes.displayRef&quot; configuration in
+<b>git-log</b>(1).</p>
+
+<p style="margin-left:11%; margin-top: 1em">See the
+&quot;notes.rewrite.&lt;command&gt;&quot; configuration for
+a way to carry notes across commands that rewrite
+commits.</p>
+
+<h2>SUBCOMMANDS
+<a name="SUBCOMMANDS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">list</p>
+
+<p style="margin-left:17%;">List the notes object for a
+given object. If no object is given, show a list of all note
+objects and the objects they annotate (in the format
+&quot;&lt;note object&gt; &lt;annotated object&gt;&quot;).
+This is the default subcommand if no subcommand is
+given.</p>
+
+<p style="margin-left:11%; margin-top: 1em">add</p>
+
+<p style="margin-left:17%;">Add notes for a given object
+(defaults to HEAD). Abort if the object already has notes
+(use &minus;f to overwrite existing notes). However, if
+you&rsquo;re using add interactively (using an editor to
+supply the notes contents), then &minus; instead of aborting
+&minus; the existing notes will be opened in the editor
+(like the edit subcommand).</p>
+
+<p style="margin-left:11%; margin-top: 1em">copy</p>
+
+<p style="margin-left:17%;">Copy the notes for the first
+object onto the second object. Abort if the second object
+already has notes, or if the first object has none (use
+&minus;f to overwrite existing notes to the second object).
+This subcommand is equivalent to: git notes add [&minus;f]
+&minus;C $(git notes list &lt;from&minus;object&gt;)
+&lt;to&minus;object&gt;</p>
+
+<p style="margin-left:17%; margin-top: 1em">In
+&minus;&minus;stdin mode, take lines in the format</p>
+
+
+<p style="margin-left:23%; margin-top: 1em">&lt;from&minus;object&gt;
+SP &lt;to&minus;object&gt; [ SP &lt;rest&gt; ] LF</p>
+
+<p style="margin-left:17%; margin-top: 1em">on standard
+input, and copy the notes from each
+&lt;from&minus;object&gt; to its corresponding
+&lt;to&minus;object&gt;. (The optional &lt;rest&gt; is
+ignored so that the command can read the input given to the
+post&minus;rewrite hook.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">append</p>
+
+<p style="margin-left:17%;">Append to the notes of an
+existing object (defaults to HEAD). Creates a new notes
+object if needed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">edit</p>
+
+<p style="margin-left:17%;">Edit the notes for a given
+object (defaults to HEAD).</p>
+
+<p style="margin-left:11%; margin-top: 1em">show</p>
+
+<p style="margin-left:17%;">Show the notes for a given
+object (defaults to HEAD).</p>
+
+<p style="margin-left:11%; margin-top: 1em">merge</p>
+
+<p style="margin-left:17%;">Merge the given notes ref into
+the current notes ref. This will try to merge the changes
+made by the given notes ref (called &quot;remote&quot;)
+since the merge&minus;base (if any) into the current notes
+ref (called &quot;local&quot;).</p>
+
+<p style="margin-left:17%; margin-top: 1em">If conflicts
+arise and a strategy for automatically resolving conflicting
+notes (see the &minus;s/&minus;&minus;strategy option) is
+not given, the &quot;manual&quot; resolver is used. This
+resolver checks out the conflicting notes in a special
+worktree (.git/NOTES_MERGE_WORKTREE), and instructs the user
+to manually resolve the conflicts there. When done, the user
+can either finalize the merge with <i>git notes merge
+&minus;&minus;commit</i>, or abort the merge with <i>git
+notes merge &minus;&minus;abort</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">remove</p>
+
+<p style="margin-left:17%;">Remove the notes for given
+objects (defaults to HEAD). When giving zero or one object
+from the command line, this is equivalent to specifying an
+empty note message to the edit subcommand.</p>
+
+<p style="margin-left:11%; margin-top: 1em">prune</p>
+
+<p style="margin-left:17%;">Remove all notes for
+non&minus;existing/unreachable objects.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">get&minus;ref</p>
+
+<p style="margin-left:17%;">Print the current notes ref.
+This provides an easy way to retrieve the current notes ref
+(e.g. from scripts).</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;f,
+&minus;&minus;force</p>
+
+<p style="margin-left:17%;">When adding notes to an object
+that already has notes, overwrite the existing notes
+(instead of aborting).</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;m
+&lt;msg&gt;, &minus;&minus;message=&lt;msg&gt;</p>
+
+<p style="margin-left:17%;">Use the given note message
+(instead of prompting). If multiple &minus;m options are
+given, their values are concatenated as separate paragraphs.
+Lines starting with # and empty lines other than a single
+line between paragraphs will be stripped out.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;F
+&lt;file&gt;, &minus;&minus;file=&lt;file&gt;</p>
+
+<p style="margin-left:17%;">Take the note message from the
+given file. Use <i>&minus;</i> to read the note message from
+the standard input. Lines starting with # and empty lines
+other than a single line between paragraphs will be stripped
+out.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;C
+&lt;object&gt;,
+&minus;&minus;reuse&minus;message=&lt;object&gt;</p>
+
+<p style="margin-left:17%;">Take the given blob object (for
+example, another note) as the note message. (Use git notes
+copy &lt;object&gt; instead to copy notes between
+objects.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;c
+&lt;object&gt;,
+&minus;&minus;reedit&minus;message=&lt;object&gt;</p>
+
+<p style="margin-left:17%;">Like <i>&minus;C</i>, but with
+<i>&minus;c</i> the editor is invoked, so that the user can
+further edit the note message.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;ref
+&lt;ref&gt;</p>
+
+<p style="margin-left:17%;">Manipulate the notes tree in
+&lt;ref&gt;. This overrides <i>GIT_NOTES_REF</i> and the
+&quot;core.notesRef&quot; configuration. The ref is taken to
+be in refs/notes/ if it is not qualified.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;ignore&minus;missing</p>
+
+<p style="margin-left:17%;">Do not consider it an error to
+request removing notes from an object that does not have
+notes attached to it.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;stdin</p>
+
+<p style="margin-left:17%;">Also read the object names to
+remove notes from from the standard input (there is no
+reason you cannot combine this with object names from the
+command line).</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;n,
+&minus;&minus;dry&minus;run</p>
+
+<p style="margin-left:17%;">Do not remove anything; just
+report the object names whose notes would be removed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;s
+&lt;strategy&gt;,
+&minus;&minus;strategy=&lt;strategy&gt;</p>
+
+<p style="margin-left:17%;">When merging notes, resolve
+notes conflicts using the given strategy. The following
+strategies are recognized: &quot;manual&quot; (default),
+&quot;ours&quot;, &quot;theirs&quot;, &quot;union&quot; and
+&quot;cat_sort_uniq&quot;. See the &quot;NOTES MERGE
+STRATEGIES&quot; section below for more information on each
+notes merge strategy.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;commit</p>
+
+<p style="margin-left:17%;">Finalize an in&minus;progress
+<i>git notes merge</i>. Use this option when you have
+resolved the conflicts that <i>git notes merge</i> stored in
+.git/NOTES_MERGE_WORKTREE. This amends the partial merge
+commit created by <i>git notes merge</i> (stored in
+.git/NOTES_MERGE_PARTIAL) by adding the notes in
+.git/NOTES_MERGE_WORKTREE. The notes ref stored in the
+.git/NOTES_MERGE_REF symref is updated to the resulting
+commit.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;abort</p>
+
+<p style="margin-left:17%;">Abort/reset a in&minus;progress
+<i>git notes merge</i>, i.e. a notes merge with conflicts.
+This simply removes all files related to the notes
+merge.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;q,
+&minus;&minus;quiet</p>
+
+<p style="margin-left:17%;">When merging notes, operate
+quietly.</p>
+
+<p style="margin-left:11%; margin-top: 1em">&minus;v,
+&minus;&minus;verbose</p>
+
+<p style="margin-left:17%;">When merging notes, be more
+verbose. When pruning notes, report all object names whose
+notes are removed.</p>
+
+<h2>DISCUSSION
+<a name="DISCUSSION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Commit notes
+are blobs containing extra information about an object
+(usually information to supplement a commit&rsquo;s
+message). These blobs are taken from notes refs. A notes ref
+is usually a branch which contains &quot;files&quot; whose
+paths are the object names for the objects they describe,
+with some directory separators included for performance
+reasons <small>[1]</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">Every notes
+change creates a new commit at the specified notes ref. You
+can therefore inspect the history of the notes by invoking,
+e.g., git log &minus;p notes/commits. Currently the commit
+message only records which operation triggered the update,
+and the commit authorship is determined according to the
+usual rules (see <b>git-commit</b>(1)). These details may
+change in the future.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is also
+permitted for a notes ref to point directly to a tree
+object, in which case the history of the notes can be read
+with git log &minus;p &minus;g &lt;refname&gt;.</p>
+
+<h2>NOTES MERGE STRATEGIES
+<a name="NOTES MERGE STRATEGIES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The default
+notes merge strategy is &quot;manual&quot;, which checks out
+conflicting notes in a special work tree for resolving notes
+conflicts (.git/NOTES_MERGE_WORKTREE), and instructs the
+user to resolve the conflicts in that work tree. When done,
+the user can either finalize the merge with <i>git notes
+merge &minus;&minus;commit</i>, or abort the merge with
+<i>git notes merge &minus;&minus;abort</i>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&quot;ours&quot;
+automatically resolves conflicting notes in favor of the
+local version (i.e. the current notes ref).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&quot;theirs&quot;
+automatically resolves notes conflicts in favor of the
+remote version (i.e. the given notes ref being merged into
+the current notes ref).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&quot;union&quot;
+automatically resolves notes conflicts by concatenating the
+local and remote versions.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">&quot;cat_sort_uniq&quot;
+is similar to &quot;union&quot;, but in addition to
+concatenating the local and remote versions, this strategy
+also sorts the resulting lines, and removes duplicate lines
+from the result. This is equivalent to applying the
+&quot;cat | sort | uniq&quot; shell pipeline to the local
+and remote versions. This strategy is useful if the notes
+follow a line&minus;based format where one wants to avoid
+duplicated lines in the merge result. Note that if either
+the local or remote version contain duplicate lines prior to
+the merge, these will also be removed by this notes merge
+strategy.</p>
+
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can use
+notes to add annotations with information that was not
+available at the time a commit was written.</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git notes add
+&minus;m 'Tested&minus;by: Johannes Sixt
+&lt;j6t@kdbg.org&gt;' 72a144e2 <br>
+$ git show &minus;s 72a144e <br>
+[...] <br>
+Signed&minus;off&minus;by: Junio C Hamano
+&lt;gitster@pobox.com&gt;</p>
+
+<p style="margin-left:17%; margin-top: 1em">Notes: <br>
+Tested&minus;by: Johannes Sixt &lt;j6t@kdbg.org&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">In principle, a
+note is a regular Git blob, and any kind of
+(non&minus;)format is accepted. You can binary&minus;safely
+create notes from arbitrary files using <i>git
+hash&minus;object</i>:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ cc *.c <br>
+$ blob=$(git hash&minus;object &minus;w a.out) <br>
+$ git notes &minus;&minus;ref=built add &minus;C
+&quot;$blob&quot; HEAD</p>
+
+<p style="margin-left:11%; margin-top: 1em">(You cannot
+simply use git notes &minus;&minus;ref=built add &minus;F
+a.out HEAD because that is not binary&minus;safe.) Of
+course, it doesn&rsquo;t make much sense to display
+non&minus;text&minus;format notes with <i>git log</i>, so if
+you use such notes, you&rsquo;ll probably need to write some
+special&minus;purpose tools to do something useful with
+them.</p>
+
+<h2>CONFIGURATION
+<a name="CONFIGURATION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">core.notesRef</p>
+
+<p style="margin-left:17%;">Notes ref to read and
+manipulate instead of refs/notes/commits. Must be an
+unabbreviated ref name. This setting can be overridden
+through the environment and command line.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">notes.displayRef</p>
+
+<p style="margin-left:17%;">Which ref (or refs, if a glob
+or specified more than once), in addition to the default set
+by core.notesRef or <i>GIT_NOTES_REF</i>, to read notes from
+when showing commit messages with the <i>git log</i> family
+of commands. This setting can be overridden on the command
+line or by the <i>GIT_NOTES_DISPLAY_REF</i> environment
+variable. See <b>git-log</b>(1).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">notes.rewrite.&lt;command&gt;</p>
+
+<p style="margin-left:17%;">When rewriting commits with
+&lt;command&gt; (currently amend or rebase), if this
+variable is false, git will not copy notes from the original
+to the rewritten commit. Defaults to true. See also
+&quot;notes.rewriteRef&quot; below.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This setting
+can be overridden by the <i>GIT_NOTES_REWRITE_REF</i>
+environment variable.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">notes.rewriteMode</p>
+
+<p style="margin-left:17%;">When copying notes during a
+rewrite, what to do if the target commit already has a note.
+Must be one of overwrite, concatenate, and ignore. Defaults
+to concatenate.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This setting
+can be overridden with the GIT_NOTES_REWRITE_MODE
+environment variable.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">notes.rewriteRef</p>
+
+<p style="margin-left:17%;">When copying notes during a
+rewrite, specifies the (fully qualified) ref whose notes
+should be copied. May be a glob, in which case notes in all
+matching refs will be copied. You may also specify this
+configuration several times.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Does not have a
+default value; you must configure this variable to enable
+note rewriting.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Can be
+overridden with the <i>GIT_NOTES_REWRITE_REF</i> environment
+variable.</p>
+
+<h2>ENVIRONMENT
+<a name="ENVIRONMENT"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>GIT_NOTES_REF</i></p>
+
+<p style="margin-left:17%;">Which ref to manipulate notes
+from, instead of refs/notes/commits. This overrides the
+core.notesRef setting.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>GIT_NOTES_DISPLAY_REF</i></p>
+
+<p style="margin-left:17%;">Colon&minus;delimited list of
+refs or globs indicating which refs, in addition to the
+default from core.notesRef or <i>GIT_NOTES_REF</i>, to read
+notes from when showing commit messages. This overrides the
+notes.displayRef setting.</p>
+
+<p style="margin-left:17%; margin-top: 1em">A warning will
+be issued for refs that do not exist, but a glob that does
+not match any refs is silently ignored.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>GIT_NOTES_REWRITE_MODE</i></p>
+
+<p style="margin-left:17%;">When copying notes during a
+rewrite, what to do if the target commit already has a note.
+Must be one of overwrite, concatenate, and ignore. This
+overrides the core.rewriteMode setting.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>GIT_NOTES_REWRITE_REF</i></p>
+
+<p style="margin-left:17%;">When rewriting commits, which
+notes to copy from the original to the rewritten commit.
+Must be a colon&minus;delimited list of refs or globs.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If not set in
+the environment, the list of notes to copy depends on the
+notes.rewrite.&lt;command&gt; and notes.rewriteRef
+settings.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Written by
+Johannes Schindelin
+&lt;<b><font color="#0000FF">johannes.schindelin@gmx.de</font></b>
+<small><font color="#000000">[2]</font></small>
+<font color="#000000">&gt; and Johan Herland
+&lt;</font><b><font color="#0000FF">johan@herland.net</font></b>
+<small><font color="#000000">[3]</font></small>
+<font color="#000000">&gt;</font></p>
+
+<h2>DOCUMENTATION
+<a name="DOCUMENTATION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Documentation
+by Johannes Schindelin and Johan Herland</font></p>
+
+<h2>GIT
+<a name="GIT"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Part
+of the <b>git</b>(7) suite</font></p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">1.</font></p> </td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em"><font color="#000000">Permitted
+pathnames have the form
+<i>ab</i>/<i>cd</i>/<i>ef</i>/<i>...</i>/<i>abcdef...</i>: a
+sequence of directory names of two hexadecimal digits each
+followed by a filename with the rest of the object
+ID.</font></p> </td></tr>
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+<p><font color="#000000">2.</font></p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+
+<p><font color="#000000">johannes.schindelin@gmx.de</font></p> </td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">mailto:johannes.schindelin@gmx.de</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">3.</font></p> </td>
+<td width="2%"></td>
+<td width="26%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">johan@herland.net</font></p> </td>
+<td width="57%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">mailto:johan@herland.net</font></p>
+<hr>
+</body>
+</html>

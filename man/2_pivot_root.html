@@ -1,0 +1,311 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:40 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PIVOT_ROOT</title>
+
+</head>
+<body>
+
+<h1 align="center">PIVOT_ROOT</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">pivot_root
+&minus; change the root file system</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+pivot_root(const char *</b><i>new_root</i><b>, const char
+*</b><i>put_old</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Note</i>:
+There is no glibc wrapper for this system call; see
+NOTES.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>pivot_root</b>()
+moves the root file system of the calling process to the
+directory <i>put_old</i> and makes <i>new_root</i> the new
+root file system of the calling process.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The typical use
+of <b>pivot_root</b>() is during system startup, when the
+system mounts a temporary root file system (e.g., an
+<b>initrd</b>), then mounts the real root file system, and
+eventually turns the latter into the current root of all
+relevant processes or threads.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>pivot_root</b>()
+may or may not change the current root and the current
+working directory of any processes or threads which use the
+old root directory. The caller of <b>pivot_root</b>() must
+ensure that processes with root or current working directory
+at the old root operate correctly in either case. An easy
+way to ensure this is to change their root and current
+working directory to <i>new_root</i> before invoking
+<b>pivot_root</b>().</p>
+
+<p style="margin-left:11%; margin-top: 1em">The paragraph
+above is intentionally vague because the implementation of
+<b>pivot_root</b>() may change in the future. At the time of
+writing, <b>pivot_root</b>() changes root and current
+working directory of each process or thread to
+<i>new_root</i> if they point to the old root directory.
+This is necessary in order to prevent kernel threads from
+keeping the old root directory busy with their root and
+current working directory, even if they never access the
+file system in any way. In the future, there may be a
+mechanism for kernel threads to explicitly relinquish any
+access to the file system, such that this fairly intrusive
+mechanism can be removed from <b>pivot_root</b>().</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that this
+also applies to the calling process: <b>pivot_root</b>() may
+or may not affect its current working directory. It is
+therefore recommended to call <b>chdir(&quot;/&quot;)</b>
+immediately after <b>pivot_root</b>().</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+restrictions apply to <i>new_root</i> and
+<i>put_old</i>:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&minus;</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>They must be directories.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&minus;</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p><i>new_root</i> and <i>put_old</i> must not be on the
+same file system as the current root.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&minus;</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p><i>put_old</i> must be underneath <i>new_root</i>, that
+is, adding a nonzero number of <i>/..</i> to the string
+pointed to by <i>put_old</i> must yield the same directory
+as <i>new_root</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&minus;</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>No other file system may be mounted on
+<i>put_old</i>.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">See also
+<b>pivot_root</b>(8) for additional usage examples.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the current
+root is not a mount point (e.g., after <b>chroot</b>(2) or
+<b>pivot_root</b>(), see also below), not the old root
+directory, but the mount point of that file system is
+mounted on <i>put_old</i>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>new_root</i>
+does not have to be a mount point. In this case,
+<i>/proc/mounts</i> will show the mount point of the file
+system containing <i>new_root</i> as root (<i>/</i>).</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success,
+zero is returned. On error, &minus;1 is returned, and
+<i>errno</i> is set appropriately.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>pivot_root</b>()
+may return (in <i>errno</i>) any of the errors returned by
+<b>stat</b>(2). Additionally, it may return:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EBUSY</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em"><i>new_root</i> or
+<i>put_old</i> are on the current root file system, or a
+file system is already mounted on <i>put_old</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>put_old</i> is not underneath <i>new_root</i>.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>ENOTDIR</b></p>
+
+<p style="margin-left:22%;"><i>new_root</i> or
+<i>put_old</i> is not a directory.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>EPERM</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>The calling process does not have the
+<b>CAP_SYS_ADMIN</b> capability.</p></td></tr>
+</table>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>pivot_root</b>()
+was introduced in Linux 2.3.41.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>pivot_root</b>()
+is Linux-specific and hence is not portable.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Glibc does not
+provide a wrapper for this system call; call it using
+<b>syscall</b>(2).</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>pivot_root</b>()
+should not have to change root and current working directory
+of all other processes in the system.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Some of the
+more obscure uses of <b>pivot_root</b>() may quickly lead to
+insanity.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>chdir</b>(2),
+<b>chroot</b>(2), <b>stat</b>(2), <b>initrd</b>(4),
+<b>pivot_root</b>(8)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

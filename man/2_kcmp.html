@@ -1,0 +1,320 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:28 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>KCMP</title>
+
+</head>
+<body>
+
+<h1 align="center">KCMP</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">kcmp &minus;
+compare two processes to determine if they share a kernel
+resource</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;linux/kcmp.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+kcmp(pid_t</b> <i>pid1</i><b>, pid_t</b> <i>pid2</i><b>,
+int</b> <i>type</i><b>, <br>
+unsigned long</b> <i>idx1</i><b>, unsigned long</b>
+<i>idx2</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Note</i>:
+There is no glibc wrapper for this system call; see
+NOTES.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>kcmp</b>() system call can be used to check whether the
+two processes identified by <i>pid1</i> and <i>pid2</i>
+share a kernel resource such as virtual memory, file
+descriptors, and so on.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>type</i>
+argument specifies which resource is to be compared in the
+two processes. It has one of the following values: <b><br>
+KCMP_FILE</b></p>
+
+<p style="margin-left:22%;">Check whether a file descriptor
+<i>idx1</i> in the process <i>pid1</i> refers to the same
+open file description (see <b>open</b>(2)) as file
+descriptor <i>idx2</i> in the process <i>pid2</i>.</p>
+
+<p style="margin-left:11%;"><b>KCMP_FILES</b></p>
+
+<p style="margin-left:22%;">Check whether the process share
+the same set of open file descriptors. The arguments
+<i>idx1</i> and <i>idx2</i> are ignored.</p>
+
+<p style="margin-left:11%;"><b>KCMP_FS</b></p>
+
+<p style="margin-left:22%;">Check whether the processes
+share the same file system information (i.e., file mode
+creation mask, working directory, and file system root). The
+arguments <i>idx1</i> and <i>idx2</i> are ignored.</p>
+
+<p style="margin-left:11%;"><b>KCMP_IO</b></p>
+
+<p style="margin-left:22%;">Check whether the processes
+share I/O context. The arguments <i>idx1</i> and <i>idx2</i>
+are ignored.</p>
+
+<p style="margin-left:11%;"><b>KCMP_SIGHAND</b></p>
+
+<p style="margin-left:22%;">Check whether the processes
+share the same table of signal dispositions. The arguments
+<i>idx1</i> and <i>idx2</i> are ignored.</p>
+
+<p style="margin-left:11%;"><b>KCMP_SYSVSEM</b></p>
+
+<p style="margin-left:22%;">Check whether the processes
+share the same list of System V semaphore undo operations.
+The arguments <i>idx1</i> and <i>idx2</i> are ignored.</p>
+
+<p style="margin-left:11%;"><b>KCMP_VM</b></p>
+
+<p style="margin-left:22%;">Check whether the processes
+share the same address space. The arguments <i>idx1</i> and
+<i>idx2</i> are ignored.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note the
+<b>kcmp</b>() is not protected against false positives which
+may have place if tasks are running. Which means one should
+stop tasks being inspected with this syscall to obtain
+meaningful results.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The return
+value of a successful call to <b>kcmp</b>() is simply the
+result of arithmetic comparison of kernel pointers (when the
+kernel compares resources, it uses their memory
+addresses).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The easiest way
+to explain is to consider an example. Suppose that <i>v1</i>
+and <i>v2</i> are the addresses of appropriate resources,
+then the return value is one of the following:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>0</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><i>v1</i> is equal to <i>v2</i>; in other words, the two
+processes share the resource.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>1</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><i>v1</i> is less than <i>v2</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>2</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><i>v1</i> is greater than <i>v2</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>3</p></td>
+<td width="5%"></td>
+<td width="77%">
+
+
+<p><i>v1</i> is not equal to <i>v2</i>, but ordering
+information is unavailable.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">On error,
+&minus;1 is returned, and <i>errno</i> is set
+appropriately.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>kcmp ()</b>
+was designed to return values suitable for sorting. This is
+particularly handy if one needs to compare a large number of
+file descriptors.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EBADF</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em"><i>type</i> is <b>KCMP_FILE</b>
+and <i>fd1</i> or <i>fd2</i> is not an open file
+descriptor.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>type</i> is invalid.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EPERM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Insufficient permission to inspect process resources.
+The <b>CAP_SYS_PTRACE</b> capability is required to inspect
+processes that you do not own.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ESRCH</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Process <i>pid1</i> or <i>pid2</i> does not exist.</p></td></tr>
+</table>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>kcmp</b>() system call first appeared in Linux 3.5.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>kcmp</b>()
+is Linux specific and should not be used in programs
+intended to be portable.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Glibc does not
+provide a wrapper for this system call; call it using
+<b>syscall</b>(2).</p>
+
+<p style="margin-left:11%; margin-top: 1em">This system
+call is available only if the kernel was configured with
+<b>CONFIG_CHECKPOINT_RESTORE</b>. The main use of the system
+call is for the checkpoint/restore in user space (CRIU)
+feature. The alternative to this system call would have been
+to expose suitable process information via the
+<b>proc</b>(5) file system; this was deemed to be unsuitable
+for security reasons.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See
+<b>clone</b>(2) for some background information on the
+shared resources referred to on this page.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>clone</b>(2),
+<b>unshare</b>(2)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

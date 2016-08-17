@@ -1,0 +1,1176 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:54 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SIGACTION</title>
+
+</head>
+<body>
+
+<h1 align="center">SIGACTION</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">sigaction
+&minus; examine and change a signal action</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;signal.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+sigaction(int</b> <i>signum</i><b>, const struct sigaction
+*</b><i>act</i><b>, <br>
+struct sigaction *</b><i>oldact</i><b>);</b></p>
+
+<p style="margin-left:5%; margin-top: 1em">Feature Test
+Macro Requirements for glibc (see
+<b>feature_test_macros</b>(7)):</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>sigaction</b>():
+_POSIX_C_SOURCE&nbsp;&gt;=&nbsp;1 || _XOPEN_SOURCE ||
+_POSIX_SOURCE</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>siginfo_t</i>:
+_POSIX_C_SOURCE &gt;= 199309L</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>sigaction</b>() system call is used to change the action
+taken by a process on receipt of a specific signal. (See
+<b>signal</b>(7) for an overview of signals.)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>signum</i>
+specifies the signal and can be any valid signal except
+<b>SIGKILL</b> and <b>SIGSTOP</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If <i>act</i>
+is non-NULL, the new action for signal <i>signum</i> is
+installed from <i>act</i>. If <i>oldact</i> is non-NULL, the
+previous action is saved in <i>oldact</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>sigaction</i> structure is defined as something like:</p>
+
+<p style="margin-left:17%; margin-top: 1em">struct
+sigaction { <br>
+void (*sa_handler)(int); <br>
+void (*sa_sigaction)(int, siginfo_t *, void *); <br>
+sigset_t sa_mask; <br>
+int sa_flags; <br>
+void (*sa_restorer)(void); <br>
+};</p>
+
+<p style="margin-left:11%; margin-top: 1em">On some
+architectures a union is involved: do not assign to both
+<i>sa_handler</i> and <i>sa_sigaction</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>sa_restorer</i> element is obsolete and should not be
+used. POSIX does not specify a <i>sa_restorer</i>
+element.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>sa_handler</i>
+specifies the action to be associated with <i>signum</i> and
+may be <b>SIG_DFL</b> for the default action, <b>SIG_IGN</b>
+to ignore this signal, or a pointer to a signal handling
+function. This function receives the signal number as its
+only argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b>SA_SIGINFO</b> is specified in <i>sa_flags</i>, then
+<i>sa_sigaction</i> (instead of <i>sa_handler</i>) specifies
+the signal-handling function for <i>signum</i>. This
+function receives the signal number as its first argument, a
+pointer to a <i>siginfo_t</i> as its second argument and a
+pointer to a <i>ucontext_t</i> (cast to <i>void&nbsp;*</i>)
+as its third argument. (Commonly, the handler function
+doesn&rsquo;t make any use of the third argument. See
+<b>getcontext</b>(3) for further information about
+<i>ucontext_t</i>.)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>sa_mask</i>
+specifies a mask of signals which should be blocked (i.e.,
+added to the signal mask of the thread in which the signal
+handler is invoked) during execution of the signal handler.
+In addition, the signal which triggered the handler will be
+blocked, unless the <b>SA_NODEFER</b> flag is used.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>sa_flags</i>
+specifies a set of flags which modify the behavior of the
+signal. It is formed by the bitwise OR of zero or more of
+the following:</p>
+
+<p style="margin-left:17%;"><b>SA_NOCLDSTOP</b></p>
+
+<p style="margin-left:28%;">If <i>signum</i> is
+<b>SIGCHLD</b>, do not receive notification when child
+processes stop (i.e., when they receive one of
+<b>SIGSTOP</b>, <b>SIGTSTP</b>, <b>SIGTTIN</b> or
+<b>SIGTTOU</b>) or resume (i.e., they receive
+<b>SIGCONT</b>) (see <b>wait</b>(2)). This flag is
+meaningful only when establishing a handler for
+<b>SIGCHLD</b>.</p>
+
+<p style="margin-left:17%;"><b>SA_NOCLDWAIT</b> (since
+Linux 2.6)</p>
+
+<p style="margin-left:28%;">If <i>signum</i> is
+<b>SIGCHLD</b>, do not transform children into zombies when
+they terminate. See also <b>waitpid</b>(2). This flag is
+meaningful only when establishing a handler for
+<b>SIGCHLD</b>, or when setting that signal&rsquo;s
+disposition to <b>SIG_DFL</b>.</p>
+
+<p style="margin-left:28%; margin-top: 1em">If the
+<b>SA_NOCLDWAIT</b> flag is set when establishing a handler
+for <b>SIGCHLD</b>, POSIX.1 leaves it unspecified whether a
+<b>SIGCHLD</b> signal is generated when a child process
+terminates. On Linux, a <b>SIGCHLD</b> signal is generated
+in this case; on some other implementations, it is not.</p>
+
+<p style="margin-left:17%;"><b>SA_NODEFER</b></p>
+
+<p style="margin-left:28%;">Do not prevent the signal from
+being received from within its own signal handler. This flag
+is meaningful only when establishing a signal handler.
+<b>SA_NOMASK</b> is an obsolete, nonstandard synonym for
+this flag.</p>
+
+<p style="margin-left:17%;"><b>SA_ONSTACK</b></p>
+
+<p style="margin-left:28%;">Call the signal handler on an
+alternate signal stack provided by <b>sigaltstack</b>(2). If
+an alternate stack is not available, the default stack will
+be used. This flag is meaningful only when establishing a
+signal handler.</p>
+
+<p style="margin-left:17%;"><b>SA_RESETHAND</b></p>
+
+<p style="margin-left:28%;">Restore the signal action to
+the default upon entry to the signal handler. This flag is
+meaningful only when establishing a signal handler.
+<b>SA_ONESHOT</b> is an obsolete, nonstandard synonym for
+this flag.</p>
+
+<p style="margin-left:17%;"><b>SA_RESTART</b></p>
+
+<p style="margin-left:28%;">Provide behavior compatible
+with BSD signal semantics by making certain system calls
+restartable across signals. This flag is meaningful only
+when establishing a signal handler. See <b>signal</b>(7) for
+a discussion of system call restarting.</p>
+
+<p style="margin-left:17%;"><b>SA_SIGINFO</b> (since Linux
+2.2)</p>
+
+<p style="margin-left:28%;">The signal handler takes three
+arguments, not one. In this case, <i>sa_sigaction</i> should
+be set instead of <i>sa_handler</i>. This flag is meaningful
+only when establishing a signal handler.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>siginfo_t</i> argument to <i>sa_sigaction</i> is a struct
+with the following elements:</p>
+
+<p style="margin-left:17%; margin-top: 1em">siginfo_t {
+<br>
+int si_signo; /* Signal number */ <br>
+int si_errno; /* An errno value */ <br>
+int si_code; /* Signal code */ <br>
+int si_trapno; /* Trap number that caused <br>
+hardware-generated signal <br>
+(unused on most architectures) */ <br>
+pid_t si_pid; /* Sending process ID */ <br>
+uid_t si_uid; /* Real user ID of sending process */ <br>
+int si_status; /* Exit value or signal */ <br>
+clock_t si_utime; /* User time consumed */ <br>
+clock_t si_stime; /* System time consumed */ <br>
+sigval_t si_value; /* Signal value */ <br>
+int si_int; /* POSIX.1b signal */ <br>
+void *si_ptr; /* POSIX.1b signal */ <br>
+int si_overrun; /* Timer overrun count; POSIX.1b timers */
+<br>
+int si_timerid; /* Timer ID; POSIX.1b timers */ <br>
+void *si_addr; /* Memory location which caused fault */ <br>
+long si_band; /* Band event (was <i>int</i> in <br>
+glibc 2.3.2 and earlier) */ <br>
+int si_fd; /* File descriptor */ <br>
+short si_addr_lsb; /* Least significant bit of address <br>
+(since Linux 2.6.32) */ <br>
+}</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>si_signo</i>,
+<i>si_errno</i> and <i>si_code</i> are defined for all
+signals. (<i>si_errno</i> is generally unused on Linux.) The
+rest of the struct may be a union, so that one should read
+only the fields that are meaningful for the given
+signal:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p>Signals sent with <b>kill</b>(2) and <b>sigqueue</b>(3)
+fill in <i>si_pid</i> and <i>si_uid</i>. In addition,
+signals sent with <b>sigqueue</b>(3) fill in <i>si_int</i>
+and <i>si_ptr</i> with the values specified by the sender of
+the signal; see <b>sigqueue</b>(3) for more details.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p>Signals sent by POSIX.1b timers (since Linux 2.6) fill
+in <i>si_overrun</i> and <i>si_timerid</i>. The
+<i>si_timerid</i> field is an internal ID used by the kernel
+to identify the timer; it is not the same as the timer ID
+returned by <b>timer_create</b>(2). The <i>si_overrun</i>
+field is the timer overrun count; this is the same
+information as is obtained by a call to
+<b>timer_getoverrun</b>(2). These fields are nonstandard
+Linux extensions.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p>Signals sent for message queue notification (see the
+description of <b>SIGEV_SIGNAL</b> in <b>mq_notify</b>(3))
+fill in <i>si_int</i>/<i>si_ptr</i>, with the
+<i>sigev_value</i> supplied to <b>mq_notify</b>(3);
+<i>si_pid</i>, with the process ID of the message sender;
+and <i>si_uid</i>, with the real user ID of the message
+sender.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p><b>SIGCHLD</b> fills in <i>si_pid</i>, <i>si_uid</i>,
+<i>si_status</i>, <i>si_utime</i> and <i>si_stime</i>,
+providing information about the child. The <i>si_pid</i>
+field is the process ID of the child; <i>si_uid</i> is the
+child&rsquo;s real user ID. The <i>si_status</i> field
+contains the exit status of the child (if <i>si_code</i> is
+<b>CLD_EXITED</b>), or the signal number that caused the
+process to change state. The <i>si_utime</i> and
+<i>si_stime</i> contain the user and system CPU time used by
+the child process; these fields do not include the times
+used by waited-for children (unlike <b>getrusage</b>(2) and
+<b>time</b>(2)). In kernels up to 2.6, and since 2.6.27,
+these fields report CPU time in units of
+<i>sysconf(_SC_CLK_TCK)</i>. In 2.6 kernels before 2.6.27, a
+bug meant that these fields reported time in units of the
+(configurable) system jiffy (see <b>time</b>(7)).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p><b>SIGILL</b>, <b>SIGFPE</b>, <b>SIGSEGV</b>,
+<b>SIGBUS</b>, and <b>SIGTRAP</b> fill in <i>si_addr</i>
+with the address of the fault. On some architectures, these
+signals also fill in the <i>si_trapno</i> filed. Some
+suberrors of <b>SIGBUS</b>, in particular
+<b>BUS_MCEERR_AO</b> and <b>BUS_MCEERR_AR</b>, also fill in
+<i>si_addr_lsb</i>. This field indicates the least
+significant bit of the reported address and therefore the
+extent of the corruption. For example, if a full page was
+corrupted, <i>si_addr_lsb</i> contains
+<i>log2(sysconf(_SC_PAGESIZE))</i>. <b>BUS_MCERR_*</b> and
+<i>si_addr_lsb</i> are Linux-specific extensions.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p><b>SIGIO</b>/<b>SIGPOLL</b> (the two names are synonyms
+on Linux) fills in <i>si_band</i> and <i>si_fd</i>. The
+<i>si_band</i> event is a bit mask containing the same
+values as are filled in the <i>revents</i> field by
+<b>poll</b>(2). The <i>si_fd</i> field indicates the file
+descriptor for which the I/O event occurred.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><i>si_code</i>
+is a value (not a bit mask) indicating why this signal was
+sent. The following list shows the values which can be
+placed in <i>si_code</i> for any signal, along with reason
+that the signal was generated.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p style="margin-top: 1em"><b>SI_USER</b></p></td>
+<td width="8%"></td>
+<td width="60%">
+
+
+<p style="margin-top: 1em"><b>kill</b>(2)</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>SI_KERNEL</b></p></td>
+<td width="8%"></td>
+<td width="60%">
+
+
+<p>Sent by the kernel.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>SI_QUEUE</b></p></td>
+<td width="8%"></td>
+<td width="60%">
+
+
+<p><b>sigqueue</b>(3)</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>SI_TIMER</b></p></td>
+<td width="8%"></td>
+<td width="60%">
+
+
+<p>POSIX timer expired</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>SI_MESGQ</b></p></td>
+<td width="8%"></td>
+<td width="60%">
+
+
+<p>POSIX message queue state changed (since Linux 2.6.6);
+see <b>mq_notify</b>(3)</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>SI_ASYNCIO</b></p></td>
+<td width="8%"></td>
+<td width="60%">
+
+
+<p>AIO completed</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>SI_SIGIO</b></p></td>
+<td width="8%"></td>
+<td width="60%">
+
+
+<p>Queued <b>SIGIO</b> (only in kernels up to Linux 2.2;
+from Linux 2.4 onward <b>SIGIO</b>/<b>SIGPOLL</b> fills in
+<i>si_code</i> as described below).</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>SI_TKILL</b></p></td>
+<td width="8%"></td>
+<td width="60%">
+
+
+<p><b>tkill</b>(2) or <b>tgkill</b>(2) (since Linux
+2.4.19)</p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+values can be placed in <i>si_code</i> for a <b>SIGILL</b>
+signal:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p style="margin-top: 1em"><b>ILL_ILLOPC</b></p></td>
+<td width="8%"></td>
+<td width="35%">
+
+
+<p style="margin-top: 1em">illegal opcode</p></td>
+<td width="25%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>ILL_ILLOPN</b></p></td>
+<td width="8%"></td>
+<td width="35%">
+
+
+<p>illegal operand</p></td>
+<td width="25%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>ILL_ILLADR</b></p></td>
+<td width="8%"></td>
+<td width="35%">
+
+
+<p>illegal addressing mode</p></td>
+<td width="25%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>ILL_ILLTRP</b></p></td>
+<td width="8%"></td>
+<td width="35%">
+
+
+<p>illegal trap</p></td>
+<td width="25%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>ILL_PRVOPC</b></p></td>
+<td width="8%"></td>
+<td width="35%">
+
+
+<p>privileged opcode</p></td>
+<td width="25%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>ILL_PRVREG</b></p></td>
+<td width="8%"></td>
+<td width="35%">
+
+
+<p>privileged register</p></td>
+<td width="25%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>ILL_COPROC</b></p></td>
+<td width="8%"></td>
+<td width="35%">
+
+
+<p>coprocessor error</p></td>
+<td width="25%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>ILL_BADSTK</b></p></td>
+<td width="8%"></td>
+<td width="35%">
+
+
+<p>internal stack error</p></td>
+<td width="25%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+values can be placed in <i>si_code</i> for a <b>SIGFPE</b>
+signal:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p style="margin-top: 1em"><b>FPE_INTDIV</b></p></td>
+<td width="8%"></td>
+<td width="49%">
+
+
+<p style="margin-top: 1em">integer divide by zero</p></td>
+<td width="11%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>FPE_INTOVF</b></p></td>
+<td width="8%"></td>
+<td width="49%">
+
+
+<p>integer overflow</p></td>
+<td width="11%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>FPE_FLTDIV</b></p></td>
+<td width="8%"></td>
+<td width="49%">
+
+
+<p>floating-point divide by zero</p></td>
+<td width="11%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>FPE_FLTOVF</b></p></td>
+<td width="8%"></td>
+<td width="49%">
+
+
+<p>floating-point overflow</p></td>
+<td width="11%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>FPE_FLTUND</b></p></td>
+<td width="8%"></td>
+<td width="49%">
+
+
+<p>floating-point underflow</p></td>
+<td width="11%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>FPE_FLTRES</b></p></td>
+<td width="8%"></td>
+<td width="49%">
+
+
+<p>floating-point inexact result</p></td>
+<td width="11%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>FPE_FLTINV</b></p></td>
+<td width="8%"></td>
+<td width="49%">
+
+
+<p>floating-point invalid operation</p></td>
+<td width="11%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>FPE_FLTSUB</b></p></td>
+<td width="8%"></td>
+<td width="49%">
+
+
+<p>subscript out of range</p></td>
+<td width="11%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+values can be placed in <i>si_code</i> for a <b>SIGSEGV</b>
+signal:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="17%">
+
+
+<p style="margin-top: 1em"><b>SEGV_MAPERR</b></p></td>
+<td width="6%"></td>
+<td width="57%">
+
+
+<p style="margin-top: 1em">address not mapped to object</p></td>
+<td width="3%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="17%">
+
+
+<p><b>SEGV_ACCERR</b></p></td>
+<td width="6%"></td>
+<td width="57%">
+
+
+<p>invalid permissions for mapped object</p></td>
+<td width="3%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+values can be placed in <i>si_code</i> for a <b>SIGBUS</b>
+signal:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p style="margin-top: 1em"><b>BUS_ADRALN</b></p></td>
+<td width="8%"></td>
+<td width="46%">
+
+
+<p style="margin-top: 1em">invalid address alignment</p></td>
+<td width="14%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>BUS_ADRERR</b></p></td>
+<td width="8%"></td>
+<td width="46%">
+
+
+<p>nonexistent physical address</p></td>
+<td width="14%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>BUS_OBJERR</b></p></td>
+<td width="8%"></td>
+<td width="46%">
+
+
+<p>object-specific hardware error</p></td>
+<td width="14%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%;"><b>BUS_MCEERR_AR</b> (since
+Linux 2.6.32)</p>
+
+<p style="margin-left:40%;">Hardware memory error consumed
+on a machine check; action required.</p>
+
+<p style="margin-left:17%;"><b>BUS_MCEERR_AO</b> (since
+Linux 2.6.32)</p>
+
+<p style="margin-left:40%;">Hardware memory error detected
+in process but not consumed; action optional.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+values can be placed in <i>si_code</i> for a <b>SIGTRAP</b>
+signal:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>TRAP_BRKPT</b></p></td>
+<td width="8%"></td>
+<td width="28%">
+
+
+<p>process breakpoint</p></td>
+<td width="32%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="15%">
+
+
+<p><b>TRAP_TRACE</b></p></td>
+<td width="8%"></td>
+<td width="28%">
+
+
+<p>process trace trap</p></td>
+<td width="32%">
+</td></tr>
+</table>
+
+<p style="margin-left:17%;"><b>TRAP_BRANCH</b> (since Linux
+2.4)</p>
+
+<p style="margin-left:40%;">process taken branch trap</p>
+
+<p style="margin-left:17%;"><b>TRAP_HWBKPT</b> (since Linux
+2.4)</p>
+
+<p style="margin-left:40%;">hardware
+breakpoint/watchpoint</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+values can be placed in <i>si_code</i> for a <b>SIGCHLD</b>
+signal:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="20%">
+
+
+<p><b>CLD_EXITED</b></p></td>
+<td width="3%"></td>
+<td width="60%">
+
+
+<p>child has exited</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="20%">
+
+
+<p><b>CLD_KILLED</b></p></td>
+<td width="3%"></td>
+<td width="60%">
+
+
+<p>child was killed</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="20%">
+
+
+<p><b>CLD_DUMPED</b></p></td>
+<td width="3%"></td>
+<td width="60%">
+
+
+<p>child terminated abnormally</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="20%">
+
+
+<p><b>CLD_TRAPPED</b></p></td>
+<td width="3%"></td>
+<td width="60%">
+
+
+<p>traced child has trapped</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="20%">
+
+
+<p><b>CLD_STOPPED</b></p></td>
+<td width="3%"></td>
+<td width="60%">
+
+
+<p>child has stopped</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="20%">
+
+
+<p><b>CLD_CONTINUED</b></p></td>
+<td width="3%"></td>
+<td width="60%">
+
+
+<p>stopped child has continued (since Linux 2.6.9)</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+values can be placed in <i>si_code</i> for a
+<b>SIGIO</b>/<b>SIGPOLL</b> signal:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="12%">
+
+
+<p style="margin-top: 1em"><b>POLL_IN</b></p></td>
+<td width="11%"></td>
+<td width="45%">
+
+
+<p style="margin-top: 1em">data input available</p></td>
+<td width="15%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="12%">
+
+
+<p><b>POLL_OUT</b></p></td>
+<td width="11%"></td>
+<td width="45%">
+
+
+<p>output buffers available</p></td>
+<td width="15%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="12%">
+
+
+<p><b>POLL_MSG</b></p></td>
+<td width="11%"></td>
+<td width="45%">
+
+
+<p>input message available</p></td>
+<td width="15%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="12%">
+
+
+<p><b>POLL_ERR</b></p></td>
+<td width="11%"></td>
+<td width="45%">
+
+
+<p>I/O error</p></td>
+<td width="15%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="12%">
+
+
+<p><b>POLL_PRI</b></p></td>
+<td width="11%"></td>
+<td width="45%">
+
+
+<p>high priority input available</p></td>
+<td width="15%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="12%">
+
+
+<p><b>POLL_HUP</b></p></td>
+<td width="11%"></td>
+<td width="45%">
+
+
+<p>device disconnected</p></td>
+<td width="15%">
+</td></tr>
+</table>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>sigaction</b>()
+returns 0 on success; on error, &minus;1 is returned, and
+<i>errno</i> is set to indicate the error.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em"><i>act</i> or <i>oldact</i>
+points to memory which is not a valid part of the process
+address space.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>An invalid signal was specified. This will also be
+generated if an attempt is made to change the action for
+<b>SIGKILL</b> or <b>SIGSTOP</b>, which cannot be caught or
+ignored.</p> </td></tr>
+</table>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">POSIX.1-2001,
+SVr4.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">A child created
+via <b>fork</b>(2) inherits a copy of its parent&rsquo;s
+signal dispositions. During an <b>execve</b>(2), the
+dispositions of handled signals are reset to the default;
+the dispositions of ignored signals are left unchanged.</p>
+
+<p style="margin-left:11%; margin-top: 1em">According to
+POSIX, the behavior of a process is undefined after it
+ignores a <b>SIGFPE</b>, <b>SIGILL</b>, or <b>SIGSEGV</b>
+signal that was not generated by <b>kill</b>(2) or
+<b>raise</b>(3). Integer division by zero has undefined
+result. On some architectures it will generate a
+<b>SIGFPE</b> signal. (Also dividing the most negative
+integer by &minus;1 may generate <b>SIGFPE</b>.) Ignoring
+this signal might lead to an endless loop.</p>
+
+<p style="margin-left:11%; margin-top: 1em">POSIX.1-1990
+disallowed setting the action for <b>SIGCHLD</b> to
+<b>SIG_IGN</b>. POSIX.1-2001 allows this possibility, so
+that ignoring <b>SIGCHLD</b> can be used to prevent the
+creation of zombies (see <b>wait</b>(2)). Nevertheless, the
+historical BSD and System V behaviors for ignoring
+<b>SIGCHLD</b> differ, so that the only completely portable
+method of ensuring that terminated children do not become
+zombies is to catch the <b>SIGCHLD</b> signal and perform a
+<b>wait</b>(2) or similar.</p>
+
+<p style="margin-left:11%; margin-top: 1em">POSIX.1-1990
+specified only <b>SA_NOCLDSTOP</b>. POSIX.1-2001 added
+<b>SA_NOCLDWAIT</b>, <b>SA_RESETHAND</b>, <b>SA_NODEFER</b>,
+and <b>SA_SIGINFO</b>. Use of these latter values in
+<i>sa_flags</i> may be less portable in applications
+intended for older UNIX implementations.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>SA_RESETHAND</b> flag is compatible with the SVr4 flag of
+the same name.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>SA_NODEFER</b> flag is compatible with the SVr4 flag of
+the same name under kernels 1.3.9 and newer. On older
+kernels the Linux implementation allowed the receipt of any
+signal, not just the one we are installing (effectively
+overriding any <i>sa_mask</i> settings).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>sigaction</b>()
+can be called with a NULL second argument to query the
+current signal handler. It can also be used to check whether
+a given signal is valid for the current machine by calling
+it with NULL second and third arguments.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is not
+possible to block <b>SIGKILL</b> or <b>SIGSTOP</b> (by
+specifying them in <i>sa_mask</i>). Attempts to do so are
+silently ignored.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See
+<b>sigsetops</b>(3) for details on manipulating signal
+sets.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See
+<b>signal</b>(7) for a list of the async-signal-safe
+functions that can be safely called inside from inside a
+signal handler.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Undocumented</b>
+<br>
+Before the introduction of <b>SA_SIGINFO</b> it was also
+possible to get some additional information, namely by using
+a <i>sa_handler</i> with second argument of type <i>struct
+sigcontext</i>. See the relevant Linux kernel sources for
+details. This use is obsolete now.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In kernels up
+to and including 2.6.13, specifying <b>SA_NODEFER</b> in
+<i>sa_flags</i> prevents not only the delivered signal from
+being masked during execution of the handler, but also the
+signals specified in <i>sa_mask</i>. This bug was fixed in
+kernel 2.6.14.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">See
+<b>mprotect</b>(2).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>kill</b>(1),
+<b>kill</b>(2), <b>killpg</b>(2), <b>pause</b>(2),
+<b>restart_syscall</b>(2), <b>sigaltstack</b>(2),
+<b>signal</b>(2), <b>signalfd</b>(2), <b>sigpending</b>(2),
+<b>sigprocmask</b>(2), <b>sigsuspend</b>(2), <b>wait</b>(2),
+<b>raise</b>(3), <b>siginterrupt</b>(3), <b>sigqueue</b>(3),
+<b>sigsetops</b>(3), <b>sigvec</b>(3), <b>core</b>(5),
+<b>signal</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

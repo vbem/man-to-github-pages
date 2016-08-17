@@ -1,0 +1,524 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:24:53 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PTHREAD_CREATE</title>
+
+</head>
+<body>
+
+<h1 align="center">PTHREAD_CREATE</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">pthread_create
+&minus; create a new thread</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;pthread.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+pthread_create(pthread_t *</b><i>thread</i><b>, const
+pthread_attr_t *</b><i>attr</i><b>, <br>
+void *(*</b><i>start_routine</i><b>) (void *), void
+*</b><i>arg</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">Compile and
+link with <i>&minus;pthread</i>.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>pthread_create</b>() function starts a new thread in the
+calling process. The new thread starts execution by invoking
+<i>start_routine</i>(); <i>arg</i> is passed as the sole
+argument of <i>start_routine</i>().</p>
+
+<p style="margin-left:11%; margin-top: 1em">The new thread
+terminates in one of the following ways:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p>It calls <b>pthread_exit</b>(3), specifying an exit
+status value that is available to another thread in the same
+process that calls <b>pthread_join</b>(3).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p>It returns from <i>start_routine</i>(). This is
+equivalent to calling <b>pthread_exit</b>(3) with the value
+supplied in the <i>return</i> statement.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p>It is canceled (see <b>pthread_cancel</b>(3)).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p>Any of the threads in the process calls <b>exit</b>(3),
+or the main thread performs a return from <i>main</i>().
+This causes the termination of all threads in the
+process.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>attr</i>
+argument points to a <i>pthread_attr_t</i> structure whose
+contents are used at thread creation time to determine
+attributes for the new thread; this structure is initialized
+using <b>pthread_attr_init</b>(3) and related functions. If
+<i>attr</i> is NULL, then the thread is created with default
+attributes.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Before
+returning, a successful call to <b>pthread_create</b>()
+stores the ID of the new thread in the buffer pointed to by
+<i>thread</i>; this identifier is used to refer to the
+thread in subsequent calls to other pthreads functions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The new thread
+inherits a copy of the creating thread&rsquo;s signal mask
+(<b>pthread_sigmask</b>(3)). The set of pending signals for
+the new thread is empty (<b>sigpending</b>(2)). The new
+thread does not inherit the creating thread&rsquo;s
+alternate signal stack (<b>sigaltstack</b>(2)).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The new thread
+inherits the calling thread&rsquo;s floating-point
+environment (<b>fenv</b>(3)).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The initial
+value of the new thread&rsquo;s CPU-time clock is 0 (see
+<b>pthread_getcpuclockid</b>(3)).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Linux-specific
+details</b> <br>
+The new thread inherits copies of the calling thread&rsquo;s
+capability sets (see <b>capabilities</b>(7)) and CPU
+affinity mask (see <b>sched_setaffinity</b>(2)).</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success,
+<b>pthread_create</b>() returns 0; on error, it returns an
+error number, and the contents of <i>*thread</i> are
+undefined.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EAGAIN</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">Insufficient resources to create
+another thread, or a system-imposed limit on the number of
+threads was encountered. The latter case may occur in two
+ways: the <b>RLIMIT_NPROC</b> soft resource limit (set via
+<b>setrlimit</b>(2)), which limits the number of process for
+a real user ID, was reached; or the kernel&rsquo;s
+system-wide limit on the number of threads,
+<i>/proc/sys/kernel/threads-max</i>, was reached.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Invalid settings in <i>attr</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EPERM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>No permission to set the scheduling policy and
+parameters specified in <i>attr</i>.</p></td></tr>
+</table>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">POSIX.1-2001.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">See
+<b>pthread_self</b>(3) for further information on the thread
+ID returned in <i>*thread</i> by <b>pthread_create</b>().
+Unless real-time scheduling policies are being employed,
+after a call to <b>pthread_create</b>(), it is indeterminate
+which thread&mdash;the caller or the new thread&mdash;will
+next execute.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A thread may
+either be <i>joinable</i> or <i>detached</i>. If a thread is
+joinable, then another thread can call
+<b>pthread_join</b>(3) to wait for the thread to terminate
+and fetch its exit status. Only when a terminated joinable
+thread has been joined are the last of its resources
+released back to the system. When a detached thread
+terminates, its resources are automatically released back to
+the system: it is not possible to join with the thread in
+order to obtain its exit status. Making a thread detached is
+useful for some types of daemon threads whose exit status
+the application does not need to care about. By default, a
+new thread is created in a joinable state, unless
+<i>attr</i> was set to create the thread in a detached state
+(using <b>pthread_attr_setdetachstate</b>(3)).</p>
+
+<p style="margin-left:11%; margin-top: 1em">On
+Linux/x86-32, the default stack size for a new thread is 2
+megabytes. Under the NPTL threading implementation, if the
+<b>RLIMIT_STACK</b> soft resource limit <i>at the time the
+program started</i> has any value other than
+&quot;unlimited&quot;, then it determines the default stack
+size of new threads. Using
+<b>pthread_attr_setstacksize</b>(3), the stack size
+attribute can be explicitly set in the <i>attr</i> argument
+used to create a thread, in order to obtain a stack size
+other than the default.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In the obsolete
+LinuxThreads implementation, each of the threads in a
+process has a different process ID. This is in violation of
+the POSIX threads specification, and is the source of many
+other nonconformances to the standard; see
+<b>pthreads</b>(7).</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The program
+below demonstrates the use of <b>pthread_create</b>(), as
+well as a number of other functions in the pthreads API.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the
+following run, on a system providing the NPTL threading
+implementation, the stack size defaults to the value given
+by the &quot;stack size&quot; resource limit:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ <b>ulimit
+&minus;s</b> <br>
+8192 # The stack size limit is 8 MB (0x800000 bytes) <br>
+$ <b>./a.out hola salut servus</b> <br>
+Thread 1: top of stack near 0xb7dd03b8; argv_string=hola
+<br>
+Thread 2: top of stack near 0xb75cf3b8; argv_string=salut
+<br>
+Thread 3: top of stack near 0xb6dce3b8; argv_string=servus
+<br>
+Joined with thread 1; returned value was HOLA <br>
+Joined with thread 2; returned value was SALUT <br>
+Joined with thread 3; returned value was SERVUS</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the next
+run, the program explicitly sets a stack size of 1MB (using
+<b>pthread_attr_setstacksize</b>(3)) for the created
+threads:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ <b>./a.out
+&minus;s 0x100000 hola salut servus</b> <br>
+Thread 1: top of stack near 0xb7d723b8; argv_string=hola
+<br>
+Thread 2: top of stack near 0xb7c713b8; argv_string=salut
+<br>
+Thread 3: top of stack near 0xb7b703b8; argv_string=servus
+<br>
+Joined with thread 1; returned value was HOLA <br>
+Joined with thread 2; returned value was SALUT <br>
+Joined with thread 3; returned value was SERVUS</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Program
+source</b> <br>
+#include &lt;pthread.h&gt; <br>
+#include &lt;string.h&gt; <br>
+#include &lt;stdio.h&gt; <br>
+#include &lt;stdlib.h&gt; <br>
+#include &lt;unistd.h&gt; <br>
+#include &lt;errno.h&gt; <br>
+#include &lt;ctype.h&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">#define
+handle_error_en(en, msg) \ <br>
+do { errno = en; perror(msg); exit(EXIT_FAILURE); } while
+(0)</p>
+
+<p style="margin-left:11%; margin-top: 1em">#define
+handle_error(msg) \ <br>
+do { perror(msg); exit(EXIT_FAILURE); } while (0)</p>
+
+<p style="margin-left:11%; margin-top: 1em">struct
+thread_info { /* Used as argument to thread_start() */ <br>
+pthread_t thread_id; /* ID returned by pthread_create() */
+<br>
+int thread_num; /* Application&minus;defined thread # */
+<br>
+char *argv_string; /* From command&minus;line argument */
+<br>
+};</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* Thread start
+function: display address near top of our stack, <br>
+and return upper&minus;cased copy of argv_string */</p>
+
+<p style="margin-left:11%; margin-top: 1em">static void *
+<br>
+thread_start(void *arg) <br>
+{ <br>
+struct thread_info *tinfo = arg; <br>
+char *uargv, *p;</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">printf(&quot;Thread
+%d: top of stack near %p; argv_string=%s\n&quot;, <br>
+tinfo&minus;&gt;thread_num, &amp;p,
+tinfo&minus;&gt;argv_string);</p>
+
+<p style="margin-left:11%; margin-top: 1em">uargv =
+strdup(tinfo&minus;&gt;argv_string); <br>
+if (uargv == NULL) <br>
+handle_error(&quot;strdup&quot;);</p>
+
+<p style="margin-left:11%; margin-top: 1em">for (p = uargv;
+*p != '\0'; p++) <br>
+*p = toupper(*p);</p>
+
+<p style="margin-left:11%; margin-top: 1em">return uargv;
+<br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">int <br>
+main(int argc, char *argv[]) <br>
+{ <br>
+int s, tnum, opt, num_threads; <br>
+struct thread_info *tinfo; <br>
+pthread_attr_t attr; <br>
+int stack_size; <br>
+void *res;</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* The
+&quot;&minus;s&quot; option specifies a stack size for our
+threads */</p>
+
+<p style="margin-left:11%; margin-top: 1em">stack_size =
+&minus;1; <br>
+while ((opt = getopt(argc, argv, &quot;s:&quot;)) !=
+&minus;1) { <br>
+switch (opt) { <br>
+case 's': <br>
+stack_size = strtoul(optarg, NULL, 0); <br>
+break;</p>
+
+<p style="margin-left:11%; margin-top: 1em">default: <br>
+fprintf(stderr, &quot;Usage: %s [&minus;s stack-size]
+arg...\n&quot;, <br>
+argv[0]); <br>
+exit(EXIT_FAILURE); <br>
+} <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">num_threads =
+argc &minus; optind;</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* Initialize
+thread creation attributes */</p>
+
+<p style="margin-left:11%; margin-top: 1em">s =
+pthread_attr_init(&amp;attr); <br>
+if (s != 0) <br>
+handle_error_en(s, &quot;pthread_attr_init&quot;);</p>
+
+<p style="margin-left:11%; margin-top: 1em">if (stack_size
+&gt; 0) { <br>
+s = pthread_attr_setstacksize(&amp;attr, stack_size); <br>
+if (s != 0) <br>
+handle_error_en(s, &quot;pthread_attr_setstacksize&quot;);
+<br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* Allocate
+memory for pthread_create() arguments */</p>
+
+<p style="margin-left:11%; margin-top: 1em">tinfo =
+calloc(num_threads, sizeof(struct thread_info)); <br>
+if (tinfo == NULL) <br>
+handle_error(&quot;calloc&quot;);</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* Create one
+thread for each command&minus;line argument */</p>
+
+<p style="margin-left:11%; margin-top: 1em">for (tnum = 0;
+tnum &lt; num_threads; tnum++) { <br>
+tinfo[tnum].thread_num = tnum + 1; <br>
+tinfo[tnum].argv_string = argv[optind + tnum];</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* The
+pthread_create() call stores the thread ID into <br>
+corresponding element of tinfo[] */</p>
+
+<p style="margin-left:11%; margin-top: 1em">s =
+pthread_create(&amp;tinfo[tnum].thread_id, &amp;attr, <br>
+&amp;thread_start, &amp;tinfo[tnum]); <br>
+if (s != 0) <br>
+handle_error_en(s, &quot;pthread_create&quot;); <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* Destroy the
+thread attributes object, since it is no <br>
+longer needed */</p>
+
+<p style="margin-left:11%; margin-top: 1em">s =
+pthread_attr_destroy(&amp;attr); <br>
+if (s != 0) <br>
+handle_error_en(s, &quot;pthread_attr_destroy&quot;);</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* Now join
+with each thread, and display its returned value */</p>
+
+<p style="margin-left:11%; margin-top: 1em">for (tnum = 0;
+tnum &lt; num_threads; tnum++) { <br>
+s = pthread_join(tinfo[tnum].thread_id, &amp;res); <br>
+if (s != 0) <br>
+handle_error_en(s, &quot;pthread_join&quot;);</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">printf(&quot;Joined
+with thread %d; returned value was %s\n&quot;, <br>
+tinfo[tnum].thread_num, (char *) res); <br>
+free(res); /* Free memory allocated by thread */ <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">free(tinfo);
+<br>
+exit(EXIT_SUCCESS); <br>
+}</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>getrlimit</b>(2),
+<b>pthread_attr_init</b>(3), <b>pthread_cancel</b>(3),
+<b>pthread_detach</b>(3), <b>pthread_equal</b>(3),
+<b>pthread_exit</b>(3), <b>pthread_getattr_np</b>(3),
+<b>pthread_join</b>(3), <b>pthread_self</b>(3),
+<b>pthreads</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

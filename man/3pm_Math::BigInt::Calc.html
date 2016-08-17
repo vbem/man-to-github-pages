@@ -1,0 +1,662 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:32:59 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Math::BigInt::Calc</title>
+
+</head>
+<body>
+
+<h1 align="center">Math::BigInt::Calc</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#THE Math::BigInt API">THE Math::BigInt API</a><br>
+<a href="#WRAP YOUR OWN">WRAP YOUR OWN</a><br>
+<a href="#LICENSE">LICENSE</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">Math::BigInt::Calc
+&minus; Pure Perl module to support Math::BigInt</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This library
+provides support for big integer calculations. It is not
+intended to be used by other modules. Other modules which
+support the same <small>API</small> (see below) can also be
+used to support Math::BigInt, like Math::BigInt::GMP and
+Math::BigInt::Pari.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In this
+library, the numbers are represented in base B = 10**N,
+where N is the largest possible value that does not cause
+overflow in the intermediate computations. The base B
+elements are stored in an array, with the least significant
+element stored in array element zero. There are no leading
+zero elements, except a single zero element when the number
+is zero.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For instance,
+if B = 10000, the number 1234567890 is represented
+internally as [3456, 7890, 12].</p>
+
+<h2>THE Math::BigInt API
+<a name="THE Math::BigInt API"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In order to
+allow for multiple big integer libraries, Math::BigInt was
+rewritten to use a plug-in library for core math routines.
+Any module which conforms to the <small>API</small> can be
+used by Math::BigInt by using this in your program:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use Math::BigInt lib =&gt; 'libname';</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">&rsquo;libname&rsquo;
+is either the long name, like
+&rsquo;Math::BigInt::Pari&rsquo;, or only the short version,
+like &rsquo;Pari&rsquo;.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>General
+Notes</b> <br>
+A library only needs to deal with unsigned big integers.
+Testing of input parameter validity is done by the caller,
+so there is no need to worry about underflow (e.g., in
+<tt>&quot;_sub()&quot;</tt> and <tt>&quot;_dec()&quot;</tt>)
+nor about division by zero (e.g., in
+<tt>&quot;_div()&quot;</tt>) or similar cases.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For some
+methods, the first parameter can be modified. That includes
+the possibility that you return a reference to a completely
+different object instead. Although keeping the reference and
+just changing its contents is preferred over creating and
+returning a different reference.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Return values
+are always objects, strings, Perl scalars, or true/false for
+comparison routines.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>API</small>
+version 1</b> <br>
+The following methods must be defined in order to support
+the use by Math::BigInt v1.70 or later.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i><small>API</small>
+version <br>
+api_version()</i></p>
+
+<p style="margin-left:17%;">Return <small>API</small>
+version as a Perl scalar, 1 for Math::BigInt v1.70, 2 for
+Math::BigInt v1.83.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>Constructors
+<br>
+_new( <small>STR</small> )</i></p>
+
+<p style="margin-left:17%;">Convert a string representing
+an unsigned decimal number to an object representing the
+same number. The input is normalize, i.e., it matches
+<tt>&quot;^(0|[1&minus;9]\d*)$&quot;</tt>.</p>
+
+<p style="margin-left:11%;"><i>_zero()</i></p>
+
+<p style="margin-left:17%;">Return an object representing
+the number zero.</p>
+
+<p style="margin-left:11%;"><i>_one()</i></p>
+
+<p style="margin-left:17%;">Return an object representing
+the number one.</p>
+
+<p style="margin-left:11%;"><i>_two()</i></p>
+
+<p style="margin-left:17%;">Return an object representing
+the number two.</p>
+
+<p style="margin-left:11%;"><i>_ten()</i></p>
+
+<p style="margin-left:17%;">Return an object representing
+the number ten.</p>
+
+<p style="margin-left:11%;"><i>_from_bin(
+<small>STR</small> )</i></p>
+
+<p style="margin-left:17%;">Return an object given a string
+representing a binary number. The input has a
+&rsquo;0b&rsquo; prefix and matches the regular expression
+<tt>&quot;^0[bB](0|1[01]*)$&quot;</tt>.</p>
+
+<p style="margin-left:11%;"><i>_from_oct(
+<small>STR</small> )</i></p>
+
+<p style="margin-left:17%;">Return an object given a string
+representing an octal number. The input has a
+&rsquo;0&rsquo; prefix and matches the regular expression
+<tt>&quot;^0[1&minus;7]*$&quot;</tt>.</p>
+
+<p style="margin-left:11%;"><i>_from_hex(
+<small>STR</small> )</i></p>
+
+<p style="margin-left:17%;">Return an object given a string
+representing a hexadecimal number. The input has a
+&rsquo;0x&rsquo; prefix and matches the regular expression
+<tt>&quot;^0x(0|[1&minus;9a&minus;fA&minus;F][\da&minus;fA&minus;F]*)$&quot;</tt>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>Mathematical
+functions</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Each of these
+methods may modify the first input argument, except
+<i>_bgcd()</i>, which shall not modify any input argument,
+and <i>_sub()</i> which may modify the second input
+argument. <i><br>
+_add( <small>OBJ1</small> , <small>OBJ2</small> )</i></p>
+
+<p style="margin-left:17%;">Returns the result of adding
+<small>OBJ2</small> to <small>OBJ1</small> .</p>
+
+<p style="margin-left:11%;"><i>_mul( <small>OBJ1</small> ,
+<small>OBJ2</small> )</i></p>
+
+<p style="margin-left:17%;">Returns the result of
+multiplying <small>OBJ2</small> and <small>OBJ1</small>
+.</p>
+
+<p style="margin-left:11%;"><i>_div( <small>OBJ1</small> ,
+<small>OBJ2</small> )</i></p>
+
+<p style="margin-left:17%;">Returns the result of dividing
+<small>OBJ1</small> by <small>OBJ2</small> and truncating
+the result to an integer.</p>
+
+<p style="margin-left:11%;"><i>_sub( <small>OBJ1</small> ,
+<small>OBJ2</small> , <small>FLAG</small> ) <br>
+_sub( <small>OBJ1</small> , <small>OBJ2</small> )</i></p>
+
+<p style="margin-left:17%;">Returns the result of
+subtracting <small>OBJ2</small> by <small>OBJ1</small> . If
+<tt>&quot;flag&quot;</tt> is false or omitted,
+<small>OBJ1</small> might be modified. If
+<tt>&quot;flag&quot;</tt> is true, <small>OBJ2</small> might
+be modified.</p>
+
+<p style="margin-left:11%;"><i>_dec( <small>OBJ</small>
+)</i></p>
+
+<p style="margin-left:17%;">Decrement <small>OBJ</small> by
+one.</p>
+
+<p style="margin-left:11%;"><i>_inc( <small>OBJ</small>
+)</i></p>
+
+<p style="margin-left:17%;">Increment <small>OBJ</small> by
+one.</p>
+
+<p style="margin-left:11%;"><i>_mod( <small>OBJ1</small> ,
+<small>OBJ2</small> )</i></p>
+
+<p style="margin-left:17%;">Return <small>OBJ1</small>
+modulo <small>OBJ2</small> , i.e., the remainder after
+dividing <small>OBJ1</small> by <small>OBJ2</small> .</p>
+
+<p style="margin-left:11%;"><i>_sqrt( <small>OBJ</small>
+)</i></p>
+
+<p style="margin-left:17%;">Return the square root of the
+object, truncated to integer.</p>
+
+<p style="margin-left:11%;"><i>_root( <small>OBJ</small> ,
+N)</i></p>
+
+<p style="margin-left:17%;">Return Nth root of the object,
+truncated to int. N is &gt;= 3.</p>
+
+<p style="margin-left:11%;"><i>_fac( <small>OBJ</small>
+)</i></p>
+
+<p style="margin-left:17%;">Return factorial of object
+(1*2*3*4*...).</p>
+
+<p style="margin-left:11%;"><i>_pow( <small>OBJ1</small> ,
+<small>OBJ2</small> )</i></p>
+
+<p style="margin-left:17%;">Return <small>OBJ1</small> to
+the power of <small>OBJ2</small> . By convention, 0**0 =
+1.</p>
+
+<p style="margin-left:11%;"><i>_modinv( <small>OBJ1</small>
+, <small>OBJ2</small> )</i></p>
+
+<p style="margin-left:17%;">Return modular multiplicative
+inverse, i.e., return <small>OBJ3</small> so that</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    (OBJ3 * OBJ1) % OBJ2 = 1 % OBJ2</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">The result is
+returned as two arguments. If the modular multiplicative
+inverse does not exist, both arguments are undefined.
+Otherwise, the arguments are a number (object) and its sign
+(&quot;+&quot; or &quot;&minus;&quot;).</p>
+
+<p style="margin-left:17%; margin-top: 1em">The output
+value, with its sign, must either be a positive value in the
+range 1,2,...,OBJ2&minus;1 or the same value subtracted
+<small>OBJ2</small> . For instance, if the input arguments
+are objects representing the numbers 7 and 5, the method
+must either return an object representing the number 3 and a
+&quot;+&quot; sign, since (3*7) % 5 = 1 % 5, or an object
+representing the number 2 and &quot;&minus;&quot; sign,
+since (&minus;2*7) % 5 = 1 % 5.</p>
+
+<p style="margin-left:11%;"><i>_modpow( <small>OBJ1</small>
+, <small>OBJ2</small> , <small>OBJ3</small> )</i></p>
+
+<p style="margin-left:17%;">Return modular exponentiation,
+( <small>OBJ1</small> ** <small>OBJ2</small> ) %
+<small>OBJ3</small> .</p>
+
+<p style="margin-left:11%;"><i>_rsft( <small>OBJ</small> ,
+N, B)</i></p>
+
+<p style="margin-left:17%;">Shift object N digits right in
+base B and return the resulting object. This is equivalent
+to performing integer division by B**N and discarding the
+remainder, except that it might be much faster, depending on
+how the number is represented internally.</p>
+
+<p style="margin-left:17%; margin-top: 1em">For instance,
+if the object <tt>$obj</tt> represents the hexadecimal
+number 0xabcde, then <tt>&quot;_rsft($obj, 2, 16)&quot;</tt>
+returns an object representing the number 0xabc. The
+&quot;remainer&quot;, 0xde, is discarded and not
+returned.</p>
+
+<p style="margin-left:11%;"><i>_lsft( <small>OBJ</small> ,
+N, B)</i></p>
+
+<p style="margin-left:17%;">Shift the object N digits left
+in base B. This is equivalent to multiplying by B**N, except
+that it might be much faster, depending on how the number is
+represented internally.</p>
+
+<p style="margin-left:11%;"><i>_log_int( <small>OBJ</small>
+, B)</i></p>
+
+<p style="margin-left:17%;">Return integer log of
+<small>OBJ</small> to base <small>BASE</small> . This method
+has two output arguments, the <small>OBJECT</small> and a
+<small>STATUS</small> . The <small>STATUS</small> is Perl
+scalar; it is 1 if <small>OBJ</small> is the exact result, 0
+if the result was truncted to give <small>OBJ</small> , and
+undef if it is unknown whether <small>OBJ</small> is the
+exact result.</p>
+
+<p style="margin-left:11%;"><i>_gcd( <small>OBJ1</small> ,
+<small>OBJ2</small> )</i></p>
+
+<p style="margin-left:17%;">Return the greatest common
+divisor of <small>OBJ1</small> and <small>OBJ2</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Bitwise
+operators</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Each of these
+methods may modify the first input argument. <i><br>
+_and( <small>OBJ1</small> , <small>OBJ2</small> )</i></p>
+
+<p style="margin-left:17%;">Return bitwise and. If
+necessary, the smallest number is padded with leading
+zeros.</p>
+
+<p style="margin-left:11%;"><i>_or( <small>OBJ1</small> ,
+<small>OBJ2</small> )</i></p>
+
+<p style="margin-left:17%;">Return bitwise or. If
+necessary, the smallest number is padded with leading
+zeros.</p>
+
+<p style="margin-left:11%;"><i>_xor( <small>OBJ1</small> ,
+<small>OBJ2</small> )</i></p>
+
+<p style="margin-left:17%;">Return bitwise exclusive or. If
+necessary, the smallest number is padded with leading
+zeros.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Boolean
+operators <br>
+_is_zero( <small>OBJ</small> )</i></p>
+
+<p style="margin-left:17%;">Returns a true value if
+<small>OBJ</small> is zero, and false value otherwise.</p>
+
+<p style="margin-left:11%;"><i>_is_one( <small>OBJ</small>
+)</i></p>
+
+<p style="margin-left:17%;">Returns a true value if
+<small>OBJ</small> is one, and false value otherwise.</p>
+
+<p style="margin-left:11%;"><i>_is_two( <small>OBJ</small>
+)</i></p>
+
+<p style="margin-left:17%;">Returns a true value if
+<small>OBJ</small> is two, and false value otherwise.</p>
+
+<p style="margin-left:11%;"><i>_is_ten( <small>OBJ</small>
+)</i></p>
+
+<p style="margin-left:17%;">Returns a true value if
+<small>OBJ</small> is ten, and false value otherwise.</p>
+
+<p style="margin-left:11%;"><i>_is_even( <small>OBJ</small>
+)</i></p>
+
+<p style="margin-left:17%;">Return a true value if
+<small>OBJ</small> is an even integer, and a false value
+otherwise.</p>
+
+<p style="margin-left:11%;"><i>_is_odd( <small>OBJ</small>
+)</i></p>
+
+<p style="margin-left:17%;">Return a true value if
+<small>OBJ</small> is an even integer, and a false value
+otherwise.</p>
+
+<p style="margin-left:11%;"><i>_acmp( <small>OBJ1</small> ,
+<small>OBJ2</small> )</i></p>
+
+<p style="margin-left:17%;">Compare <small>OBJ1</small> and
+<small>OBJ2</small> and return &minus;1, 0, or 1, if
+<small>OBJ1</small> is less than, equal to, or larger than
+<small>OBJ2</small> , respectively.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>String
+conversion <br>
+_str( <small>OBJ</small> )</i></p>
+
+<p style="margin-left:17%;">Return a string representing
+the object. The returned string should have no leading
+zeros, i.e., it should match
+<tt>&quot;^(0|[1&minus;9]\d*)$&quot;</tt>.</p>
+
+<p style="margin-left:11%;"><i>_as_bin( <small>OBJ</small>
+)</i></p>
+
+<p style="margin-left:17%;">Return the binary string
+representation of the number. The string must have a
+&rsquo;0b&rsquo; prefix.</p>
+
+<p style="margin-left:11%;"><i>_as_oct( <small>OBJ</small>
+)</i></p>
+
+<p style="margin-left:17%;">Return the octal string
+representation of the number. The string must have a
+&rsquo;0x&rsquo; prefix.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Note: This
+method was required from Math::BigInt version 1.78, but the
+required <small>API</small> version number was not
+incremented, so there are older libraries that support
+<small>API</small> version 1, but do not support
+<tt>&quot;_as_oct()&quot;</tt>.</p>
+
+<p style="margin-left:11%;"><i>_as_hex( <small>OBJ</small>
+)</i></p>
+
+<p style="margin-left:17%;">Return the hexadecimal string
+representation of the number. The string must have a
+&rsquo;0x&rsquo; prefix.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Numeric
+conversion <br>
+_num( <small>OBJ</small> )</i></p>
+
+<p style="margin-left:17%;">Given an object, return a Perl
+scalar number (int/float) representing this number.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>Miscellaneous
+<br>
+_copy( <small>OBJ</small> )</i></p>
+
+<p style="margin-left:17%;">Return a true copy of the
+object.</p>
+
+<p style="margin-left:11%;"><i>_len( <small>OBJ</small>
+)</i></p>
+
+<p style="margin-left:17%;">Returns the number of the
+decimal digits in the number. The output is a Perl
+scalar.</p>
+
+<p style="margin-left:11%;"><i>_zeros( <small>OBJ</small>
+)</i></p>
+
+<p style="margin-left:17%;">Return the number of trailing
+decimal zeros. The output is a Perl scalar.</p>
+
+<p style="margin-left:11%;"><i>_digit( <small>OBJ</small> ,
+N)</i></p>
+
+<p style="margin-left:17%;">Return the Nth digit as a Perl
+scalar. N is a Perl scalar, where zero refers to the
+rightmost (least significant) digit, and negative values
+count from the left (most significant digit). If
+<tt>$obj</tt> represents the number 123, then
+<i>_digit($obj, 0)</i> is 3 and <i>_digit(123, &minus;1)</i>
+is 1.</p>
+
+<p style="margin-left:11%;"><i>_check( <small>OBJ</small>
+)</i></p>
+
+<p style="margin-left:17%;">Return a true value if the
+object is <small>OK</small> , and a false value otherwise.
+This is a check routine to test the internal state of the
+object for corruption.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>API</small>
+version 2</b> <br>
+The following methods are required for an <small>API</small>
+version of 2 or greater.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>Constructors
+<br>
+_1ex(N)</i></p>
+
+<p style="margin-left:17%;">Return an object representing
+the number 10**N where N &gt;= 0 is a Perl scalar.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>Mathematical
+functions <br>
+_nok( <small>OBJ1</small> , <small>OBJ2</small> )</i></p>
+
+<p style="margin-left:17%;">Return the binomial coefficient
+<small>OBJ1</small> over <small>OBJ1</small> .</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>Miscellaneous
+<br>
+_alen( <small>OBJ</small> )</i></p>
+
+<p style="margin-left:17%;">Return the approximate number
+of decimal digits of the object. The output is one Perl
+scalar. This estimate must be greater than or equal to what
+<tt>&quot;_len()&quot;</tt> returns.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>API</small>
+optional methods</b> <br>
+The following methods are optional, and can be defined if
+the underlying lib has a fast way to do them. If undefined,
+Math::BigInt will use pure Perl (hence slow) fallback
+routines to emulate these:</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Signed
+bitwise operators.</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Each of these
+methods may modify the first input argument. <i><br>
+_signed_or( <small>OBJ1</small> , <small>OBJ2</small> ,
+<small>SIGN1</small> , <small>SIGN2</small> )</i></p>
+
+<p style="margin-left:17%;">Return the signed bitwise
+or.</p>
+
+<p style="margin-left:11%;"><i>_signed_and(
+<small>OBJ1</small> , <small>OBJ2</small> ,
+<small>SIGN1</small> , <small>SIGN2</small> )</i></p>
+
+<p style="margin-left:17%;">Return the signed bitwise
+and.</p>
+
+<p style="margin-left:11%;"><i>_signed_xor(
+<small>OBJ1</small> , <small>OBJ2</small> ,
+<small>SIGN1</small> , <small>SIGN2</small> )</i></p>
+
+<p style="margin-left:17%;">Return the signed bitwise
+exclusive or.</p>
+
+<h2>WRAP YOUR OWN
+<a name="WRAP YOUR OWN"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+port your own favourite c&minus;lib for big numbers to the
+Math::BigInt interface, you can take any of the already
+existing modules as a rough guideline. You should really
+wrap up the latest BigInt and BigFloat testsuites with your
+module, and replace in them any of the following:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use Math::BigInt;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">by this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use Math::BigInt lib =&gt; 'yourlib';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This way you
+ensure that your library really works 100% within
+Math::BigInt.</p>
+
+<h2>LICENSE
+<a name="LICENSE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This program is
+free software; you may redistribute it and/or modify it
+under the same terms as Perl itself.</p>
+
+<h2>AUTHORS
+<a name="AUTHORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Original math code by Mark
+Biggar, rewritten by Tels &lt;http://bloodgate.com/&gt; in
+late 2000.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Separated from BigInt and shaped <small>API</small> with
+the help of John Peacock.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Fixed, speed-up, streamlined and enhanced by Tels 2001
+&minus; 2007.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><small>API</small> documentation corrected and extended
+by Peter John Acklam, &lt;pjacklam@online.no&gt;</p></td></tr>
+</table>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Math::BigInt,
+Math::BigFloat, Math::BigInt::GMP, Math::BigInt::FastCalc
+and Math::BigInt::Pari.</p>
+<hr>
+</body>
+</html>

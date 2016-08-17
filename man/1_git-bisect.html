@@ -1,0 +1,534 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:13:35 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>GIT&minus;BISECT</title>
+
+</head>
+<body>
+
+<h1 align="center">GIT&minus;BISECT</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#GIT">GIT</a><br>
+<a href="#NOTES">NOTES</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">git-bisect
+&minus; Find by binary search the change that introduced a
+bug</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>git
+bisect</i> &lt;subcommand&gt; &lt;options&gt;</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The command
+takes various subcommands, and different options depending
+on the subcommand:</p>
+
+<p style="margin-left:17%; margin-top: 1em">git bisect help
+<br>
+git bisect start [&minus;&minus;no&minus;checkout]
+[&lt;bad&gt; [&lt;good&gt;...]] [&minus;&minus;]
+[&lt;paths&gt;...] <br>
+git bisect bad [&lt;rev&gt;] <br>
+git bisect good [&lt;rev&gt;...] <br>
+git bisect skip [(&lt;rev&gt;|&lt;range&gt;)...] <br>
+git bisect reset [&lt;commit&gt;] <br>
+git bisect visualize <br>
+git bisect replay &lt;logfile&gt; <br>
+git bisect log <br>
+git bisect run &lt;cmd&gt;...</p>
+
+<p style="margin-left:11%; margin-top: 1em">This command
+uses <i>git rev&minus;list &minus;&minus;bisect</i> to help
+drive the binary search process to find which change
+introduced a bug, given an old &quot;good&quot; commit
+object name and a later &quot;bad&quot; commit object
+name.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Getting
+help</b> <br>
+Use &quot;git bisect&quot; to get a short usage description,
+and &quot;git bisect help&quot; or &quot;git bisect
+&minus;h&quot; to get a long usage description.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Basic bisect
+commands: start, bad, good</b> <br>
+Using the Linux kernel tree as an example, basic use of the
+bisect command is as follows:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bisect
+start <br>
+$ git bisect bad # Current version is bad <br>
+$ git bisect good v2.6.13&minus;rc2 # v2.6.13&minus;rc2 was
+the last version <br>
+# tested that was good</p>
+
+<p style="margin-left:11%; margin-top: 1em">When you have
+specified at least one bad and one good version, the command
+bisects the revision tree and outputs something similar to
+the following:</p>
+
+<p style="margin-left:17%; margin-top: 1em">Bisecting: 675
+revisions left to test after this</p>
+
+<p style="margin-left:11%; margin-top: 1em">The state in
+the middle of the set of revisions is then checked out. You
+would now compile that kernel and boot it. If the booted
+kernel works correctly, you would then issue the following
+command:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bisect
+good # this one is good</p>
+
+<p style="margin-left:11%; margin-top: 1em">The output of
+this command would be something similar to the
+following:</p>
+
+<p style="margin-left:17%; margin-top: 1em">Bisecting: 337
+revisions left to test after this</p>
+
+<p style="margin-left:11%; margin-top: 1em">You keep
+repeating this process, compiling the tree, testing it, and
+depending on whether it is good or bad issuing the command
+&quot;git bisect good&quot; or &quot;git bisect bad&quot; to
+ask for the next bisection.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Eventually
+there will be no more revisions left to bisect, and you will
+have been left with the first bad kernel revision in
+&quot;refs/bisect/bad&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Bisect
+reset</b> <br>
+After a bisect session, to clean up the bisection state and
+return to the original HEAD (i.e., to quit bisecting), issue
+the following command:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bisect
+reset</p>
+
+<p style="margin-left:11%; margin-top: 1em">By default,
+this will return your tree to the commit that was checked
+out before git bisect start. (A new git bisect start will
+also do that, as it cleans up the old bisection state.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">With an
+optional argument, you can return to a different commit
+instead:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bisect
+reset &lt;commit&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">For example,
+git bisect reset HEAD will leave you on the current
+bisection commit and avoid switching commits at all, while
+git bisect reset bisect/bad will check out the first bad
+revision.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Bisect
+visualize</b> <br>
+To see the currently remaining suspects in <i>gitk</i>,
+issue the following command during the bisection
+process:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bisect
+visualize</p>
+
+<p style="margin-left:11%; margin-top: 1em">view may also
+be used as a synonym for visualize.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+<i>DISPLAY</i> environment variable is not set, <i>git
+log</i> is used instead. You can also give command line
+options such as &minus;p and &minus;&minus;stat.</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bisect
+view &minus;&minus;stat</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Bisect log
+and bisect replay</b> <br>
+After having marked revisions as good or bad, issue the
+following command to show what has been done so far:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bisect
+log</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you discover
+that you made a mistake in specifying the status of a
+revision, you can save the output of this command to a file,
+edit it to remove the incorrect entries, and then issue the
+following commands to return to a corrected state:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bisect
+reset <br>
+$ git bisect replay that&minus;file</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Avoiding
+testing a commit</b> <br>
+If, in the middle of a bisect session, you know that the
+next suggested revision is not a good one to test (e.g. the
+change the commit introduces is known not to work in your
+environment and you know it does not have anything to do
+with the bug you are chasing), you may want to find a nearby
+commit and try that instead.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+example:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bisect
+good/bad # previous round was good or bad. <br>
+Bisecting: 337 revisions left to test after this <br>
+$ git bisect visualize # oops, that is uninteresting. <br>
+$ git reset &minus;&minus;hard HEAD~3 # try 3 revisions
+before what <br>
+# was suggested</p>
+
+<p style="margin-left:11%; margin-top: 1em">Then compile
+and test the chosen revision, and afterwards mark the
+revision as good or bad in the usual manner.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Bisect
+skip</b> <br>
+Instead of choosing by yourself a nearby commit, you can ask
+Git to do it for you by issuing the command:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bisect
+skip # Current version cannot be tested</p>
+
+<p style="margin-left:11%; margin-top: 1em">But Git may
+eventually be unable to tell the first bad commit among a
+bad commit and one or more skipped commits.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can even
+skip a range of commits, instead of just one commit, using
+the
+&quot;<i>&lt;commit1&gt;</i>..<i>&lt;commit2&gt;</i>&quot;
+notation. For example:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bisect
+skip v2.5..v2.6</p>
+
+<p style="margin-left:11%; margin-top: 1em">This tells the
+bisect process that no commit after v2.5, up to and
+including v2.6, should be tested.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that if
+you also want to skip the first commit of the range you
+would issue the command:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bisect
+skip v2.5 v2.5..v2.6</p>
+
+<p style="margin-left:11%; margin-top: 1em">This tells the
+bisect process that the commits between v2.5 included and
+v2.6 included should be skipped.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Cutting down
+bisection by giving more parameters to bisect start</b> <br>
+You can further cut down the number of trials, if you know
+what part of the tree is involved in the problem you are
+tracking down, by specifying path parameters when issuing
+the bisect start command:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bisect
+start &minus;&minus; arch/i386 include/asm&minus;i386</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you know
+beforehand more than one good commit, you can narrow the
+bisect space down by specifying all of the good commits
+immediately after the bad commit when issuing the bisect
+start command:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bisect
+start v2.6.20&minus;rc6 v2.6.20&minus;rc4 v2.6.20&minus;rc1
+&minus;&minus; <br>
+# v2.6.20&minus;rc6 is bad <br>
+# v2.6.20&minus;rc4 and v2.6.20&minus;rc1 are good</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Bisect
+run</b> <br>
+If you have a script that can tell if the current source
+code is good or bad, you can bisect by issuing the
+command:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git bisect
+run my_script arguments</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that the
+script (my_script in the above example) should exit with
+code 0 if the current source code is good, and exit with a
+code between 1 and 127 (inclusive), except 125, if the
+current source code is bad.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Any other exit
+code will abort the bisect process. It should be noted that
+a program that terminates via &quot;exit(&minus;1)&quot;
+leaves $? = 255, (see the exit(3) manual page), as the value
+is chopped with &quot;&amp; 0377&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The special
+exit code 125 should be used when the current source code
+cannot be tested. If the script exits with this code, the
+current revision will be skipped (see git bisect skip
+above). 125 was chosen as the highest sensible value to use
+for this purpose, because 126 and 127 are used by POSIX
+shells to signal specific error status (127 is for command
+not found, 126 is for command found but not
+executable&minus;&minus;&minus;these details do not matter,
+as they are normal errors in the script, as far as
+&quot;bisect run&quot; is concerned).</p>
+
+<p style="margin-left:11%; margin-top: 1em">You may often
+find that during a bisect session you want to have temporary
+modifications (e.g. s/#define DEBUG 0/#define DEBUG 1/ in a
+header file, or &quot;revision that does not have this
+commit needs this patch applied to work around another
+problem this bisection is not interested in&quot;) applied
+to the revision being tested.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To cope with
+such a situation, after the inner <i>git bisect</i> finds
+the next revision to test, the script can apply the patch
+before compiling, run the real test, and afterwards decide
+if the revision (possibly with the needed patch) passed the
+test and then rewind the tree to the pristine state. Finally
+the script should exit with the status of the real test to
+let the &quot;git bisect run&quot; command loop determine
+the eventual outcome of the bisect session.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">&minus;&minus;no&minus;checkout</p>
+
+<p style="margin-left:17%;">Do not checkout the new working
+tree at each iteration of the bisection process. Instead
+just update a special reference named <i>BISECT_HEAD</i> to
+make it point to the commit that should be tested.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This option may
+be useful when the test you would perform in each step does
+not require a checked out tree.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If the
+repository is bare, &minus;&minus;no&minus;checkout is
+assumed.</p>
+
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+Automatically bisect a broken build between v1.2 and
+HEAD:</p>
+
+<p style="margin-left:23%; margin-top: 1em">$ git bisect
+start HEAD v1.2 &minus;&minus; # HEAD is bad, v1.2 is good
+<br>
+$ git bisect run make # &quot;make&quot; builds the app <br>
+$ git bisect reset # quit the bisect session</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+Automatically bisect a test failure between origin and
+HEAD:</p>
+
+<p style="margin-left:23%; margin-top: 1em">$ git bisect
+start HEAD origin &minus;&minus; # HEAD is bad, origin is
+good <br>
+$ git bisect run make test # &quot;make test&quot; builds
+and tests <br>
+$ git bisect reset # quit the bisect session</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+Automatically bisect a broken test case:</p>
+
+<p style="margin-left:23%; margin-top: 1em">$ cat ~/test.sh
+<br>
+#!/bin/sh <br>
+make || exit 125 # this skips broken builds <br>
+~/check_test_case.sh # does the test case pass? <br>
+$ git bisect start HEAD HEAD~10 &minus;&minus; # culprit is
+among the last 10 <br>
+$ git bisect run ~/test.sh <br>
+$ git bisect reset # quit the bisect session</p>
+
+<p style="margin-left:17%; margin-top: 1em">Here we use a
+&quot;test.sh&quot; custom script. In this script, if
+&quot;make&quot; fails, we skip the current commit.
+&quot;check_test_case.sh&quot; should &quot;exit 0&quot; if
+the test case passes, and &quot;exit 1&quot; otherwise.</p>
+
+<p style="margin-left:17%; margin-top: 1em">It is safer if
+both &quot;test.sh&quot; and &quot;check_test_case.sh&quot;
+are outside the repository to prevent interactions between
+the bisect, make and test processes and the scripts.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+Automatically bisect with temporary modifications
+(hot&minus;fix):</p>
+
+<p style="margin-left:23%; margin-top: 1em">$ cat ~/test.sh
+<br>
+#!/bin/sh</p>
+
+<p style="margin-left:23%; margin-top: 1em"># tweak the
+working tree by merging the hot&minus;fix branch <br>
+# and then attempt a build <br>
+if git merge &minus;&minus;no&minus;commit hot&minus;fix
+&amp;&amp; <br>
+make <br>
+then <br>
+# run project specific test and report its status <br>
+~/check_test_case.sh <br>
+status=$? <br>
+else <br>
+# tell the caller this is untestable <br>
+status=125 <br>
+fi</p>
+
+<p style="margin-left:23%; margin-top: 1em"># undo the
+tweak to allow clean flipping to the next commit <br>
+git reset &minus;&minus;hard</p>
+
+<p style="margin-left:23%; margin-top: 1em"># return
+control <br>
+exit $status</p>
+
+<p style="margin-left:17%; margin-top: 1em">This applies
+modifications from a hot&minus;fix branch before each test
+run, e.g. in case your build or test environment changed so
+that older revisions may need a fix which newer ones have
+already. (Make sure the hot&minus;fix branch is based off a
+commit which is contained in all revisions which you are
+bisecting, so that the merge does not pull in too much, or
+use git cherry&minus;pick instead of git merge.)</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+Automatically bisect a broken test case:</p>
+
+<p style="margin-left:23%; margin-top: 1em">$ git bisect
+start HEAD HEAD~10 &minus;&minus; # culprit is among the
+last 10 <br>
+$ git bisect run sh &minus;c &quot;make || exit 125;
+~/check_test_case.sh&quot; <br>
+$ git bisect reset # quit the bisect session</p>
+
+<p style="margin-left:17%; margin-top: 1em">This shows that
+you can do without a run script if you write the test on a
+single line.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; Locate a
+good region of the object graph in a damaged repository</p>
+
+<p style="margin-left:23%; margin-top: 1em">$ git bisect
+start HEAD &lt;known&minus;good&minus;commit&gt; [
+&lt;boundary&minus;commit&gt; ... ]
+&minus;&minus;no&minus;checkout <br>
+$ git bisect run sh &minus;c ' <br>
+GOOD=$(git for&minus;each&minus;ref
+&quot;&minus;&minus;format=%(objectname)&quot;
+refs/bisect/good&minus;*) &amp;&amp; <br>
+git rev&minus;list &minus;&minus;objects BISECT_HEAD
+&minus;&minus;not $GOOD &gt;tmp.$$ &amp;&amp; <br>
+git pack&minus;objects &minus;&minus;stdout &gt;/dev/null
+&lt;tmp.$$ <br>
+rc=$? <br>
+rm &minus;f tmp.$$ <br>
+test $rc = 0'</p>
+
+<p style="margin-left:23%; margin-top: 1em">$ git bisect
+reset # quit the bisect session</p>
+
+<p style="margin-left:17%; margin-top: 1em">In this case,
+when <i>git bisect run</i> finishes, bisect/bad will refer
+to a commit that has at least one parent whose reachable
+graph is fully traversable in the sense required by <i>git
+pack objects</i>.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><font color="#0000FF">Fighting
+regressions with git bisect</font></b>
+<small><font color="#000000">[1]</font></small>
+<font color="#000000">, <b>git-blame</b>(1).</font></p>
+
+<h2>GIT
+<a name="GIT"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Part
+of the <b>git</b>(1) suite</font></p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">1.</font></p> </td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p style="margin-top: 1em"><font color="#000000">Fighting
+regressions with git bisect</font></p></td>
+<td width="28%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">file:///usr/share/doc/git-1.8.3.1/git-bisect-lk2009.html</font></p>
+<hr>
+</body>
+</html>

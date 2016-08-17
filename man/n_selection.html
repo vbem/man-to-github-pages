@@ -1,0 +1,273 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:41:30 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>selection</title>
+
+</head>
+<body>
+
+<h1 align="center">selection</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#KEYWORDS">KEYWORDS</a><br>
+
+<hr>
+
+
+
+<p>______________________________________________________________________________</p>
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">selection
+&minus; Manipulate the X selection</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>selection</b>
+<i>option</i> ?<i>arg arg ...</i>?
+_________________________________________________________________</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This command
+provides a Tcl interface to the X selection mechanism and
+implements the full selection functionality described in the
+X Inter-Client Communication Conventions Manual (ICCCM).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that for
+management of the CLIPBOARD selection (see below), the
+<b>clipboard</b> command may also be used.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The first
+argument to <b>selection</b> determines the format of the
+rest of the arguments and the behavior of the command. The
+following forms are currently supported: <b><br>
+selection clear</b> ?<b>&minus;displayof</b> <i>window</i>?
+?<b>&minus;selection</b> <i>selection</i>?</p>
+
+<p style="margin-left:22%;">If <i>selection</i> exists
+anywhere on <i>window</i>&rsquo;s display, clear it so that
+no window owns the selection anymore. <i>Selection</i>
+specifies the X selection that should be cleared, and should
+be an atom name such as PRIMARY or CLIPBOARD; see the
+Inter-Client Communication Conventions Manual for complete
+details. <i>Selection</i> defaults to PRIMARY and
+<i>window</i> defaults to &ldquo;.&rdquo;. Returns an empty
+string.</p>
+
+<p style="margin-left:11%;"><b>selection get</b>
+?<b>&minus;displayof</b> <i>window</i>?
+?<b>&minus;selection</b> <i>selection</i>?
+?<b>&minus;type</b> <i>type</i>?</p>
+
+<p style="margin-left:22%;">Retrieves the value of
+<i>selection</i> from <i>window</i>&rsquo;s display and
+returns it as a result. <i>Selection</i> defaults to PRIMARY
+and <i>window</i> defaults to &ldquo;.&rdquo;. <i>Type</i>
+specifies the form in which the selection is to be returned
+(the desired &ldquo;target&rdquo; for conversion, in ICCCM
+terminology), and should be an atom name such as STRING or
+FILE_NAME; see the Inter-Client Communication Conventions
+Manual for complete details. <i>Type</i> defaults to STRING.
+The selection owner may choose to return the selection in
+any of several different representation formats, such as
+STRING, UTF8_STRING, ATOM, INTEGER, etc. (this format is
+different than the selection type; see the ICCCM for all the
+confusing details). If the selection is returned in a
+non-string format, such as INTEGER or ATOM, the
+<b>selection</b> command converts it to string format as a
+collection of fields separated by spaces: atoms are
+converted to their textual names, and anything else is
+converted to hexadecimal integers. Note that <b>selection
+get</b> does not retrieve the selection in the UTF8_STRING
+format unless told to.</p>
+
+<p style="margin-left:11%;"><b>selection handle</b>
+?<b>&minus;selection</b> <i>s</i>? ?<b>&minus;type</b>
+<i>t</i>? ?<b>&minus;format</b> <i>f</i>? <i>window
+command</i></p>
+
+<p style="margin-left:22%;">Creates a handler for selection
+requests, such that <i>command</i> will be executed whenever
+selection <i>s</i> is owned by <i>window</i> and someone
+attempts to retrieve it in the form given by type <i>t</i>
+(e.g. <i>t</i> is specified in the <b>selection get</b>
+command). <i>S</i> defaults to PRIMARY, <i>t</i> defaults to
+STRING, and <i>f</i> defaults to STRING. If <i>command</i>
+is an empty string then any existing handler for
+<i>window</i>, <i>t</i>, and <i>s</i> is removed. Note that
+when the selection is handled as type STRING it is also
+automatically handled as type UTF8_STRING as well.</p>
+
+<p style="margin-left:22%; margin-top: 1em">When
+<i>selection</i> is requested, <i>window</i> is the
+selection owner, and <i>type</i> is the requested type,
+<i>command</i> will be executed as a Tcl command with two
+additional numbers appended to it (with space separators).
+The two additional numbers are <i>offset</i> and
+<i>maxChars</i>: <i>offset</i> specifies a starting
+character position in the selection and <i>maxChars</i>
+gives the maximum number of characters to retrieve. The
+command should return a value consisting of at most
+<i>maxChars</i> of the selection, starting at position
+<i>offset</i>. For very large selections (larger than
+<i>maxChars</i>) the selection will be retrieved using
+several invocations of <i>command</i> with increasing
+<i>offset</i> values. If <i>command</i> returns a string
+whose length is less than <i>maxChars</i>, the return value
+is assumed to include all of the remainder of the selection;
+if the length of <i>command</i>&rsquo;s result is equal to
+<i>maxChars</i> then <i>command</i> will be invoked again,
+until it eventually returns a result shorter than
+<i>maxChars</i>. The value of <i>maxChars</i> will always be
+relatively large (thousands of characters).</p>
+
+<p style="margin-left:22%; margin-top: 1em">If
+<i>command</i> returns an error then the selection retrieval
+is rejected just as if the selection did not exist at
+all.</p>
+
+<p style="margin-left:22%; margin-top: 1em">The
+<i>format</i> argument specifies the representation that
+should be used to transmit the selection to the requester
+(the second column of Table 2 of the ICCCM), and defaults to
+STRING. If <i>format</i> is STRING, the selection is
+transmitted as 8-bit ASCII characters (i.e. just in the form
+returned by <i>command</i>, in the system <b>encoding</b>;
+the UTF8_STRING format always uses UTF-8 as its encoding).
+If <i>format</i> is ATOM, then the return value from
+<i>command</i> is divided into fields separated by white
+space; each field is converted to its atom value, and the
+32-bit atom value is transmitted instead of the atom name.
+For any other <i>format</i>, the return value from
+<i>command</i> is divided into fields separated by white
+space and each field is converted to a 32-bit integer; an
+array of integers is transmitted to the selection
+requester.</p>
+
+<p style="margin-left:22%; margin-top: 1em">The
+<i>format</i> argument is needed only for compatibility with
+selection requesters that do not use Tk. If Tk is being used
+to retrieve the selection then the value is converted back
+to a string at the requesting end, so <i>format</i> is
+irrelevant.</p>
+
+<p style="margin-left:11%;"><b>selection own</b>
+?<b>&minus;displayof</b> <i>window</i>?
+?<b>&minus;selection</b> <i>selection</i>? <b><br>
+selection own</b> ?<b>&minus;command</b> <i>command</i>?
+?<b>&minus;selection</b> <i>selection</i>? <i>window</i></p>
+
+<p style="margin-left:22%;">The first form of <b>selection
+own</b> returns the path name of the window in this
+application that owns <i>selection</i> on the display
+containing <i>window</i>, or an empty string if no window in
+this application owns the selection. <i>Selection</i>
+defaults to PRIMARY and <i>window</i> defaults to
+&ldquo;.&rdquo;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The second form
+of <b>selection own</b> causes <i>window</i> to become the
+new owner of <i>selection</i> on <i>window</i>&rsquo;s
+display, returning an empty string as result. The existing
+owner, if any, is notified that it has lost the selection.
+If <i>command</i> is specified, it is a Tcl script to
+execute when some other window claims ownership of the
+selection away from <i>window</i>. <i>Selection</i> defaults
+to PRIMARY.</p>
+
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On X11
+platforms, one of the standard selections available is the
+SECONDARY selection. Hardly anything uses it, but here is
+how to read it using Tk:</p>
+
+<p style="margin-left:22%;">set selContents [<b>selection
+get</b> &minus;selection SECONDARY]</p>
+
+<p style="margin-left:11%; margin-top: 1em">Many different
+types of data may be available for a selection; the special
+type TARGETS allows you to get a list of available
+types:</p>
+
+<p style="margin-left:22%;">foreach type [<b>selection
+get</b> &minus;type TARGETS] { <br>
+puts &quot;Selection PRIMARY supports type $type&quot; <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">To claim the
+selection, you must first set up a handler to supply the
+data for the selection. Then you have to claim the
+selection...</p>
+
+<p style="margin-left:22%;"># Set up the data handler ready
+for incoming requests <br>
+set foo &quot;This is a string with some data in it... blah
+blah&quot; <b><br>
+selection handle</b> &minus;selection SECONDARY . getData
+<br>
+proc getData {offset maxChars} { <br>
+puts &quot;Retrieving selection starting at $offset&quot;
+<br>
+return [string range $::foo $offset [expr
+{$offset+$maxChars}]] <br>
+}</p>
+
+<p style="margin-left:22%; margin-top: 1em"># Now we grab
+the selection itself <br>
+puts &quot;Claiming selection&quot; <b><br>
+selection own</b> &minus;command lost &minus;selection
+SECONDARY . <br>
+proc lost {} { <br>
+puts &quot;Lost selection&quot; <br>
+}</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">clipboard(n)</p>
+
+<h2>KEYWORDS
+<a name="KEYWORDS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">clear, format,
+handler, ICCCM, own, selection, target, type</p>
+<hr>
+</body>
+</html>

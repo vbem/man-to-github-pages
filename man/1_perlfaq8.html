@@ -1,0 +1,1903 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:14:53 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERLFAQ8</title>
+
+</head>
+<body>
+
+<h1 align="center">PERLFAQ8</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#AUTHOR AND COPYRIGHT">AUTHOR AND COPYRIGHT</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlfaq8
+&minus; System Interaction</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This section of
+the Perl <small>FAQ</small> covers questions involving
+operating system interaction. Topics include interprocess
+communication ( <small>IPC</small> ), control over the
+user-interface (keyboard, screen and pointing devices), and
+most anything else not related to data manipulation.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Read the FAQs
+and documentation specific to the port of perl to your
+operating system (eg, perlvms, perlplan9, ...). These should
+contain more detailed information on the vagaries of your
+perl.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+find out which operating system I&rsquo;m running under?</b>
+<br>
+The <tt>$^O</tt> variable (<tt>$OSNAME</tt> if you use
+<tt>&quot;English&quot;</tt>) contains an indication of the
+name of the operating system (not its release number) that
+your perl binary was built for.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How come</b>
+<i>exec()</i> <b>doesn&rsquo;t return?</b> <br>
+(contributed by brian d foy)</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;exec&quot;</tt> function&rsquo;s job is to turn
+your process into another command and never to return. If
+that&rsquo;s not what you want to do, don&rsquo;t use
+<tt>&quot;exec&quot;</tt>. :)</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+run an external command and still keep your Perl process
+going, look at a piped <tt>&quot;open&quot;</tt>,
+<tt>&quot;fork&quot;</tt>, or
+<tt>&quot;system&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I do
+fancy stuff with the keyboard/screen/mouse?</b> <br>
+How you access/control keyboards, screens, and pointing
+devices (&quot;mice&quot;) is system-dependent. Try the
+following modules: <br>
+Keyboard</p>
+
+<pre style="margin-left:17%;">    Term::Cap               Standard perl distribution
+    Term::ReadKey           CPAN
+    Term::ReadLine::Gnu     CPAN
+    Term::ReadLine::Perl    CPAN
+    Term::Screen            CPAN</pre>
+
+
+<p style="margin-left:11%;">Screen</p>
+
+<pre style="margin-left:17%;">    Term::Cap               Standard perl distribution
+    Curses                  CPAN
+    Term::ANSIColor         CPAN</pre>
+
+
+<p style="margin-left:11%;">Mouse</p>
+
+<pre style="margin-left:17%;">    Tk                      CPAN
+    Wx                      CPAN
+    Gtk2                    CPAN
+    Qt4                     kdebindings4 package</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Some of these
+specific cases are shown as examples in other answers in
+this section of the perlfaq.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+print something out in color?</b> <br>
+In general, you don&rsquo;t, because you don&rsquo;t know
+whether the recipient has a color-aware display device. If
+you know that they have an <small>ANSI</small> terminal that
+understands color, you can use the Term::ANSIColor module
+from <small>CPAN:</small></p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Term::ANSIColor;
+    print color(&quot;red&quot;), &quot;Stop!\n&quot;, color(&quot;reset&quot;);
+    print color(&quot;green&quot;), &quot;Go!\n&quot;, color(&quot;reset&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Or like
+this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Term::ANSIColor qw(:constants);
+    print RED, &quot;Stop!\n&quot;, RESET;
+    print GREEN, &quot;Go!\n&quot;, RESET;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+read just one key without waiting for a return key?</b> <br>
+Controlling input buffering is a remarkably system-dependent
+matter. On many systems, you can just use the <b>stty</b>
+command as shown in &quot;getc&quot; in perlfunc, but as you
+see, that&rsquo;s already getting you into portability
+snags.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open(TTY, &quot;+&lt;/dev/tty&quot;) or die &quot;no tty: $!&quot;;
+    system &quot;stty  cbreak &lt;/dev/tty &gt;/dev/tty 2&gt;&amp;1&quot;;
+    $key = getc(TTY);        # perhaps this works
+    # OR ELSE
+    sysread(TTY, $key, 1);    # probably this does
+    system &quot;stty &minus;cbreak &lt;/dev/tty &gt;/dev/tty 2&gt;&amp;1&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+Term::ReadKey module from <small>CPAN</small> offers an
+easy-to-use interface that should be more efficient than
+shelling out to <b>stty</b> for each key. It even includes
+limited support for Windows.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Term::ReadKey;
+    ReadMode('cbreak');
+    $key = ReadKey(0);
+    ReadMode('normal');</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">However, using
+the code requires that you have a working C compiler and can
+use it to build and install a <small>CPAN</small> module.
+Here&rsquo;s a solution using the standard
+<small>POSIX</small> module, which is already on your system
+(assuming your system supports <small>POSIX</small> ).</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use HotKey;
+    $key = readkey();</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">And
+here&rsquo;s the <tt>&quot;HotKey&quot;</tt> module, which
+hides the somewhat mystifying calls to manipulate the
+<small>POSIX</small> termios structures.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    # HotKey.pm
+    package HotKey;
+    use strict;
+    use warnings;
+    use parent 'Exporter';
+    our @EXPORT = qw(cbreak cooked readkey);
+    use POSIX qw(:termios_h);
+    my ($term, $oterm, $echo, $noecho, $fd_stdin);
+    $fd_stdin = fileno(STDIN);
+    $term     = POSIX::Termios&minus;&gt;new();
+    $term&minus;&gt;getattr($fd_stdin);
+    $oterm     = $term&minus;&gt;getlflag();
+    $echo     = ECHO | ECHOK | ICANON;
+    $noecho   = $oterm &amp; ~$echo;
+    sub cbreak {
+        $term&minus;&gt;setlflag($noecho);  # ok, so i don't want echo either
+        $term&minus;&gt;setcc(VTIME, 1);
+        $term&minus;&gt;setattr($fd_stdin, TCSANOW);
+    }
+    sub cooked {
+        $term&minus;&gt;setlflag($oterm);
+        $term&minus;&gt;setcc(VTIME, 0);
+        $term&minus;&gt;setattr($fd_stdin, TCSANOW);
+    }
+    sub readkey {
+        my $key = '';
+        cbreak();
+        sysread(STDIN, $key, 1);
+        cooked();
+        return $key;
+    }
+    END { cooked() }
+    1;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+check whether input is ready on the keyboard?</b> <br>
+The easiest way to do this is to read a key in nonblocking
+mode with the Term::ReadKey module from <small>CPAN</small>
+, passing it an argument of &minus;1 to indicate not to
+block:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Term::ReadKey;
+    ReadMode('cbreak');
+    if (defined (my $char = ReadKey(&minus;1)) ) {
+        # input was waiting and it was $char
+    } else {
+        # no input was waiting
+    }
+    ReadMode('normal');                  # restore normal tty settings</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+clear the screen?</b> <br>
+(contributed by brian d foy)</p>
+
+<p style="margin-left:11%; margin-top: 1em">To clear the
+screen, you just have to print the special sequence that
+tells the terminal to clear the screen. Once you have that
+sequence, output it when you want to clear the screen.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can use the
+Term::ANSIScreen module to get the special sequence. Import
+the <tt>&quot;cls&quot;</tt> function (or the
+<tt>&quot;:screen&quot;</tt> tag):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Term::ANSIScreen qw(cls);
+    my $clear_screen = cls();
+    print $clear_screen;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The Term::Cap
+module can also get the special sequence if you want to deal
+with the low-level details of terminal control. The
+<tt>&quot;Tputs&quot;</tt> method returns the string for the
+given capability:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Term::Cap;
+    my $terminal = Term::Cap&minus;&gt;Tgetent( { OSPEED =&gt; 9600 } );
+    my $clear_string = $terminal&minus;&gt;Tputs('cl');
+    print $clear_screen;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">On Windows, you
+can use the Win32::Console module. After creating an object
+for the output filehandle you want to affect, call the
+<tt>&quot;Cls&quot;</tt> method:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Win32::Console;
+    my $OUT = Win32::Console&minus;&gt;new(STD_OUTPUT_HANDLE);
+    my $clear_string = $OUT&minus;&gt;Cls;
+    print $clear_screen;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you have a
+command-line program that does the job, you can call it in
+backticks to capture whatever it outputs so you can use it
+later:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my $clear_string = `clear`;
+    print $clear_string;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I get
+the screen size?</b> <br>
+If you have Term::ReadKey module installed from
+<small>CPAN</small> , you can use it to fetch the width and
+height in characters and in pixels:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Term::ReadKey;
+    my ($wchar, $hchar, $wpixels, $hpixels) = GetTerminalSize();</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is more
+portable than the raw <tt>&quot;ioctl&quot;</tt>, but not as
+illustrative:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    require 'sys/ioctl.ph';
+    die &quot;no TIOCGWINSZ &quot; unless defined &amp;TIOCGWINSZ;
+    open(my $tty_fh, &quot;+&lt;/dev/tty&quot;)                     or die &quot;No tty: $!&quot;;
+    unless (ioctl($tty_fh, &amp;TIOCGWINSZ, $winsize='')) {
+        die sprintf &quot;$0: ioctl TIOCGWINSZ (%08x: $!)\n&quot;, &amp;TIOCGWINSZ;
+    }
+    my ($row, $col, $xpixel, $ypixel) = unpack('S4', $winsize);
+    print &quot;(row,col) = ($row,$col)&quot;;
+    print &quot;  (xpixel,ypixel) = ($xpixel,$ypixel)&quot; if $xpixel || $ypixel;
+    print &quot;\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I ask
+the user for a password?</b> <br>
+(This question has nothing to do with the web. See a
+different <small>FAQ</small> for that.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">There&rsquo;s
+an example of this in &quot;crypt&quot; in perlfunc). First,
+you put the terminal into &quot;no echo&quot; mode, then
+just read the password normally. You may do this with an
+old-style <tt>&quot;ioctl()&quot;</tt> function,
+<small>POSIX</small> terminal control (see
+<small>POSIX</small> or its documentation the Camel Book),
+or a call to the <b>stty</b> program, with varying degrees
+of portability.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can also do
+this for most systems using the Term::ReadKey module from
+<small>CPAN</small> , which is easier to use and in theory
+more portable.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Term::ReadKey;
+    ReadMode('noecho');
+    my $password = ReadLine(0);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+read and write the serial port?</b> <br>
+This depends on which operating system your program is
+running on. In the case of Unix, the serial ports will be
+accessible through files in <tt>&quot;/dev&quot;</tt>; on
+other systems, device names will doubtless differ. Several
+problem areas common to all device interaction are the
+following: <br>
+lockfiles</p>
+
+<p style="margin-left:17%;">Your system may use lockfiles
+to control multiple access. Make sure you follow the correct
+protocol. Unpredictable behavior can result from multiple
+processes reading from one device.</p>
+
+<p style="margin-left:11%;">open mode</p>
+
+<p style="margin-left:17%;">If you expect to use both read
+and write operations on the device, you&rsquo;ll have to
+open it for update (see &quot;open&quot; in perlfunc for
+details). You may wish to open it without running the risk
+of blocking by using <tt>&quot;sysopen()&quot;</tt> and
+<tt>&quot;O_RDWR|O_NDELAY|O_NOCTTY&quot;</tt> from the Fcntl
+module (part of the standard perl distribution). See
+&quot;sysopen&quot; in perlfunc for more on this
+approach.</p>
+
+<p style="margin-left:11%;">end of line</p>
+
+<p style="margin-left:17%;">Some devices will be expecting
+a &quot;\r&quot; at the end of each line rather than a
+&quot;\n&quot;. In some ports of perl, &quot;\r&quot; and
+&quot;\n&quot; are different from their usual (Unix)
+<small>ASCII</small> values of &quot;\015&quot; and
+&quot;\012&quot;. You may have to give the numeric values
+you want directly, using octal (&quot;\015&quot;), hex
+(&quot;0x0D&quot;), or as a control-character specification
+(&quot;\cM&quot;).</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    print DEV &quot;atv1\012&quot;;    # wrong, for some devices
+    print DEV &quot;atv1\015&quot;;    # right, for some devices</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Even though
+with normal text files a &quot;\n&quot; will do the trick,
+there is still no unified scheme for terminating a line that
+is portable between Unix, DOS/Win, and Macintosh, except to
+terminate <i><small>ALL</small></i> line ends with
+&quot;\015\012&quot;, and strip what you don&rsquo;t need
+from the output. This applies especially to socket I/O and
+autoflushing, discussed next.</p>
+
+<p style="margin-left:11%;">flushing output</p>
+
+<p style="margin-left:17%;">If you expect characters to get
+to your device when you <tt>&quot;print()&quot;</tt> them,
+you&rsquo;ll want to autoflush that filehandle. You can use
+<tt>&quot;select()&quot;</tt> and the <tt>$|</tt> variable
+to control autoflushing (see &quot;$|&quot; in perlvar and
+&quot;select&quot; in perlfunc, or perlfaq5, &quot;How do I
+flush/unbuffer an output filehandle? Why must I do
+this?&quot;):</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    my $old_handle = select($dev_fh);
+    $| = 1;
+    select($old_handle);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">You&rsquo;ll
+also see code that does this without a temporary variable,
+as in</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    select((select($deb_handle), $| = 1)[0]);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Or if you
+don&rsquo;t mind pulling in a few thousand lines of code
+just because you&rsquo;re afraid of a little <tt>$|</tt>
+variable:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    use IO::Handle;
+    $dev_fh&minus;&gt;autoflush(1);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">As mentioned in
+the previous item, this still doesn&rsquo;t work when using
+socket I/O between Unix and Macintosh. You&rsquo;ll need to
+hard code your line terminators, in that case.</p>
+
+<p style="margin-left:11%;">non-blocking input</p>
+
+<p style="margin-left:17%;">If you are doing a blocking
+<tt>&quot;read()&quot;</tt> or
+<tt>&quot;sysread()&quot;</tt>, you&rsquo;ll have to arrange
+for an alarm handler to provide a timeout (see
+&quot;alarm&quot; in perlfunc). If you have a non-blocking
+open, you&rsquo;ll likely have a non-blocking read, which
+means you may have to use a 4&minus;arg
+<tt>&quot;select()&quot;</tt> to determine whether I/O is
+ready on that device (see &quot;select&quot; in
+perlfunc.</p>
+
+<p style="margin-left:11%; margin-top: 1em">While trying to
+read from his caller-id box, the notorious Jamie Zawinski
+<tt>&quot;&lt;jwz@netscape.com&gt;&quot;</tt>, after much
+gnashing of teeth and fighting with
+<tt>&quot;sysread&quot;</tt>, <tt>&quot;sysopen&quot;</tt>,
+<small>POSIX</small> &rsquo;s <tt>&quot;tcgetattr&quot;</tt>
+business, and various other functions that go bump in the
+night, finally came up with this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    sub open_modem {
+        use IPC::Open2;
+        my $stty = `/bin/stty &minus;g`;
+        open2( \*MODEM_IN, \*MODEM_OUT, &quot;cu &minus;l$modem_device &minus;s2400 2&gt;&amp;1&quot;);
+        # starting cu hoses /dev/tty's stty settings, even when it has
+        # been opened on a pipe...
+        system(&quot;/bin/stty $stty&quot;);
+        $_ = &lt;MODEM_IN&gt;;
+        chomp;
+        if ( !m/^Connected/ ) {
+            print STDERR &quot;$0: cu printed `$_' instead of `Connected'\n&quot;;
+        }
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+decode encrypted password files?</b> <br>
+You spend lots and lots of money on dedicated hardware, but
+this is bound to get you talked about.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Seriously, you
+can&rsquo;t if they are Unix password files--the Unix
+password system employs one-way encryption. It&rsquo;s more
+like hashing than encryption. The best you can do is check
+whether something else hashes to the same string. You
+can&rsquo;t turn a hash back into the original string.
+Programs like Crack can forcibly (and intelligently) try to
+guess passwords, but don&rsquo;t (can&rsquo;t) guarantee
+quick success.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you&rsquo;re
+worried about users selecting bad passwords, you should
+proactively check when they try to change their password (by
+modifying <i>passwd</i>(1), for example).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+start a process in the background?</b> <br>
+(contributed by brian d foy)</p>
+
+<p style="margin-left:11%; margin-top: 1em">There&rsquo;s
+not a single way to run code in the background so you
+don&rsquo;t have to wait for it to finish before your
+program moves on to other tasks. Process management depends
+on your particular operating system, and many of the
+techniques are covered in perlipc.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Several
+<small>CPAN</small> modules may be able to help, including
+IPC::Open2 or IPC::Open3, IPC::Run, Parallel::Jobs,
+Parallel::ForkManager, <small>POE</small> ,
+Proc::Background, and Win32::Process. There are many other
+modules you might use, so check those namespaces for other
+options too.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you are on a
+Unix-like system, you might be able to get away with a
+system call where you put an <tt>&quot;&amp;&quot;</tt> on
+the end of the command:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    system(&quot;cmd &amp;&quot;)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can also
+try using <tt>&quot;fork&quot;</tt>, as described in
+perlfunc (although this is the same thing that many of the
+modules will do for you). <small><br>
+STDIN</small> , <small>STDOUT</small> , and
+<small>STDERR</small> are shared</p>
+
+<p style="margin-left:17%;">Both the main process and the
+backgrounded one (the &quot;child&quot; process) share the
+same <small>STDIN</small> , <small>STDOUT</small> and
+<small>STDERR</small> filehandles. If both try to access
+them at once, strange things can happen. You may want to
+close or reopen these for the child. You can get around this
+with <tt>&quot;open&quot;</tt>ing a pipe (see
+&quot;open&quot; in perlfunc) but on some systems this means
+that the child process cannot outlive the parent.</p>
+
+<p style="margin-left:11%;">Signals</p>
+
+<p style="margin-left:17%;">You&rsquo;ll have to catch the
+<small>SIGCHLD</small> signal, and possibly
+<small>SIGPIPE</small> too. <small>SIGCHLD</small> is sent
+when the backgrounded process finishes.
+<small>SIGPIPE</small> is sent when you write to a
+filehandle whose child process has closed (an untrapped
+<small>SIGPIPE</small> can cause your program to silently
+die). This is not an issue with
+<tt>&quot;system(&quot;cmd&amp;&quot;)&quot;</tt>.</p>
+
+<p style="margin-left:11%;">Zombies</p>
+
+<p style="margin-left:17%;">You have to be prepared to
+&quot;reap&quot; the child process when it finishes.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    $SIG{CHLD} = sub { wait };
+    $SIG{CHLD} = 'IGNORE';</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">You can also
+use a double fork. You immediately
+<tt>&quot;wait()&quot;</tt> for your first child, and the
+init daemon will <tt>&quot;wait()&quot;</tt> for your
+grandchild once it exits.</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    unless ($pid = fork) {
+        unless (fork) {
+            exec &quot;what you really wanna do&quot;;
+            die &quot;exec failed!&quot;;
+        }
+        exit 0;
+    }
+    waitpid($pid, 0);</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">See
+&quot;Signals&quot; in perlipc for other examples of code to
+do this. Zombies are not an issue with
+<tt>&quot;system(&quot;prog &amp;&quot;)&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+trap control characters/signals?</b> <br>
+You don&rsquo;t actually &quot;trap&quot; a control
+character. Instead, that character generates a signal which
+is sent to your terminal&rsquo;s currently foregrounded
+process group, which you then trap in your process. Signals
+are documented in &quot;Signals&quot; in perlipc and the
+section on &quot;Signals&quot; in the Camel.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can set the
+values of the <tt>%SIG</tt> hash to be the functions you
+want to handle the signal. After perl catches the signal, it
+looks in <tt>%SIG</tt> for a key with the same name as the
+signal, then calls the subroutine value for that key.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    # as an anonymous subroutine
+    $SIG{INT} = sub { syswrite(STDERR, &quot;ouch\n&quot;, 5 ) };
+    # or a reference to a function
+    $SIG{INT} = \&amp;ouch;
+    # or the name of the function as a string
+    $SIG{INT} = &quot;ouch&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Perl versions
+before 5.8 had in its C source code signal handlers which
+would catch the signal and possibly run a Perl function that
+you had set in <tt>%SIG</tt>. This violated the rules of
+signal handling at that level causing perl to dump core.
+Since version 5.8.0, perl looks at <tt>%SIG</tt>
+<b>after</b> the signal has been caught, rather than while
+it is being caught. Previous versions of this answer were
+incorrect.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+modify the shadow password file on a Unix system?</b> <br>
+If perl was installed correctly and your shadow library was
+written properly, the <tt>&quot;getpw*()&quot;</tt>
+functions described in perlfunc should in theory provide
+(read-only) access to entries in the shadow password file.
+To change the file, make a new shadow password file (the
+format varies from system to system--see <i>passwd</i>(1)
+for specifics) and use <tt>pwd_mkdb(8)</tt> to install it
+(see <i>pwd_mkdb</i>(8) for more details).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I set
+the time and date?</b> <br>
+Assuming you&rsquo;re running under sufficient permissions,
+you should be able to set the system-wide date and time by
+running the <tt>date(1)</tt> program. (There is no way to
+set the time and date on a per-process basis.) This
+mechanism will work for Unix, MS-DOS, Windows, and
+<small>NT</small> ; the <small>VMS</small> equivalent is
+<tt>&quot;set time&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">However, if all
+you want to do is change your time zone, you can probably
+get away with setting an environment variable:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ENV{TZ} = &quot;MST7MDT&quot;;           # Unixish
+    $ENV{'SYS$TIMEZONE_DIFFERENTIAL'}=&quot;&minus;5&quot; # vms
+    system('trn', 'comp.lang.perl.misc');</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can
+I</b> <i>sleep()</i> <b>or</b> <i>alarm()</i> <b>for under a
+second?</b> <br>
+If you want finer granularity than the 1 second that the
+<tt>&quot;sleep()&quot;</tt> function provides, the easiest
+way is to use the <tt>&quot;select()&quot;</tt> function as
+documented in &quot;select&quot; in perlfunc. Try the
+Time::HiRes and the BSD::Itimer modules (available from
+<small>CPAN</small> , and starting from Perl 5.8 Time::HiRes
+is part of the standard distribution).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can I
+measure time under a second?</b> <br>
+(contributed by brian d foy)</p>
+
+<p style="margin-left:11%; margin-top: 1em">The Time::HiRes
+module (part of the standard distribution as of Perl 5.8)
+measures time with the <tt>&quot;gettimeofday()&quot;</tt>
+system call, which returns the time in microseconds since
+the epoch. If you can&rsquo;t install Time::HiRes for older
+Perls and you are on a Unixish system, you may be able to
+call <tt>gettimeofday(2)</tt> directly. See
+&quot;syscall&quot; in perlfunc.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can I do
+an</b> <i>atexit()</i> <b>or</b>
+<i>setjmp()</i><b>/</b><i>longjmp()</i><b>? (Exception
+handling)</b> <br>
+You can use the <tt>&quot;END&quot;</tt> block to simulate
+<tt>&quot;atexit()&quot;</tt>. Each package&rsquo;s
+<tt>&quot;END&quot;</tt> block is called when the program or
+thread ends. See the perlmod manpage for more details about
+<tt>&quot;END&quot;</tt> blocks.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For example,
+you can use this to make sure your filter program managed to
+finish its output without filling up the disk:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    END {
+        close(STDOUT) || die &quot;stdout close failed: $!&quot;;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;END&quot;</tt> block isn&rsquo;t called when
+untrapped signals kill the program, though, so if you use
+<tt>&quot;END&quot;</tt> blocks you should also use</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use sigtrap qw(die normal&minus;signals);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Perl&rsquo;s
+exception-handling mechanism is its
+<tt>&quot;eval()&quot;</tt> operator. You can use
+<tt>&quot;eval()&quot;</tt> as <tt>&quot;setjmp&quot;</tt>
+and <tt>&quot;die()&quot;</tt> as
+<tt>&quot;longjmp&quot;</tt>. For details of this, see the
+section on signals, especially the time-out handler for a
+blocking <tt>&quot;flock()&quot;</tt> in &quot;Signals&quot;
+in perlipc or the section on &quot;Signals&quot; in
+<i>Programming Perl</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If exception
+handling is all you&rsquo;re interested in, use one of the
+many <small>CPAN</small> modules that handle exceptions,
+such as Try::Tiny.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you want the
+<tt>&quot;atexit()&quot;</tt> syntax (and an
+<tt>&quot;rmexit()&quot;</tt> as well), try the
+<tt>&quot;AtExit&quot;</tt> module available from
+<small>CPAN</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Why
+doesn&rsquo;t my sockets program work under System V
+(Solaris)? What does the error message &quot;Protocol not
+supported&quot; mean?</b> <br>
+Some Sys-V based systems, notably Solaris 2.X, redefined
+some of the standard socket constants. Since these were
+constant across all architectures, they were often hardwired
+into perl code. The proper way to deal with this is to
+&quot;use Socket&quot; to get the correct values.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that even
+though SunOS and Solaris are binary compatible, these values
+are different. Go figure.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can I
+call my system&rsquo;s unique C functions from Perl?</b>
+<br>
+In most cases, you write an external module to do it--see
+the answer to &quot;Where can I learn about linking C with
+Perl? [h2xs, xsubpp]&quot;. However, if the function is a
+system call, and your system supports
+<tt>&quot;syscall()&quot;</tt>, you can use the
+<tt>&quot;syscall&quot;</tt> function (documented in
+perlfunc).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Remember to
+check the modules that came with your distribution, and
+<small>CPAN</small> as well--someone may already have
+written a module to do it. On Windows, try Win32::API. On
+Macs, try Mac::Carbon. If no module has an interface to the
+C function, you can inline a bit of C in your Perl source
+with Inline::C.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Where do I
+get the include files to do</b> <i>ioctl()</i> <b>or</b>
+<i>syscall()</i><b>?</b> <br>
+Historically, these would be generated by the h2ph tool,
+part of the standard perl distribution. This program
+converts <tt>cpp(1)</tt> directives in C header files to
+files containing subroutine definitions, like
+<tt>&amp;SYS_getitimer</tt>, which you can use as arguments
+to your functions. It doesn&rsquo;t work perfectly, but it
+usually gets most of the job done. Simple files like
+<i>errno.h</i>, <i>syscall.h</i>, and <i>socket.h</i> were
+fine, but the hard ones like <i>ioctl.h</i> nearly always
+need to be hand-edited. Here&rsquo;s how to install the *.ph
+files:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    1. Become the super&minus;user
+    2. cd /usr/include
+    3. h2ph *.h */*.h</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If your system
+supports dynamic loading, for reasons of portability and
+sanity you probably ought to use h2xs (also part of the
+standard perl distribution). This tool converts C header
+files to Perl extensions. See perlxstut for how to get
+started with h2xs.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If your system
+doesn&rsquo;t support dynamic loading, you still probably
+ought to use h2xs. See perlxstut and ExtUtils::MakeMaker for
+more information (in brief, just use <b>make perl</b>
+instead of a plain <b>make</b> to rebuild perl with a new
+static extension).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Why do
+setuid perl scripts complain about kernel problems?</b> <br>
+Some operating systems have bugs in the kernel that make
+setuid scripts inherently insecure. Perl gives you a number
+of options (described in perlsec) to work around such
+systems.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can I
+open a pipe both to and from a command?</b> <br>
+The IPC::Open2 module (part of the standard perl
+distribution) is an easy-to-use approach that internally
+uses <tt>&quot;pipe()&quot;</tt>,
+<tt>&quot;fork()&quot;</tt>, and <tt>&quot;exec()&quot;</tt>
+to do the job. Make sure you read the deadlock warnings in
+its documentation, though (see IPC::Open2). See
+&quot;Bidirectional Communication with Another Process&quot;
+in perlipc and &quot;Bidirectional Communication with
+Yourself&quot; in perlipc</p>
+
+<p style="margin-left:11%; margin-top: 1em">You may also
+use the IPC::Open3 module (part of the standard perl
+distribution), but be warned that it has a different order
+of arguments from IPC::Open2 (see IPC::Open3).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Why
+can&rsquo;t I get the output of a command with</b>
+<i>system()</i><b>?</b> <br>
+You&rsquo;re confusing the purpose of
+<tt>&quot;system()&quot;</tt> and backticks
+(&lsquo;&lsquo;). <tt>&quot;system()&quot;</tt> runs a
+command and returns exit status information (as a 16 bit
+value: the low 7 bits are the signal the process died from,
+if any, and the high 8 bits are the actual exit value).
+Backticks (&lsquo;&lsquo;) run a command and return what it
+sent to <small>STDOUT</small> .</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my $exit_status   = system(&quot;mail&minus;users&quot;);
+    my $output_string = `ls`;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can I
+capture <small>STDERR</small> from an external command?</b>
+<br>
+There are three basic ways of running external commands:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    system $cmd;        # using system()
+    my $output = `$cmd`;        # using backticks (``)
+    open (my $pipe_fh, &quot;$cmd |&quot;);    # using open()</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">With
+<tt>&quot;system()&quot;</tt>, both <small>STDOUT</small>
+and <small>STDERR</small> will go the same place as the
+script&rsquo;s <small>STDOUT</small> and
+<small>STDERR</small> , unless the
+<tt>&quot;system()&quot;</tt> command redirects them.
+Backticks and <tt>&quot;open()&quot;</tt> read <b>only</b>
+the <small>STDOUT</small> of your command.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can also
+use the <tt>&quot;open3()&quot;</tt> function from
+IPC::Open3. Benjamin Goldberg provides some sample code:</p>
+
+<p style="margin-left:11%; margin-top: 1em">To capture a
+program&rsquo;s <small>STDOUT</small> , but discard its
+<small>STDERR:</small></p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use IPC::Open3;
+    use File::Spec;
+    use Symbol qw(gensym);
+    open(NULL, &quot;&gt;&quot;, File::Spec&minus;&gt;devnull);
+    my $pid = open3(gensym, \*PH, &quot;&gt;&amp;NULL&quot;, &quot;cmd&quot;);
+    while( &lt;PH&gt; ) { }
+    waitpid($pid, 0);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To capture a
+program&rsquo;s <small>STDERR</small> , but discard its
+<small>STDOUT:</small></p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use IPC::Open3;
+    use File::Spec;
+    use Symbol qw(gensym);
+    open(NULL, &quot;&gt;&quot;, File::Spec&minus;&gt;devnull);
+    my $pid = open3(gensym, &quot;&gt;&amp;NULL&quot;, \*PH, &quot;cmd&quot;);
+    while( &lt;PH&gt; ) { }
+    waitpid($pid, 0);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To capture a
+program&rsquo;s <small>STDERR</small> , and let its
+<small>STDOUT</small> go to our own
+<small>STDERR:</small></p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use IPC::Open3;
+    use Symbol qw(gensym);
+    my $pid = open3(gensym, &quot;&gt;&amp;STDERR&quot;, \*PH, &quot;cmd&quot;);
+    while( &lt;PH&gt; ) { }
+    waitpid($pid, 0);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To read both a
+command&rsquo;s <small>STDOUT</small> and its
+<small>STDERR</small> separately, you can redirect them to
+temp files, let the command run, then read the temp
+files:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use IPC::Open3;
+    use Symbol qw(gensym);
+    use IO::File;
+    local *CATCHOUT = IO::File&minus;&gt;new_tmpfile;
+    local *CATCHERR = IO::File&minus;&gt;new_tmpfile;
+    my $pid = open3(gensym, &quot;&gt;&amp;CATCHOUT&quot;, &quot;&gt;&amp;CATCHERR&quot;, &quot;cmd&quot;);
+    waitpid($pid, 0);
+    seek $_, 0, 0 for \*CATCHOUT, \*CATCHERR;
+    while( &lt;CATCHOUT&gt; ) {}
+    while( &lt;CATCHERR&gt; ) {}</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">But
+there&rsquo;s no real need for <b>both</b> to be
+tempfiles... the following should work just as well, without
+deadlocking:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use IPC::Open3;
+    use Symbol qw(gensym);
+    use IO::File;
+    local *CATCHERR = IO::File&minus;&gt;new_tmpfile;
+    my $pid = open3(gensym, \*CATCHOUT, &quot;&gt;&amp;CATCHERR&quot;, &quot;cmd&quot;);
+    while( &lt;CATCHOUT&gt; ) {}
+    waitpid($pid, 0);
+    seek CATCHERR, 0, 0;
+    while( &lt;CATCHERR&gt; ) {}</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">And it&rsquo;ll
+be faster, too, since we can begin processing the
+program&rsquo;s stdout immediately, rather than waiting for
+the program to finish.</p>
+
+<p style="margin-left:11%; margin-top: 1em">With any of
+these, you can change file descriptors before the call:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open(STDOUT, &quot;&gt;logfile&quot;);
+    system(&quot;ls&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">or you can use
+Bourne shell file-descriptor redirection:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $output = `$cmd 2&gt;some_file`;
+    open (PIPE, &quot;cmd 2&gt;some_file |&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can also
+use file-descriptor redirection to make
+<small>STDERR</small> a duplicate of
+<small>STDOUT:</small></p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $output = `$cmd 2&gt;&amp;1`;
+    open (PIPE, &quot;cmd 2&gt;&amp;1 |&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Note that you
+<i>cannot</i> simply open <small>STDERR</small> to be a dup
+of <small>STDOUT</small> in your Perl program and avoid
+calling the shell to do the redirection. This doesn&rsquo;t
+work:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open(STDERR, &quot;&gt;&amp;STDOUT&quot;);
+    $alloutput = `cmd args`;  # stderr still escapes</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This fails
+because the <tt>&quot;open()&quot;</tt> makes
+<small>STDERR</small> go to where <small>STDOUT</small> was
+going at the time of the <tt>&quot;open()&quot;</tt>. The
+backticks then make <small>STDOUT</small> go to a string,
+but don&rsquo;t change <small>STDERR</small> (which still
+goes to the old <small>STDOUT</small> ).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that you
+<i>must</i> use Bourne shell (<tt>sh(1)</tt>) redirection
+syntax in backticks, not <tt>csh(1)</tt>! Details on why
+Perl&rsquo;s <tt>&quot;system()&quot;</tt> and backtick and
+pipe opens all use the Bourne shell are in the
+<i>versus/csh.whynot</i> article in the &quot;Far More Than
+You Ever Wanted To Know&quot; collection in
+&lt;http://www.cpan.org/misc/olddoc/FMTEYEWTK.tgz&gt; . To
+capture a command&rsquo;s <small>STDERR</small> and
+<small>STDOUT</small> together:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $output = `cmd 2&gt;&amp;1`;                       # either with backticks
+    $pid = open(PH, &quot;cmd 2&gt;&amp;1 |&quot;);              # or with an open pipe
+    while (&lt;PH&gt;) { }                            #    plus a read</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To capture a
+command&rsquo;s <small>STDOUT</small> but discard its
+<small>STDERR:</small></p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $output = `cmd 2&gt;/dev/null`;                # either with backticks
+    $pid = open(PH, &quot;cmd 2&gt;/dev/null |&quot;);       # or with an open pipe
+    while (&lt;PH&gt;) { }                            #    plus a read</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To capture a
+command&rsquo;s <small>STDERR</small> but discard its
+<small>STDOUT:</small></p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $output = `cmd 2&gt;&amp;1 1&gt;/dev/null`;           # either with backticks
+    $pid = open(PH, &quot;cmd 2&gt;&amp;1 1&gt;/dev/null |&quot;);  # or with an open pipe
+    while (&lt;PH&gt;) { }                            #    plus a read</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To exchange a
+command&rsquo;s <small>STDOUT</small> and
+<small>STDERR</small> in order to capture the
+<small>STDERR</small> but leave its <small>STDOUT</small> to
+come out our old <small>STDERR:</small></p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $output = `cmd 3&gt;&amp;1 1&gt;&amp;2 2&gt;&amp;3 3&gt;&amp;&minus;`;        # either with backticks
+    $pid = open(PH, &quot;cmd 3&gt;&amp;1 1&gt;&amp;2 2&gt;&amp;3 3&gt;&amp;&minus;|&quot;);# or with an open pipe
+    while (&lt;PH&gt;) { }                            #    plus a read</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">To read both a
+command&rsquo;s <small>STDOUT</small> and its
+<small>STDERR</small> separately, it&rsquo;s easiest to
+redirect them separately to files, and then read from those
+files when the program is done:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    system(&quot;program args 1&gt;program.stdout 2&gt;program.stderr&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Ordering is
+important in all these examples. That&rsquo;s because the
+shell processes file descriptor redirections in strictly
+left to right order.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    system(&quot;prog args 1&gt;tmpfile 2&gt;&amp;1&quot;);
+    system(&quot;prog args 2&gt;&amp;1 1&gt;tmpfile&quot;);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The first
+command sends both standard out and standard error to the
+temporary file. The second command sends only the old
+standard output there, and the old standard error shows up
+on the old standard out.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Why
+doesn&rsquo;t</b> <i>open()</i> <b>return an error when a
+pipe open fails?</b> <br>
+If the second argument to a piped
+<tt>&quot;open()&quot;</tt> contains shell metacharacters,
+perl <tt>&quot;fork()&quot;</tt>s, then
+<tt>&quot;exec()&quot;</tt>s a shell to decode the
+metacharacters and eventually run the desired program. If
+the program couldn&rsquo;t be run, it&rsquo;s the shell that
+gets the message, not Perl. All your Perl program can find
+out is whether the shell itself could be successfully
+started. You can still capture the shell&rsquo;s
+<small>STDERR</small> and check it for error messages. See
+&quot;How can I capture <small>STDERR</small> from an
+external command?&quot; elsewhere in this document, or use
+the IPC::Open3 module.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If there are no
+shell metacharacters in the argument of
+<tt>&quot;open()&quot;</tt>, Perl runs the command directly,
+without using the shell, and can correctly report whether
+the command started.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>What&rsquo;s
+wrong with using backticks in a void context?</b> <br>
+Strictly speaking, nothing. Stylistically speaking,
+it&rsquo;s not a good way to write maintainable code. Perl
+has several operators for running external commands.
+Backticks are one; they collect the output from the command
+for use in your program. The <tt>&quot;system&quot;</tt>
+function is another; it doesn&rsquo;t do this.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Writing
+backticks in your program sends a clear message to the
+readers of your code that you wanted to collect the output
+of the command. Why send a clear message that isn&rsquo;t
+true?</p>
+
+<p style="margin-left:11%; margin-top: 1em">Consider this
+line:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    `cat /etc/termcap`;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You forgot to
+check <tt>$?</tt> to see whether the program even ran
+correctly. Even if you wrote</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    print `cat /etc/termcap`;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">this code could
+and probably should be written as</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    system(&quot;cat /etc/termcap&quot;) == 0
+    or die &quot;cat program failed!&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">which will echo
+the cat command&rsquo;s output as it is generated, instead
+of waiting until the program has completed to print it out.
+It also checks the return value.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;system&quot;</tt>
+also provides direct control over whether shell wildcard
+processing may take place, whereas backticks do not.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can I
+call backticks without shell processing?</b> <br>
+This is a bit tricky. You can&rsquo;t simply write the
+command like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    @ok = `grep @opts '$search_string' @filenames`;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">As of Perl
+5.8.0, you can use <tt>&quot;open()&quot;</tt> with multiple
+arguments. Just like the list forms of
+<tt>&quot;system()&quot;</tt> and
+<tt>&quot;exec()&quot;</tt>, no shell escapes happen.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open( GREP, &quot;&minus;|&quot;, 'grep', @opts, $search_string, @filenames );
+    chomp(@ok = &lt;GREP&gt;);
+    close GREP;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can
+also:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my @ok = ();
+    if (open(GREP, &quot;&minus;|&quot;)) {
+        while (&lt;GREP&gt;) {
+            chomp;
+            push(@ok, $_);
+        }
+        close GREP;
+    } else {
+        exec 'grep', @opts, $search_string, @filenames;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Just as with
+<tt>&quot;system()&quot;</tt>, no shell escapes happen when
+you <tt>&quot;exec()&quot;</tt> a list. Further examples of
+this can be found in &quot;Safe Pipe Opens&quot; in
+perlipc.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that if
+you&rsquo;re using Windows, no solution to this vexing issue
+is even possible. Even though Perl emulates
+<tt>&quot;fork()&quot;</tt>, you&rsquo;ll still be stuck,
+because Windows does not have an argc/argv&minus;style
+<small>API</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Why
+can&rsquo;t my script read from <small>STDIN</small> after I
+gave it <small>EOF</small> (^D on Unix, ^Z on MS-DOS)?</b>
+<br>
+This happens only if your perl is compiled to use stdio
+instead of perlio, which is the default. Some (maybe all?)
+stdios set error and eof flags that you may need to clear.
+The <small>POSIX</small> module defines
+<tt>&quot;clearerr()&quot;</tt> that you can use. That is
+the technically correct way to do it. Here are some less
+reliable workarounds:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>1.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>Try keeping around the seekpointer and go there, like
+this:</p> </td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    my $where = tell($log_fh);
+    seek($log_fh, $where, 0);</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">2.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">If that doesn&rsquo;t work, try
+seeking to a different part of the file and then back.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>3.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>If that doesn&rsquo;t work, try seeking to a different
+part of the file, reading something, and then seeking
+back.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>4.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>If that doesn&rsquo;t work, give up on your stdio
+package and use sysread.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can I
+convert my shell script to perl?</b> <br>
+Learn Perl and rewrite it. Seriously, there&rsquo;s no
+simple converter. Things that are awkward to do in the shell
+are easy to do in Perl, and this very awkwardness is what
+would make a shell&minus;&gt;perl converter nigh-on
+impossible to write. By rewriting it, you&rsquo;ll think
+about what you&rsquo;re really trying to do, and hopefully
+will escape the shell&rsquo;s pipeline datastream paradigm,
+which while convenient for some matters, causes many
+inefficiencies.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Can I use
+perl to run a telnet or ftp session?</b> <br>
+Try the Net::FTP, TCP::Client, and Net::Telnet modules
+(available from <small>CPAN</small> ).
+&lt;http://www.cpan.org/scripts/netstuff/telnet.emul.shar&gt;
+will also help for emulating the telnet protocol, but
+Net::Telnet is quite probably easier to use.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If all you want
+to do is pretend to be telnet but don&rsquo;t need the
+initial telnet handshaking, then the standard dual-process
+approach will suffice:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use IO::Socket;             # new in 5.004
+    my $handle = IO::Socket::INET&minus;&gt;new('www.perl.com:80')
+        or die &quot;can't connect to port 80 on www.perl.com $!&quot;;
+    $handle&minus;&gt;autoflush(1);
+    if (fork()) {               # XXX: undef means failure
+        select($handle);
+        print while &lt;STDIN&gt;;    # everything from stdin to socket
+    } else {
+        print while &lt;$handle&gt;;  # everything from socket to stdout
+    }
+    close $handle;
+    exit;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can I
+write expect in Perl?</b> <br>
+Once upon a time, there was a library called <i>chat2.pl</i>
+(part of the standard perl distribution), which never really
+got finished. If you find it somewhere, <i>don&rsquo;t use
+it</i>. These days, your best bet is to look at the Expect
+module available from <small>CPAN</small> , which also
+requires two other modules from <small>CPAN</small> ,
+IO::Pty and IO::Stty.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Is there a
+way to hide perl&rsquo;s command line from programs such as
+&quot;ps&quot;?</b> <br>
+First of all note that if you&rsquo;re doing this for
+security reasons (to avoid people seeing passwords, for
+example) then you should rewrite your program so that
+critical information is never given as an argument. Hiding
+the arguments won&rsquo;t make your program completely
+secure.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To actually
+alter the visible command line, you can assign to the
+variable <tt>$0</tt> as documented in perlvar. This
+won&rsquo;t work on all operating systems, though. Daemon
+programs like sendmail place their state there, as in:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $0 = &quot;orcus [accepting connections]&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>I {changed
+directory, modified my environment} in a perl script. How
+come the change disappeared when I exited the script? How do
+I get my changes to be visible?</b> <br>
+Unix</p>
+
+<p style="margin-left:17%;">In the strictest sense, it
+can&rsquo;t be done--the script executes as a different
+process from the shell it was started from. Changes to a
+process are not reflected in its parent--only in any
+children created after the change. There is shell magic that
+may allow you to fake it by <tt>&quot;eval()&quot;</tt>ing
+the script&rsquo;s output in your shell; check out the
+comp.unix.questions <small>FAQ</small> for details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+close a process&rsquo;s filehandle without waiting for it to
+complete?</b> <br>
+Assuming your system supports such things, just send an
+appropriate signal to the process (see &quot;kill&quot; in
+perlfunc). It&rsquo;s common to first send a
+<small>TERM</small> signal, wait a little bit, and then send
+a <small>KILL</small> signal to finish it off.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+fork a daemon process?</b> <br>
+If by daemon process you mean one that&rsquo;s detached
+(disassociated from its tty), then the following process is
+reported to work on most Unixish systems. Non-Unix users
+should check their Your_OS::Process module for other
+solutions.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Open /dev/tty and use the <small>TIOCNOTTY</small> ioctl
+on it. See <i>tty</i>(1) for details. Or better yet, you can
+just use the <tt>&quot;POSIX::setsid()&quot;</tt> function,
+so you don&rsquo;t have to worry about process groups.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Change directory to /</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Reopen <small>STDIN</small> , <small>STDOUT</small> ,
+and <small>STDERR</small> so they&rsquo;re not connected to
+the old tty.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>Background yourself like this:</p></td></tr>
+</table>
+
+<pre style="margin-left:17%; margin-top: 1em">    fork &amp;&amp; exit;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+Proc::Daemon module, available from <small>CPAN</small> ,
+provides a function to perform these actions for you.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+find out if I&rsquo;m running interactively or not?</b> <br>
+(contributed by brian d foy)</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is a
+difficult question to answer, and the best answer is only a
+guess.</p>
+
+<p style="margin-left:11%; margin-top: 1em">What do you
+really want to know? If you merely want to know if one of
+your filehandles is connected to a terminal, you can try the
+<tt>&quot;&minus;t&quot;</tt> file test:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    if( &minus;t STDOUT ) {
+        print &quot;I'm connected to a terminal!\n&quot;;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">However, you
+might be out of luck if you expect that means there is a
+real person on the other side. With the Expect module,
+another program can pretend to be a person. The program
+might even come close to passing the Turing test.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+IO::Interactive module does the best it can to give you an
+answer. Its <tt>&quot;is_interactive&quot;</tt> function
+returns an output filehandle; that filehandle points to
+standard output if the module thinks the session is
+interactive. Otherwise, the filehandle is a null handle that
+simply discards the output:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use IO::Interactive;
+    print { is_interactive } &quot;I might go to standard output!\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This still
+doesn&rsquo;t guarantee that a real person is answering your
+prompts or reading your output.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+know how to handle automated testing for your distribution,
+you can check the environment. The <small>CPAN</small>
+Testers, for instance, set the value of
+<tt>&quot;AUTOMATED_TESTING&quot;</tt>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    unless( $ENV{AUTOMATED_TESTING} ) {
+        print &quot;Hello interactive tester!\n&quot;;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+timeout a slow event?</b> <br>
+Use the <tt>&quot;alarm()&quot;</tt> function, probably in
+conjunction with a signal handler, as documented in
+&quot;Signals&quot; in perlipc and the section on
+&quot;Signals&quot; in the Camel. You may instead use the
+more flexible Sys::AlarmCall module available from
+<small>CPAN</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;alarm()&quot;</tt> function is not implemented on
+all versions of Windows. Check the documentation for your
+specific version of Perl.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I set
+<small>CPU</small> limits?</b> <br>
+(contributed by Xho)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Use the
+BSD::Resource module from <small>CPAN</small> . As an
+example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use BSD::Resource;
+    setrlimit(RLIMIT_CPU,10,20) or die $!;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This sets the
+soft and hard limits to 10 and 20 seconds, respectively.
+After 10 seconds of time spent running on the
+<small>CPU</small> (not &quot;wall&quot; time), the process
+will be sent a signal ( <small>XCPU</small> on some systems)
+which, if not trapped, will cause the process to terminate.
+If that signal is trapped, then after 10 more seconds (20
+seconds in total) the process will be killed with a
+non-trappable signal.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See the
+BSD::Resource and your systems documentation for the gory
+details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+avoid zombies on a Unix system?</b> <br>
+Use the reaper code from &quot;Signals&quot; in perlipc to
+call <tt>&quot;wait()&quot;</tt> when a
+<small>SIGCHLD</small> is received, or else use the
+double-fork technique described in &quot;How do I start a
+process in the background?&quot; in perlfaq8.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I use
+an <small>SQL</small> database?</b> <br>
+The <small>DBI</small> module provides an abstract interface
+to most database servers and types, including Oracle,
+<small>DB2</small> , Sybase, mysql, Postgresql,
+<small>ODBC</small> , and flat files. The <small>DBI</small>
+module accesses each database type through a database
+driver, or <small>DBD</small> . You can see a complete list
+of available drivers on <small>CPAN:</small>
+http://www.cpan.org/modules/by&minus;module/DBD/
+&lt;http://www.cpan.org/modules/by-module/DBD/&gt; . You can
+read more about <small>DBI</small> on
+&lt;http://dbi.perl.org/&gt; .</p>
+
+<p style="margin-left:11%; margin-top: 1em">Other modules
+provide more specific access: Win32::ODBC, Alzabo,
+<tt>&quot;iodbc&quot;</tt>, and others found on
+<small>CPAN</small> Search: &lt;http://search.cpan.org/&gt;
+.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+make a</b> <i>system()</i> <b>exit on control-C?</b> <br>
+You can&rsquo;t. You need to imitate the
+<tt>&quot;system()&quot;</tt> call (see perlipc for sample
+code) and then have a signal handler for the
+<small>INT</small> signal that passes the signal on to the
+subprocess. Or you can check for it:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $rc = system($cmd);
+    if ($rc &amp; 127) { die &quot;signal death&quot; }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+open a file without blocking?</b> <br>
+If you&rsquo;re lucky enough to be using a system that
+supports non-blocking reads (most Unixish systems do), you
+need only to use the <tt>&quot;O_NDELAY&quot;</tt> or
+<tt>&quot;O_NONBLOCK&quot;</tt> flag from the
+<tt>&quot;Fcntl&quot;</tt> module in conjunction with
+<tt>&quot;sysopen()&quot;</tt>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Fcntl;
+    sysopen(my $fh, &quot;/foo/somefile&quot;, O_WRONLY|O_NDELAY|O_CREAT, 0644)
+        or die &quot;can't open /foo/somefile: $!&quot;:</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+tell the difference between errors from the shell and
+perl?</b> <br>
+(answer contributed by brian d foy)</p>
+
+<p style="margin-left:11%; margin-top: 1em">When you run a
+Perl script, something else is running the script for you,
+and that something else may output error messages. The
+script might emit its own warnings and error messages. Most
+of the time you cannot tell who said what.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You probably
+cannot fix the thing that runs perl, but you can change how
+perl outputs its warnings by defining a custom warning and
+die functions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Consider this
+script, which has an error you may not notice
+immediately.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    #!/usr/locl/bin/perl
+    print &quot;Hello World\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">I get an error
+when I run this from my shell (which happens to be bash).
+That may look like perl forgot it has a
+<tt>&quot;print()&quot;</tt> function, but my shebang line
+is not the path to perl, so the shell runs the script, and I
+get the error.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ ./test
+    ./test: line 3: print: command not found</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">A quick and
+dirty fix involves a little bit of code, but this may be all
+you need to figure out the problem.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    #!/usr/bin/perl &minus;w
+    BEGIN {
+        $SIG{__WARN__} = sub{ print STDERR &quot;Perl: &quot;, @_; };
+        $SIG{__DIE__}  = sub{ print STDERR &quot;Perl: &quot;, @_; exit 1};
+    }
+    $a = 1 + undef;
+    $x / 0;
+    __END__</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The perl
+message comes out with &quot;Perl&quot; in front. The
+<tt>&quot;BEGIN&quot;</tt> block works at compile time so
+all of the compilation errors and warnings get the
+&quot;Perl:&quot; prefix too.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Perl: Useless use of division (/) in void context at ./test line 9.
+    Perl: Name &quot;main::a&quot; used only once: possible typo at ./test line 8.
+    Perl: Name &quot;main::x&quot; used only once: possible typo at ./test line 9.
+    Perl: Use of uninitialized value in addition (+) at ./test line 8.
+    Perl: Use of uninitialized value in division (/) at ./test line 9.
+    Perl: Illegal division by zero at ./test line 9.
+    Perl: Illegal division by zero at &minus;e line 3.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If I
+don&rsquo;t see that &quot;Perl:&quot;, it&rsquo;s not from
+perl.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You could also
+just know all the perl errors, and although there are some
+people who may know all of them, you probably don&rsquo;t.
+However, they all should be in the perldiag manpage. If you
+don&rsquo;t find the error in there, it probably isn&rsquo;t
+a perl error.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Looking up
+every message is not the easiest way, so let perl to do it
+for you. Use the diagnostics pragma with turns perl&rsquo;s
+normal messages into longer discussions on the topic.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use diagnostics;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you
+don&rsquo;t get a paragraph or two of expanded discussion,
+it might not be perl&rsquo;s message.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+install a module from <small>CPAN</small> ?</b> <br>
+(contributed by brian d foy)</p>
+
+<p style="margin-left:11%; margin-top: 1em">The easiest way
+is to have a module also named <small>CPAN</small> do it for
+you by using the <tt>&quot;cpan&quot;</tt> command that
+comes with Perl. You can give it a list of modules to
+install:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ cpan IO::Interactive Getopt::Whatever</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you prefer
+<tt>&quot;CPANPLUS&quot;</tt>, it&rsquo;s just as easy:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ cpanp i IO::Interactive Getopt::Whatever</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+install a distribution from the current directory, you can
+tell <tt>&quot;CPAN.pm&quot;</tt> to install
+<tt>&quot;.&quot;</tt> (the full stop):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ cpan .</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">See the
+documentation for either of those commands to see what else
+you can do.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+try to install a distribution by yourself, resolving all
+dependencies on your own, you follow one of two possible
+build paths.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+distributions that use <i>Makefile.PL</i>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl Makefile.PL
+    $ make test install</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">For
+distributions that use <i>Build.PL</i>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl Build.PL
+    $ ./Build test
+    $ ./Build install</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Some
+distributions may need to link to libraries or other
+third-party code and their build and installation sequences
+may be more complicated. Check any
+<i><small>README</small></i> or
+<i><small>INSTALL</small></i> files that you may find.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>What&rsquo;s
+the difference between require and use?</b> <br>
+(contributed by brian d foy)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl runs
+<tt>&quot;require&quot;</tt> statement at run-time. Once
+Perl loads, compiles, and runs the file, it doesn&rsquo;t do
+anything else. The <tt>&quot;use&quot;</tt> statement is the
+same as a <tt>&quot;require&quot;</tt> run at compile-time,
+but Perl also calls the <tt>&quot;import&quot;</tt> method
+for the loaded package. These two are the same:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use MODULE qw(import list);
+    BEGIN {
+        require MODULE;
+        MODULE&minus;&gt;import(import list);
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">However, you
+can suppress the <tt>&quot;import&quot;</tt> by using an
+explicit, empty import list. Both of these still happen at
+compile-time:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use MODULE ();
+    BEGIN {
+        require MODULE;
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Since
+<tt>&quot;use&quot;</tt> will also call the
+<tt>&quot;import&quot;</tt> method, the actual value for
+<tt>&quot;MODULE&quot;</tt> must be a bareword. That is,
+<tt>&quot;use&quot;</tt> cannot load files by name, although
+<tt>&quot;require&quot;</tt> can:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    require &quot;$ENV{HOME}/lib/Foo.pm&quot;; # no @INC searching!</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">See the entry
+for <tt>&quot;use&quot;</tt> in perlfunc for more
+details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+keep my own module/library directory?</b> <br>
+When you build modules, tell Perl where to install the
+modules.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+install modules for your own use, the easiest way might be
+local::lib, which you can download from <small>CPAN</small>
+. It sets various installation settings for you, and uses
+those same settings within your programs.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you want
+more flexibility, you need to configure your
+<small>CPAN</small> client for your particular
+situation.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+<tt>&quot;Makefile.PL&quot;</tt>&minus;based distributions,
+use the <small>INSTALL_BASE</small> option when generating
+Makefiles:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    perl Makefile.PL INSTALL_BASE=/mydir/perl</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can set
+this in your <tt>&quot;CPAN.pm&quot;</tt> configuration so
+modules automatically install in your private library
+directory when you use the <small>CPAN</small> .pm
+shell:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    % cpan
+    cpan&gt; o conf makepl_arg INSTALL_BASE=/mydir/perl
+    cpan&gt; o conf commit</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">For
+<tt>&quot;Build.PL&quot;</tt>&minus;based distributions, use
+the &minus;&minus;install_base option:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    perl Build.PL &minus;&minus;install_base /mydir/perl</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can
+configure <tt>&quot;CPAN.pm&quot;</tt> to automatically use
+this option too:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    % cpan
+    cpan&gt; o conf mbuild_arg &quot;&minus;&minus;install_base /mydir/perl&quot;
+    cpan&gt; o conf commit</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>INSTALL_BASE</small>
+tells these tools to put your modules into
+<i>/mydir/perl/lib/perl5</i>. See &quot;How do I add a
+directory to my include path (@INC) at runtime?&quot; for
+details on how to run your newly installed modules.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is one
+caveat with <small>INSTALL_BASE</small> , though, since it
+acts differently from the <small>PREFIX</small> and
+<small>LIB</small> settings that older versions of
+ExtUtils::MakeMaker advocated. <small>INSTALL_BASE</small>
+does not support installing modules for multiple versions of
+Perl or different architectures under the same directory.
+You should consider whether you really want that and, if you
+do, use the older <small>PREFIX</small> and
+<small>LIB</small> settings. See the ExtUtils::Makemaker
+documentation for more details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I add
+the directory my program lives in to the module/library
+search path?</b> <br>
+(contributed by brian d foy)</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you know the
+directory already, you can add it to <tt>@INC</tt> as you
+would for any other directory. You might &lt;use lib&gt; if
+you know the directory at compile time:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use lib $directory;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The trick in
+this task is to find the directory. Before your script does
+anything else (such as a <tt>&quot;chdir&quot;</tt>), you
+can get the current working directory with the
+<tt>&quot;Cwd&quot;</tt> module, which comes with Perl:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    BEGIN {
+        use Cwd;
+        our $directory = cwd;
+    }
+    use lib $directory;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can do a
+similar thing with the value of <tt>$0</tt>, which holds the
+script name. That might hold a relative path, but
+<tt>&quot;rel2abs&quot;</tt> can turn it into an absolute
+path. Once you have the</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    BEGIN {
+        use File::Spec::Functions qw(rel2abs);
+        use File::Basename qw(dirname);
+        my $path   = rel2abs( $0 );
+        our $directory = dirname( $path );
+    }
+    use lib $directory;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The FindBin
+module, which comes with Perl, might work. It finds the
+directory of the currently running script and puts it in
+<tt>$Bin</tt>, which you can then use to construct the right
+library path:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use FindBin qw($Bin);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can also
+use local::lib to do much of the same thing. Install modules
+using local::lib&rsquo;s settings then use the module in
+your program:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">     use local::lib; # sets up a local lib at ~/perl5</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">See the
+local::lib documentation for more details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I add
+a directory to my include path (@INC) at runtime?</b> <br>
+Here are the suggested ways of modifying your include path,
+including environment variables, run-time switches, and
+in-code statements: <br>
+the &quot;PERLLIB&quot; environment variable</p>
+
+<pre style="margin-left:17%;">    $ export PERLLIB=/path/to/my/dir
+    $ perl program.pl</pre>
+
+
+<p style="margin-left:11%;">the &quot;PERL5LIB&quot;
+environment variable</p>
+
+<pre style="margin-left:17%;">    $ export PERL5LIB=/path/to/my/dir
+    $ perl program.pl</pre>
+
+
+<p style="margin-left:11%;">the &quot;perl
+&minus;Idir&quot; command line flag</p>
+
+<pre style="margin-left:17%;">    $ perl &minus;I/path/to/my/dir program.pl</pre>
+
+
+<p style="margin-left:11%;">the &quot;lib&quot; pragma:</p>
+
+<pre style="margin-left:17%;">    use lib &quot;$ENV{HOME}/myown_perllib&quot;;</pre>
+
+
+<p style="margin-left:11%;">the local::lib module:</p>
+
+<pre style="margin-left:17%;">    use local::lib;
+    use local::lib &quot;~/myown_perllib&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The last is
+particularly useful because it knows about machine-dependent
+architectures. The <tt>&quot;lib.pm&quot;</tt> pragmatic
+module was first included with the 5.002 release of
+Perl.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>What is
+socket.ph and where do I get it?</b> <br>
+It&rsquo;s a Perl 4 style file defining values for system
+networking constants. Sometimes it is built using h2ph when
+Perl is installed, but other times it is not. Modern
+programs should use <tt>&quot;use Socket;&quot;</tt>
+instead.</p>
+
+<h2>AUTHOR AND COPYRIGHT
+<a name="AUTHOR AND COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (c)
+1997&minus;2010 Tom Christiansen, Nathan Torkington, and
+other authors as noted. All rights reserved.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This
+documentation is free; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Irrespective of
+its distribution, all code examples in this file are hereby
+placed into the public domain. You are permitted and
+encouraged to use this code in your own programs for fun or
+for profit as you see fit. A simple comment in the code
+giving credit would be courteous but is not required.</p>
+<hr>
+</body>
+</html>

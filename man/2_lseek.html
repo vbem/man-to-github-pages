@@ -1,0 +1,279 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:30 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>LSEEK</title>
+
+</head>
+<body>
+
+<h1 align="center">LSEEK</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">lseek &minus;
+reposition read/write file offset</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;sys/types.h&gt; <br>
+#include &lt;unistd.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>off_t
+lseek(int</b> <i>fd</i><b>, off_t</b> <i>offset</i><b>,
+int</b> <i>whence</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>lseek</b>() function repositions the offset of the open
+file associated with the file descriptor <i>fd</i> to the
+argument <i>offset</i> according to the directive
+<i>whence</i> as follows: <b><br>
+SEEK_SET</b></p>
+
+<p style="margin-left:22%;">The offset is set to
+<i>offset</i> bytes.</p>
+
+<p style="margin-left:11%;"><b>SEEK_CUR</b></p>
+
+<p style="margin-left:22%;">The offset is set to its
+current location plus <i>offset</i> bytes.</p>
+
+<p style="margin-left:11%;"><b>SEEK_END</b></p>
+
+<p style="margin-left:22%;">The offset is set to the size
+of the file plus <i>offset</i> bytes.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>lseek</b>() function allows the file offset to be set
+beyond the end of the file (but this does not change the
+size of the file). If data is later written at this point,
+subsequent reads of the data in the gap (a &quot;hole&quot;)
+return null bytes ('\0') until data is actually written into
+the gap.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Seeking file
+data and holes</b> <br>
+Since version 3.1, Linux supports the following additional
+values for <i>whence</i>: <b><br>
+SEEK_DATA</b></p>
+
+<p style="margin-left:22%;">Adjust the file offset to the
+next location in the file greater than or equal to
+<i>offset</i> containing data. If <i>offset</i> points to
+data, then the file offset is set to <i>offset</i>.</p>
+
+<p style="margin-left:11%;"><b>SEEK_HOLE</b></p>
+
+<p style="margin-left:22%;">Adjust the file offset to the
+next hole in the file greater than or equal to
+<i>offset</i>. If <i>offset</i> points into the middle of a
+hole, then the file offset is set to <i>offset</i>. If there
+is no hole past <i>offset</i>, then the file offset is
+adjusted to the end of the file (i.e., there is an implicit
+hole at the end of any file).</p>
+
+<p style="margin-left:11%; margin-top: 1em">In both of the
+above cases, <b>lseek</b>() fails if <i>offset</i> points
+past the end of the file.</p>
+
+<p style="margin-left:11%; margin-top: 1em">These
+operations allow applications to map holes in a sparsely
+allocated file. This can be useful for applications such as
+file backup tools, which can save space when creating
+backups and preserve holes, if they have a mechanism for
+discovering holes.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For the
+purposes of these operations, a hole is a sequence of zeros
+that (normally) has not been allocated in the underlying
+file storage. However, a file system is not obliged to
+report holes, so these operations are not a guaranteed
+mechanism for mapping the storage space actually allocated
+to a file. (Furthermore, a sequence of zeros that actually
+has been written to the underlying storage may not be
+reported as a hole.) In the simplest implementation, a file
+system can support the operations by making <b>SEEK_HOLE</b>
+always return the offset of the end of the file, and making
+<b>SEEK_DATA</b> always return <i>offset</i> (i.e., even if
+the location referred to by <i>offset</i> is a hole, it can
+be considered to consist of data that is a sequence of
+zeros).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>_GNU_SOURCE</b> feature test macro must be defined in
+order to obtain the definitions of <b>SEEK_DATA</b> and
+<b>SEEK_HOLE</b> from <i>&lt;unistd.h&gt;</i>.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Upon successful
+completion, <b>lseek</b>() returns the resulting offset
+location as measured in bytes from the beginning of the
+file. On error, the value <i>(off_t)&nbsp;&minus;1</i> is
+returned and <i>errno</i> is set to indicate the error.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EBADF</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em"><i>fd</i> is not an open file
+descriptor.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>whence</i> is not valid. Or: the resulting file
+offset would be negative, or beyond the end of a seekable
+device.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>EOVERFLOW</b></p>
+
+<p style="margin-left:22%;">The resulting file offset
+cannot be represented in an <i>off_t</i>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ESPIPE</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>fd</i> is associated with a pipe, socket, or
+FIFO.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENXIO</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>whence</i> is <b>SEEK_DATA</b> or <b>SEEK_HOLE</b>,
+and the current file offset is beyond the end of the
+file.</p> </td></tr>
+</table>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">SVr4, 4.3BSD,
+POSIX.1-2001.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>SEEK_DATA</b>
+and <b>SEEK_HOLE</b> are nonstandard extensions also present
+in Solaris, FreeBSD, and DragonFly BSD; they are proposed
+for inclusion in the next POSIX revision (Issue 8).</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Some devices
+are incapable of seeking and POSIX does not specify which
+devices must support <b>lseek</b>().</p>
+
+<p style="margin-left:11%; margin-top: 1em">On Linux, using
+<b>lseek</b>() on a terminal device returns
+<b>ESPIPE</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When converting
+old code, substitute values for <i>whence</i> with the
+following macros:</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that file
+descriptors created by <b>dup</b>(2) or <b>fork</b>(2) share
+the current file position pointer, so seeking on such files
+may be subject to race conditions.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>dup</b>(2),
+<b>fork</b>(2), <b>open</b>(2), <b>fseek</b>(3),
+<b>lseek64</b>(3), <b>posix_fallocate</b>(3)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,325 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:15 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>FALLOCATE</title>
+
+</head>
+<body>
+
+<h1 align="center">FALLOCATE</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">fallocate
+&minus; manipulate file space</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#define
+_GNU_SOURCE</b> /* See feature_test_macros(7) */ <b><br>
+#include &lt;fcntl.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+fallocate(int</b> <i>fd</i><b>, int</b> <i>mode</i><b>,
+off_t</b> <i>offset</i><b>, off_t</b>
+<i>len</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is a
+nonportable, Linux-specific system call. For the portable,
+POSIX.1-specified method of ensuring that space is allocated
+for a file, see <b>posix_fallocate</b>(3).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>fallocate</b>()
+allows the caller to directly manipulate the allocated disk
+space for the file referred to by <i>fd</i> for the byte
+range starting at <i>offset</i> and continuing for
+<i>len</i> bytes.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>mode</i>
+argument determines the operation to be performed on the
+given range. Details of the supported operations are given
+in the subsections below.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Allocating
+disk space</b> <br>
+The default operation (i.e., <i>mode</i> is zero) of
+<b>fallocate</b>() allocates and initializes to zero the
+disk space within the range specified by <i>offset</i> and
+<i>len</i>. The file size (as reported by <b>stat</b>(2))
+will be changed if <i>offset</i>+<i>len</i> is greater than
+the file size. This default behavior closely resembles the
+behavior of the <b>posix_fallocate</b>(3) library function,
+and is intended as a method of optimally implementing that
+function.</p>
+
+<p style="margin-left:11%; margin-top: 1em">After a
+successful call, subsequent writes into the range specified
+by <i>offset</i> and <i>len</i> are guaranteed not to fail
+because of lack of disk space.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+<b>FALLOC_FL_KEEP_SIZE</b> flag is specified in <i>mode</i>,
+the behavior of the call is similar, but the file size will
+not be changed even if <i>offset</i>+<i>len</i> is greater
+than the file size. Preallocating zeroed blocks beyond the
+end of the file in this manner is useful for optimizing
+append workloads.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Because
+allocation is done in block size chunks, <b>fallocate</b>()
+may allocate a larger range of disk space than was
+specified.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Deallocating
+file space</b> <br>
+Specifying the <b>FALLOC_FL_PUNCH_HOLE</b> flag (available
+since Linux 2.6.38) in <i>mode</i> deallocates space (i.e.,
+creates a hole) in the byte range starting at <i>offset</i>
+and continuing for <i>len</i> bytes. Within the specified
+range, partial file system blocks are zeroed, and whole file
+system blocks are removed from the file. After a successful
+call, subsequent reads from this range will return
+zeroes.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>FALLOC_FL_PUNCH_HOLE</b> flag must be ORed with
+<b>FALLOC_FL_KEEP_SIZE</b> in <i>mode</i>; in other words,
+even when punching off the end of the file, the file size
+(as reported by <b>stat</b>(2)) does not change.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Not all file
+systems support <b>FALLOC_FL_PUNCH_HOLE</b>; if a file
+system doesn&rsquo;t support the operation, an error is
+returned.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success,
+<b>fallocate</b>() returns zero. On error, &minus;1 is
+returned and <i>errno</i> is set to indicate the error.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EBADF</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em"><i>fd</i> is not a valid file
+descriptor, or is not opened for writing.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EFBIG</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>offset</i>+<i>len</i> exceeds the maximum file
+size.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINTR</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>A signal was caught during execution.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>offset</i> was less than 0, or <i>len</i> was less
+than or equal to 0.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EIO</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>An I/O error occurred while reading from or writing to a
+file system.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENODEV</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>fd</i> does not refer to a regular file or a
+directory. (If <i>fd</i> is a pipe or FIFO, a different
+error results.)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOSPC</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>There is not enough space left on the device containing
+the file referred to by <i>fd</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOSYS</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>This kernel does not implement <b>fallocate</b>().</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>EOPNOTSUPP</b></p>
+
+<p style="margin-left:22%;">The file system containing the
+file referred to by <i>fd</i> does not support this
+operation; or the <i>mode</i> is not supported by the file
+system containing the file referred to by <i>fd</i>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EPERM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The file referred to by <i>fd</i> is marked immutable
+(see <b>chattr</b>(1)). Or: <i>mode</i> specifies
+<b>FALLOC_FL_PUNCH_HOLE</b> and the file referred to by
+<i>fd</i> is marked append-only (see <b>chattr</b>(1)).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ESPIPE</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>fd</i> refers to a pipe or FIFO.</p></td></tr>
+</table>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>fallocate</b>()
+is available on Linux since kernel 2.6.23. Support is
+provided by glibc since version 2.10. The <b>FALLOC_FL_*</b>
+flags are defined in glibc headers only since version
+2.18.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>fallocate</b>()
+is Linux-specific.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>fallocate</b>(1),
+<b>ftruncate</b>(2), <b>posix_fadvise</b>(3),
+<b>posix_fallocate</b>(3)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

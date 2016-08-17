@@ -1,0 +1,335 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:13 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>DELETE_MODULE</title>
+
+</head>
+<body>
+
+<h1 align="center">DELETE_MODULE</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">delete_module
+&minus; unload a kernel module</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+delete_module(const char *</b><i>name</i><b>, int</b>
+<i>flags</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Note</i>:
+There is no glibc wrapper for this system call; see
+NOTES.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>delete_module</b>() system call attempts to remove the
+unused loadable module entry identified by <i>name</i>. If
+the module has an <i>exit</i> function, then that function
+is executed before unloading the module. The <i>flags</i>
+argument is used to modify the behavior of the system call,
+as described below. This system call requires privilege.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Module removal
+is attempted according to the following rules:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>1.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>If there are other loaded modules that depend on (i.e.,
+refer to symbols defined in) this module, then the call
+fails.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>2.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>Otherwise, if the reference count for the module (i.e.,
+the number of processes currently using the module) is zero,
+then the module is immediately unloaded.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>3.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>If a module has a nonzero reference count, then the
+behavior depends on the bits set in <i>flags</i>. In normal
+usage (see NOTES), the <b>O_NONBLOCK</b> flag is always
+specified, and the <b>O_TRUNC</b> flag may additionally be
+specified.</p> </td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">The various
+combinations for <i>flags</i> have the following effect:
+<b><br>
+flags == O_NONBLOCK</b></p>
+
+<p style="margin-left:28%;">The call returns immediately,
+with an error.</p>
+
+<p style="margin-left:17%;"><b>flags == (O_NONBLOCK |
+O_TRUNC)</b></p>
+
+<p style="margin-left:28%;">The module is unloaded
+immediately, regardless of whether it has a nonzero
+reference count.</p>
+
+<p style="margin-left:17%;"><b>(flags &amp; O_NONBLOCK) ==
+0</b></p>
+
+<p style="margin-left:28%;">If <i>flags</i> does not
+specify <b>O_NONBLOCK</b>, the following steps occur:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="28%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="3%"></td>
+<td width="68%">
+
+
+<p>The module is marked so that no new references are
+permitted.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="28%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="3%"></td>
+<td width="68%">
+
+
+<p>If the module&rsquo;s reference count is nonzero, the
+caller is placed in an uninterruptible sleep state
+(<b>TASK_UNINTERRUPTIBLE</b>) until the reference count is
+zero, at which point the call unblocks.</p></td></tr>
+<tr valign="top" align="left">
+<td width="28%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="3%"></td>
+<td width="68%">
+
+
+<p>The module is unloaded in the usual way.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>O_TRUNC</b> flag has one further effect on the rules
+described above. By default, if a module has an <i>init</i>
+function but no <i>exit</i> function, then an attempt to
+remove the module will fail. However, if <b>O_TRUNC</b> was
+specified, this requirement is bypassed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Using the
+<b>O_TRUNC</b> flag is dangerous! If the kernel was not
+built with <b>CONFIG_MODULE_FORCE_UNLOAD</b>, this flag is
+silently ignored. (Normally,
+<b>CONFIG_MODULE_FORCE_UNLOAD</b> is enabled.) Using this
+flag taints the kernel (TAINT_FORCED_RMMOD).</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success,
+zero is returned. On error, &minus;1 is returned and
+<i>errno</i> is set appropriately.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EBUSY</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">The module is not
+&quot;live&quot; (i.e., it is still being initialized or is
+already marked for removal); or, the module has an
+<i>init</i> function but has no <i>exit</i> function, and
+<b>O_TRUNC</b> was not specified in <i>flags</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>name</i> refers to a location outside the
+process&rsquo;s accessible address space.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOENT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>No module by that name exists.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EPERM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The caller was not privileged (did not have the
+<b>CAP_SYS_MODULE</b> capability), or module unloading is
+disabled (see <i>/proc/sys/kernel/modules_disabled</i> in
+<b>proc</b>(5)).</p> </td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>EWOULDBLOCK</b></p>
+
+<p style="margin-left:22%;">Other modules depend on this
+module; or, <b>O_NONBLOCK</b> was specified in <i>flags</i>,
+but the reference count of this module is nonzero and
+<b>O_TRUNC</b> was not specified in <i>flags</i>.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>delete_module</b>()
+is Linux-specific.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Glibc does not
+provide a wrapper for this system call; call it using
+<b>syscall</b>(2).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+uninterruptible sleep that may occur if <b>O_NONBLOCK</b> is
+omitted from <i>flags</i> is considered undesirable, because
+the sleeping process is left in an unkillable state. As at
+Linux 3.7, specifying <b>O_NONBLOCK</b> is optional, but in
+future kernels it is likely to become mandatory.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Linux 2.4
+and earlier</b> <br>
+In Linux 2.4 and earlier, the system call took only one
+argument:</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+delete_module(const char *</b><i>name</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">If <i>name</i>
+is NULL, all unused modules marked auto-clean are
+removed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Some further
+details of differences in the behavior of
+<b>delete_module</b>() in Linux 2.4 and earlier are
+<i>not</i> currently explained in this manual page.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>create_module</b>(2),
+<b>init_module</b>(2), <b>query_module</b>(2),
+<b>lsmod</b>(8), <b>modprobe</b>(8), <b>rmmod</b>(8)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

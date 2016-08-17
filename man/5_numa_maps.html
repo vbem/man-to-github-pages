@@ -1,0 +1,265 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:38:44 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>NUMA</title>
+
+</head>
+<body>
+
+<h1 align="center">NUMA</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">numa &minus;
+overview of Non-Uniform Memory Architecture</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Non-Uniform
+Memory Access (NUMA) refers to multiprocessor systems whose
+memory is divided into multiple memory nodes. The access
+time of a memory node depends on the relative locations of
+the accessing CPU and the accessed node. (This contrasts
+with a symmetric multiprocessor system, where the access
+time for all of the memory is the same for all CPUs.)
+Normally, each CPU on a NUMA system has a local memory node
+whose contents can be accessed faster than the memory in the
+node local to another CPU or the memory on a bus shared by
+all CPUs.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>NUMA system
+calls</b> <br>
+The Linux kernel implements the following NUMA-related
+system calls: <b>get_mempolicy</b>(2), <b>mbind</b>(2),
+<b>migrate_pages</b>(2), <b>move_pages</b>(2), and
+<b>set_mempolicy</b>(2). However, applications should
+normally use the interface provided by <i>libnuma</i>; see
+&quot;Library Support&quot; below.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>/proc/[number]/numa_maps
+(since Linux 2.6.14)</b> <br>
+This file displays information about a process&rsquo;s NUMA
+memory policy and allocation.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Each line
+contains information about a memory range used by the
+process, displaying&mdash;among other information&mdash;the
+effective memory policy for that memory range and on which
+nodes the pages have been allocated.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>numa_maps</i>
+is a read-only file. When <i>/proc/&lt;pid&gt;/numa_maps</i>
+is read, the kernel will scan the virtual address space of
+the process and report how memory is used. One line is
+displayed for each unique memory range of the process.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The first field
+of each line shows the starting address of the memory range.
+This field allows a correlation with the contents of the
+<i>/proc/&lt;pid&gt;/maps</i> file, which contains the end
+address of the range and other information, such as the
+access permissions and sharing.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The second
+field shows the memory policy currently in effect for the
+memory range. Note that the effective policy is not
+necessarily the policy installed by the process for that
+memory range. Specifically, if the process installed a
+&quot;default&quot; policy for that range, the effective
+policy for that range will be the process policy, which may
+or may not be &quot;default&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The rest of the
+line contains information about the pages allocated in the
+memory range, as follows: <i><br>
+N&lt;node&gt;=&lt;nr_pages&gt;</i></p>
+
+<p style="margin-left:22%;">The number of pages allocated
+on <i>&lt;node&gt;</i>. <i>&lt;nr_pages&gt;</i> includes
+only pages currently mapped by the process. Page migration
+and memory reclaim may have temporarily unmapped pages
+associated with this memory range. These pages may show up
+again only after the process has attempted to reference
+them. If the memory range represents a shared memory area or
+file mapping, other processes may currently have additional
+pages mapped in a corresponding memory range.</p>
+
+
+<p style="margin-left:11%;"><i>file=&lt;filename&gt;</i></p>
+
+<p style="margin-left:22%;">The file backing the memory
+range. If the file is mapped as private, write accesses may
+have generated COW (Copy-On-Write) pages in this memory
+range. These pages are displayed as anonymous pages.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><i>heap</i></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>Memory range is used for the heap.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><i>stack</i></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>Memory range is used for the stack.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><i>huge</i></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>Huge memory range. The page counts shown are huge pages
+and not regular sized pages.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><i>anon=&lt;pages&gt;</i></p>
+
+<p style="margin-left:22%;">The number of anonymous page in
+the range.</p>
+
+<p style="margin-left:11%;"><i>dirty=&lt;pages&gt;</i></p>
+
+<p style="margin-left:22%;">Number of dirty pages.</p>
+
+
+<p style="margin-left:11%;"><i>mapped=&lt;pages&gt;</i></p>
+
+<p style="margin-left:22%;">Total number of mapped pages,
+if different from <i>dirty</i> and <i>anon</i> pages.</p>
+
+
+<p style="margin-left:11%;"><i>mapmax=&lt;count&gt;</i></p>
+
+<p style="margin-left:22%;">Maximum mapcount (number of
+processes mapping a single page) encountered during the
+scan. This may be used as an indicator of the degree of
+sharing occurring in a given memory range.</p>
+
+
+<p style="margin-left:11%;"><i>swapcache=&lt;count&gt;</i></p>
+
+<p style="margin-left:22%;">Number of pages that have an
+associated entry on a swap device.</p>
+
+
+<p style="margin-left:11%;"><i>active=&lt;pages&gt;</i></p>
+
+<p style="margin-left:22%;">The number of pages on the
+active list. This field is shown only if different from the
+number of pages in this range. This means that some inactive
+pages exist in the memory range that may be removed from
+memory by the swapper soon.</p>
+
+
+<p style="margin-left:11%;"><i>writeback=&lt;pages&gt;</i></p>
+
+<p style="margin-left:22%;">Number of pages that are
+currently being written out to disk.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">No standards
+govern NUMA interfaces.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The Linux NUMA
+system calls and <i>/proc</i> interface are available only
+if the kernel was configured and built with the
+<b>CONFIG_NUMA</b> option.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Library
+support</b> <br>
+Link with <i>&minus;lnuma</i> to get the system call
+definitions. <i>libnuma</i> and the required
+<i>&lt;numaif.h&gt;</i> header are available in the
+<i>numactl</i> package.</p>
+
+<p style="margin-left:11%; margin-top: 1em">However,
+applications should not use these system calls directly.
+Instead, the higher level interface provided by the
+<b>numa</b>(3) functions in the <i>numactl</i> package is
+recommended. The <i>numactl</i> package is available at
+<a href="ftp://oss.sgi.com/www/projects/libnuma/download/">ftp://oss.sgi.com/www/projects/libnuma/download/</a>.
+The package is also included in some Linux distributions.
+Some distributions include the development library and
+header in the separate <i>numactl-devel</i> package.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>get_mempolicy</b>(2),
+<b>mbind</b>(2), <b>move_pages</b>(2),
+<b>set_mempolicy</b>(2), <b>numa</b>(3), <b>cpuset</b>(7),
+<b>numactl</b>(8)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

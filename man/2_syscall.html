@@ -1,0 +1,212 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:59 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SYSCALL</title>
+
+</head>
+<body>
+
+<h1 align="center">SYSCALL</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">syscall &minus;
+indirect system call</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#define
+_GNU_SOURCE</b> /* See feature_test_macros(7) */ <b><br>
+#include &lt;unistd.h&gt; <br>
+#include &lt;sys/syscall.h&gt;</b> /* For SYS_xxx
+definitions */</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+syscall(int</b> <i>number</i><b>, ...);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>syscall</b>()
+is a small library function that invokes the system call
+whose assembly language interface has the specified
+<i>number</i> with the specified arguments. Employing
+<b>syscall</b>() is useful, for example, when invoking a
+system call that has no wrapper function in the C
+library.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>syscall</b>()
+saves CPU registers before making the system call, restores
+the registers upon return from the system call, and stores
+any error code returned by the system call in
+<b>errno</b>(3) if an error occurs.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Symbolic
+constants for system call numbers can be found in the header
+file <i>&lt;sys/syscall.h&gt;</i>.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The return
+value is defined by the system call being invoked. In
+general, a 0 return value indicates success. A &minus;1
+return value indicates an error, and an error code is stored
+in <i>errno</i>.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>syscall</b>()
+first appeared in 4BSD.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Architecture-specific
+requirements</b> <br>
+Each architecture ABI has its own requirements on how system
+call arguments are passed to the kernel. For system calls
+that have a glibc wrapper (e.g., most system calls), glibc
+handles the details of copying arguments to the right
+registers in a manner suitable for the architecture.
+However, when using <b>syscall</b>() to make a system call,
+the caller might need to handle architecture-dependent
+details; this requirement is most commonly encountered on
+certain 32-bit architectures.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For example, on
+the ARM architecture Embedded ABI (EABI), a 64-bit value
+(e.g., <i>long long</i>) must be aligned to an even register
+pair. Thus, using <b>syscall</b>() instead of the wrapper
+provided by glibc, the <b>readahead</b>() system call would
+be invoked as follows on the ARM architecture with the
+EABI:</p>
+
+
+<p style="margin-left:17%; margin-top: 1em">syscall(SYS_readahead,
+fd, 0, <br>
+(unsigned int) (offset &gt;&gt; 32), <br>
+(unsigned int) (offset &amp; 0xFFFFFFFF), <br>
+count);</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since the
+offset argument is 64 bits, and the first argument
+(<i>fd</i>) is passed in <i>r0</i>, the caller must manually
+split and align the 64-bit value so that it is passed in the
+<i>r2</i>/<i>r3</i> register pair. That means inserting a
+dummy value into <i>r1</i> (the second argument of 0).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Similar issues
+can occur on MIPS with the O32 ABI, on PowerPC with the
+32-bit ABI, and on Xtensa.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The affected
+system calls are <b>fadvise64_64</b>(2),
+<b>ftruncate64</b>(2), <b>posix_fadvise</b>(2),
+<b>pread64</b>(2), <b>pwrite64</b>(2), <b>readahead</b>(2),
+<b>sync_file_range</b>(2), and <b>truncate64</b>(2).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Architecture
+calling conventions</b> <br>
+Every architecture has its own way of invoking and passing
+arguments to the kernel. The details for various
+architectures are listed in the two tables below.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The first table
+lists the instruction used to transition to kernel mode,
+(which might not be the fastest or best way to transition to
+the kernel, so you might have to refer to the VDSO), the
+register used to indicate the system call number, and the
+register used to return the system call result.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The second
+table shows the registers used to pass the system call
+arguments.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that these
+tables don&rsquo;t cover the entire calling
+convention&mdash;some architectures may indiscriminately
+clobber other registers not listed here.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">#define
+_GNU_SOURCE <br>
+#include &lt;unistd.h&gt; <br>
+#include &lt;sys/syscall.h&gt; <br>
+#include &lt;sys/types.h&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">int <br>
+main(int argc, char *argv[]) <br>
+{ <br>
+pid_t tid;</p>
+
+<p style="margin-left:11%; margin-top: 1em">tid =
+syscall(SYS_gettid); <br>
+tid = syscall(SYS_tgkill, getpid(), tid); <br>
+}</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>_syscall</b>(2),
+<b>intro</b>(2), <b>syscalls</b>(2)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

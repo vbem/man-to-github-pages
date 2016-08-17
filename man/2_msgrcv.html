@@ -1,0 +1,627 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:35 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>MSGOP</title>
+
+</head>
+<body>
+
+<h1 align="center">MSGOP</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">msgrcv, msgsnd
+&minus; System V message queue operations</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;sys/types.h&gt; <br>
+#include &lt;sys/ipc.h&gt; <br>
+#include &lt;sys/msg.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+msgsnd(int</b> <i>msqid</i><b>, const void
+*</b><i>msgp</i><b>, size_t</b> <i>msgsz</i><b>, int</b>
+<i>msgflg</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>ssize_t
+msgrcv(int</b> <i>msqid</i><b>, void *</b><i>msgp</i><b>,
+size_t</b> <i>msgsz</i><b>, long</b> <i>msgtyp</i><b>, <br>
+int</b> <i>msgflg</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>msgsnd</b>() and <b>msgrcv</b>() system calls are used,
+respectively, to send messages to, and receive messages
+from, a System V message queue. The calling process must
+have write permission on the message queue in order to send
+a message, and read permission to receive a message.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>msgp</i>
+argument is a pointer to caller-defined structure of the
+following general form:</p>
+
+<p style="margin-left:17%; margin-top: 1em">struct msgbuf {
+<br>
+long mtype; /* message type, must be &gt; 0 */ <br>
+char mtext[1]; /* message data */ <br>
+};</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>mtext</i> field is an array (or other structure) whose
+size is specified by <i>msgsz</i>, a nonnegative integer
+value. Messages of zero length (i.e., no <i>mtext</i> field)
+are permitted. The <i>mtype</i> field must have a strictly
+positive integer value. This value can be used by the
+receiving process for message selection (see the description
+of <b>msgrcv</b>() below).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>msgsnd()</b>
+<br>
+The <b>msgsnd</b>() system call appends a copy of the
+message pointed to by <i>msgp</i> to the message queue whose
+identifier is specified by <i>msqid</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If sufficient
+space is available in the queue, <b>msgsnd</b>() succeeds
+immediately. (The queue capacity is defined by the
+<i>msg_qbytes</i> field in the associated data structure for
+the message queue. During queue creation this field is
+initialized to <b>MSGMNB</b> bytes, but this limit can be
+modified using <b>msgctl</b>(2).) If insufficient space is
+available in the queue, then the default behavior of
+<b>msgsnd</b>() is to block until space becomes available.
+If <b>IPC_NOWAIT</b> is specified in <i>msgflg</i>, then the
+call instead fails with the error <b>EAGAIN</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A blocked
+<b>msgsnd</b>() call may also fail if:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p>the queue is removed, in which case the system call
+fails with <i>errno</i> set to <b>EIDRM</b>; or</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p>a signal is caught, in which case the system call fails
+with <i>errno</i> set to <b>EINTR</b>;<b>see signal</b>(7).
+(<b>msgsnd</b>() is never automatically restarted after
+being interrupted by a signal handler, regardless of the
+setting of the <b>SA_RESTART</b> flag when establishing a
+signal handler.)</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Upon successful
+completion the message queue data structure is updated as
+follows:</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>msg_lspid</i>
+is set to the process ID of the calling process.</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>msg_qnum</i>
+is incremented by 1.</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>msg_stime</i>
+is set to the current time.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>msgrcv()</b>
+<br>
+The <b>msgrcv</b>() system call removes a message from the
+queue specified by <i>msqid</i> and places it in the buffer
+pointed to by <i>msgp</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The argument
+<i>msgsz</i> specifies the maximum size in bytes for the
+member <i>mtext</i> of the structure pointed to by the
+<i>msgp</i> argument. If the message text has length greater
+than <i>msgsz</i>, then the behavior depends on whether
+<b>MSG_NOERROR</b> is specified in <i>msgflg</i>. If
+<b>MSG_NOERROR</b> is specified, then the message text will
+be truncated (and the truncated part will be lost); if
+<b>MSG_NOERROR</b> is not specified, then the message
+isn&rsquo;t removed from the queue and the system call fails
+returning &minus;1 with <i>errno</i> set to
+<b>E2BIG</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The argument
+<i>msgtyp</i> specifies the type of message requested as
+follows:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p style="margin-top: 1em">If <i>msgtyp</i> is 0, then the
+first message in the queue is read.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p>If <i>msgtyp</i> is greater than 0, then the first
+message in the queue of type <i>msgtyp</i> is read, unless
+<b>MSG_EXCEPT</b> was specified in <i>msgflg</i>, in which
+case the first message in the queue of type not equal to
+<i>msgtyp</i> will be read.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p>If <i>msgtyp</i> is less than 0, then the first message
+in the queue with the lowest type less than or equal to the
+absolute value of <i>msgtyp</i> will be read.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>msgflg</i> argument is a bit mask constructed by ORing
+together zero or more of the following flags: <b><br>
+IPC_NOWAIT</b></p>
+
+<p style="margin-left:22%;">Return immediately if no
+message of the requested type is in the queue. The system
+call fails with <i>errno</i> set to <b>ENOMSG</b>.</p>
+
+<p style="margin-left:11%;"><b>MSG_EXCEPT</b></p>
+
+<p style="margin-left:22%;">Used with <i>msgtyp</i> greater
+than 0 to read the first message in the queue with message
+type that differs from <i>msgtyp</i>.</p>
+
+<p style="margin-left:11%;"><b>MSG_NOERROR</b></p>
+
+<p style="margin-left:22%;">To truncate the message text if
+longer than <i>msgsz</i> bytes.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If no message
+of the requested type is available and <b>IPC_NOWAIT</b>
+isn&rsquo;t specified in <i>msgflg</i>, the calling process
+is blocked until one of the following conditions occurs:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p>A message of the desired type is placed in the
+queue.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p>The message queue is removed from the system. In this
+case the system call fails with <i>errno</i> set to
+<b>EIDRM</b>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p>The calling process catches a signal. In this case the
+system call fails with <i>errno</i> set to <b>EINTR</b>.
+(<b>msgrcv</b>() is never automatically restarted after
+being interrupted by a signal handler, regardless of the
+setting of the <b>SA_RESTART</b> flag when establishing a
+signal handler.)</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Upon successful
+completion the message queue data structure is updated as
+follows:</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>msg_lrpid</i>
+is set to the process ID of the calling process.</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>msg_qnum</i>
+is decremented by 1.</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>msg_rtime</i>
+is set to the current time.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On failure both
+functions return &minus;1 with <i>errno</i> indicating the
+error, otherwise <b>msgsnd</b>() returns 0 and
+<b>msgrcv</b>() returns the number of bytes actually copied
+into the <i>mtext</i> array.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">When
+<b>msgsnd</b>() fails, <i>errno</i> will be set to one among
+the following values:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EACCES</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">The calling process does not
+have write permission on the message queue, and does not
+have the <b>CAP_IPC_OWNER</b> capability.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EAGAIN</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The message can&rsquo;t be sent due to the
+<i>msg_qbytes</i> limit for the queue and <b>IPC_NOWAIT</b>
+was specified in <i>msgflg</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The address pointed to by <i>msgp</i> isn&rsquo;t
+accessible.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EIDRM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The message queue was removed.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINTR</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Sleeping on a full message queue condition, the process
+caught a signal.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Invalid <i>msqid</i> value, or nonpositive <i>mtype</i>
+value, or invalid <i>msgsz</i> value (less than 0 or greater
+than the system value <b>MSGMAX</b>).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The system does not have enough memory to make a copy of
+the message pointed to by <i>msgp</i>.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">When
+<b>msgrcv</b>() fails, <i>errno</i> will be set to one among
+the following values:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>E2BIG</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">The message text length is
+greater than <i>msgsz</i> and <b>MSG_NOERROR</b> isn&rsquo;t
+specified in <i>msgflg</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EACCES</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The calling process does not have read permission on the
+message queue, and does not have the <b>CAP_IPC_OWNER</b>
+capability.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EAGAIN</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>No message was available in the queue and
+<b>IPC_NOWAIT</b> was specified in <i>msgflg</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The address pointed to by <i>msgp</i> isn&rsquo;t
+accessible.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EIDRM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>While the process was sleeping to receive a message, the
+message queue was removed.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINTR</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>While the process was sleeping to receive a message, the
+process caught a signal; see <b>signal</b>(7).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>msgqid</i> was invalid, or <i>msgsz</i> was less than
+0.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMSG</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><b>IPC_NOWAIT</b> was specified in <i>msgflg</i> and no
+message of the requested type existed on the message
+queue.</p> </td></tr>
+</table>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">SVr4,
+POSIX.1-2001.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The inclusion
+of <i>&lt;sys/types.h&gt;</i> and <i>&lt;sys/ipc.h&gt;</i>
+isn&rsquo;t required on Linux or by any version of POSIX.
+However, some old implementations required the inclusion of
+these header files, and the SVID also documented their
+inclusion. Applications intended to be portable to such old
+systems may need to include these header files.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>msgp</i>
+argument is declared as <i>struct msgbuf *</i> with libc4,
+libc5, glibc 2.0, glibc 2.1. It is declared as <i>void *</i>
+with glibc 2.2 and later, as required by SUSv2 and
+SUSv3.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+limits on message queue resources affect the <b>msgsnd</b>()
+call:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>MSGMAX</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">Maximum size for a message text:
+8192 bytes (on Linux, this limit can be read and modified
+via <i>/proc/sys/kernel/msgmax</i>).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>MSGMNB</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Default maximum size in bytes of a message queue: 16384
+bytes (on Linux, this limit can be read and modified via
+<i>/proc/sys/kernel/msgmnb</i>). The superuser can increase
+the size of a message queue beyond <b>MSGMNB</b> by a
+<b>msgctl</b>(2) system call.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The
+implementation has no intrinsic limits for the system wide
+maximum number of message headers (<b>MSGTQL</b>) and for
+the system wide maximum size in bytes of the message pool
+(<b>MSGPOOL</b>).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>msgctl</b>(2),
+<b>msgget</b>(2), <b>capabilities</b>(7),
+<b>mq_overview</b>(7), <b>svipc</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

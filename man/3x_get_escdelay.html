@@ -1,0 +1,237 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:36:38 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>curs_threads</title>
+
+</head>
+<body>
+
+<h1 align="center">curs_threads</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#PORTABILITY">PORTABILITY</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>use_screen</b>,
+<b>use_window</b> &minus; <b>curses</b> thread support</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;curses.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>typedef int
+(*NCURSES_WINDOW_CB)(WINDOW *, void *); <br>
+typedef int (*NCURSES_SCREEN_CB)(SCREEN *, void *); <br>
+int get_escdelay(void); <br>
+int set_escdelay(int size); <br>
+int set_tabsize(int size); <br>
+int use_screen(SCREEN *scr, NCURSES_SCREEN_CB func, void
+*data); <br>
+int use_window(WINDOW *win, NCURSES_WINDOW_CB func, void
+*data);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This
+implementation can be configured to provide rudimentary
+support for multi-threaded applications. This makes a
+different set of libraries, e.g., <i>libncursest</i> since
+the binary interfaces are different.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Rather than
+modify the interfaces to pass a thread specifier to each
+function, it adds a few functions which can be used in any
+configuration which hide the mutex&rsquo;s needed to prevent
+concurrent use of the global variables when configured for
+threading.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In addition to
+forcing access to members of the <b>WINDOW</b> structure to
+be via functions (see <b>curs_opaque</b>(3x)), it makes
+functions of the common global variables, e.g., COLORS,
+COLOR_PAIRS, COLS, ESCDELAY, LINES, TABSIZE curscr, newscr
+and ttytype. Those variables are maintained as read-only
+values, stored in the <b>SCREEN</b> structure.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Even this is
+not enough to make a thread-safe application using curses. A
+multi-threaded application would be expected to have threads
+updating separate windows (within the same device), or
+updating on separate screens (on different devices). Also, a
+few of the global variables are considered writable by some
+applications. The functions described here address these
+special situations.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The ESCDELAY
+and TABSIZE global variables are modified by some
+applications. To modify them in any configuration, use the
+<b>set_escdelay</b> or <b>set_tabsize</b> functions. Other
+global variables are not modifiable.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>get_escdelay</b> function returns the value for
+ESCDELAY.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>use_window</b> and <b>use_screen</b> functions provide
+coarse granularity mutexes for their respective
+<b>WINDOW</b> and <b>SCREEN</b> parameters, and call a
+user-supplied function, passing it a <i>data</i> parameter,
+and returning the value from the user-supplied function to
+the application.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>USAGE</b>
+<br>
+All of the ncurses library functions assume that the locale
+is not altered during operation. In addition, they use data
+which is maintained within a hierarchy of scopes.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="15%"></td>
+<td width="2%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="78%">
+
+
+<p>global data, e.g., used in the low-level terminfo or
+termcap interfaces.</p></td></tr>
+<tr valign="top" align="left">
+<td width="15%"></td>
+<td width="2%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="78%">
+
+
+<p>terminal data, e.g., associated with a call to
+<i>set_curterm</i>. The terminal data are initialized when
+screens are created.</p></td></tr>
+<tr valign="top" align="left">
+<td width="15%"></td>
+<td width="2%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="78%">
+
+
+<p>screen data, e.g., associated with a call to
+<i>newterm</i> or <i>initscr</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="15%"></td>
+<td width="2%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="78%">
+
+
+<p>window data, e.g., associated with a call to
+<i>newwin</i> or <i>subwin</i>. Windows are associated with
+screens. Pads are not necessarily associated with a
+particular screen.</p></td></tr>
+</table>
+
+<p style="margin-left:22%; margin-top: 1em">Most curses
+applications operate on one or more windows within a single
+screen.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="15%"></td>
+<td width="2%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">reentrant, i.e., it uses only
+the data passed as parameters.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">This table
+lists the scope of data used for each symbol in the ncurses
+library when it is configured to support threading:</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These functions
+all return TRUE or FALSE, except as noted.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Both a macro
+and a function are provided for each name.</p>
+
+<h2>PORTABILITY
+<a name="PORTABILITY"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These routines
+are specific to ncurses. They were not supported on Version
+7, BSD or System V implementations. It is recommended that
+any code depending on ncurses extensions be conditioned
+using NCURSES_VERSION.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>curses</b>(3X),
+<b>curs_opaque</b>(3X), <b>curs_variables</b>(3X).</p>
+<hr>
+</body>
+</html>

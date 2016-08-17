@@ -1,0 +1,244 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:38:57 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SYSUSERS.D</title>
+
+</head>
+<body>
+
+<h1 align="center">SYSUSERS.D</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#CONFIGURATION FORMAT">CONFIGURATION FORMAT</a><br>
+<a href="#CONFIGURATION DIRECTORIES AND PRECEDENCE">CONFIGURATION DIRECTORIES AND PRECEDENCE</a><br>
+<a href="#IDEMPOTENCE">IDEMPOTENCE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">sysusers.d
+&minus; Declarative allocation of system users and
+groups</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">/usr/lib/sysusers.d/*.conf</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>systemd&minus;sysusers</b>
+uses the files from sysusers.d directory to create system
+users and groups at package installation or boot time. This
+tool may be used to allocate system users and groups only,
+it is not useful for creating non&minus;system users and
+groups, as it accesses /etc/passwd and /etc/group directly,
+bypassing any more complex user databases, for example any
+database involving NIS or LDAP.</p>
+
+<h2>CONFIGURATION FORMAT
+<a name="CONFIGURATION FORMAT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Each
+configuration file shall be named in the style of
+<i>package</i>.conf or
+<i>package</i>&minus;<i>part</i>.conf. The second variant
+should be used when it is desirable to make it easy to
+override just this part of configuration.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The file format
+is one line per user or group containing name, ID, GECOS
+field description and home directory:</p>
+
+<p style="margin-left:17%; margin-top: 1em"># Type Name ID
+GECOS <br>
+u httpd 440 &quot;HTTP User&quot; <br>
+u authd /usr/bin/authd &quot;Authorization user&quot; <br>
+g input &minus; &minus; <br>
+m authd input <br>
+u root 0 &quot;Superuser&quot; /root</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Type</b>
+<br>
+The type consists of a single letter. The following line
+types are understood:</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>u</i></p>
+
+<p style="margin-left:17%;">Create a system user and group
+of the specified name should they not exist yet. The user's
+primary group will be set to the group bearing the same
+name. The user's shell will be set to /sbin/nologin, the
+home directory to the specified home directory, or / if none
+is given. The account will be created disabled, so that
+logins are not allowed.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>g</i></p>
+
+<p style="margin-left:17%;">Create a system group of the
+specified name should it not exist yet. Note that <i>u</i>
+implicitly create a matching group. The group will be
+created with no password set.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>m</i></p>
+
+<p style="margin-left:17%;">Add a user to a group. If the
+user or group are not existing yet, they will be implicitly
+created.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>r</i></p>
+
+<p style="margin-left:17%;">Add a range of numeric
+UIDs/GIDs to the pool to allocate new UIDs and GIDs from. If
+no line of this type is specified the range of UIDs/GIDs is
+set to some compiled&minus;in default. Note that both UIDs
+and GIDs are allocated from the same pool, in order to
+ensure that users and groups of the same name are likely to
+carry the same numeric UID and GID.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Name</b>
+<br>
+The name field specifies the user or group name. It should
+be shorter than 31 characters and avoid any non&minus;ASCII
+characters, and not begin with a numeric character. It is
+strongly recommended to pick user and group names that are
+unlikely to clash with normal users created by the
+administrator. A good scheme to guarantee this is by
+prefixing all system and group names with the underscore,
+and avoiding too generic names.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For <i>m</i>
+lines this field should contain the user name to add to a
+group.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For lines of
+type <i>r</i> this field should be set to
+&quot;&minus;&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>ID</b> <br>
+For <i>u</i> and <i>g</i> the numeric 32bit UID or GID of
+the user/group. Do not use IDs 65535 or 4294967295, as they
+have special placeholder meanings. Specify
+&quot;&minus;&quot; for automatic UID/GID allocation for the
+user or group. Alternatively, specify an absolute path in
+the file system. In this case the UID/GID is read from the
+path's owner/group. This is useful to create users whose
+UID/GID match the owners of pre&minus;existing files (such
+as SUID or SGID binaries).</p>
+
+<p style="margin-left:11%; margin-top: 1em">For <i>m</i>
+lines this field should contain the group name to add to a
+user to.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For lines of
+type <i>r</i> this field should be set to a UID/GID range in
+the format &quot;FROM&minus;TO&quot; where both values are
+formatted as decimal ASCII numbers. Alternatively, a single
+UID/GID may be specified formatted as decimal ASCII
+numbers.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>GECOS</b>
+<br>
+A short, descriptive string for users to be created,
+enclosed in quotation marks. Note that this field may not
+contain colons.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Only applies to
+lines of type <i>u</i> and should otherwise be left unset,
+or be set to &quot;&minus;&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Home
+Directory</b> <br>
+The home directory for a new system user. If omitted
+defaults to the root directory. It is recommended to not
+unnecessarily specify home directories for system users,
+unless software strictly requires one to be set.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Only applies to
+lines of type <i>u</i> and should otherwise be left unset,
+or be set to &quot;&minus;&quot;.</p>
+
+<h2>CONFIGURATION DIRECTORIES AND PRECEDENCE
+<a name="CONFIGURATION DIRECTORIES AND PRECEDENCE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Configuration
+files are read from directories in /etc/, /run/, and
+/usr/lib/, in order of precedence. Each configuration file
+in these configuration directories shall be named in the
+style of <i>filename</i>.conf. Files in /etc/ override files
+with the same name in /run/ and /usr/lib/. Files in /run/
+override files with the same name in /usr/lib/.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Packages should
+install their configuration files in /usr/lib/. Files in
+/etc/ are reserved for the local administrator, who may use
+this logic to override the configuration files installed by
+vendor packages. All configuration files are sorted by their
+filename in lexicographic order, regardless of which of the
+directories they reside in. If multiple files specify the
+same option, the entry in the file with the
+lexicographically latest name will take precedence. It is
+recommended to prefix all filenames with a two&minus;digit
+number and a dash, to simplify the ordering of the
+files.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+administrator wants to disable a configuration file supplied
+by the vendor, the recommended way is to place a symlink to
+/dev/null in the configuration directory in /etc/, with the
+same filename as the vendor configuration file.</p>
+
+<h2>IDEMPOTENCE
+<a name="IDEMPOTENCE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+<b>systemd&minus;sysusers</b> will do nothing if the
+specified users or groups already exist, so normally there
+no reason to override sysusers.d vendor configuration,
+except to block certain users or groups from being
+created.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>systemd</b>(1),
+<b>systemd-sysusers</b>(8)</p>
+<hr>
+</body>
+</html>

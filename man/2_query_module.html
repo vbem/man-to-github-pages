@@ -1,0 +1,303 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:43 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>QUERY_MODULE</title>
+
+</head>
+<body>
+
+<h1 align="center">QUERY_MODULE</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">query_module
+&minus; query the kernel for various bits pertaining to
+modules</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;linux/module.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+query_module(const char *</b><i>name</i><b>, int</b>
+<i>which</i><b>, void *</b><i>buf</i><b>, <br>
+size_t</b> <i>bufsize</i><b>, size_t
+*</b><i>ret</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Note</i>:
+There is no glibc wrapper for this system call; see
+NOTES.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Note</b>:
+This system call is present only in kernels before Linux
+2.6.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>query_module</b>()
+requests information from the kernel about loadable modules.
+The returned information is placed in the buffer pointed to
+by <i>buf</i>. The caller must specify the size of
+<i>buf</i> in <i>bufsize</i>. The precise nature and format
+of the returned information depend on the operation
+specified by <i>which</i>. Some operations require
+<i>name</i> to identify a currently loaded module, some
+allow <i>name</i> to be NULL, indicating the kernel
+proper.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+values can be specified for <i>which</i>:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p><b>0</b></p></td>
+<td width="10%"></td>
+<td width="78%">
+
+
+<p>Returns success, if the kernel supports
+<b>query_module</b>(). Used to probe for availability of the
+system call.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>QM_MODULES</b></p>
+
+<p style="margin-left:22%;">Returns the names of all loaded
+modules. The returned buffer consists of a sequence of
+null-terminated strings; <i>ret</i> is set to the number of
+modules.</p>
+
+<p style="margin-left:11%;"><b>QM_DEPS</b></p>
+
+<p style="margin-left:22%;">Returns the names of all
+modules used by the indicated module. The returned buffer
+consists of a sequence of null-terminated strings;
+<i>ret</i> is set to the number of modules.</p>
+
+<p style="margin-left:11%;"><b>QM_REFS</b></p>
+
+<p style="margin-left:22%;">Returns the names of all
+modules using the indicated module. This is the inverse of
+<b>QM_DEPS</b>. The returned buffer consists of a sequence
+of null-terminated strings; <i>ret</i> is set to the number
+of modules.</p>
+
+<p style="margin-left:11%;"><b>QM_SYMBOLS</b></p>
+
+<p style="margin-left:22%;">Returns the symbols and values
+exported by the kernel or the indicated module. The returned
+buffer is an array of structures of the following form</p>
+
+<p style="margin-left:28%; margin-top: 1em">struct
+module_symbol { <br>
+unsigned long value; <br>
+unsigned long name; <br>
+};</p>
+
+<p style="margin-left:22%; margin-top: 1em">followed by
+null-terminated strings. The value of <i>name</i> is the
+character offset of the string relative to the start of
+<i>buf</i>; <i>ret</i> is set to the number of symbols.</p>
+
+<p style="margin-left:11%;"><b>QM_INFO</b></p>
+
+<p style="margin-left:22%;">Returns miscellaneous
+information about the indicated module. The output buffer
+format is:</p>
+
+<p style="margin-left:28%; margin-top: 1em">struct
+module_info { <br>
+unsigned long address; <br>
+unsigned long size; <br>
+unsigned long flags; <br>
+};</p>
+
+<p style="margin-left:22%; margin-top: 1em">where
+<i>address</i> is the kernel address at which the module
+resides, <i>size</i> is the size of the module in bytes, and
+<i>flags</i> is a mask of <b>MOD_RUNNING</b>,
+<b>MOD_AUTOCLEAN</b>, etc., that indicates the current
+status of the module (see the Linux kernel source file
+<i>include/linux/module.h</i>). <i>ret</i> is set to the
+size of the <i>module_info</i> structure.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success,
+zero is returned. On error, &minus;1 is returned and
+<i>errno</i> is set appropriately.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">At least one of <i>name</i>,
+<i>buf</i>, or <i>ret</i> was outside the program&rsquo;s
+accessible address space.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Invalid <i>which</i>; or <i>name</i> is NULL (indicating
+&quot;the kernel&quot;), but this is not permitted with the
+specified value of <i>which</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOENT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>No module by that <i>name</i> exists.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOSPC</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The buffer size provided was too small. <i>ret</i> is
+set to the minimum size needed.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOSYS</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><b>query_module</b>() is not supported in this version
+of the kernel (e.g., the kernel is version 2.6 or
+later).</p> </td></tr>
+</table>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This system
+call is present on Linux only up until kernel 2.4; it was
+removed in Linux 2.6.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>query_module</b>()
+is Linux-specific.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Some of the
+information that was formerly available via
+<b>query_module</b>() can be obtained from
+<i>/proc/modules</i>, <i>/proc/kallsyms</i>, and the files
+under the directory <i>/sys/module</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Glibc does not
+provide a wrapper for this system call; in the unlikely
+event that you need to use it on an old kernel, use
+<b>syscall</b>(2).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>create_module</b>(2),
+<b>delete_module</b>(2), <b>get_kernel_syms</b>(2),
+<b>init_module</b>(2), <b>lsmod</b>(8),
+<b>modinfo</b>(8)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

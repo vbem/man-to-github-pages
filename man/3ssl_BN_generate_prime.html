@@ -1,0 +1,205 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:33:48 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>BN_generate_prime</title>
+
+</head>
+<body>
+
+<h1 align="center">BN_generate_prime</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUES">RETURN VALUES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#HISTORY">HISTORY</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">BN_generate_prime,
+BN_is_prime, BN_is_prime_fasttest &minus; generate primes
+and test for primality</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> #include &lt;openssl/bn.h&gt;
+ BIGNUM *BN_generate_prime(BIGNUM *ret, int num, int safe, BIGNUM *add,
+     BIGNUM *rem, void (*callback)(int, int, void *), void *cb_arg);
+ int BN_is_prime(const BIGNUM *a, int checks, void (*callback)(int, int,
+     void *), BN_CTX *ctx, void *cb_arg);
+ int BN_is_prime_fasttest(const BIGNUM *a, int checks,
+     void (*callback)(int, int, void *), BN_CTX *ctx, void *cb_arg,
+     int do_trial_division);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_generate_prime()</i>
+generates a pseudo-random prime number of <b>num</b> bits.
+If <b>ret</b> is not <b><small>NULL</small></b> , it will be
+used to store the number.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b>callback</b> is not <b><small>NULL</small></b> , it is
+called as follows:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><b>callback(0, i, cb_arg)</b> is called after generating
+the i&minus;th potential prime number.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>While the number is being tested for primality,
+<b>callback(1, j, cb_arg)</b> is called as described
+below.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>When a prime has been found, <b>callback(2, i,
+cb_arg)</b> is called.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The prime may
+have to fulfill additional requirements for use in
+Diffie-Hellman key exchange:</p>
+
+<p style="margin-left:11%; margin-top: 1em">If <b>add</b>
+is not <b><small>NULL</small></b> , the prime will fulfill
+the condition p % <b>add</b> == <b>rem</b> (p % <b>add</b>
+== 1 if <b>rem</b> == <b><small>NULL</small></b> ) in order
+to suit a given generator.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If <b>safe</b>
+is true, it will be a safe prime (i.e. a prime p so that
+(p&minus;1)/2 is also prime).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<small>PRNG</small> must be seeded prior to calling
+<i>BN_generate_prime()</i>. The prime number generation has
+a negligible error probability.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_is_prime()</i>
+and <i>BN_is_prime_fasttest()</i> test if the number
+<b>a</b> is prime. The following tests are performed until
+one of them shows that <b>a</b> is composite; if <b>a</b>
+passes all these tests, it is considered prime.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_is_prime_fasttest()</i>,
+when called with <b>do_trial_division == 1</b>, first
+attempts trial division by a number of small primes; if no
+divisors are found by this test and <b>callback</b> is not
+<b><small>NULL</small></b> , <b>callback(1, &minus;1,
+cb_arg)</b> is called. If <b>do_trial_division == 0</b>,
+this test is skipped.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Both
+<i>BN_is_prime()</i> and <i>BN_is_prime_fasttest()</i>
+perform a Miller-Rabin probabilistic primality test with
+<b>checks</b> iterations. If <b>checks ==
+BN_prime_checks</b>, a number of iterations is used that
+yields a false positive rate of at most 2^&minus;80 for
+random input.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b>callback</b> is not <b><small>NULL</small></b> ,
+<b>callback(1, j, cb_arg)</b> is called after the j&minus;th
+iteration (j = 0, 1, ...). <b>ctx</b> is a pre-allocated
+<b><small>BN_CTX</small></b> (to save the overhead of
+allocating and freeing the structure in a loop), or
+<b><small>NULL</small></b> .</p>
+
+<h2>RETURN VALUES
+<a name="RETURN VALUES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_generate_prime()</i>
+returns the prime number on success,
+<b><small>NULL</small></b> otherwise.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BN_is_prime()</i>
+returns 0 if the number is composite, 1 if it is prime with
+an error probability of less than 0.25^<b>checks</b>, and
+&minus;1 on error.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The error codes
+can be obtained by <i>ERR_get_error</i>(3).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>bn</i>(3),
+<i>ERR_get_error</i>(3), <i>rand</i>(3)</p>
+
+<h2>HISTORY
+<a name="HISTORY"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>cb_arg</b> arguments to <i>BN_generate_prime()</i> and to
+<i>BN_is_prime()</i> were added in SSLeay 0.9.0. The
+<b>ret</b> argument to <i>BN_generate_prime()</i> was added
+in SSLeay 0.9.1. <i>BN_is_prime_fasttest()</i> was added in
+OpenSSL 0.9.5.</p>
+<hr>
+</body>
+</html>

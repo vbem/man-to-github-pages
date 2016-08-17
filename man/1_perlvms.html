@@ -1,0 +1,1866 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:15:27 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERLVMS</title>
+
+</head>
+<body>
+
+<h1 align="center">PERLVMS</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#Installation">Installation</a><br>
+<a href="#Organization of Perl Images">Organization of Perl Images</a><br>
+<a href="#File specifications">File specifications</a><br>
+<a href="#PERL5LIB and PERLLIB">PERL5LIB and PERLLIB</a><br>
+<a href="#The Perl Forked Debugger">The Perl Forked Debugger</a><br>
+<a href="#PERL_VMS_EXCEPTION_DEBUG">PERL_VMS_EXCEPTION_DEBUG</a><br>
+<a href="#Command line">Command line</a><br>
+<a href="#Perl functions">Perl functions</a><br>
+<a href="#Perl variables">Perl variables</a><br>
+<a href="#Standard modules with VMS-specific differences">Standard modules with VMS-specific differences</a><br>
+<a href="#Revision date">Revision date</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlvms &minus;
+VMS&minus;specific documentation for Perl</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Gathered below
+are notes describing details of Perl 5&rsquo;s behavior on
+<small>VMS</small> . They are a supplement to the regular
+Perl 5 documentation, so we have focussed on the ways in
+which Perl 5 functions differently under <small>VMS</small>
+than it does under Unix, and on the interactions between
+Perl and the rest of the operating system. We haven&rsquo;t
+tried to duplicate complete descriptions of Perl features
+from the main Perl documentation, which can be found in the
+<i>[.pod]</i> subdirectory of the Perl distribution.</p>
+
+<p style="margin-left:11%; margin-top: 1em">We hope these
+notes will save you from confusion and lost sleep when
+writing Perl scripts on <small>VMS</small> . If you find
+we&rsquo;ve missed something you think should appear here,
+please don&rsquo;t hesitate to drop a line to
+vmsperl@perl.org.</p>
+
+<h2>Installation
+<a name="Installation"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Directions for
+building and installing Perl 5 can be found in the file
+<i><small>README</small> .vms</i> in the main source
+directory of the Perl distribution..</p>
+
+<h2>Organization of Perl Images
+<a name="Organization of Perl Images"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Core
+Images</b> <br>
+During the installation process, three Perl images are
+produced. <i>Miniperl.Exe</i> is an executable image which
+contains all of the basic functionality of Perl, but cannot
+take advantage of Perl extensions. It is used to generate
+several files needed to build the complete Perl and various
+extensions. Once you&rsquo;ve finished installing Perl, you
+can delete this image.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Most of the
+complete Perl resides in the shareable image
+<i>PerlShr.Exe</i>, which provides a core to which the Perl
+executable image and all Perl extensions are linked. You
+should place this image in <i>Sys$Share</i>, or define the
+logical name <i>PerlShr</i> to translate to the full file
+specification of this image. It should be world readable.
+(Remember that if a user has execute only access to
+<i>PerlShr</i>, <small>VMS</small> will treat it as if it
+were a privileged shareable image, and will therefore
+require all downstream shareable images to be INSTALLed,
+etc.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Finally,
+<i>Perl.Exe</i> is an executable image containing the main
+entry point for Perl, as well as some initialization code.
+It should be placed in a public directory, and made world
+executable. In order to run Perl with command line
+arguments, you should define a foreign command to invoke
+this image.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Perl
+Extensions</b> <br>
+Perl extensions are packages which provide both
+<small>XS</small> and Perl code to add new functionality to
+perl. ( <small>XS</small> is a meta-language which
+simplifies writing C code which interacts with Perl, see
+perlxs for more details.) The Perl code for an extension is
+treated like any other library module &minus; it&rsquo;s
+made available in your script through the appropriate
+<tt>&quot;use&quot;</tt> or <tt>&quot;require&quot;</tt>
+statement, and usually defines a Perl package containing the
+extension.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The portion of
+the extension provided by the <small>XS</small> code may be
+connected to the rest of Perl in either of two ways. In the
+<b>static</b> configuration, the object code for the
+extension is linked directly into <i>PerlShr.Exe</i>, and is
+initialized whenever Perl is invoked. In the <b>dynamic</b>
+configuration, the extension&rsquo;s machine code is placed
+into a separate shareable image, which is mapped by
+Perl&rsquo;s DynaLoader when the extension is
+<tt>&quot;use&quot;</tt>d or <tt>&quot;require&quot;</tt>d
+in your script. This allows you to maintain the extension as
+a separate entity, at the cost of keeping track of the
+additional shareable image. Most extensions can be set up as
+either static or dynamic.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The source code
+for an extension usually resides in its own directory. At
+least three files are generally provided:
+<i>Extshortname.xs</i> (where <i>Extshortname</i> is the
+portion of the extension&rsquo;s name following the last
+<tt>&quot;::&quot;</tt>), containing the <small>XS</small>
+code, <i>Extshortname.pm</i>, the Perl library module for
+the extension, and <i>Makefile.PL</i>, a Perl script which
+uses the <tt>&quot;MakeMaker&quot;</tt> library modules
+supplied with Perl to generate a <i>Descrip.MMS</i> file for
+the extension.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Installing
+static extensions</b> <br>
+Since static extensions are incorporated directly into
+<i>PerlShr.Exe</i>, you&rsquo;ll have to rebuild Perl to
+incorporate a new extension. You should edit the main
+<i>Descrip.MMS</i> or <i>Makefile</i> you use to build Perl,
+adding the extension&rsquo;s name to the
+<tt>&quot;ext&quot;</tt> macro, and the extension&rsquo;s
+object file to the <tt>&quot;extobj&quot;</tt> macro.
+You&rsquo;ll also need to build the extension&rsquo;s object
+file, either by adding dependencies to the main
+<i>Descrip.MMS</i>, or using a separate <i>Descrip.MMS</i>
+for the extension. Then, rebuild <i>PerlShr.Exe</i> to
+incorporate the new code.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Finally,
+you&rsquo;ll need to copy the extension&rsquo;s Perl library
+module to the <i>[.Extname]</i> subdirectory under one of
+the directories in <tt>@INC</tt>, where <i>Extname</i> is
+the name of the extension, with all <tt>&quot;::&quot;</tt>
+replaced by <tt>&quot;.&quot;</tt> (e.g. the library module
+for extension Foo::Bar would be copied to a
+<i>[.Foo.Bar]</i> subdirectory).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Installing
+dynamic extensions</b> <br>
+In general, the distributed kit for a Perl extension
+includes a file named Makefile.PL, which is a Perl program
+which is used to create a <i>Descrip.MMS</i> file which can
+be used to build and install the files required by the
+extension. The kit should be unpacked into a directory tree
+<b>not</b> under the main Perl source directory, and the
+procedure for building the extension is simply</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl Makefile.PL  ! Create Descrip.MMS
+    $ mmk               ! Build necessary files
+    $ mmk test          ! Run test code, if supplied
+    $ mmk install       ! Install into public Perl tree</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>N.B.</i> The
+procedure by which extensions are built and tested creates
+several levels (at least 4) under the directory in which the
+extension&rsquo;s source files live. For this reason if you
+are running a version of <small>VMS</small> prior to V7.1
+you shouldn&rsquo;t nest the source directory too deeply in
+your directory structure lest you exceed <small>RMS</small>
+&rsquo; maximum of 8 levels of subdirectory in a filespec.
+(You can use rooted logical names to get another 8 levels of
+nesting, if you can&rsquo;t place the files near the top of
+the physical directory structure.)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>VMS</small>
+support for this process in the current release of Perl is
+sufficient to handle most extensions. However, it does not
+yet recognize extra libraries required to build shareable
+images which are part of an extension, so these must be
+added to the linker options file for the extension by hand.
+For instance, if the <i><small>PGPLOT</small></i> extension
+to Perl requires the <i><small>PGPLOTSHR</small> .EXE</i>
+shareable image in order to properly link the Perl
+extension, then the line
+<tt>&quot;PGPLOTSHR/Share&quot;</tt> must be added to the
+linker options file <i><small>PGPLOT</small> .Opt</i>
+produced during the build process for the Perl
+extension.</p>
+
+<p style="margin-left:11%; margin-top: 1em">By default, the
+shareable image for an extension is placed in the
+<i>[.lib.site_perl.autoArch</i>.<i>Extname]</i> directory of
+the installed Perl directory tree (where <i>Arch</i> is
+<i><small>VMS_VAX</small></i> or
+<i><small>VMS_AXP</small></i> , and <i>Extname</i> is the
+name of the extension, with each <tt>&quot;::&quot;</tt>
+translated to <tt>&quot;.&quot;</tt>). (See the MakeMaker
+documentation for more details on installation options for
+extensions.) However, it can be manually placed in any of
+several locations:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>the <i>[.Lib.Auto.Arch$PVersExtname]</i> subdirectory of
+one of the directories in <tt>@INC</tt> (where <i>PVers</i>
+is the version of Perl you&rsquo;re using, as supplied in
+<tt>$]</tt>, with &rsquo;.&rsquo; converted to
+&rsquo;_&rsquo;), or</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>one of the directories in <tt>@INC</tt>, or</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p>a directory which the extensions Perl library module
+passes to the DynaLoader when asking it to map the shareable
+image, or</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="83%">
+
+
+<p><i>Sys$Share</i> or <i>Sys$Library</i>.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+shareable image isn&rsquo;t in any of these places,
+you&rsquo;ll need to define a logical name
+<i>Extshortname</i>, where <i>Extshortname</i> is the
+portion of the extension&rsquo;s name after the last
+<tt>&quot;::&quot;</tt>, which translates to the full file
+specification of the shareable image.</p>
+
+<h2>File specifications
+<a name="File specifications"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Syntax</b>
+<br>
+We have tried to make Perl aware of both VMS-style and
+Unix-style file specifications wherever possible. You may
+use either style, or both, on the command line and in
+scripts, but you may not combine the two styles within a
+single file specification. <small>VMS</small> Perl
+interprets Unix pathnames in much the same way as the
+<small>CRTL</small> (<i>e.g.</i> the first component of an
+absolute path is read as the device name for the
+<small>VMS</small> file specification). There are a set of
+functions provided in the <tt>&quot;VMS::Filespec&quot;</tt>
+package for explicit interconversion between
+<small>VMS</small> and Unix syntax; its documentation
+provides more details.</p>
+
+<p style="margin-left:11%; margin-top: 1em">We&rsquo;ve
+tried to minimize the dependence of Perl library modules on
+Unix syntax, but you may find that some of these, as well as
+some scripts written for Unix systems, will require that you
+use Unix syntax, since they will assume that &rsquo;/&rsquo;
+is the directory separator, <i>etc.</i> If you find
+instances of this in the Perl distribution itself, please
+let us know, so we can try to work around them.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also when
+working on Perl programs on <small>VMS</small> , if you need
+a syntax in a specific operating system format, then you
+need either to check the appropriate <small>DECC$</small>
+feature logical, or call a conversion routine to force it to
+that format.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The feature
+logical name <small>DECC$FILENAME_UNIX_REPORT</small>
+modifies traditional Perl behavior in the conversion of file
+specifications from Unix to <small>VMS</small> format in
+order to follow the extended character handling rules now
+expected by the <small>CRTL</small> . Specifically, when
+this feature is in effect, the <tt>&quot;./.../&quot;</tt>
+in a Unix path is now translated to
+<tt>&quot;[.^.^.^.]&quot;</tt> instead of the traditional
+<small>VMS</small> <tt>&quot;[...]&quot;</tt>. To be
+compatible with what MakeMaker expects, if a
+<small>VMS</small> path cannot be translated to a Unix path,
+it is passed through unchanged, so
+<tt>&quot;unixify(&quot;[...]&quot;)&quot;</tt> will return
+<tt>&quot;[...]&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The handling of
+extended characters is largely complete in the VMS-specific
+C infrastructure of Perl, but more work is still needed to
+fully support extended syntax filenames in several core
+modules. In particular, at this writing PathTools has only
+partial support for directories containing some extended
+characters.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There are
+several ambiguous cases where a conversion routine cannot
+determine whether an input filename is in Unix format or in
+<small>VMS</small> format, since now both <small>VMS</small>
+and Unix file specifications may have characters in them
+that could be mistaken for syntax delimiters of the other
+type. So some pathnames simply cannot be used in a mode that
+allows either type of pathname to be present. Perl will tend
+to assume that an ambiguous filename is in Unix format.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Allowing
+&quot;.&quot; as a version delimiter is simply incompatible
+with determining whether a pathname is in <small>VMS</small>
+format or in Unix format with extended file syntax. There is
+no way to know whether &quot;perl&minus;5.8.6&quot; is a
+Unix &quot;perl&minus;5.8.6&quot; or a <small>VMS</small>
+&quot;perl&minus;5.8;6&quot; when passing it to
+<i>unixify()</i> or <i>vmsify()</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<small>DECC$FILENAME_UNIX_REPORT</small> logical name
+controls how Perl interprets filenames to the extent that
+Perl uses the <small>CRTL</small> internally for many
+purposes, and attempts to follow <small>CRTL</small>
+conventions for reporting filenames. The
+<small>DECC$FILENAME_UNIX_ONLY</small> feature differs in
+that it expects all filenames passed to the C run-time to be
+already in Unix format. This feature is not yet supported in
+Perl since Perl uses traditional OpenVMS file specifications
+internally and in the test harness, and it is not yet clear
+whether this mode will be useful or useable. The feature
+logical name <small>DECC$POSIX_COMPLIANT_PATHNAMES</small>
+is new with the <small>RMS</small> Symbolic Link
+<small>SDK</small> and included with OpenVMS v8.3, but is
+not yet supported in Perl.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Filename
+Case</b> <br>
+Perl follows <small>VMS</small> defaults and override
+settings in preserving (or not preserving) filename case.
+Case is not preserved on <small>ODS&minus;2</small>
+formatted volumes on any architecture. On
+<small>ODS&minus;5</small> volumes, filenames may be case
+preserved depending on process and feature settings. Perl
+now honors <small>DECC$EFS_CASE_PRESERVE</small> and
+<small>DECC$ARGV_PARSE_STYLE</small> on those systems where
+the <small>CRTL</small> supports these features. When these
+features are not enabled or the <small>CRTL</small> does not
+support them, Perl follows the traditional
+<small>CRTL</small> behavior of downcasing command-line
+arguments and returning file specifications in lower case
+only.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>N. B.</i> It
+is very easy to get tripped up using a mixture of other
+programs, external utilities, and Perl scripts that are in
+varying states of being able to handle case preservation.
+For example, a file created by an older version of an
+archive utility or a build utility such as
+<small>MMK</small> or <small>MMS</small> may generate a
+filename in all upper case even on an
+<small>ODS&minus;5</small> volume. If this filename is later
+retrieved by a Perl script or module in a case preserving
+environment, that upper case name may not match the
+mixed-case or lower-case exceptions of the Perl code. Your
+best bet is to follow an all-or-nothing approach to case
+preservation: either don&rsquo;t use it at all, or make sure
+your entire toolchain and application environment support
+and use it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">OpenVMS Alpha
+v7.3&minus;1 and later and all version of OpenVMS I64
+support case sensitivity as a process setting (see
+<tt>&quot;SET PROCESS /CASE_LOOKUP=SENSITIVE&quot;</tt>).
+Perl does not currently support case sensitivity on
+<small>VMS</small> , but it may in the future, so Perl
+programs should use the
+<tt>&quot;File::Spec&minus;&gt;case_tolerant&quot;</tt>
+method to determine the state, and not the <tt>$^O</tt>
+variable.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Symbolic
+Links</b> <br>
+When built on an <small>ODS&minus;5</small> volume with
+symbolic links enabled, Perl by default supports symbolic
+links when the requisite support is available in the
+filesystem and <small>CRTL</small> (generally 64&minus;bit
+OpenVMS v8.3 and later). There are a number of limitations
+and caveats to be aware of when working with symbolic links
+on <small>VMS</small> . Most notably, the target of a valid
+symbolic link must be expressed as a Unix-style path and it
+must exist on a volume visible from your
+<small>POSIX</small> root (see the <tt>&quot;SHOW
+ROOT&quot;</tt> command in <small>DCL</small> help). For
+further details on symbolic link capabilities and
+requirements, see chapter 12 of the <small>CRTL</small>
+manual that ships with OpenVMS v8.3 or later.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Wildcard
+expansion</b> <br>
+File specifications containing wildcards are allowed both on
+the command line and within Perl globs (e.g.
+<tt>&quot;&lt;*.c&gt;&quot;</tt>). If the wildcard filespec
+uses <small>VMS</small> syntax, the resultant filespecs will
+follow <small>VMS</small> syntax; if a Unix-style filespec
+is passed in, Unix-style filespecs will be returned. Similar
+to the behavior of wildcard globbing for a Unix shell, one
+can escape command line wildcards with double quotation
+marks <tt>&quot;&quot;&quot;</tt> around a perl program
+command line argument. However, owing to the stripping of
+<tt>&quot;&quot;&quot;</tt> characters carried out by the C
+handling of argv you will need to escape a construct such as
+this one (in a directory containing the files
+<i><small>PERL</small> .C</i>, <i><small>PERL</small>
+.EXE</i>, <i><small>PERL</small> .H</i>, and
+<i><small>PERL</small> .OBJ</i>):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl &minus;e &quot;print join(' ',@ARGV)&quot; perl.*
+    perl.c perl.exe perl.h perl.obj</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">in the
+following triple quoted manner:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ perl &minus;e &quot;print join(' ',@ARGV)&quot; &quot;&quot;&quot;perl.*&quot;&quot;&quot;
+    perl.*</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In both the
+case of unquoted command line arguments or in calls to
+<tt>&quot;glob()&quot;</tt> <small>VMS</small> wildcard
+expansion is performed. (csh-style wildcard expansion is
+available if you use <tt>&quot;File::Glob::glob&quot;</tt>.)
+If the wildcard filespec contains a device or directory
+specification, then the resultant filespecs will also
+contain a device and directory; otherwise, device and
+directory information are removed. VMS-style resultant
+filespecs will contain a full device and directory, while
+Unix-style resultant filespecs will contain only as much of
+a directory path as was present in the input filespec. For
+example, if your default directory is Perl_Root:[000000],
+the expansion of <tt>&quot;[.t]*.*&quot;</tt> will yield
+filespecs like &quot;perl_root:[t]base.dir&quot;, while the
+expansion of <tt>&quot;t/*/*&quot;</tt> will yield filespecs
+like &quot;t/base.dir&quot;. (This is done to match the
+behavior of glob expansion performed by Unix shells.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Similarly, the
+resultant filespec will contain the file version only if one
+was present in the input filespec.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Pipes</b>
+<br>
+Input and output pipes to Perl filehandles are supported;
+the &quot;file name&quot; is passed to lib$<i>spawn()</i>
+for asynchronous execution. You should be careful to close
+any pipes you have opened in a Perl script, lest you leave
+any &quot;orphaned&quot; subprocesses around when Perl
+exits.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You may also
+use backticks to invoke a <small>DCL</small> subprocess,
+whose output is used as the return value of the expression.
+The string between the backticks is handled as if it were
+the argument to the <tt>&quot;system&quot;</tt> operator
+(see below). In this case, Perl will wait for the subprocess
+to complete before continuing.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The mailbox (
+<small>MBX</small> ) that perl can create to communicate
+with a pipe defaults to a buffer size of 8192 on
+64&minus;bit systems, 512 on <small>VAX</small> . The
+default buffer size is adjustable via the logical name
+<small>PERL_MBX_SIZE</small> provided that the value falls
+between 128 and the <small>SYSGEN</small> parameter
+<small>MAXBUF</small> inclusive. For example, to set the
+mailbox size to 32767 use <tt>&quot;$ENV{'PERL_MBX_SIZE'} =
+32767;&quot;</tt> and then open and use pipe constructs. An
+alternative would be to issue the command:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $ Define PERL_MBX_SIZE 32767</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">before running
+your wide record pipe program. A larger value may improve
+performance at the expense of the <small>BYTLM UAF</small>
+quota.</p>
+
+<h2>PERL5LIB and PERLLIB
+<a name="PERL5LIB and PERLLIB"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<small>PERL5LIB</small> and <small>PERLLIB</small> logical
+names work as documented in perl, except that the element
+separator is &rsquo;|&rsquo; instead of &rsquo;:&rsquo;. The
+directory specifications may use either <small>VMS</small>
+or Unix syntax.</p>
+
+<h2>The Perl Forked Debugger
+<a name="The Perl Forked Debugger"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The Perl forked
+debugger places the debugger commands and output in a
+separate X&minus;11 terminal window so that commands and
+output from multiple processes are not mixed together.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl on
+<small>VMS</small> supports an emulation of the forked
+debugger when Perl is run on a <small>VMS</small> system
+that has X11 support installed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To use the
+forked debugger, you need to have the default display set to
+an X&minus;11 Server and some environment variables set that
+Unix expects.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The forked
+debugger requires the environment variable
+<tt>&quot;TERM&quot;</tt> to be <tt>&quot;xterm&quot;</tt>,
+and the environment variable <tt>&quot;DISPLAY&quot;</tt> to
+exist. <tt>&quot;xterm&quot;</tt> must be in lower case.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $define TERM &quot;xterm&quot;
+  $define DISPLAY &quot;hostname:0.0&quot;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Currently the
+value of <tt>&quot;DISPLAY&quot;</tt> is ignored. It is
+recommended that it be set to be the hostname of the
+display, the server and screen in Unix notation. In the
+future the value of <small>DISPLAY</small> may be honored by
+Perl instead of using the default display.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It may be
+helpful to always use the forked debugger so that script I/O
+is separated from debugger I/O. You can force the debugger
+to be forked by assigning a value to the logical name &lt;
+<small>PERLDB_PIDS</small> &gt; that is not a process
+identification number.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $define PERLDB_PIDS XXXX</pre>
+
+
+<h2>PERL_VMS_EXCEPTION_DEBUG
+<a name="PERL_VMS_EXCEPTION_DEBUG"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<small>PERL_VMS_EXCEPTION_DEBUG</small> being defined as
+&quot; <small>ENABLE</small> &quot; will cause the
+<small>VMS</small> debugger to be invoked if a fatal
+exception that is not otherwise handled is raised. The
+purpose of this is to allow debugging of internal Perl
+problems that would cause such a condition.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This allows the
+programmer to look at the execution stack and variables to
+find out the cause of the exception. As the debugger is
+being invoked as the Perl interpreter is about to do a fatal
+exit, continuing the execution in debug mode is usually not
+practical.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Starting Perl
+in the <small>VMS</small> debugger may change the program
+execution profile in a way that such problems are not
+reproduced.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;kill&quot;</tt> function can be used to test this
+functionality from within a program.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In typical
+<small>VMS</small> style, only the first letter of the value
+of this logical name is actually checked in a case
+insensitive mode, and it is considered enabled if it is the
+value &quot;T&quot;,&quot;1&quot; or &quot;E&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This logical
+name must be defined before Perl is started.</p>
+
+<h2>Command line
+<a name="Command line"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>I/O
+redirection and backgrounding</b> <br>
+Perl for <small>VMS</small> supports redirection of input
+and output on the command line, using a subset of Bourne
+shell syntax:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em">&bull;</p></td>
+<td width="5%"></td>
+<td width="60%">
+
+
+<p style="margin-top: 1em"><tt>&quot;&lt;file&quot;</tt>
+reads stdin from <tt>&quot;file&quot;</tt>,</p></td>
+<td width="23%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="60%">
+
+
+<p><tt>&quot;&gt;file&quot;</tt> writes stdout to
+<tt>&quot;file&quot;</tt>,</p> </td>
+<td width="23%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="60%">
+
+
+<p><tt>&quot;&gt;&gt;file&quot;</tt> appends stdout to
+<tt>&quot;file&quot;</tt>,</p> </td>
+<td width="23%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="60%">
+
+
+<p><tt>&quot;2&gt;file&quot;</tt> writes stderr to
+<tt>&quot;file&quot;</tt>,</p> </td>
+<td width="23%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="60%">
+
+
+<p><tt>&quot;2&gt;&gt;file&quot;</tt> appends stderr to
+<tt>&quot;file&quot;</tt>, and</p></td>
+<td width="23%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="5%"></td>
+<td width="60%">
+
+
+<p><tt>&quot;2&gt;&amp;1&quot;</tt> redirects stderr to
+stdout.</p> </td>
+<td width="23%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">In addition,
+output may be piped to a subprocess, using the character
+&rsquo;|&rsquo;. Anything after this character on the
+command line is passed to a subprocess for execution; the
+subprocess takes the output of Perl as its input.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Finally, if the
+command line ends with &rsquo;&amp;&rsquo;, the entire
+command is run in the background as an asynchronous
+subprocess.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Command line
+switches</b> <br>
+The following command line switches behave differently under
+<small>VMS</small> than described in perlrun. Note also that
+in order to pass uppercase switches to Perl, you need to
+enclose them in double-quotes on the command line, since the
+<small>CRTL</small> downcases all unquoted strings.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On newer 64 bit
+versions of OpenVMS, a process setting now controls if the
+quoting is needed to preserve the case of command line
+arguments.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">&minus;i</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">If the
+<tt>&quot;&minus;i&quot;</tt> switch is present but no
+extension for a backup copy is given, then inplace editing
+creates a new version of a file; the existing copy is not
+deleted. (Note that if an extension is given, an existing
+file is renamed to the backup file, as is the case under
+other operating systems, so it does not remain as a previous
+version under the original filename.)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>&minus;S</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>If the <tt>&quot;&minus;S&quot;</tt> or
+<tt>&quot;&minus;&quot;S&quot;&quot;</tt> switch is present
+<i>and</i> the script name does not contain a directory,
+then Perl translates the logical name
+<small>DCL$PATH</small> as a searchlist, using each
+translation as a directory in which to look for the script.
+In addition, if no file type is specified, Perl looks in
+each directory for a file matching the name specified, with
+a blank type, a type of <i>.pl</i>, and a type of
+<i>.com</i>, in that order.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>&minus;u</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>The <tt>&quot;&minus;u&quot;</tt> switch causes the
+<small>VMS</small> debugger to be invoked after the Perl
+program is compiled, but before it has run. It does not
+create a core dump file.</p></td></tr>
+</table>
+
+<h2>Perl functions
+<a name="Perl functions"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">As of the time
+this document was last revised, the following Perl functions
+were implemented in the <small>VMS</small> port of Perl
+(functions marked with * are discussed in more detail
+below):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    file tests*, abs, alarm, atan, backticks*, binmode*, bless,
+    caller, chdir, chmod, chown, chomp, chop, chr,
+    close, closedir, cos, crypt*, defined, delete, die, do, dump*,
+    each, endgrent, endpwent, eof, eval, exec*, exists, exit, exp,
+    fileno, flock  getc, getgrent*, getgrgid*, getgrnam, getlogin, getppid,
+    getpwent*, getpwnam*, getpwuid*, glob, gmtime*, goto,
+    grep, hex, ioctl, import, index, int, join, keys, kill*,
+    last, lc, lcfirst, lchown*, length, link*, local, localtime, log, lstat, m//,
+    map, mkdir, my, next, no, oct, open, opendir, ord, pack,
+    pipe, pop, pos, print, printf, push, q//, qq//, qw//,
+    qx//*, quotemeta, rand, read, readdir, readlink*, redo, ref, rename,
+    require, reset, return, reverse, rewinddir, rindex,
+    rmdir, s///, scalar, seek, seekdir, select(internal),
+    select (system call)*, setgrent, setpwent, shift, sin, sleep,
+    socketpair, sort, splice, split, sprintf, sqrt, srand, stat,
+    study, substr, symlink*, sysread, system*, syswrite, tell,
+    telldir, tie, time, times*, tr///, uc, ucfirst, umask,
+    undef, unlink*, unpack, untie, unshift, use, utime*,
+    values, vec, wait, waitpid*, wantarray, warn, write, y///</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+functions were not implemented in the <small>VMS</small>
+port, and calling them produces a fatal error (usually) or
+undefined behavior (rarely, we hope):</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    chroot, dbmclose, dbmopen, fork*, getpgrp, getpriority,
+    msgctl, msgget, msgsend, msgrcv, semctl,
+    semget, semop, setpgrp, setpriority, shmctl, shmget,
+    shmread, shmwrite, syscall</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+functions are available on Perls compiled with Dec C 5.2 or
+greater and running <small>VMS</small> 7.0 or greater:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    truncate</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+functions are available on Perls built on <small>VMS</small>
+7.2 or greater:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    fcntl (without locking)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+functions may or may not be implemented, depending on what
+type of socket support you&rsquo;ve built into your copy of
+Perl:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    accept, bind, connect, getpeername,
+    gethostbyname, getnetbyname, getprotobyname,
+    getservbyname, gethostbyaddr, getnetbyaddr,
+    getprotobynumber, getservbyport, gethostent,
+    getnetent, getprotoent, getservent, sethostent,
+    setnetent, setprotoent, setservent, endhostent,
+    endnetent, endprotoent, endservent, getsockname,
+    getsockopt, listen, recv, select(system call)*,
+    send, setsockopt, shutdown, socket</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+function is available on Perls built on 64 bit OpenVMS v8.2
+with hard links enabled on an <small>ODS&minus;5</small>
+formatted build disk. <small>CRTL</small> support is in
+principle available as of OpenVMS v7.3&minus;1, and better
+configuration support could detect this.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    link</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+functions are available on Perls built on 64 bit OpenVMS
+v8.2 and later. <small>CRTL</small> support is in principle
+available as of OpenVMS v7.3&minus;2, and better
+configuration support could detect this.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   getgrgid, getgrnam, getpwnam, getpwuid,
+   setgrent, ttyname</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+functions are available on Perls built on 64 bit OpenVMS
+v8.2 and later.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   statvfs, socketpair</pre>
+
+
+<p style="margin-left:11%;">File tests</p>
+
+<p style="margin-left:17%;">The tests
+<tt>&quot;&minus;b&quot;</tt>,
+<tt>&quot;&minus;B&quot;</tt>,
+<tt>&quot;&minus;c&quot;</tt>,
+<tt>&quot;&minus;C&quot;</tt>,
+<tt>&quot;&minus;d&quot;</tt>,
+<tt>&quot;&minus;e&quot;</tt>,
+<tt>&quot;&minus;f&quot;</tt>,
+<tt>&quot;&minus;o&quot;</tt>,
+<tt>&quot;&minus;M&quot;</tt>,
+<tt>&quot;&minus;s&quot;</tt>,
+<tt>&quot;&minus;S&quot;</tt>,
+<tt>&quot;&minus;t&quot;</tt>,
+<tt>&quot;&minus;T&quot;</tt>, and
+<tt>&quot;&minus;z&quot;</tt> work as advertised. The return
+values for <tt>&quot;&minus;r&quot;</tt>,
+<tt>&quot;&minus;w&quot;</tt>, and
+<tt>&quot;&minus;x&quot;</tt> tell you whether you can
+actually access the file; this may not reflect the UIC-based
+file protections. Since real and effective
+<small>UIC</small> don&rsquo;t differ under
+<small>VMS</small> , <tt>&quot;&minus;O&quot;</tt>,
+<tt>&quot;&minus;R&quot;</tt>,
+<tt>&quot;&minus;W&quot;</tt>, and
+<tt>&quot;&minus;X&quot;</tt> are equivalent to
+<tt>&quot;&minus;o&quot;</tt>,
+<tt>&quot;&minus;r&quot;</tt>,
+<tt>&quot;&minus;w&quot;</tt>, and
+<tt>&quot;&minus;x&quot;</tt>. Similarly, several other
+tests, including <tt>&quot;&minus;A&quot;</tt>,
+<tt>&quot;&minus;g&quot;</tt>,
+<tt>&quot;&minus;k&quot;</tt>,
+<tt>&quot;&minus;l&quot;</tt>,
+<tt>&quot;&minus;p&quot;</tt>, and
+<tt>&quot;&minus;u&quot;</tt>, aren&rsquo;t particularly
+meaningful under <small>VMS</small> , and the values
+returned by these tests reflect whatever your
+<small>CRTL</small> <tt>&quot;stat()&quot;</tt> routine does
+to the equivalent bits in the st_mode field. Finally,
+<tt>&quot;&minus;d&quot;</tt> returns true if passed a
+device specification without an explicit directory (e.g.
+<tt>&quot;DUA1:&quot;</tt>), as well as if passed a
+directory.</p>
+
+<p style="margin-left:17%; margin-top: 1em">There are
+<small>DECC</small> feature logical names <small>AND
+ODS&minus;5</small> volume attributes that also control what
+values are returned for the date fields.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Note: Some
+sites have reported problems when using the file-access
+tests (<tt>&quot;&minus;r&quot;</tt>,
+<tt>&quot;&minus;w&quot;</tt>, and
+<tt>&quot;&minus;x&quot;</tt>) on files accessed via
+<small>DEC</small> &rsquo;s <small>DFS</small> .
+Specifically, since <small>DFS</small> does not currently
+provide access to the extended file header of files on
+remote volumes, attempts to examine the <small>ACL</small>
+fail, and the file tests will return false, with <tt>$!</tt>
+indicating that the file does not exist. You can use
+<tt>&quot;stat&quot;</tt> on these files, since that checks
+UIC-based protection only, and then manually check the
+appropriate bits, as defined by your C compiler&rsquo;s
+<i>stat.h</i>, in the mode value it returns, if you need an
+approximation of the file&rsquo;s protections.</p>
+
+<p style="margin-left:11%;">backticks</p>
+
+<p style="margin-left:17%;">Backticks create a subprocess,
+and pass the enclosed string to it for execution as a
+<small>DCL</small> command. Since the subprocess is created
+directly via <tt>&quot;lib$spawn()&quot;</tt>, any valid
+<small>DCL</small> command string may be specified.</p>
+
+<p style="margin-left:11%;">binmode
+<small>FILEHANDLE</small></p>
+
+<p style="margin-left:17%;">The
+<tt>&quot;binmode&quot;</tt> operator will attempt to insure
+that no translation of carriage control occurs on input from
+or output to this filehandle. Since this involves reopening
+the file and then restoring its file position indicator, if
+this function returns <small>FALSE</small> , the underlying
+filehandle may no longer point to an open file, or may point
+to a different position in the file than before
+<tt>&quot;binmode&quot;</tt> was called.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Note that
+<tt>&quot;binmode&quot;</tt> is generally not necessary when
+using normal filehandles; it is provided so that you can
+control I/O to existing record-structured files when
+necessary. You can also use the
+<tt>&quot;vmsfopen&quot;</tt> function in the VMS::Stdio
+extension to gain finer control of I/O to files and devices
+with different record structures.</p>
+
+<p style="margin-left:11%;">crypt <small>PLAINTEXT</small>
+, <small>USER</small></p>
+
+<p style="margin-left:17%;">The <tt>&quot;crypt&quot;</tt>
+operator uses the <tt>&quot;sys$hash_password&quot;</tt>
+system service to generate the hashed representation of
+<small>PLAINTEXT</small> . If <small>USER</small> is a valid
+username, the algorithm and salt values are taken from that
+user&rsquo;s <small>UAF</small> record. If it is not, then
+the preferred algorithm and a salt of 0 are used. The
+quadword encrypted value is returned as an 8&minus;character
+string.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The value
+returned by <tt>&quot;crypt&quot;</tt> may be compared
+against the encrypted password from the <small>UAF</small>
+returned by the <tt>&quot;getpw*&quot;</tt> functions, in
+order to authenticate users. If you&rsquo;re going to do
+this, remember that the encrypted password in the
+<small>UAF</small> was generated using uppercase username
+and password strings; you&rsquo;ll have to upcase the
+arguments to <tt>&quot;crypt&quot;</tt> to insure that
+you&rsquo;ll get the proper value:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    sub validate_passwd {
+        my($user,$passwd) = @_;
+        my($pwdhash);
+        if ( !($pwdhash = (getpwnam($user))[1]) ||
+               $pwdhash ne crypt(&quot;\U$passwd&quot;,&quot;\U$name&quot;) ) {
+            intruder_alert($name);
+        }
+        return 1;
+    }</pre>
+
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p>die</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p><tt>&quot;die&quot;</tt> will force the native
+<small>VMS</small> exit status to be an
+<small>SS$_ABORT</small> code if neither of the $! or $?
+status values are ones that would cause the native status to
+be interpreted as being what <small>VMS</small> classifies
+as <small>SEVERE_ERROR</small> severity for
+<small>DCL</small> error handling.</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">When
+<tt>&quot;PERL_VMS_POSIX_EXIT&quot;</tt> is active (see
+&quot;$?&quot; below), the native <small>VMS</small> exit
+status value will have either one of the <tt>$!</tt> or
+<tt>$?</tt> or <tt>$^E</tt> or the Unix value 255 encoded
+into it in a way that the effective original value can be
+decoded by other programs written in C, including Perl and
+the <small>GNV</small> package. As per the normal non-VMS
+behavior of <tt>&quot;die&quot;</tt> if either <tt>$!</tt>
+or <tt>$?</tt> are non-zero, one of those values will be
+encoded into a native <small>VMS</small> status value. If
+both of the Unix status values are 0, and the <tt>$^E</tt>
+value is set one of <small>ERROR</small> or
+<small>SEVERE_ERROR</small> severity, then the <tt>$^E</tt>
+value will be used as the exit code as is. If none of the
+above apply, the Unix value of 255 will be encoded into a
+native <small>VMS</small> exit status value.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Please note a
+significant difference in the behavior of
+<tt>&quot;die&quot;</tt> in the
+<tt>&quot;PERL_VMS_POSIX_EXIT&quot;</tt> mode is that it
+does not force a <small>VMS SEVERE_ERROR</small> status on
+exit. The Unix exit values of 2 through 255 will be encoded
+in <small>VMS</small> status values with severity levels of
+<small>SUCCESS</small> . The Unix exit value of 1 will be
+encoded in a <small>VMS</small> status value with a severity
+level of <small>ERROR</small> . This is to be compatible
+with how the <small>VMS</small> C library encodes these
+values.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The minimum
+severity level set by <tt>&quot;die&quot;</tt> in
+<tt>&quot;PERL_VMS_POSIX_EXIT&quot;</tt> mode may be changed
+to be <small>ERROR</small> or higher in the future depending
+on the results of testing and further review.</p>
+
+<p style="margin-left:17%; margin-top: 1em">See
+&quot;$?&quot; for a description of the encoding of the Unix
+value to produce a native <small>VMS</small> status
+containing it.</p>
+
+<p style="margin-left:11%;">dump</p>
+
+<p style="margin-left:17%;">Rather than causing Perl to
+abort and dump core, the <tt>&quot;dump&quot;</tt> operator
+invokes the <small>VMS</small> debugger. If you continue to
+execute the Perl program under the debugger, control will be
+transferred to the label specified as the argument to
+<tt>&quot;dump&quot;</tt>, or, if no label was specified,
+back to the beginning of the program. All other state of the
+program (<i>e.g.</i> values of variables, open file handles)
+are not affected by calling <tt>&quot;dump&quot;</tt>.</p>
+
+<p style="margin-left:11%;">exec <small>LIST</small></p>
+
+<p style="margin-left:17%;">A call to
+<tt>&quot;exec&quot;</tt> will cause Perl to exit, and to
+invoke the command given as an argument to
+<tt>&quot;exec&quot;</tt> via
+<tt>&quot;lib$do_command&quot;</tt>. If the argument begins
+with &rsquo;@&rsquo; or &rsquo;$&rsquo; (other than as part
+of a filespec), then it is executed as a <small>DCL</small>
+command. Otherwise, the first token on the command line is
+treated as the filespec of an image to run, and an attempt
+is made to invoke it (using <i>.Exe</i> and the process
+defaults to expand the filespec) and pass the rest of
+<tt>&quot;exec&quot;</tt>&rsquo;s argument to it as
+parameters. If the token has no file type, and matches a
+file with null type, then an attempt is made to determine
+whether the file is an executable image which should be
+invoked using <tt>&quot;MCR&quot;</tt> or a text file which
+should be passed to <small>DCL</small> as a command
+procedure.</p>
+
+<p style="margin-left:11%;">fork</p>
+
+<p style="margin-left:17%;">While in principle the
+<tt>&quot;fork&quot;</tt> operator could be implemented via
+(and with the same rather severe limitations as) the
+<small>CRTL</small> <tt>&quot;vfork()&quot;</tt> routine,
+and while some internal support to do just that is in place,
+the implementation has never been completed, making
+<tt>&quot;fork&quot;</tt> currently unavailable. A true
+kernel <tt>&quot;fork()&quot;</tt> is expected in a future
+version of <small>VMS</small> , and the pseudo-fork based on
+interpreter threads may be available in a future version of
+Perl on <small>VMS</small> (see perlfork). In the meantime,
+use <tt>&quot;system&quot;</tt>, backticks, or piped
+filehandles to create subprocesses.</p>
+
+<p style="margin-left:11%;">getpwent <br>
+getpwnam <br>
+getpwuid</p>
+
+<p style="margin-left:17%;">These operators obtain the
+information described in perlfunc, if you have the
+privileges necessary to retrieve the named user&rsquo;s
+<small>UAF</small> information via
+<tt>&quot;sys$getuai&quot;</tt>. If not, then only the
+<tt>$name</tt>, <tt>$uid</tt>, and <tt>$gid</tt> items are
+returned. The <tt>$dir</tt> item contains the login
+directory in <small>VMS</small> syntax, while the
+<tt>$comment</tt> item contains the login directory in Unix
+syntax. The <tt>$gcos</tt> item contains the owner field
+from the <small>UAF</small> record. The <tt>$quota</tt> item
+is not used.</p>
+
+<p style="margin-left:11%;">gmtime</p>
+
+<p style="margin-left:17%;">The <tt>&quot;gmtime&quot;</tt>
+operator will function properly if you have a working
+<small>CRTL</small> <tt>&quot;gmtime()&quot;</tt> routine,
+or if the logical name
+<small>SYS$TIMEZONE_DIFFERENTIAL</small> is defined as the
+number of seconds which must be added to <small>UTC</small>
+to yield local time. (This logical name is defined
+automatically if you are running a version of
+<small>VMS</small> with built-in <small>UTC</small>
+support.) If neither of these cases is true, a warning
+message is printed, and <tt>&quot;undef&quot;</tt> is
+returned.</p>
+
+<p style="margin-left:11%;">kill</p>
+
+<p style="margin-left:17%;">In most cases,
+<tt>&quot;kill&quot;</tt> is implemented via the
+undocumented system service <tt>$SIGPRC</tt>, which has the
+same calling sequence as <tt>$FORCEX</tt>, but throws an
+exception in the target process rather than forcing it to
+call <tt>$EXIT</tt>. Generally speaking,
+<tt>&quot;kill&quot;</tt> follows the behavior of the
+<small>CRTL</small> &rsquo;s <tt>&quot;kill()&quot;</tt>
+function, but unlike that function can be called from within
+a signal handler. Also, unlike the <tt>&quot;kill&quot;</tt>
+in some versions of the <small>CRTL</small> , Perl&rsquo;s
+<tt>&quot;kill&quot;</tt> checks the validity of the signal
+passed in and returns an error rather than attempting to
+send an unrecognized signal.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Also, negative
+signal values don&rsquo;t do anything special under
+<small>VMS</small> ; they&rsquo;re just converted to the
+corresponding positive value.</p>
+
+<p style="margin-left:11%;">qx//</p>
+
+<p style="margin-left:17%;">See the entry on
+<tt>&quot;backticks&quot;</tt> above.</p>
+
+<p style="margin-left:11%;">select (system call)</p>
+
+<p style="margin-left:17%;">If Perl was not built with
+socket support, the system call version of
+<tt>&quot;select&quot;</tt> is not available at all. If
+socket support is present, then the system call version of
+<tt>&quot;select&quot;</tt> functions only for file
+descriptors attached to sockets. It will not provide
+information about regular files or pipes, since the
+<small>CRTL</small> <tt>&quot;select()&quot;</tt> routine
+does not provide this functionality.</p>
+
+<p style="margin-left:11%;">stat <small>EXPR</small></p>
+
+<p style="margin-left:17%;">Since <small>VMS</small> keeps
+track of files according to a different scheme than Unix,
+it&rsquo;s not really possible to represent the file&rsquo;s
+<small>ID</small> in the <tt>&quot;st_dev&quot;</tt> and
+<tt>&quot;st_ino&quot;</tt> fields of a <tt>&quot;struct
+stat&quot;</tt>. Perl tries its best, though, and the values
+it uses are pretty unlikely to be the same for two different
+files. We can&rsquo;t guarantee this, though, so caveat
+scriptor.</p>
+
+<p style="margin-left:11%;">system <small>LIST</small></p>
+
+<p style="margin-left:17%;">The <tt>&quot;system&quot;</tt>
+operator creates a subprocess, and passes its arguments to
+the subprocess for execution as a <small>DCL</small>
+command. Since the subprocess is created directly via
+<tt>&quot;lib$spawn()&quot;</tt>, any valid
+<small>DCL</small> command string may be specified. If the
+string begins with &rsquo;@&rsquo;, it is treated as a
+<small>DCL</small> command unconditionally. Otherwise, if
+the first token contains a character used as a delimiter in
+file specification (e.g. <tt>&quot;:&quot;</tt> or
+<tt>&quot;]&quot;</tt>), an attempt is made to expand it
+using a default type of <i>.Exe</i> and the process
+defaults, and if successful, the resulting file is invoked
+via <tt>&quot;MCR&quot;</tt>. This allows you to invoke an
+image directly simply by passing the file specification to
+<tt>&quot;system&quot;</tt>, a common Unixish idiom. If the
+token has no file type, and matches a file with null type,
+then an attempt is made to determine whether the file is an
+executable image which should be invoked using
+<tt>&quot;MCR&quot;</tt> or a text file which should be
+passed to <small>DCL</small> as a command procedure.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If
+<small>LIST</small> consists of the empty string,
+<tt>&quot;system&quot;</tt> spawns an interactive
+<small>DCL</small> subprocess, in the same fashion as typing
+<b><small>SPAWN</small></b> at the <small>DCL</small>
+prompt.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Perl waits for
+the subprocess to complete before continuing execution in
+the current process. As described in perlfunc, the return
+value of <tt>&quot;system&quot;</tt> is a fake
+&quot;status&quot; which follows <small>POSIX</small>
+semantics unless the pragma <tt>&quot;use vmsish
+'status'&quot;</tt> is in effect; see the description of
+<tt>$?</tt> in this document for more detail.</p>
+
+<p style="margin-left:11%;">time</p>
+
+<p style="margin-left:17%;">The value returned by
+<tt>&quot;time&quot;</tt> is the offset in seconds from
+01&minus;JAN&minus;1970 00:00:00 (just like the
+<small>CRTL</small> &rsquo;s <i>times()</i> routine), in
+order to make life easier for code coming in from the
+POSIX/Unix world.</p>
+
+<p style="margin-left:11%;">times</p>
+
+<p style="margin-left:17%;">The array returned by the
+<tt>&quot;times&quot;</tt> operator is divided up according
+to the same rules the <small>CRTL</small>
+<tt>&quot;times()&quot;</tt> routine. Therefore, the
+&quot;system time&quot; elements will always be 0, since
+there is no difference between &quot;user time&quot; and
+&quot;system&quot; time under <small>VMS</small> , and the
+time accumulated by a subprocess may or may not appear
+separately in the &quot;child time&quot; field, depending on
+whether <tt>&quot;times()&quot;</tt> keeps track of
+subprocesses separately. Note especially that the
+<small>VAXCRTL</small> (at least) keeps track only of
+subprocesses spawned using <tt>&quot;fork()&quot;</tt> and
+<tt>&quot;exec()&quot;</tt>; it will not accumulate the
+times of subprocesses spawned via pipes,
+<tt>&quot;system()&quot;</tt>, or backticks.</p>
+
+<p style="margin-left:11%;">unlink <small>LIST</small></p>
+
+<p style="margin-left:17%;"><tt>&quot;unlink&quot;</tt>
+will delete the highest version of a file only; in order to
+delete all versions, you need to say</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    1 while unlink LIST;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">You may need to
+make this change to scripts written for a Unix system which
+expect that after a call to <tt>&quot;unlink&quot;</tt>, no
+files with the names passed to <tt>&quot;unlink&quot;</tt>
+will exist. (Note: This can be changed at compile time; if
+you <tt>&quot;use Config&quot;</tt> and
+<tt>$Config{'d_unlink_all_versions'}</tt> is
+<tt>&quot;define&quot;</tt>, then
+<tt>&quot;unlink&quot;</tt> will delete all versions of a
+file on the first call.)</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><tt>&quot;unlink&quot;</tt>
+will delete a file if at all possible, even if it requires
+changing file protection (though it won&rsquo;t try to
+change the protection of the parent directory). You can tell
+whether you&rsquo;ve got explicit delete access to a file by
+using the <tt>&quot;VMS::Filespec::candelete&quot;</tt>
+operator. For instance, in order to delete only files to
+which you have delete access, you could say something
+like</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    sub safe_unlink {
+        my($file,$num);
+        foreach $file (@_) {
+            next unless VMS::Filespec::candelete($file);
+            $num += unlink $file;
+        }
+        $num;
+    }</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">(or you could
+just use <tt>&quot;VMS::Stdio::remove&quot;</tt>, if
+you&rsquo;ve installed the VMS::Stdio extension distributed
+with Perl). If <tt>&quot;unlink&quot;</tt> has to change the
+file protection to delete the file, and you interrupt it in
+midstream, the file may be left intact, but with a changed
+<small>ACL</small> allowing you delete access.</p>
+
+<p style="margin-left:17%; margin-top: 1em">This behavior
+of <tt>&quot;unlink&quot;</tt> is to be compatible with
+<small>POSIX</small> behavior and not traditional
+<small>VMS</small> behavior.</p>
+
+<p style="margin-left:11%;">utime <small>LIST</small></p>
+
+<p style="margin-left:17%;">This operator changes only the
+modification time of the file ( <small>VMS</small> revision
+date) on <small>ODS&minus;2</small> volumes and
+<small>ODS&minus;5</small> volumes without access dates
+enabled. On <small>ODS&minus;5</small> volumes with access
+dates enabled, the true access time is modified.</p>
+
+<p style="margin-left:11%;">waitpid <small>PID</small>
+,FLAGS</p>
+
+<p style="margin-left:17%;">If <small>PID</small> is a
+subprocess started by a piped <tt>&quot;open()&quot;</tt>
+(see open), <tt>&quot;waitpid&quot;</tt> will wait for that
+subprocess, and return its final status value in
+<tt>$?</tt>. If <small>PID</small> is a subprocess created
+in some other way (e.g. SPAWNed before Perl was invoked),
+<tt>&quot;waitpid&quot;</tt> will simply check once per
+second whether the process has completed, and return when it
+has. (If <small>PID</small> specifies a process that
+isn&rsquo;t a subprocess of the current process, and you
+invoked Perl with the <tt>&quot;&minus;w&quot;</tt> switch,
+a warning will be issued.)</p>
+
+<p style="margin-left:17%; margin-top: 1em">Returns
+<small>PID</small> on success, &minus;1 on error. The
+<small>FLAGS</small> argument is ignored in all cases.</p>
+
+<h2>Perl variables
+<a name="Perl variables"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+VMS-specific information applies to the indicated
+&quot;special&quot; Perl variables, in addition to the
+general information in perlvar. Where there is a conflict,
+this information takes precedence. <br>
+%ENV</p>
+
+<p style="margin-left:17%;">The operation of the
+<tt>%ENV</tt> array depends on the translation of the
+logical name <i><small>PERL_ENV_TABLES</small></i> . If
+defined, it should be a search list, each element of which
+specifies a location for <tt>%ENV</tt> elements. If you tell
+Perl to read or set the element
+<tt>&quot;$ENV{&quot;</tt><i>name</i><tt>&quot;}&quot;</tt>,
+then Perl uses the translations of
+<i><small>PERL_ENV_TABLES</small></i> as follows:
+<small><br>
+CRTL_ENV</small></p>
+
+<p style="margin-left:23%;">This string tells Perl to
+consult the <small>CRTL</small> &rsquo;s internal
+<tt>&quot;environ&quot;</tt> array of key-value pairs, using
+<i>name</i> as the key. In most cases, this contains only a
+few keys, but if Perl was invoked via the C
+<tt>&quot;exec[lv]e()&quot;</tt> function, as is the case
+for <small>CGI</small> processing by some
+<small>HTTP</small> servers, then the
+<tt>&quot;environ&quot;</tt> array may have been populated
+by the calling program.</p>
+
+<p style="margin-left:17%;">CLISYM_[ <small>LOCAL</small>
+]</p>
+
+<p style="margin-left:23%;">A string beginning with
+<tt>&quot;CLISYM_&quot;</tt>tells Perl to consult the
+<small>CLI</small> &rsquo;s symbol tables, using <i>name</i>
+as the name of the symbol. When reading an element of
+<tt>%ENV</tt>, the local symbol table is scanned first,
+followed by the global symbol table.. The characters
+following <tt>&quot;CLISYM_&quot;</tt> are significant when
+an element of <tt>%ENV</tt> is set or deleted: if the
+complete string is <tt>&quot;CLISYM_LOCAL&quot;</tt>, the
+change is made in the local symbol table; otherwise the
+global symbol table is changed.</p>
+
+<p style="margin-left:17%;">Any other string</p>
+
+<p style="margin-left:23%;">If an element of
+<i><small>PERL_ENV_TABLES</small></i> translates to any
+other string, that string is used as the name of a logical
+name table, which is consulted using <i>name</i> as the
+logical name. The normal search order of access modes is
+used.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><i><small>PERL_ENV_TABLES</small></i>
+is translated once when Perl starts up; any changes you make
+while Perl is running do not affect the behavior of
+<tt>%ENV</tt>. If <i><small>PERL_ENV_TABLES</small></i> is
+not defined, then Perl defaults to consulting first the
+logical name tables specified by
+<i><small>LNM$FILE_DEV</small></i> , and then the
+<small>CRTL</small> <tt>&quot;environ&quot;</tt> array.</p>
+
+<p style="margin-left:17%; margin-top: 1em">In all
+operations on <tt>%ENV</tt>, the key string is treated as if
+it were entirely uppercase, regardless of the case actually
+specified in the Perl expression.</p>
+
+<p style="margin-left:17%; margin-top: 1em">When an element
+of <tt>%ENV</tt> is read, the locations to which
+<i><small>PERL_ENV_TABLES</small></i> points are checked in
+order, and the value obtained from the first successful
+lookup is returned. If the name of the <tt>%ENV</tt> element
+contains a semi-colon, it and any characters after it are
+removed. These are ignored when the <small>CRTL</small>
+<tt>&quot;environ&quot;</tt> array or a <small>CLI</small>
+symbol table is consulted. However, the name is looked up in
+a logical name table, the suffix after the semi-colon is
+treated as the translation index to be used for the lookup.
+This lets you look up successive values for search list
+logical names. For instance, if you say</p>
+
+<pre style="margin-left:17%; margin-top: 1em">   $  Define STORY  once,upon,a,time,there,was
+   $  perl &minus;e &quot;for ($i = 0; $i &lt;= 6; $i++) &quot; &minus;
+   _$ &minus;e &quot;{ print $ENV{'story;'.$i},' '}&quot;</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">Perl will print
+<tt>&quot;ONCE UPON A TIME THERE WAS&quot;</tt>, assuming,
+of course, that <i><small>PERL_ENV_TABLES</small></i> is set
+up so that the logical name <tt>&quot;story&quot;</tt> is
+found, rather than a <small>CLI</small> symbol or
+<small>CRTL</small> <tt>&quot;environ&quot;</tt> element
+with the same name.</p>
+
+<p style="margin-left:17%; margin-top: 1em">When an element
+of <tt>%ENV</tt> is set to a defined string, the
+corresponding definition is made in the location to which
+the first translation of
+<i><small>PERL_ENV_TABLES</small></i> points. If this causes
+a logical name to be created, it is defined in supervisor
+mode. (The same is done if an existing logical name was
+defined in executive or kernel mode; an existing user or
+supervisor mode logical name is reset to the new value.) If
+the value is an empty string, the logical name&rsquo;s
+translation is defined as a single <small>NUL</small> (
+<small>ASCII</small> 00) character, since a logical name
+cannot translate to a zero-length string. (This restriction
+does not apply to <small>CLI</small> symbols or
+<small>CRTL</small> <tt>&quot;environ&quot;</tt> values;
+they are set to the empty string.) An element of the
+<small>CRTL</small> <tt>&quot;environ&quot;</tt> array can
+be set only if your copy of Perl knows about the
+<small>CRTL</small> &rsquo;s <tt>&quot;setenv()&quot;</tt>
+function. (This is present only in some versions of the
+<small>DECCRTL</small> ; check <tt>$Config{d_setenv}</tt> to
+see whether your copy of Perl was built with a
+<small>CRTL</small> that has this function.)</p>
+
+<p style="margin-left:17%; margin-top: 1em">When an element
+of <tt>%ENV</tt> is set to <tt>&quot;undef&quot;</tt>, the
+element is looked up as if it were being read, and if it is
+found, it is deleted. (An item &quot;deleted&quot; from the
+<small>CRTL</small> <tt>&quot;environ&quot;</tt> array is
+set to the empty string; this can only be done if your copy
+of Perl knows about the <small>CRTL</small>
+<tt>&quot;setenv()&quot;</tt> function.) Using
+<tt>&quot;delete&quot;</tt> to remove an element from
+<tt>%ENV</tt> has a similar effect, but after the element is
+deleted, another attempt is made to look up the element, so
+an inner-mode logical name or a name in another location
+will replace the logical name just deleted. In either case,
+only the first value found searching
+<small>PERL_ENV_TABLES</small> is altered. It is not
+possible at present to define a search list logical name via
+<tt>%ENV</tt>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The element
+<tt>$ENV{DEFAULT}</tt> is special: when read, it returns
+Perl&rsquo;s current default device and directory, and when
+set, it resets them, regardless of the definition of
+<i><small>PERL_ENV_TABLES</small></i> . It cannot be cleared
+or deleted; attempts to do so are silently ignored.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Note that if
+you want to pass on any elements of the C&minus;local
+environ array to a subprocess which isn&rsquo;t started by
+fork/exec, or isn&rsquo;t running a C program, you can
+&quot;promote&quot; them to logical names in the current
+process, which will then be inherited by all subprocesses,
+by saying</p>
+
+<pre style="margin-left:17%; margin-top: 1em">    foreach my $key (qw[C&minus;local keys you want promoted]) {
+        my $temp = $ENV{$key}; # read from C&minus;local array
+        $ENV{$key} = $temp;    # and define as logical name
+    }</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">(You
+can&rsquo;t just say <tt>$ENV{$key} = $ENV{$key}</tt>, since
+the Perl optimizer is smart enough to elide the
+expression.)</p>
+
+<p style="margin-left:17%; margin-top: 1em">Don&rsquo;t try
+to clear <tt>%ENV</tt> by saying <tt>&quot;%ENV =
+();&quot;</tt>, it will throw a fatal error. This is
+equivalent to doing the following from
+<small>DCL:</small></p>
+
+<pre style="margin-left:17%; margin-top: 1em">    DELETE/LOGICAL *</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">You can imagine
+how bad things would be if, for example, the
+<small>SYS$MANAGER</small> or <small>SYS$SYSTEM</small>
+logical names were deleted.</p>
+
+<p style="margin-left:17%; margin-top: 1em">At present, the
+first time you iterate over <tt>%ENV</tt> using
+<tt>&quot;keys&quot;</tt>, or <tt>&quot;values&quot;</tt>,
+you will incur a time penalty as all logical names are read,
+in order to fully populate <tt>%ENV</tt>. Subsequent
+iterations will not reread logical names, so they
+won&rsquo;t be as slow, but they also won&rsquo;t reflect
+any changes to logical name tables caused by other
+programs.</p>
+
+<p style="margin-left:17%; margin-top: 1em">You do need to
+be careful with the logical names representing
+process-permanent files, such as
+<tt>&quot;SYS$INPUT&quot;</tt> and
+<tt>&quot;SYS$OUTPUT&quot;</tt>. The translations for these
+logical names are prepended with a two-byte binary value
+(0x1B 0x00) that needs to be stripped off if you wantto use
+it. (In previous versions of Perl it wasn&rsquo;t possible
+to get the values of these logical names, as the null byte
+acted as an end-of-string marker)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p>$!</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p>The string value of <tt>$!</tt> is that returned by the
+<small>CRTL</small> &rsquo;s <i>strerror()</i> function, so
+it will include the <small>VMS</small> message for
+VMS-specific errors. The numeric value of <tt>$!</tt> is the
+value of <tt>&quot;errno&quot;</tt>, except if errno is
+<small>EVMSERR</small> , in which case <tt>$!</tt> contains
+the value of vaxc$errno. Setting <tt>$!</tt> always sets
+errno to the value specified. If this value is
+<small>EVMSERR</small> , it also sets vaxc$errno to 4
+(NONAME-F-NOMSG), so that the string value of <tt>$!</tt>
+won&rsquo;t reflect the <small>VMS</small> error message
+from before <tt>$!</tt> was set.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p>$^E</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p>This variable provides direct access to
+<small>VMS</small> status values in vaxc$errno, which are
+often more specific than the generic Unix-style error
+messages in <tt>$!</tt>. Its numeric value is the value of
+vaxc$errno, and its string value is the corresponding
+<small>VMS</small> message string, as retrieved by
+sys$<i>getmsg()</i>. Setting <tt>$^E</tt> sets vaxc$errno to
+the value specified.</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">While Perl
+attempts to keep the vaxc$errno value to be current, if
+errno is not <small>EVMSERR</small> , it may not be from the
+current operation.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">$?</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">The &quot;status value&quot;
+returned in <tt>$?</tt> is synthesized from the actual exit
+status of the subprocess in a way that approximates
+<small>POSIX</small> <i>wait</i>(5) semantics, in order to
+allow Perl programs to portably test for successful
+completion of subprocesses. The low order 8 bits of
+<tt>$?</tt> are always 0 under <small>VMS</small> , since
+the termination status of a process may or may not have been
+generated by an exception.</p></td></tr>
+</table>
+
+<p style="margin-left:17%; margin-top: 1em">The next 8 bits
+contain the termination status of the program.</p>
+
+<p style="margin-left:17%; margin-top: 1em">If the child
+process follows the convention of C programs compiled with
+the _POSIX_EXIT macro set, the status value will contain the
+actual value of 0 to 255 returned by that program on a
+normal exit.</p>
+
+<p style="margin-left:17%; margin-top: 1em">With the
+_POSIX_EXIT macro set, the Unix exit value of zero is
+represented as a <small>VMS</small> native status of 1, and
+the Unix values from 2 to 255 are encoded by the
+equation:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">   VMS_status = 0x35a000 + (unix_value * 8) + 1.</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">And in the
+special case of Unix value 1 the encoding is:</p>
+
+<pre style="margin-left:17%; margin-top: 1em">   VMS_status = 0x35a000 + 8 + 2 + 0x10000000.</pre>
+
+
+<p style="margin-left:17%; margin-top: 1em">For other
+termination statuses, the severity portion of the
+subprocess&rsquo;s exit status is used: if the severity was
+success or informational, these bits are all 0; if the
+severity was warning, they contain a value of 1; if the
+severity was error or fatal error, they contain the actual
+severity bits, which turns out to be a value of 2 for error
+and 4 for severe_error. Fatal is another term for the
+severe_error status.</p>
+
+<p style="margin-left:17%; margin-top: 1em">As a result,
+<tt>$?</tt> will always be zero if the subprocess&rsquo;s
+exit status indicated successful completion, and non-zero if
+a warning or error occurred or a program compliant with
+encoding _POSIX_EXIT values was run and set a status.</p>
+
+<p style="margin-left:17%; margin-top: 1em">How can you
+tell the difference between a non-zero status that is the
+result of a <small>VMS</small> native error status or an
+encoded Unix status? You can not unless you look at the
+${^CHILD_ERROR_NATIVE} value. The ${^CHILD_ERROR_NATIVE}
+value returns the actual <small>VMS</small> status value and
+check the severity bits. If the severity bits are equal to
+1, then if the numeric value for <tt>$?</tt> is between 2
+and 255 or 0, then <tt>$?</tt> accurately reflects a value
+passed back from a Unix application. If <tt>$?</tt> is 1,
+and the severity bits indicate a <small>VMS</small> error
+(2), then <tt>$?</tt> is from a Unix application exit
+value.</p>
+
+<p style="margin-left:17%; margin-top: 1em">In practice,
+Perl scripts that call programs that return _POSIX_EXIT type
+status values will be expecting those values, and programs
+that call traditional <small>VMS</small> programs will
+either be expecting the previous behavior or just checking
+for a non-zero status.</p>
+
+<p style="margin-left:17%; margin-top: 1em">And success is
+always the value 0 in all behaviors.</p>
+
+<p style="margin-left:17%; margin-top: 1em">When the actual
+<small>VMS</small> termination status of the child is an
+error, internally the <tt>$!</tt> value will be set to the
+closest Unix errno value to that error so that Perl scripts
+that test for error messages will see the expected Unix
+style error message instead of a <small>VMS</small>
+message.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Conversely,
+when setting <tt>$?</tt> in an <small>END</small> block, an
+attempt is made to convert the <small>POSIX</small> value
+into a native status intelligible to the operating system
+upon exiting Perl. What this boils down to is that setting
+<tt>$?</tt> to zero results in the generic success value
+<small>SS$_NORMAL</small> , and setting <tt>$?</tt> to a
+non-zero value results in the generic failure status
+<small>SS$_ABORT</small> . See also &quot;exit&quot; in
+perlport.</p>
+
+<p style="margin-left:17%; margin-top: 1em">With the
+<tt>&quot;PERL_VMS_POSIX_EXIT&quot;</tt> logical name
+defined as &quot; <small>ENABLE</small> &quot;, setting
+<tt>$?</tt> will cause the new value to be encoded into
+<tt>$^E</tt> so that either the original parent or child
+exit status values <br>
+0 to 255 can be automatically recovered by C programs
+expecting _POSIX_EXIT behavior. If both a parent and a child
+exit value are non-zero, then it will be assumed that this
+is actually a <small>VMS</small> native status value to be
+passed through. The special value of 0xFFFF is almost a
+<small>NOOP</small> as it will cause the current native
+<small>VMS</small> status in the C library to become the
+current native Perl <small>VMS</small> status, and is
+handled this way as it is known to not be a valid native
+<small>VMS</small> status value. It is recommend that only
+values in the range of normal Unix parent or child status
+numbers, 0 to 255 are used.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The pragma
+<tt>&quot;use vmsish 'status'&quot;</tt> makes <tt>$?</tt>
+reflect the actual <small>VMS</small> exit status instead of
+the default emulation of <small>POSIX</small> status
+described above. This pragma also disables the conversion of
+non-zero values to <small>SS$_ABORT</small> when setting
+<tt>$?</tt> in an <small>END</small> block (but zero will
+still be converted to <small>SS$_NORMAL</small> ).</p>
+
+<p style="margin-left:17%; margin-top: 1em">Do not use the
+pragma <tt>&quot;use vmsish 'status'&quot;</tt> with
+<tt>&quot;PERL_VMS_POSIX_EXIT&quot;</tt> enabled, as they
+are at times requesting conflicting actions and the
+consequence of ignoring this advice will be undefined to
+allow future improvements in the <small>POSIX</small> exit
+handling.</p>
+
+<p style="margin-left:17%; margin-top: 1em">In general,
+with <tt>&quot;PERL_VMS_POSIX_EXIT&quot;</tt> enabled, more
+detailed information will be available in the exit status
+for <small>DCL</small> scripts or other native
+<small>VMS</small> tools, and will give the expected
+information for Posix programs. It has not been made the
+default in order to preserve backward compatibility.</p>
+
+<p style="margin-left:17%; margin-top: 1em">N.B. Setting
+<tt>&quot;DECC$FILENAME_UNIX_REPORT&quot;</tt> implicitly
+enables <tt>&quot;PERL_VMS_POSIX_EXIT&quot;</tt>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">$|</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Setting <tt>$|</tt> for an I/O
+stream causes data to be flushed all the way to disk on each
+write (<i>i.e.</i> not just to the underlying
+<small>RMS</small> buffers for a file). In other words,
+it&rsquo;s equivalent to calling <i>fflush()</i> and
+<i>fsync()</i> from C.</p></td></tr>
+</table>
+
+<h2>Standard modules with VMS-specific differences
+<a name="Standard modules with VMS-specific differences"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>SDBM_File</b>
+<br>
+SDBM_File works properly on <small>VMS</small> . It has,
+however, one minor difference. The database directory file
+created has a <i>.sdbm_dir</i> extension rather than a
+<i>.dir</i> extension. <i>.dir</i> files are
+<small>VMS</small> filesystem directory files, and using
+them for other purposes could cause unacceptable
+problems.</p>
+
+<h2>Revision date
+<a name="Revision date"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Please see the
+git repository for revision history.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Charles Bailey
+bailey@cor.newman.upenn.edu Craig Berry craigberry@mac.com
+Dan Sugalski dan@sidhe.org John Malmberg wb8tyw@qsl.net</p>
+<hr>
+</body>
+</html>

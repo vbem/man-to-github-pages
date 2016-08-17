@@ -1,0 +1,3430 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:38:27 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>ELF</title>
+
+</head>
+<body>
+
+<h1 align="center">ELF</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">elf &minus;
+format of Executable and Linking Format (ELF) files</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;elf.h&gt;</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The header file
+<i>&lt;elf.h&gt;</i> defines the format of ELF executable
+binary files. Amongst these files are normal executable
+files, relocatable object files, core files and shared
+libraries.</p>
+
+<p style="margin-left:11%; margin-top: 1em">An executable
+file using the ELF file format consists of an ELF header,
+followed by a program header table or a section header
+table, or both. The ELF header is always at offset zero of
+the file. The program header table and the section header
+table&rsquo;s offset in the file are defined in the ELF
+header. The two tables describe the rest of the
+particularities of the file.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This header
+file describes the above mentioned headers as C structures
+and also includes structures for dynamic sections,
+relocation sections and symbol tables.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+types are used for N-bit architectures (N=32,64, <i>ElfN</i>
+stands for <i>Elf32</i> or <i>Elf64</i>, <i>uintN_t</i>
+stands for <i>uint32_t</i> or <i>uint64_t</i>):</p>
+
+<p style="margin-left:17%; margin-top: 1em">ElfN_Addr
+Unsigned program address, uintN_t <br>
+ElfN_Off Unsigned file offset, uintN_t <br>
+ElfN_Section Unsigned section index, uint16_t <br>
+ElfN_Versym Unsigned version symbol information, uint16_t
+<br>
+Elf_Byte unsigned char <br>
+ElfN_Half uint16_t <br>
+ElfN_Sword int32_t <br>
+ElfN_Word uint32_t <br>
+ElfN_Sxword int64_t <br>
+ElfN_Xword uint64_t</p>
+
+<p style="margin-left:11%; margin-top: 1em">(Note: The *BSD
+terminology is a bit different. There <i>Elf64_Half</i> is
+twice as large as <i>Elf32_Half</i>, and <i>Elf64Quarter</i>
+is used for <i>uint16_t</i>. In order to avoid confusion
+these types are replaced by explicit ones in the below.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">All data
+structures that the file format defines follow the
+&quot;natural&quot; size and alignment guidelines for the
+relevant class. If necessary, data structures contain
+explicit padding to ensure 4-byte alignment for 4-byte
+objects, to force structure sizes to a multiple of 4,
+etc.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The ELF header
+is described by the type <i>Elf32_Ehdr</i> or
+<i>Elf64_Ehdr</i>:</p>
+
+<p style="margin-left:17%; margin-top: 1em">#define
+EI_NIDENT 16</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef struct
+{ <br>
+unsigned char e_ident[EI_NIDENT]; <br>
+uint16_t e_type; <br>
+uint16_t e_machine; <br>
+uint32_t e_version; <br>
+ElfN_Addr e_entry; <br>
+ElfN_Off e_phoff; <br>
+ElfN_Off e_shoff; <br>
+uint32_t e_flags; <br>
+uint16_t e_ehsize; <br>
+uint16_t e_phentsize; <br>
+uint16_t e_phnum; <br>
+uint16_t e_shentsize; <br>
+uint16_t e_shnum; <br>
+uint16_t e_shstrndx; <br>
+} ElfN_Ehdr;</p>
+
+<p style="margin-left:11%; margin-top: 1em">The fields have
+the following meanings:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p><i>e_ident</i></p></td>
+<td width="7%"></td>
+<td width="71%">
+
+
+<p>This array of bytes specifies to interpret the file,
+independent of the processor or the file&rsquo;s remaining
+contents. Within this array everything is named by macros,
+which start with the prefix <b>EI_</b> and may contain
+values which start with the prefix <b>ELF</b>. The following
+macros are defined:</p></td></tr>
+</table>
+
+<p style="margin-left:29%;"><b>EI_MAG0</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="13%"></td>
+<td width="6%"></td>
+<td width="52%">
+
+
+<p style="margin-top: 1em">The first byte of the magic
+number. It must be filled with <b>ELFMAG0</b>. (0: 0x7f)</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="13%">
+
+
+<p><b>EI_MAG1</b></p></td>
+<td width="6%"></td>
+<td width="52%">
+
+
+<p>The second byte of the magic number. It must be filled
+with <b>ELFMAG1</b>. (1: 'E')</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="13%">
+
+
+<p><b>EI_MAG2</b></p></td>
+<td width="6%"></td>
+<td width="52%">
+
+
+<p>The third byte of the magic number. It must be filled
+with <b>ELFMAG2</b>. (2: 'L')</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="13%">
+
+
+<p><b>EI_MAG3</b></p></td>
+<td width="6%"></td>
+<td width="52%">
+
+
+<p>The fourth byte of the magic number. It must be filled
+with <b>ELFMAG3</b>. (3: 'F')</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="13%">
+
+
+<p><b>EI_CLASS</b></p></td>
+<td width="6%"></td>
+<td width="52%">
+
+
+<p>The fifth byte identifies the architecture for this
+binary:</p> </td></tr>
+</table>
+
+<p style="margin-left:48%;"><b>ELFCLASSNONE</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="34%"></td>
+<td width="6%"></td>
+<td width="31%">
+
+
+<p style="margin-top: 1em">This class is invalid.</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="34%">
+
+
+<p><b>ELFCLASS32</b></p></td>
+<td width="6%"></td>
+<td width="31%">
+
+
+<p>This defines the 32-bit architecture. It supports
+machines with files and virtual address spaces up to 4
+Gigabytes.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="34%">
+
+
+<p><b>ELFCLASS64</b></p></td>
+<td width="6%"></td>
+<td width="31%">
+
+
+<p>This defines the 64-bit architecture.</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="34%">
+
+
+<p><b>EI_DATA</b></p></td>
+<td width="6%"></td>
+<td width="31%">
+</td></tr>
+</table>
+
+<p style="margin-left:48%; margin-top: 1em">The sixth byte
+specifies the data encoding of the processor-specific data
+in the file. Currently these encodings are supported:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="36%">
+
+
+<p style="margin-top: 1em"><b>ELFDATANONE</b></p></td>
+<td width="4%"></td>
+<td width="31%">
+
+
+<p style="margin-top: 1em">Unknown data format.</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="36%">
+
+
+<p><b>ELFDATA2LSB</b></p></td>
+<td width="4%"></td>
+<td width="31%">
+
+
+<p>Two&rsquo;s complement, little-endian.</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="36%">
+
+
+<p><b>ELFDATA2MSB</b></p></td>
+<td width="4%"></td>
+<td width="31%">
+
+
+<p>Two&rsquo;s complement, big-endian.</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="36%">
+
+
+<p><b>EI_VERSION</b></p></td>
+<td width="4%"></td>
+<td width="31%">
+</td></tr>
+</table>
+
+<p style="margin-left:48%; margin-top: 1em">The seventh
+byte is the version number of the ELF specification:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="34%">
+
+
+<p style="margin-top: 1em"><b>EV_NONE</b></p></td>
+<td width="6%"></td>
+<td width="25%">
+
+
+<p style="margin-top: 1em">Invalid version.</p></td>
+<td width="6%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="34%">
+
+
+<p><b>EV_CURRENT</b></p></td>
+<td width="6%"></td>
+<td width="25%">
+
+
+<p>Current version.</p></td>
+<td width="6%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="34%">
+
+
+<p><b>EI_OSABI</b></p></td>
+<td width="6%"></td>
+<td width="25%"></td>
+<td width="6%">
+</td></tr>
+</table>
+
+<p style="margin-left:48%; margin-top: 1em">The eighth byte
+identifies the operating system and ABI to which the object
+is targeted. Some fields in other ELF structures have flags
+and values that have platform-specific meanings; the
+interpretation of those fields is determined by the value of
+this byte. E.g.:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="48%"></td>
+<td width="29%">
+
+
+<p style="margin-top: 1em"><b>ELFOSABI_NONE</b></p></td>
+<td width="1%"></td>
+<td width="22%">
+
+
+<p style="margin-top: 1em">Same as ELFOSABI_SYSV</p></td></tr>
+<tr valign="top" align="left">
+<td width="48%"></td>
+<td width="29%">
+
+
+<p><b>ELFOSABI_SYSV</b></p></td>
+<td width="1%"></td>
+<td width="22%">
+
+
+<p>UNIX System V ABI.</p></td></tr>
+<tr valign="top" align="left">
+<td width="48%"></td>
+<td width="29%">
+
+
+<p><b>ELFOSABI_HPUX</b></p></td>
+<td width="1%"></td>
+<td width="22%">
+
+
+<p>HP-UX ABI.</p></td></tr>
+<tr valign="top" align="left">
+<td width="48%"></td>
+<td width="29%">
+
+
+<p><b>ELFOSABI_NETBSD</b></p></td>
+<td width="1%"></td>
+<td width="22%">
+
+
+<p>NetBSD ABI.</p></td></tr>
+<tr valign="top" align="left">
+<td width="48%"></td>
+<td width="29%">
+
+
+<p><b>ELFOSABI_LINUX</b></p></td>
+<td width="1%"></td>
+<td width="22%">
+
+
+<p>Linux ABI.</p></td></tr>
+<tr valign="top" align="left">
+<td width="48%"></td>
+<td width="29%">
+
+
+<p><b>ELFOSABI_SOLARIS</b></p></td>
+<td width="1%"></td>
+<td width="22%">
+
+
+<p>Solaris ABI.</p></td></tr>
+<tr valign="top" align="left">
+<td width="48%"></td>
+<td width="29%">
+
+
+<p><b>ELFOSABI_IRIX</b></p></td>
+<td width="1%"></td>
+<td width="22%">
+
+
+<p>IRIX ABI.</p></td></tr>
+<tr valign="top" align="left">
+<td width="48%"></td>
+<td width="29%">
+
+
+<p><b>ELFOSABI_FREEBSD</b></p></td>
+<td width="1%"></td>
+<td width="22%">
+
+
+<p>FreeBSD ABI.</p></td></tr>
+<tr valign="top" align="left">
+<td width="48%"></td>
+<td width="29%">
+
+
+<p><b>ELFOSABI_TRU64</b></p></td>
+<td width="1%"></td>
+<td width="22%">
+
+
+<p>TRU64 UNIX ABI.</p></td></tr>
+<tr valign="top" align="left">
+<td width="48%"></td>
+<td width="29%">
+
+
+<p><b>ELFOSABI_ARM</b></p></td>
+<td width="1%"></td>
+<td width="22%">
+
+
+<p>ARM architecture ABI.</p></td></tr>
+<tr valign="top" align="left">
+<td width="48%"></td>
+<td width="29%">
+
+
+<p><b>ELFOSABI_STANDALONE</b></p></td>
+<td width="1%"></td>
+<td width="22%">
+
+
+<p>Stand-alone (embedded) ABI.</p></td></tr>
+</table>
+
+<p style="margin-left:29%;"><b>EI_ABIVERSION</b></p>
+
+<p style="margin-left:48%;">The ninth byte identifies the
+version of the ABI to which the object is targeted. This
+field is used to distinguish among incompatible versions of
+an ABI. The interpretation of this version number is
+dependent on the ABI identified by the <b>EI_OSABI</b>
+field. Applications conforming to this specification use the
+value 0.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>EI_PAD</b></p></td>
+<td width="5%"></td>
+<td width="52%">
+
+
+<p>Start of padding. These bytes are reserved and set to
+zero. Programs which read them should ignore them. The value
+for <b>EI_PAD</b> will change in the future if currently
+unused bytes are given meanings.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>EI_NIDENT</b></p></td>
+<td width="5%"></td>
+<td width="52%">
+
+
+<p>The size of the <i>e_ident</i> array.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><i>e_type</i></p></td>
+<td width="5%"></td>
+<td width="52%">
+</td></tr>
+</table>
+
+<p style="margin-left:29%; margin-top: 1em">This member of
+the structure identifies the object file type:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="29%">
+
+
+<p style="margin-top: 1em"><b>ET_NONE</b></p></td>
+<td width="8%"></td>
+<td width="29%">
+
+
+<p style="margin-top: 1em">An unknown type.</p></td>
+<td width="23%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="29%">
+
+
+<p><b>ET_REL</b></p></td>
+<td width="8%"></td>
+<td width="29%">
+
+
+<p>A relocatable file.</p></td>
+<td width="23%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="29%">
+
+
+<p><b>ET_EXEC</b></p></td>
+<td width="8%"></td>
+<td width="29%">
+
+
+<p>An executable file.</p></td>
+<td width="23%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="29%">
+
+
+<p><b>ET_DYN</b></p></td>
+<td width="8%"></td>
+<td width="29%">
+
+
+<p>A shared object.</p></td>
+<td width="23%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="29%">
+
+
+<p><b>ET_CORE</b></p></td>
+<td width="8%"></td>
+<td width="29%">
+
+
+<p>A core file.</p></td>
+<td width="23%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="29%">
+
+
+<p><i>e_machine</i></p></td>
+<td width="8%"></td>
+<td width="29%"></td>
+<td width="23%">
+</td></tr>
+</table>
+
+<p style="margin-left:29%; margin-top: 1em">This member
+specifies the required architecture for an individual file.
+E.g.:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="14%">
+
+
+<p style="margin-top: 1em"><b>EM_NONE</b></p></td>
+<td width="5%"></td>
+<td width="46%">
+
+
+<p style="margin-top: 1em">An unknown machine.</p></td>
+<td width="6%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="14%">
+
+
+<p><b>EM_M32</b></p></td>
+<td width="5%"></td>
+<td width="46%">
+
+
+<p>AT&amp;T WE 32100.</p></td>
+<td width="6%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="14%">
+
+
+<p><b>EM_SPARC</b></p></td>
+<td width="5%"></td>
+<td width="46%">
+
+
+<p>Sun Microsystems SPARC.</p></td>
+<td width="6%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="14%">
+
+
+<p><b>EM_386</b></p></td>
+<td width="5%"></td>
+<td width="46%">
+
+
+<p>Intel 80386.</p></td>
+<td width="6%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="14%">
+
+
+<p><b>EM_68K</b></p></td>
+<td width="5%"></td>
+<td width="46%">
+
+
+<p>Motorola 68000.</p></td>
+<td width="6%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="14%">
+
+
+<p><b>EM_88K</b></p></td>
+<td width="5%"></td>
+<td width="46%">
+
+
+<p>Motorola 88000.</p></td>
+<td width="6%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="14%">
+
+
+<p><b>EM_860</b></p></td>
+<td width="5%"></td>
+<td width="46%">
+
+
+<p>Intel 80860.</p></td>
+<td width="6%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="14%">
+
+
+<p><b>EM_MIPS</b></p></td>
+<td width="5%"></td>
+<td width="46%">
+
+
+<p>MIPS RS3000 (big-endian only).</p></td>
+<td width="6%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="14%">
+
+
+<p><b>EM_PARISC</b></p></td>
+<td width="5%"></td>
+<td width="46%">
+
+
+<p>HP/PA.</p></td>
+<td width="6%">
+</td></tr>
+</table>
+
+<p style="margin-left:29%;"><b>EM_SPARC32PLUS</b></p>
+
+<p style="margin-left:48%;">SPARC with enhanced instruction
+set.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>EM_PPC</b></p></td>
+<td width="3%"></td>
+<td width="34%">
+
+
+<p>PowerPC.</p></td>
+<td width="18%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>EM_PPC64</b></p></td>
+<td width="3%"></td>
+<td width="34%">
+
+
+<p>PowerPC 64-bit.</p></td>
+<td width="18%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>EM_S390</b></p></td>
+<td width="3%"></td>
+<td width="34%">
+
+
+<p>IBM S/390</p></td>
+<td width="18%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>EM_ARM</b></p></td>
+<td width="3%"></td>
+<td width="34%">
+
+
+<p>Advanced RISC Machines</p></td>
+<td width="18%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>EM_SH</b></p></td>
+<td width="3%"></td>
+<td width="34%">
+
+
+<p>Renesas SuperH</p></td>
+<td width="18%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>EM_SPARCV9</b></p></td>
+<td width="3%"></td>
+<td width="34%">
+
+
+<p>SPARC v9 64-bit.</p></td>
+<td width="18%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>EM_IA_64</b></p></td>
+<td width="3%"></td>
+<td width="34%">
+
+
+<p>Intel Itanium</p></td>
+<td width="18%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>EM_X86_64</b></p></td>
+<td width="3%"></td>
+<td width="34%">
+
+
+<p>AMD x86-64</p></td>
+<td width="18%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>EM_VAX</b></p></td>
+<td width="3%"></td>
+<td width="34%">
+
+
+<p>DEC Vax.</p></td>
+<td width="18%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><i>e_version</i></p></td>
+<td width="3%"></td>
+<td width="34%"></td>
+<td width="18%">
+</td></tr>
+</table>
+
+<p style="margin-left:29%; margin-top: 1em">This member
+identifies the file version:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p style="margin-top: 1em"><b>EV_NONE</b></p></td>
+<td width="3%"></td>
+<td width="24%">
+
+
+<p style="margin-top: 1em">Invalid version.</p></td>
+<td width="28%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>EV_CURRENT</b></p></td>
+<td width="3%"></td>
+<td width="24%">
+
+
+<p>Current version.</p></td>
+<td width="28%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><i>e_entry</i></p></td>
+<td width="3%"></td>
+<td width="24%"></td>
+<td width="28%">
+</td></tr>
+</table>
+
+<p style="margin-left:29%; margin-top: 1em">This member
+gives the virtual address to which the system first
+transfers control, thus starting the process. If the file
+has no associated entry point, this member holds zero.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p style="margin-top: 1em"><i>e_phoff</i></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p style="margin-top: 1em">This member holds the program
+header table&rsquo;s file offset in bytes. If the file has
+no program header table, this member holds zero.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p><i>e_shoff</i></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>This member holds the section header table&rsquo;s file
+offset in bytes. If the file has no section header table
+this member holds zero.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p><i>e_flags</i></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>This member holds processor-specific flags associated
+with the file. Flag names take the form
+EF_&lsquo;machine_flag&rsquo;. Currently no flags have been
+defined.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p><i>e_ehsize</i></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>This member holds the ELF header&rsquo;s size in
+bytes.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p><i>e_phentsize</i></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>This member holds the size in bytes of one entry in the
+file&rsquo;s program header table; all entries are the same
+size.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p><i>e_phnum</i></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>This member holds the number of entries in the program
+header table. Thus the product of <i>e_phentsize</i> and
+<i>e_phnum</i> gives the table&rsquo;s size in bytes. If a
+file has no program header, <i>e_phnum</i> holds the value
+zero.</p> </td></tr>
+</table>
+
+<p style="margin-left:29%; margin-top: 1em">If the number
+of entries in the program header table is larger than or
+equal to <b>PN_XNUM</b> (0xffff), this member holds
+<b>PN_XNUM</b> (0xffff) and the real number of entries in
+the program header table is held in the <i>sh_info</i>
+member of the initial entry in section header table.
+Otherwise, the <i>sh_info</i> member of the initial entry
+contains the value zero.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="29%">
+
+
+<p style="margin-top: 1em"><b>PN_XNUM</b></p></td>
+<td width="3%"></td>
+<td width="57%">
+
+
+<p style="margin-top: 1em">This is defined as 0xffff, the
+largest number <i>e_phnum</i> can have, specifying where the
+actual number of program headers is assigned.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="29%">
+
+
+<p><i>e_shentsize</i></p></td>
+<td width="3%"></td>
+<td width="57%">
+</td></tr>
+</table>
+
+<p style="margin-left:29%; margin-top: 1em">This member
+holds a sections header&rsquo;s size in bytes. A section
+header is one entry in the section header table; all entries
+are the same size.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p style="margin-top: 1em"><i>e_shnum</i></p></td>
+<td width="7%"></td>
+<td width="71%">
+
+
+<p style="margin-top: 1em">This member holds the number of
+entries in the section header table. Thus the product of
+<i>e_shentsize</i> and <i>e_shnum</i> gives the section
+header table&rsquo;s size in bytes. If a file has no section
+header table, <i>e_shnum</i> holds the value of zero.</p></td></tr>
+</table>
+
+<p style="margin-left:29%; margin-top: 1em">If the number
+of entries in the section header table is larger than or
+equal to <b>SHN_LORESERVE</b> (0xff00), <i>e_shnum</i> holds
+the value zero and the real number of entries in the section
+header table is held in the <i>sh_size</i> member of the
+initial entry in section header table. Otherwise, the
+<i>sh_size</i> member of the initial entry in the section
+header table holds the value zero.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="15%">
+
+
+<p style="margin-top: 1em"><i>e_shstrndx</i></p></td>
+<td width="3%"></td>
+<td width="71%">
+
+
+<p style="margin-top: 1em">This member holds the section
+header table index of the entry associated with the section
+name string table. If the file has no section name string
+table, this member holds the value <b>SHN_UNDEF</b>.</p></td></tr>
+</table>
+
+<p style="margin-left:29%; margin-top: 1em">If the index of
+section name string table section is larger than or equal to
+<b>SHN_LORESERVE</b> (0xff00), this member holds
+<b>SHN_XINDEX</b> (0xffff) and the real index of the section
+name string table section is held in the <i>sh_link</i>
+member of the initial entry in section header table.
+Otherwise, the <i>sh_link</i> member of the initial entry in
+section header table contains the value zero.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="20%">
+
+
+<p style="margin-top: 1em"><b>SHN_UNDEF</b></p></td>
+<td width="2%"></td>
+<td width="49%">
+
+
+<p style="margin-top: 1em">This value marks an undefined,
+missing, irrelevant, or otherwise meaningless section
+reference. For example, a symbol &quot;defined&quot;
+relative to section number <b>SHN_UNDEF</b> is an undefined
+symbol.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="20%">
+
+
+<p><b>SHN_LORESERVE</b></p></td>
+<td width="2%"></td>
+<td width="49%">
+
+
+<p>This value specifies the lower bound of the range of
+reserved indices.</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="20%">
+
+
+<p><b>SHN_LOPROC</b></p></td>
+<td width="2%"></td>
+<td width="49%">
+
+
+<p>Values greater than or equal to <b>SHN_HIPROC</b> are
+reserved for processor-specific semantics.</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="20%">
+
+
+<p><b>SHN_HIPROC</b></p></td>
+<td width="2%"></td>
+<td width="49%">
+
+
+<p>Values less than or equal to <b>SHN_LOPROC</b> are
+reserved for processor-specific semantics.</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="20%">
+
+
+<p><b>SHN_ABS</b></p></td>
+<td width="2%"></td>
+<td width="49%">
+
+
+<p>This value specifies absolute values for the
+corresponding reference. For example, symbols defined
+relative to section number <b>SHN_ABS</b> have absolute
+values and are not affected by relocation.</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="20%">
+
+
+<p><b>SHN_COMMON</b></p></td>
+<td width="2%"></td>
+<td width="49%">
+
+
+<p>Symbols defined relative to this section are common
+symbols, such as Fortran COMMON or unallocated C external
+variables.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="20%">
+
+
+<p><b>SHN_HIRESERVE</b></p></td>
+<td width="2%"></td>
+<td width="49%">
+
+
+<p>This value specifies the upper bound of the range of
+reserved indices between <b>SHN_LORESERVE</b> and
+<b>SHN_HIRESERVE</b>, inclusive; the values do not reference
+the section header table. That is, the section header table
+does <i>not</i> contain entries for the reserved
+indices.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">An executable
+or shared object file&rsquo;s program header table is an
+array of structures, each describing a segment or other
+information the system needs to prepare the program for
+execution. An object file <i>segment</i> contains one or
+more <i>sections</i>. Program headers are meaningful only
+for executable and shared object files. A file specifies its
+own program header size with the ELF header&rsquo;s
+<i>e_phentsize</i> and <i>e_phnum</i> members. The ELF
+program header is described by the type <i>Elf32_Phdr</i> or
+<i>Elf64_Phdr</i> depending on the architecture:</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef struct
+{ <br>
+uint32_t p_type; <br>
+Elf32_Off p_offset; <br>
+Elf32_Addr p_vaddr; <br>
+Elf32_Addr p_paddr; <br>
+uint32_t p_filesz; <br>
+uint32_t p_memsz; <br>
+uint32_t p_flags; <br>
+uint32_t p_align; <br>
+} Elf32_Phdr;</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef struct
+{ <br>
+uint32_t p_type; <br>
+uint32_t p_flags; <br>
+Elf64_Off p_offset; <br>
+Elf64_Addr p_vaddr; <br>
+Elf64_Addr p_paddr; <br>
+uint64_t p_filesz; <br>
+uint64_t p_memsz; <br>
+uint64_t p_align; <br>
+} Elf64_Phdr;</p>
+
+<p style="margin-left:11%; margin-top: 1em">The main
+difference between the 32-bit and the 64-bit program header
+lies in the location of the <i>p_flags</i> member in the
+total struct.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><i>p_type</i></p></td>
+<td width="9%"></td>
+<td width="71%">
+
+
+<p style="margin-top: 1em">This member of the Phdr struct
+tells what kind of segment this array element describes or
+how to interpret the array element&rsquo;s information.</p></td></tr>
+</table>
+
+<p style="margin-left:29%;"><b>PT_NULL</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="16%"></td>
+<td width="3%"></td>
+<td width="52%">
+
+
+<p style="margin-top: 1em">The array element is unused and
+the other members&rsquo; values are undefined. This lets the
+program header have ignored entries.</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="16%">
+
+
+<p><b>PT_LOAD</b></p></td>
+<td width="3%"></td>
+<td width="52%">
+
+
+<p>The array element specifies a loadable segment,
+described by <i>p_filesz</i> and <i>p_memsz</i>. The bytes
+from the file are mapped to the beginning of the memory
+segment. If the segment&rsquo;s memory size <i>p_memsz</i>
+is larger than the file size <i>p_filesz</i>, the
+&quot;extra&quot; bytes are defined to hold the value 0 and
+to follow the segment&rsquo;s initialized area. The file
+size may not be larger than the memory size. Loadable
+segment entries in the program header table appear in
+ascending order, sorted on the <i>p_vaddr</i> member.</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="16%">
+
+
+<p><b>PT_DYNAMIC</b></p></td>
+<td width="3%"></td>
+<td width="52%">
+
+
+<p>The array element specifies dynamic linking
+information.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="16%">
+
+
+<p><b>PT_INTERP</b></p></td>
+<td width="3%"></td>
+<td width="52%">
+
+
+<p>The array element specifies the location and size of a
+null-terminated pathname to invoke as an interpreter. This
+segment type is meaningful only for executable files (though
+it may occur for shared objects). However it may not occur
+more than once in a file. If it is present, it must precede
+any loadable segment entry.</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="16%">
+
+
+<p><b>PT_NOTE</b></p></td>
+<td width="3%"></td>
+<td width="52%">
+
+
+<p>The array element specifies the location and size for
+auxiliary information.</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="16%">
+
+
+<p><b>PT_SHLIB</b></p></td>
+<td width="3%"></td>
+<td width="52%">
+
+
+<p>This segment type is reserved but has unspecified
+semantics. Programs that contain an array element of this
+type do not conform to the ABI.</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="16%">
+
+
+<p><b>PT_PHDR</b></p></td>
+<td width="3%"></td>
+<td width="52%">
+
+
+<p>The array element, if present, specifies the location
+and size of the program header table itself, both in the
+file and in the memory image of the program. This segment
+type may not occur more than once in a file. Moreover, it
+may occur only if the program header table is part of the
+memory image of the program. If it is present, it must
+precede any loadable segment entry.</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="16%">
+
+
+<p><b>PT_LOPROC</b></p></td>
+<td width="3%"></td>
+<td width="52%">
+
+
+<p>Values greater than or equal to <b>PT_HIPROC</b> are
+reserved for processor-specific semantics.</p></td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="16%">
+
+
+<p><b>PT_HIPROC</b></p></td>
+<td width="3%"></td>
+<td width="52%">
+
+
+<p>Values less than or equal to <b>PT_LOPROC</b> are
+reserved for processor-specific semantics.</p></td></tr>
+</table>
+
+<p style="margin-left:29%;"><b>PT_GNU_STACK</b></p>
+
+<p style="margin-left:48%;">GNU extension which is used by
+the Linux kernel to control the state of the stack via the
+flags set in the <i>p_flags</i> member.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>p_offset</i></p></td>
+<td width="6%"></td>
+<td width="71%">
+
+
+<p>This member holds the offset from the beginning of the
+file at which the first byte of the segment resides.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>p_vaddr</i></p></td>
+<td width="6%"></td>
+<td width="71%">
+
+
+<p>This member holds the virtual address at which the first
+byte of the segment resides in memory.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>p_paddr</i></p></td>
+<td width="6%"></td>
+<td width="71%">
+
+
+<p>On systems for which physical addressing is relevant,
+this member is reserved for the segment&rsquo;s physical
+address. Under BSD this member is not used and must be
+zero.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>p_filesz</i></p></td>
+<td width="6%"></td>
+<td width="71%">
+
+
+<p>This member holds the number of bytes in the file image
+of the segment. It may be zero.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>p_memsz</i></p></td>
+<td width="6%"></td>
+<td width="71%">
+
+
+<p>This member holds the number of bytes in the memory
+image of the segment. It may be zero.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>p_flags</i></p></td>
+<td width="6%"></td>
+<td width="71%">
+
+
+<p>This member holds a bit mask of flags relevant to the
+segment:</p> </td></tr>
+</table>
+
+<p style="margin-left:29%;"><b>PF_X</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="6%"></td>
+<td width="5%"></td>
+<td width="34%">
+
+
+<p style="margin-top: 1em">An executable segment.</p></td>
+<td width="26%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="6%">
+
+
+<p><b>PF_W</b></p></td>
+<td width="5%"></td>
+<td width="34%">
+
+
+<p>A writable segment.</p></td>
+<td width="26%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="29%"></td>
+<td width="6%">
+
+
+<p><b>PF_R</b></p></td>
+<td width="5%"></td>
+<td width="34%">
+
+
+<p>A readable segment.</p></td>
+<td width="26%">
+</td></tr>
+</table>
+
+<p style="margin-left:29%; margin-top: 1em">A text segment
+commonly has the flags <b>PF_X</b> and <b>PF_R</b>. A data
+segment commonly has <b>PF_X</b>, <b>PF_W</b> and
+<b>PF_R</b>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p style="margin-top: 1em"><i>p_align</i></p></td>
+<td width="7%"></td>
+<td width="71%">
+
+
+<p style="margin-top: 1em">This member holds the value to
+which the segments are aligned in memory and in the file.
+Loadable process segments must have congruent values for
+<i>p_vaddr</i> and <i>p_offset</i>, modulo the page size.
+Values of zero and one mean no alignment is required.
+Otherwise, <i>p_align</i> should be a positive, integral
+power of two, and <i>p_vaddr</i> should equal
+<i>p_offset</i>, modulo <i>p_align</i>.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">A file&rsquo;s
+section header table lets one locate all the file&rsquo;s
+sections. The section header table is an array of
+<i>Elf32_Shdr</i> or <i>Elf64_Shdr</i> structures. The ELF
+header&rsquo;s <i>e_shoff</i> member gives the byte offset
+from the beginning of the file to the section header table.
+<i>e_shnum</i> holds the number of entries the section
+header table contains. <i>e_shentsize</i> holds the size in
+bytes of each entry.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A section
+header table index is a subscript into this array. Some
+section header table indices are reserved: the initial entry
+and the indices between <b>SHN_LORESERVE</b> and
+<b>SHN_HIRESERVE</b>. The initial entry is used in ELF
+extensions for <i>e_phnum</i>, <i>e_shnum</i> and
+<i>e_strndx</i>; in other cases, each field in the initial
+entry is set to zero. An object file does not have sections
+for these special indices:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="20%">
+
+
+<p style="margin-top: 1em"><b>SHN_UNDEF</b></p></td>
+<td width="1%"></td>
+<td width="57%">
+
+
+<p style="margin-top: 1em">This value marks an undefined,
+missing, irrelevant or otherwise meaningless section
+reference.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="20%">
+
+
+<p><b>SHN_LORESERVE</b></p></td>
+<td width="1%"></td>
+<td width="57%">
+
+
+<p>This value specifies the lower bound of the range of
+reserved indices.</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="20%">
+
+
+<p><b>SHN_LOPROC</b></p></td>
+<td width="1%"></td>
+<td width="57%">
+
+
+<p>Values greater than or equal to <b>SHN_HIPROC</b> are
+reserved for processor-specific semantics.</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="20%">
+
+
+<p><b>SHN_HIPROC</b></p></td>
+<td width="1%"></td>
+<td width="57%">
+
+
+<p>Values less than or equal to <b>SHN_LOPROC</b> are
+reserved for processor-specific semantics.</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="20%">
+
+
+<p><b>SHN_ABS</b></p></td>
+<td width="1%"></td>
+<td width="57%">
+
+
+<p>This value specifies the absolute value for the
+corresponding reference. For example, a symbol defined
+relative to section number <b>SHN_ABS</b> has an absolute
+value and is not affected by relocation.</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="20%">
+
+
+<p><b>SHN_COMMON</b></p></td>
+<td width="1%"></td>
+<td width="57%">
+
+
+<p>Symbols defined relative to this section are common
+symbols, such as FORTRAN COMMON or unallocated C external
+variables.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="20%">
+
+
+<p><b>SHN_HIRESERVE</b></p></td>
+<td width="1%"></td>
+<td width="57%">
+
+
+<p>This value specifies the upper bound of the range of
+reserved indices. The system reserves indices between
+<b>SHN_LORESERVE</b> and <b>SHN_HIRESERVE</b>, inclusive.
+The section header table does not contain entries for the
+reserved indices.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The section
+header has the following structure:</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef struct
+{ <br>
+uint32_t sh_name; <br>
+uint32_t sh_type; <br>
+uint32_t sh_flags; <br>
+Elf32_Addr sh_addr; <br>
+Elf32_Off sh_offset; <br>
+uint32_t sh_size; <br>
+uint32_t sh_link; <br>
+uint32_t sh_info; <br>
+uint32_t sh_addralign; <br>
+uint32_t sh_entsize; <br>
+} Elf32_Shdr;</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef struct
+{ <br>
+uint32_t sh_name; <br>
+uint32_t sh_type; <br>
+uint64_t sh_flags; <br>
+Elf64_Addr sh_addr; <br>
+Elf64_Off sh_offset; <br>
+uint64_t sh_size; <br>
+uint32_t sh_link; <br>
+uint32_t sh_info; <br>
+uint64_t sh_addralign; <br>
+uint64_t sh_entsize; <br>
+} Elf64_Shdr;</p>
+
+<p style="margin-left:11%; margin-top: 1em">No real
+differences exist between the 32-bit and 64-bit section
+headers.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p style="margin-top: 1em"><i>sh_name</i></p></td>
+<td width="4%"></td>
+<td width="74%">
+
+
+<p style="margin-top: 1em">This member specifies the name
+of the section. Its value is an index into the section
+header string table section, giving the location of a
+null-terminated string.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p><i>sh_type</i></p></td>
+<td width="4%"></td>
+<td width="74%">
+
+
+<p>This member categorizes the section&rsquo;s contents and
+semantics.</p> </td></tr>
+</table>
+
+<p style="margin-left:26%;"><b>SHT_NULL</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%"></td>
+<td width="4%"></td>
+<td width="51%">
+
+
+<p style="margin-top: 1em">This value marks the section
+header as inactive. It does not have an associated section.
+Other members of the section header have undefined
+values.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>SHT_PROGBITS</b></p></td>
+<td width="4%"></td>
+<td width="51%">
+
+
+<p>This section holds information defined by the program,
+whose format and meaning are determined solely by the
+program.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>SHT_SYMTAB</b></p></td>
+<td width="4%"></td>
+<td width="51%">
+
+
+<p>This section holds a symbol table. Typically,
+<b>SHT_SYMTAB</b> provides symbols for link editing, though
+it may also be used for dynamic linking. As a complete
+symbol table, it may contain many symbols unnecessary for
+dynamic linking. An object file can also contain a
+<b>SHT_DYNSYM</b> section.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>SHT_STRTAB</b></p></td>
+<td width="4%"></td>
+<td width="51%">
+
+
+<p>This section holds a string table. An object file may
+have multiple string table sections.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>SHT_RELA</b></p></td>
+<td width="4%"></td>
+<td width="51%">
+
+
+<p>This section holds relocation entries with explicit
+addends, such as type <i>Elf32_Rela</i> for the 32-bit class
+of object files. An object may have multiple relocation
+sections.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>SHT_HASH</b></p></td>
+<td width="4%"></td>
+<td width="51%">
+
+
+<p>This section holds a symbol hash table. An object
+participating in dynamic linking must contain a symbol hash
+table. An object file may have only one hash table.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>SHT_DYNAMIC</b></p></td>
+<td width="4%"></td>
+<td width="51%">
+
+
+<p>This section holds information for dynamic linking. An
+object file may have only one dynamic section.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>SHT_NOTE</b></p></td>
+<td width="4%"></td>
+<td width="51%">
+
+
+<p>This section holds information that marks the file in
+some way.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>SHT_NOBITS</b></p></td>
+<td width="4%"></td>
+<td width="51%">
+
+
+<p>A section of this type occupies no space in the file but
+otherwise resembles <b>SHT_PROGBITS</b>. Although this
+section contains no bytes, the <i>sh_offset</i> member
+contains the conceptual file offset.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>SHT_REL</b></p></td>
+<td width="4%"></td>
+<td width="51%">
+
+
+<p>This section holds relocation offsets without explicit
+addends, such as type <i>Elf32_Rel</i> for the 32-bit class
+of object files. An object file may have multiple relocation
+sections.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>SHT_SHLIB</b></p></td>
+<td width="4%"></td>
+<td width="51%">
+
+
+<p>This section is reserved but has unspecified
+semantics.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>SHT_DYNSYM</b></p></td>
+<td width="4%"></td>
+<td width="51%">
+
+
+<p>This section holds a minimal set of dynamic linking
+symbols. An object file can also contain a <b>SHT_SYMTAB</b>
+section.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>SHT_LOPROC</b></p></td>
+<td width="4%"></td>
+<td width="51%">
+
+
+<p>This value up to and including <b>SHT_HIPROC</b> is
+reserved for processor-specific semantics.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>SHT_HIPROC</b></p></td>
+<td width="4%"></td>
+<td width="51%">
+
+
+<p>This value down to and including <b>SHT_LOPROC</b> is
+reserved for processor-specific semantics.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>SHT_LOUSER</b></p></td>
+<td width="4%"></td>
+<td width="51%">
+
+
+<p>This value specifies the lower bound of the range of
+indices reserved for application programs.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><b>SHT_HIUSER</b></p></td>
+<td width="4%"></td>
+<td width="51%">
+
+
+<p>This value specifies the upper bound of the range of
+indices reserved for application programs. Section types
+between <b>SHT_LOUSER</b> and <b>SHT_HIUSER</b> may be used
+by the application, without conflicting with current or
+future system-defined section types.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="34%">
+
+
+<p><i>sh_flags</i></p></td>
+<td width="4%"></td>
+<td width="51%">
+</td></tr>
+</table>
+
+<p style="margin-left:26%; margin-top: 1em">Sections
+support one-bit flags that describe miscellaneous
+attributes. If a flag bit is set in <i>sh_flags</i>, the
+attribute is &quot;on&quot; for the section. Otherwise, the
+attribute is &quot;off&quot; or does not apply. Undefined
+attributes are set to zero.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="35%">
+
+
+<p style="margin-top: 1em"><b>SHF_WRITE</b></p></td>
+<td width="3%"></td>
+<td width="51%">
+
+
+<p style="margin-top: 1em">This section contains data that
+should be writable during process execution.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="35%">
+
+
+<p><b>SHF_ALLOC</b></p></td>
+<td width="3%"></td>
+<td width="51%">
+
+
+<p>This section occupies memory during process execution.
+Some control sections do not reside in the memory image of
+an object file. This attribute is off for those
+sections.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="35%">
+
+
+<p><b>SHF_EXECINSTR</b></p></td>
+<td width="3%"></td>
+<td width="51%">
+
+
+<p>This section contains executable machine
+instructions.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="35%">
+
+
+<p><b>SHF_MASKPROC</b></p></td>
+<td width="3%"></td>
+<td width="51%">
+
+
+<p>All bits included in this mask are reserved for
+processor-specific semantics.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="35%">
+
+
+<p><i>sh_addr</i></p></td>
+<td width="3%"></td>
+<td width="51%">
+</td></tr>
+</table>
+
+<p style="margin-left:26%; margin-top: 1em">If this section
+appears in the memory image of a process, this member holds
+the address at which the section&rsquo;s first byte should
+reside. Otherwise, the member contains zero.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p style="margin-top: 1em"><i>sh_offset</i></p></td>
+<td width="1%"></td>
+<td width="74%">
+
+
+<p style="margin-top: 1em">This member&rsquo;s value holds
+the byte offset from the beginning of the file to the first
+byte in the section. One section type, <b>SHT_NOBITS</b>,
+occupies no space in the file, and its <i>sh_offset</i>
+member locates the conceptual placement in the file.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><i>sh_size</i></p></td>
+<td width="1%"></td>
+<td width="74%">
+
+
+<p>This member holds the section&rsquo;s size in bytes.
+Unless the section type is <b>SHT_NOBITS</b>, the section
+occupies <i>sh_size</i> bytes in the file. A section of type
+<b>SHT_NOBITS</b> may have a nonzero size, but it occupies
+no space in the file.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><i>sh_link</i></p></td>
+<td width="1%"></td>
+<td width="74%">
+
+
+<p>This member holds a section header table index link,
+whose interpretation depends on the section type.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><i>sh_info</i></p></td>
+<td width="1%"></td>
+<td width="74%">
+
+
+<p>This member holds extra information, whose
+interpretation depends on the section type.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><i>sh_addralign</i></p>
+
+<p style="margin-left:26%;">Some sections have address
+alignment constraints. If a section holds a doubleword, the
+system must ensure doubleword alignment for the entire
+section. That is, the value of <i>sh_addr</i> must be
+congruent to zero, modulo the value of <i>sh_addralign</i>.
+Only zero and positive integral powers of two are allowed.
+Values of zero or one mean the section has no alignment
+constraints.</p>
+
+<p style="margin-left:11%;"><i>sh_entsize</i></p>
+
+<p style="margin-left:26%;">Some sections hold a table of
+fixed-sized entries, such as a symbol table. For such a
+section, this member gives the size in bytes for each entry.
+This member contains zero if the section does not hold a
+table of fixed-size entries.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Various
+sections hold program and control information:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>.bss</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>This section holds uninitialized data that contributes
+to the program&rsquo;s memory image. By definition, the
+system initializes the data with zeros when the program
+begins to run. This section is of type <b>SHT_NOBITS</b>.
+The attribute types are <b>SHF_ALLOC</b> and
+<b>SHF_WRITE</b>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>.comment</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>This section holds version control information. This
+section is of type <b>SHT_PROGBITS</b>. No attribute types
+are used.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>.ctors</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>This section holds initialized pointers to the C++
+constructor functions. This section is of type
+<b>SHT_PROGBITS</b>. The attribute types are
+<b>SHF_ALLOC</b> and <b>SHF_WRITE</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>.data</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>This section holds initialized data that contribute to
+the program&rsquo;s memory image. This section is of type
+<b>SHT_PROGBITS</b>. The attribute types are
+<b>SHF_ALLOC</b> and <b>SHF_WRITE</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>.data1</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>This section holds initialized data that contribute to
+the program&rsquo;s memory image. This section is of type
+<b>SHT_PROGBITS</b>. The attribute types are
+<b>SHF_ALLOC</b> and <b>SHF_WRITE</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>.debug</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>This section holds information for symbolic debugging.
+The contents are unspecified. This section is of type
+<b>SHT_PROGBITS</b>. No attribute types are used.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>.dtors</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>This section holds initialized pointers to the C++
+destructor functions. This section is of type
+<b>SHT_PROGBITS</b>. The attribute types are
+<b>SHF_ALLOC</b> and <b>SHF_WRITE</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>.dynamic</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>This section holds dynamic linking information. The
+section&rsquo;s attributes will include the <b>SHF_ALLOC</b>
+bit. Whether the <b>SHF_WRITE</b> bit is set is
+processor-specific. This section is of type
+<b>SHT_DYNAMIC</b>. See the attributes above.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>.dynstr</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>This section holds strings needed for dynamic linking,
+most commonly the strings that represent the names
+associated with symbol table entries. This section is of
+type <b>SHT_STRTAB</b>. The attribute type used is
+<b>SHF_ALLOC</b>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>.dynsym</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>This section holds the dynamic linking symbol table.
+This section is of type <b>SHT_DYNSYM</b>. The attribute
+used is <b>SHF_ALLOC</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>.fini</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>This section holds executable instructions that
+contribute to the process termination code. When a program
+exits normally the system arranges to execute the code in
+this section. This section is of type <b>SHT_PROGBITS</b>.
+The attributes used are <b>SHF_ALLOC</b> and
+<b>SHF_EXECINSTR</b>.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%;"><i>.gnu.version</i></p>
+
+<p style="margin-left:26%;">This section holds the version
+symbol table, an array of <i>ElfN_Half</i> elements. This
+section is of type <b>SHT_GNU_versym</b>. The attribute type
+used is <b>SHF_ALLOC</b>.</p>
+
+<p style="margin-left:11%;"><i>.gnu.version_d</i></p>
+
+<p style="margin-left:26%;">This section holds the version
+symbol definitions, a table of <i>ElfN_Verdef</i>
+structures. This section is of type <b>SHT_GNU_verdef</b>.
+The attribute type used is <b>SHF_ALLOC</b>.</p>
+
+<p style="margin-left:11%;"><i>.gnu.version_r</i></p>
+
+<p style="margin-left:26%;">This section holds the version
+symbol needed elements, a table of <i>ElfN_Verneed</i>
+structures. This section is of type <b>SHT_GNU_versym</b>.
+The attribute type used is <b>SHF_ALLOC</b>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p><i>.got</i></p></td>
+<td width="4%"></td>
+<td width="74%">
+
+
+<p>This section holds the global offset table. This section
+is of type <b>SHT_PROGBITS</b>. The attributes are processor
+specific.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p><i>.hash</i></p></td>
+<td width="4%"></td>
+<td width="74%">
+
+
+<p>This section holds a symbol hash table. This section is
+of type <b>SHT_HASH</b>. The attribute used is
+<b>SHF_ALLOC</b>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p><i>.init</i></p></td>
+<td width="4%"></td>
+<td width="74%">
+
+
+<p>This section holds executable instructions that
+contribute to the process initialization code. When a
+program starts to run the system arranges to execute the
+code in this section before calling the main program entry
+point. This section is of type <b>SHT_PROGBITS</b>. The
+attributes used are <b>SHF_ALLOC</b> and
+<b>SHF_EXECINSTR</b>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p><i>.interp</i></p></td>
+<td width="4%"></td>
+<td width="74%">
+
+
+<p>This section holds the pathname of a program
+interpreter. If the file has a loadable segment that
+includes the section, the section&rsquo;s attributes will
+include the <b>SHF_ALLOC</b> bit. Otherwise, that bit will
+be off. This section is of type <b>SHT_PROGBITS</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p><i>.line</i></p></td>
+<td width="4%"></td>
+<td width="74%">
+
+
+<p>This section holds line number information for symbolic
+debugging, which describes the correspondence between the
+program source and the machine code. The contents are
+unspecified. This section is of type <b>SHT_PROGBITS</b>. No
+attribute types are used.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p><i>.note</i></p></td>
+<td width="4%"></td>
+<td width="74%">
+
+
+<p>This section holds information in the &quot;Note
+Section&quot; format. This section is of type
+<b>SHT_NOTE</b>. No attribute types are used. OpenBSD native
+executables usually contain a <i>.note.openbsd.ident</i>
+section to identify themselves, for the kernel to bypass any
+compatibility ELF binary emulation tests when loading the
+file.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%;"><i>.note.GNU-stack</i></p>
+
+<p style="margin-left:26%;">This section is used in Linux
+object files for declaring stack attributes. This section is
+of type <b>SHT_PROGBITS</b>. The only attribute used is
+<b>SHF_EXECINSTR</b>. This indicates to the GNU linker that
+the object file requires an executable stack.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><i>.plt</i></p></td>
+<td width="1%"></td>
+<td width="74%">
+
+
+<p>This section holds the procedure linkage table. This
+section is of type <b>SHT_PROGBITS</b>. The attributes are
+processor specific.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><i>.relNAME</i></p></td>
+<td width="1%"></td>
+<td width="74%">
+
+
+<p>This section holds relocation information as described
+below. If the file has a loadable segment that includes
+relocation, the section&rsquo;s attributes will include the
+<b>SHF_ALLOC</b> bit. Otherwise the bit will be off. By
+convention, &quot;NAME&quot; is supplied by the section to
+which the relocations apply. Thus a relocation section for
+<b>.text</b> normally would have the name <b>.rel.text</b>.
+This section is of type <b>SHT_REL</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><i>.relaNAME</i></p></td>
+<td width="1%"></td>
+<td width="74%">
+
+
+<p>This section holds relocation information as described
+below. If the file has a loadable segment that includes
+relocation, the section&rsquo;s attributes will include the
+<b>SHF_ALLOC</b> bit. Otherwise the bit will be off. By
+convention, &quot;NAME&quot; is supplied by the section to
+which the relocations apply. Thus a relocation section for
+<b>.text</b> normally would have the name <b>.rela.text</b>.
+This section is of type <b>SHT_RELA</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><i>.rodata</i></p></td>
+<td width="1%"></td>
+<td width="74%">
+
+
+<p>This section holds read-only data that typically
+contributes to a nonwritable segment in the process image.
+This section is of type <b>SHT_PROGBITS</b>. The attribute
+used is <b>SHF_ALLOC</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><i>.rodata1</i></p></td>
+<td width="1%"></td>
+<td width="74%">
+
+
+<p>This section holds read-only data that typically
+contributes to a nonwritable segment in the process image.
+This section is of type <b>SHT_PROGBITS</b>. The attribute
+used is <b>SHF_ALLOC</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><i>.shstrtab</i></p></td>
+<td width="1%"></td>
+<td width="74%">
+
+
+<p>This section holds section names. This section is of
+type <b>SHT_STRTAB</b>. No attribute types are used.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><i>.strtab</i></p></td>
+<td width="1%"></td>
+<td width="74%">
+
+
+<p>This section holds strings, most commonly the strings
+that represent the names associated with symbol table
+entries. If the file has a loadable segment that includes
+the symbol string table, the section&rsquo;s attributes will
+include the <b>SHF_ALLOC</b> bit. Otherwise the bit will be
+off. This section is of type <b>SHT_STRTAB</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><i>.symtab</i></p></td>
+<td width="1%"></td>
+<td width="74%">
+
+
+<p>This section holds a symbol table. If the file has a
+loadable segment that includes the symbol table, the
+section&rsquo;s attributes will include the <b>SHF_ALLOC</b>
+bit. Otherwise the bit will be off. This section is of type
+<b>SHT_SYMTAB</b>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="14%">
+
+
+<p><i>.text</i></p></td>
+<td width="1%"></td>
+<td width="74%">
+
+
+<p>This section holds the &quot;text&quot;, or executable
+instructions, of a program. This section is of type
+<b>SHT_PROGBITS</b>. The attributes used are
+<b>SHF_ALLOC</b> and <b>SHF_EXECINSTR</b>.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">String table
+sections hold null-terminated character sequences, commonly
+called strings. The object file uses these strings to
+represent symbol and section names. One references a string
+as an index into the string table section. The first byte,
+which is index zero, is defined to hold a null byte ('\0').
+Similarly, a string table&rsquo;s last byte is defined to
+hold a null byte, ensuring null termination for all
+strings.</p>
+
+<p style="margin-left:11%; margin-top: 1em">An object
+file&rsquo;s symbol table holds information needed to locate
+and relocate a program&rsquo;s symbolic definitions and
+references. A symbol table index is a subscript into this
+array.</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef struct
+{ <br>
+uint32_t st_name; <br>
+Elf32_Addr st_value; <br>
+uint32_t st_size; <br>
+unsigned char st_info; <br>
+unsigned char st_other; <br>
+uint16_t st_shndx; <br>
+} Elf32_Sym;</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef struct
+{ <br>
+uint32_t st_name; <br>
+unsigned char st_info; <br>
+unsigned char st_other; <br>
+uint16_t st_shndx; <br>
+Elf64_Addr st_value; <br>
+uint64_t st_size; <br>
+} Elf64_Sym;</p>
+
+<p style="margin-left:11%; margin-top: 1em">The 32-bit and
+64-bit versions have the same members, just in a different
+order.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p style="margin-top: 1em"><i>st_name</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p style="margin-top: 1em">This member holds an index into
+the object file&rsquo;s symbol string table, which holds
+character representations of the symbol names. If the value
+is nonzero, it represents a string table index that gives
+the symbol name. Otherwise, the symbol table has no
+name.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>st_value</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>This member gives the value of the associated
+symbol.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>st_size</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>Many symbols have associated sizes. This member holds
+zero if the symbol has no size or an unknown size.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>st_info</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>This member specifies the symbol&rsquo;s type and
+binding attributes:</p></td></tr>
+</table>
+
+<p style="margin-left:26%;"><b>STT_NOTYPE</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="26%"></td>
+<td width="17%"></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p style="margin-top: 1em">The symbol&rsquo;s type is not
+defined.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="26%"></td>
+<td width="17%">
+
+
+<p><b>STT_OBJECT</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>The symbol is associated with a data object.</p></td></tr>
+<tr valign="top" align="left">
+<td width="26%"></td>
+<td width="17%">
+
+
+<p><b>STT_FUNC</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>The symbol is associated with a function or other
+executable code.</p></td></tr>
+<tr valign="top" align="left">
+<td width="26%"></td>
+<td width="17%">
+
+
+<p><b>STT_SECTION</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>The symbol is associated with a section. Symbol table
+entries of this type exist primarily for relocation and
+normally have <b>STB_LOCAL</b> bindings.</p></td></tr>
+<tr valign="top" align="left">
+<td width="26%"></td>
+<td width="17%">
+
+
+<p><b>STT_FILE</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>By convention, the symbol&rsquo;s name gives the name of
+the source file associated with the object file. A file
+symbol has <b>STB_LOCAL</b> bindings, its section index is
+<b>SHN_ABS</b>, and it precedes the other <b>STB_LOCAL</b>
+symbols of the file, if it is present.</p></td></tr>
+<tr valign="top" align="left">
+<td width="26%"></td>
+<td width="17%">
+
+
+<p><b>STT_LOPROC</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>This value up to and including <b>STT_HIPROC</b> is
+reserved for processor-specific semantics.</p></td></tr>
+<tr valign="top" align="left">
+<td width="26%"></td>
+<td width="17%">
+
+
+<p><b>STT_HIPROC</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>This value down to and including <b>STT_LOPROC</b> is
+reserved for processor-specific semantics.</p></td></tr>
+<tr valign="top" align="left">
+<td width="26%"></td>
+<td width="17%">
+
+
+<p><b>STB_LOCAL</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Local symbols are not visible outside the object file
+containing their definition. Local symbols of the same name
+may exist in multiple files without interfering with each
+other.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="26%"></td>
+<td width="17%">
+
+
+<p><b>STB_GLOBAL</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Global symbols are visible to all object files being
+combined. One file&rsquo;s definition of a global symbol
+will satisfy another file&rsquo;s undefined reference to the
+same symbol.</p></td></tr>
+<tr valign="top" align="left">
+<td width="26%"></td>
+<td width="17%">
+
+
+<p><b>STB_WEAK</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Weak symbols resemble global symbols, but their
+definitions have lower precedence.</p></td></tr>
+<tr valign="top" align="left">
+<td width="26%"></td>
+<td width="17%">
+
+
+<p><b>STB_LOPROC</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>This value up to and including <b>STB_HIPROC</b> is
+reserved for processor-specific semantics.</p></td></tr>
+<tr valign="top" align="left">
+<td width="26%"></td>
+<td width="17%">
+
+
+<p><b>STB_HIPROC</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>This value down to and including <b>STB_LOPROC</b> is
+reserved for processor-specific semantics.</p></td></tr>
+</table>
+
+<p style="margin-left:45%; margin-top: 1em">There are
+macros for packing and unpacking the binding and type
+fields:</p>
+
+
+<p style="margin-left:45%; margin-top: 1em"><b>ELF32_ST_BIND</b>(info)
+or <b>ELF64_ST_BIND</b>(info) extract a binding from an
+<i>st_info</i> value.</p>
+
+
+<p style="margin-left:45%; margin-top: 1em"><b>ELF32_ST_TYPE</b>(info)
+or <b>ELF64_ST_TYPE</b>(info) <br>
+extract a type from an <i>st_info</i> value.</p>
+
+
+<p style="margin-left:45%; margin-top: 1em"><b>ELF32_ST_INFO</b>(bind,
+type) or <b>ELF64_ST_INFO</b>(bind, type) <br>
+convert a binding and a type into an <i>st_info</i>
+value.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p style="margin-top: 1em"><i>st_other</i></p></td>
+<td width="3%"></td>
+<td width="65%">
+
+
+<p style="margin-top: 1em">This member defines the symbol
+visibility.</p> </td>
+<td width="9%">
+</td></tr>
+</table>
+
+<p style="margin-left:26%;"><b>STV_DEFAULT</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="26%"></td>
+<td width="20%"></td>
+<td width="5%"></td>
+<td width="49%">
+
+
+<p style="margin-top: 1em">Default symbol visibility
+rules.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="26%"></td>
+<td width="20%">
+
+
+<p><b>STV_INTERNAL</b></p></td>
+<td width="5%"></td>
+<td width="49%">
+
+
+<p>Processor-specific hidden class.</p></td></tr>
+<tr valign="top" align="left">
+<td width="26%"></td>
+<td width="20%">
+
+
+<p><b>STV_HIDDEN</b></p></td>
+<td width="5%"></td>
+<td width="49%">
+
+
+<p>Symbol is unavailable in other modules.</p></td></tr>
+<tr valign="top" align="left">
+<td width="26%"></td>
+<td width="20%">
+
+
+<p><b>STV_PROTECTED</b></p></td>
+<td width="5%"></td>
+<td width="49%">
+
+
+<p>Not preemptible, not exported.</p></td></tr>
+</table>
+
+<p style="margin-left:26%; margin-top: 1em">There are
+macros for extracting the visibility type:</p>
+
+
+<p style="margin-left:26%; margin-top: 1em"><b>ELF32_ST_VISIBILITY</b>(other)
+or <b>ELF64_ST_VISIBILITY</b>(other)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p style="margin-top: 1em"><i>st_shndx</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p style="margin-top: 1em">Every symbol table entry is
+&quot;defined&quot; in relation to some section. This member
+holds the relevant section header table index.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">Relocation is
+the process of connecting symbolic references with symbolic
+definitions. Relocatable files must have information that
+describes how to modify their section contents, thus
+allowing executable and shared object files to hold the
+right information for a process&rsquo;s program image.
+Relocation entries are these data.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Relocation
+structures that do not need an addend:</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef struct
+{ <br>
+Elf32_Addr r_offset; <br>
+uint32_t r_info; <br>
+} Elf32_Rel;</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef struct
+{ <br>
+Elf64_Addr r_offset; <br>
+uint64_t r_info; <br>
+} Elf64_Rel;</p>
+
+<p style="margin-left:11%; margin-top: 1em">Relocation
+structures that need an addend:</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef struct
+{ <br>
+Elf32_Addr r_offset; <br>
+uint32_t r_info; <br>
+int32_t r_addend; <br>
+} Elf32_Rela;</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef struct
+{ <br>
+Elf64_Addr r_offset; <br>
+uint64_t r_info; <br>
+int64_t r_addend; <br>
+} Elf64_Rela;</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p style="margin-top: 1em"><i>r_offset</i></p></td>
+<td width="6%"></td>
+<td width="71%">
+
+
+<p style="margin-top: 1em">This member gives the location
+at which to apply the relocation action. For a relocatable
+file, the value is the byte offset from the beginning of the
+section to the storage unit affected by the relocation. For
+an executable file or shared object, the value is the
+virtual address of the storage unit affected by the
+relocation.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>r_info</i></p></td>
+<td width="6%"></td>
+<td width="71%">
+
+
+<p>This member gives both the symbol table index with
+respect to which the relocation must be made and the type of
+relocation to apply. Relocation types are processor
+specific. When the text refers to a relocation entry&rsquo;s
+relocation type or symbol table index, it means the result
+of applying <b>ELF[32|64]_R_TYPE</b> or
+<b>ELF[32|64]_R_SYM</b>, respectively, to the entry&rsquo;s
+<i>r_info</i> member.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>r_addend</i></p></td>
+<td width="6%"></td>
+<td width="71%">
+
+
+<p>This member specifies a constant addend used to compute
+the value to be stored into the relocatable field.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The .dynamic
+section contains a series of structures that hold relevant
+dynamic linking information. The d_tag member controls the
+interpretation of d_un.</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef struct
+{ <br>
+Elf32_Sword d_tag; <br>
+union { <br>
+Elf32_Word d_val; <br>
+Elf32_Addr d_ptr; <br>
+} d_un; <br>
+} Elf32_Dyn; <br>
+extern Elf32_Dyn _DYNAMIC[];</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef struct
+{ <br>
+Elf64_Sxword d_tag; <br>
+union { <br>
+Elf64_Xword d_val; <br>
+Elf64_Addr d_ptr; <br>
+} d_un; <br>
+} Elf64_Dyn; <br>
+extern Elf64_Dyn _DYNAMIC[];</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p style="margin-top: 1em"><i>d_tag</i></p></td>
+<td width="8%"></td>
+<td width="74%">
+
+
+<p style="margin-top: 1em">This member may have any of the
+following values:</p></td></tr>
+</table>
+
+<p style="margin-left:26%;"><b>DT_NULL</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%"></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p style="margin-top: 1em">Marks end of dynamic section</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_NEEDED</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>String table offset to name of a needed library</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_PLTRELSZ</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Size in bytes of PLT relocs</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_PLTGOT</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Address of PLT and/or GOT</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_HASH</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Address of symbol hash table</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_STRTAB</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Address of string table</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_SYMTAB</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Address of symbol table</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_RELA</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Address of Rela relocs table</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_RELASZ</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Size in bytes of Rela table</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_RELAENT</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Size in bytes of a Rela table entry</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_STRSZ</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Size in bytes of string table</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_SYMENT</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Size in bytes of a symbol table entry</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_INIT</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Address of the initialization function</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_FINI</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Address of the termination function</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_SONAME</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>String table offset to name of shared object</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_RPATH</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>String table offset to library search path
+(deprecated)</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_SYMBOLIC</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Alert linker to search this shared object before the
+executable for symbols</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_REL</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Address of Rel relocs table</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_RELSZ</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Size in bytes of Rel table</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_RELENT</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Size in bytes of a Rel table entry</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_PLTREL</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Type of reloc the PLT refers (Rela or Rel)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_DEBUG</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Undefined use for debugging</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_TEXTREL</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Absence of this indicates no relocs should apply to a
+nonwritable segment</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_JMPREL</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Address of reloc entries solely for the PLT</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_BIND_NOW</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Instruct dynamic linker to process all relocs before
+transferring control to the executable</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_RUNPATH</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>String table offset to library search path</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_LOPROC</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Start of processor-specific semantics</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><b>DT_HIPROC</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>End of processor-specific semantics</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="32%">
+
+
+<p><i>d_val</i></p></td>
+<td width="2%"></td>
+<td width="55%">
+</td></tr>
+</table>
+
+<p style="margin-left:26%; margin-top: 1em">This member
+represents integer values with various interpretations.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p style="margin-top: 1em"><i>d_ptr</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p style="margin-top: 1em">This member represents program
+virtual addresses. When interpreting these addresses, the
+actual address should be computed based on the original file
+value and memory base address. Files do not contain
+relocation entries to fixup these addresses.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="12%">
+
+
+<p><i>_DYNAMIC</i></p></td>
+<td width="3%"></td>
+<td width="74%">
+
+
+<p>Array containing all the dynamic structures in the
+.dynamic section. This is automatically populated by the
+linker.</p> </td></tr>
+</table>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">ELF first
+appeared in System V. The ELF format is an adopted
+standard.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The extensions
+for <i>e_phnum</i>, <i>e_shnum</i> and <i>e_strndx</i>
+respectively are Linux extensions. Sun, BSD and AMD64 also
+support them; for further information, look under SEE
+ALSO.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>as</b>(1),
+<b>gdb</b>(1), <b>ld</b>(1), <b>objdump</b>(1),
+<b>execve</b>(2), <b>core</b>(5)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">Hewlett-Packard,
+<i>Elf-64 Object File Format</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Santa Cruz
+Operation, <i>System V Application Binary Interface</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">UNIX System
+Laboratories, &quot;Object Files&quot;, <i>Executable and
+Linking Format (ELF)</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Sun
+Microsystems, <i>Linker and Libraries Guide</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">AMD64 ABI
+Draft, <i>System V Application Binary Interface AMD64
+Architecture Processor Supplement</i>.</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

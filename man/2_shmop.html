@@ -1,0 +1,343 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:54 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SHMOP</title>
+
+</head>
+<body>
+
+<h1 align="center">SHMOP</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">shmat, shmdt
+&minus; System V shared memory operations</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;sys/types.h&gt; <br>
+#include &lt;sys/shm.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>void
+*shmat(int</b> <i>shmid</i><b>, const void
+*</b><i>shmaddr</i><b>, int</b> <i>shmflg</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+shmdt(const void *</b><i>shmaddr</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>shmat</b>()
+attaches the System V shared memory segment identified by
+<i>shmid</i> to the address space of the calling process.
+The attaching address is specified by <i>shmaddr</i> with
+one of the following criteria:</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<i>shmaddr</i> is NULL, the system chooses a suitable
+(unused) address at which to attach the segment.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<i>shmaddr</i> isn&rsquo;t NULL and <b>SHM_RND</b> is
+specified in <i>shmflg</i>, the attach occurs at the address
+equal to <i>shmaddr</i> rounded down to the nearest multiple
+of <b>SHMLBA</b>. Otherwise <i>shmaddr</i> must be a
+page-aligned address at which the attach occurs.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b>SHM_RDONLY</b> is specified in <i>shmflg</i>, the segment
+is attached for reading and the process must have read
+permission for the segment. Otherwise the segment is
+attached for read and write and the process must have read
+and write permission for the segment. There is no notion of
+a write-only shared memory segment.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+(Linux-specific) <b>SHM_REMAP</b> flag may be specified in
+<i>shmflg</i> to indicate that the mapping of the segment
+should replace any existing mapping in the range starting at
+<i>shmaddr</i> and continuing for the size of the segment.
+(Normally an <b>EINVAL</b> error would result if a mapping
+already exists in this address range.) In this case,
+<i>shmaddr</i> must not be NULL.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>brk</b>(2) value of the calling process is not altered by
+the attach. The segment will automatically be detached at
+process exit. The same segment may be attached as a read and
+as a read-write one, and more than once, in the
+process&rsquo;s address space.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A successful
+<b>shmat</b>() call updates the members of the
+<i>shmid_ds</i> structure (see <b>shmctl</b>(2)) associated
+with the shared memory segment as follows:</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>shm_atime</i>
+is set to the current time.</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>shm_lpid</i>
+is set to the process-ID of the calling process.</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>shm_nattch</i>
+is incremented by one.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>shmdt</b>()
+detaches the shared memory segment located at the address
+specified by <i>shmaddr</i> from the address space of the
+calling process. The to-be-detached segment must be
+currently attached with <i>shmaddr</i> equal to the value
+returned by the attaching <b>shmat</b>() call.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On a successful
+<b>shmdt</b>() call the system updates the members of the
+<i>shmid_ds</i> structure associated with the shared memory
+segment as follows:</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>shm_dtime</i>
+is set to the current time.</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>shm_lpid</i>
+is set to the process-ID of the calling process.</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><i>shm_nattch</i>
+is decremented by one. If it becomes 0 and the segment is
+marked for deletion, the segment is deleted.</p>
+
+<p style="margin-left:11%; margin-top: 1em">After a
+<b>fork</b>(2) the child inherits the attached shared memory
+segments.</p>
+
+<p style="margin-left:11%; margin-top: 1em">After an
+<b>execve</b>(2) all attached shared memory segments are
+detached from the process.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Upon
+<b>_exit</b>(2) all attached shared memory segments are
+detached from the process.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success
+<b>shmat</b>() returns the address of the attached shared
+memory segment; on error <i>(void&nbsp;*)&nbsp;&minus;1</i>
+is returned, and <i>errno</i> is set to indicate the cause
+of the error.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On success
+<b>shmdt</b>() returns 0; on error &minus;1 is returned, and
+<i>errno</i> is set to indicate the cause of the error.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">When
+<b>shmat</b>() fails, <i>errno</i> is set to one of the
+following:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EACCES</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The calling process does not have the required
+permissions for the requested attach type, and does not have
+the <b>CAP_IPC_OWNER</b> capability.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EIDRM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>shmid</i> points to a removed identifier.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Invalid <i>shmid</i> value, unaligned (i.e., not
+page-aligned and <b>SHM_RND</b> was not specified) or
+invalid <i>shmaddr</i> value, or can&rsquo;t attach segment
+at <i>shmaddr</i>, or <b>SHM_REMAP</b> was specified and
+<i>shmaddr</i> was NULL.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Could not allocate memory for the descriptor or for the
+page tables.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">When
+<b>shmdt</b>() fails, <i>errno</i> is set as follows:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">There is no shared memory
+segment attached at <i>shmaddr</i>; or, <i>shmaddr</i> is
+not aligned on a page boundary.</p></td></tr>
+</table>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">SVr4,
+POSIX.1-2001.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In SVID 3 (or
+perhaps earlier) the type of the <i>shmaddr</i> argument was
+changed from <i>char&nbsp;*</i> into <i>const
+void&nbsp;*</i>, and the returned type of <b>shmat</b>()
+from <i>char&nbsp;*</i> into <i>void&nbsp;*</i>. (Linux
+libc4 and libc5 have the <i>char&nbsp;*</i> prototypes;
+glibc2 has <i>void&nbsp;*</i>.)</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Using
+<b>shmat</b>() with <i>shmaddr</i> equal to NULL is the
+preferred, portable way of attaching a shared memory
+segment. Be aware that the shared memory segment attached in
+this way may be attached at different addresses in different
+processes. Therefore, any pointers maintained within the
+shared memory must be made relative (typically to the
+starting address of the segment), rather than absolute.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On Linux, it is
+possible to attach a shared memory segment even if it is
+already marked to be deleted. However, POSIX.1-2001 does not
+specify this behavior and many other implementations do not
+support it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+system parameter affects <b>shmat</b>():</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>SHMLBA</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">Segment low boundary address
+multiple. Must be page aligned. For the current
+implementation the <b>SHMLBA</b> value is
+<b>PAGE_SIZE</b>.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The
+implementation places no intrinsic limit on the per-process
+maximum number of shared memory segments
+(<b>SHMSEG</b>).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>brk</b>(2),
+<b>mmap</b>(2), <b>shmctl</b>(2), <b>shmget</b>(2),
+<b>capabilities</b>(7), <b>shm_overview</b>(7),
+<b>svipc</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

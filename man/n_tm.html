@@ -1,0 +1,395 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:41:37 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>tm</title>
+
+</head>
+<body>
+
+<h1 align="center">tm</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#MODULE DEFINITION">MODULE DEFINITION</a><br>
+<a href="#FINDING MODULES">FINDING MODULES</a><br>
+<a href="#DEFAULT PATHS">DEFAULT PATHS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#KEYWORDS">KEYWORDS</a><br>
+
+<hr>
+
+
+
+<p>______________________________________________________________________________</p>
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">tm &minus;
+Facilities for locating and loading of Tcl Modules</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>::tcl::tm::path
+add</b> ?<i>path</i>...? <b><br>
+::tcl::tm::path remove</b> ?<i>path</i>...? <b><br>
+::tcl::tm::path list <br>
+::tcl::tm::roots</b> ?<i>path</i>...?
+_________________________________________________________________</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+describes the facilities for locating and loading Tcl
+Modules (see <b>MODULE DEFINITION</b> for the definition of
+a Tcl Module). The following commands are supported: <b><br>
+::tcl::tm::path add</b> ?<i>path</i>...?</p>
+
+<p style="margin-left:22%;">The paths are added at the head
+to the list of module paths, in order of appearance. This
+means that the last argument ends up as the new head of the
+list.</p>
+
+<p style="margin-left:22%; margin-top: 1em">The command
+enforces the restriction that no path may be an ancestor
+directory of any other path on the list. If any of the new
+paths violates this restriction an error will be raised,
+before any of the paths have been added. In other words, if
+only one path argument violates the restriction then none
+will be added.</p>
+
+<p style="margin-left:22%; margin-top: 1em">If a path is
+already present as is, no error will be raised and no action
+will be taken.</p>
+
+<p style="margin-left:22%; margin-top: 1em">Paths are
+searched later in the order of their appearance in the list.
+As they are added to the front of the list they are searched
+in reverse order of addition. In other words, the paths
+added last are looked at first.</p>
+
+<p style="margin-left:11%;"><b>::tcl::tm::path remove</b>
+?<i>path</i>...?</p>
+
+<p style="margin-left:22%;">Removes the paths from the list
+of module paths. The command silently ignores all paths
+which are not on the list.</p>
+
+<p style="margin-left:11%;"><b>::tcl::tm::path list</b></p>
+
+<p style="margin-left:22%;">Returns a list containing all
+registered module paths, in the order that they are searched
+for modules.</p>
+
+<p style="margin-left:11%;"><b>::tcl::tm::roots</b>
+?<i>path</i>...?</p>
+
+<p style="margin-left:22%;">Similar to <b>path add</b>, and
+layered on top of it. This command takes a list of paths,
+extends each with
+&ldquo;<b>tcl</b><i>X</i><b>/site-tcl</b>&rdquo;, and
+&ldquo;<b>tcl</b><i>X</i><b>/</b><i>X</i><b>.</b><i>y</i>&rdquo;,
+for major version <i>X</i> of the Tcl interpreter and minor
+version <i>y</i> less than or equal to the minor version of
+the interpreter, and adds the resulting set of paths to the
+list of paths to search.</p>
+
+<p style="margin-left:22%; margin-top: 1em">This command is
+used internally by the system to set up the system-specific
+default paths.</p>
+
+<p style="margin-left:22%; margin-top: 1em">The command has
+been exposed to allow a build system to define additional
+root paths beyond those described by this document.</p>
+
+<h2>MODULE DEFINITION
+<a name="MODULE DEFINITION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">A Tcl Module is
+a Tcl Package contained in a single file, and no other files
+required by it. This file has to be <b>source</b>able. In
+other words, a Tcl Module is always imported via:</p>
+
+<p style="margin-left:22%;">source module_file</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <b>load</b>
+command is not directly used. This restriction is not an
+actual limitation, as some may believe. Ever since 8.4 the
+Tcl <b>source</b> command reads only until the first ^Z
+character. This allows us to combine an arbitrary Tcl script
+with arbitrary binary data into one file, where the script
+processes the attached data in any it chooses to fully
+import and activate the package.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The name of a
+module file has to match the regular expression:</p>
+
+
+<p style="margin-left:22%;">([_[:alpha:]][:_[:alnum:]]*)-([[:digit:]].*)\.tm</p>
+
+<p style="margin-left:11%; margin-top: 1em">The first
+capturing parentheses provides the name of the package, the
+second clause its version. In addition to matching the
+pattern, the extracted version number must not raise an
+error when used in the command:</p>
+
+<p style="margin-left:22%;">package vcompare $version 0</p>
+
+<h2>FINDING MODULES
+<a name="FINDING MODULES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The directory
+tree for storing Tcl modules is separate from other parts of
+the filesystem and independent of <b>auto_path</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Tcl Modules are
+searched for in all directories listed in the result of the
+command <b>::tcl::tm::path list</b>. This is called the
+<i>Module path</i>. Neither the <b>auto_path</b> nor the
+<b>tcl_pkgPath</b> variables are used. All directories on
+the module path have to obey one restriction:</p>
+
+<p style="margin-left:22%; margin-top: 1em">For any two
+directories, neither is an ancestor directory of the
+other.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is
+required to avoid ambiguities in package naming. If for
+example the two directories &ldquo;<i>foo/</i>&rdquo; and
+&ldquo;<i>foo/cool</i>&rdquo; were on the path a package
+named <b>cool::ice</b> could be found via the names
+<b>cool::ice</b> or <b>ice</b>, the latter potentially
+obscuring a package named <b>ice</b>, unqualified.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Before the
+search is started, the name of the requested package is
+translated into a partial path, using the following
+algorithm:</p>
+
+<p style="margin-left:22%; margin-top: 1em">All occurrences
+of &ldquo;<b>::</b>&rdquo; in the package name are replaced
+by the appropriate directory separator character for the
+platform we are on. On Unix, for example, this is
+&ldquo;<b>/</b>&rdquo;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Example:</p>
+
+<p style="margin-left:22%; margin-top: 1em">The requested
+package is <b>encoding::base64</b>. The generated partial
+path is &ldquo;<i>encoding/base64</i>&rdquo;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">After this
+translation the package is looked for in all module paths,
+by combining them one-by-one, first to last with the partial
+path to form a complete search pattern. Note that the search
+algorithm rejects all files where the filename does not
+match the regular expression given in the section <b>MODULE
+DEFINITION</b>. For the remaining files <i>provide
+scripts</i> are generated and added to the package ifneeded
+database.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The algorithm
+falls back to the previous unknown handler when none of the
+found module files satisfy the request. If the request was
+satisfied the fall-back is ignored.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+packages in module form have <i>no</i> control over the
+<i>index</i> and <i>provide script</i>s entered into the
+package database for them. For a module file <b>MF</b> the
+<i>index script</i> is always:</p>
+
+<p style="margin-left:22%;">package ifneeded <b>PNAME
+PVERSION</b> [list source <b>MF</b>]</p>
+
+<p style="margin-left:11%;">and the <i>provide script</i>
+embedded in the above is:</p>
+
+<p style="margin-left:22%;">source <b>MF</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">Both package
+name <b>PNAME</b> and package version <b>PVERSION</b> are
+extracted from the filename <b>MF</b> according to the
+definition below:</p>
+
+<p style="margin-left:22%;"><b>MF</b> =
+/module_path/<b>PNAME&prime;</b>-<b>PVERSION</b>.tm</p>
+
+<p style="margin-left:11%; margin-top: 1em">Where
+<b>PNAME&prime;</b> is the partial path of the module as
+defined in section <b>FINDING MODULES</b>, and translated
+into <b>PNAME</b> by changing all directory separators to
+&ldquo;<b>::</b>&rdquo;, and <b>module_path</b> is the path
+(from the list of paths to search) that we found the module
+file under.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note also that
+we are here creating a connection between package names and
+paths. Tcl is case-sensitive when it comes to comparing
+package names, but there are filesystems which are not, like
+NTFS. Luckily these filesystems do store the case of the
+name, despite not using the information when comparing.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Given the above
+we allow the names for packages in Tcl modules to have
+mixed-case, but also require that there are no collisions
+when comparing names in a case-insensitive manner. In other
+words, if a package <b>Foo</b> is deployed in the form of a
+Tcl Module, packages like <b>foo</b>, <b>fOo</b>, etc. are
+not allowed anymore.</p>
+
+<h2>DEFAULT PATHS
+<a name="DEFAULT PATHS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The default
+list of paths on the module path is computed by a
+<b>tclsh</b> as follows, where <i>X</i> is the major version
+of the Tcl interpreter and <i>y</i> is less than or equal to
+the minor version of the Tcl interpreter.</p>
+
+<p style="margin-left:11%; margin-top: 1em">All the default
+paths are added to the module path, even those paths which
+do not exist. Non-existent paths are filtered out during
+actual searches. This enables a user to create one of the
+paths searched when needed and all running applications will
+automatically pick up any modules placed in them.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The paths are
+added in the order as they are listed below, and for lists
+of paths defined by an environment variable in the order
+they are found in the variable.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>SYSTEM
+SPECIFIC PATHS <br>
+file normalize [info
+library]/../tcl</b><i>X</i><b>/</b><i>X</i><b>.</b><i>y</i></p>
+
+<p style="margin-left:22%;">In other words, the interpreter
+will look into a directory specified by its major version
+and whose minor versions are less than or equal to the minor
+version of the interpreter.</p>
+
+<p style="margin-left:22%; margin-top: 1em">For example for
+Tcl 8.4 the paths searched are:</p>
+
+<p style="margin-left:32%;"><b>[info library]/../tcl8/8.4
+<br>
+[info library]/../tcl8/8.3 <br>
+[info library]/../tcl8/8.2 <br>
+[info library]/../tcl8/8.1 <br>
+[info library]/../tcl8/8.0</b></p>
+
+<p style="margin-left:22%; margin-top: 1em">This definition
+assumes that a package defined for Tcl
+<i>X</i><b>.</b><i>y</i> can also be used by all
+interpreters which have the same major number <i>X</i> and a
+minor number greater than <i>y</i>.</p>
+
+<p style="margin-left:11%;"><b>file normalize
+EXEC/tcl</b><i>X</i><b>/</b><i>X</i><b>.</b><i>y</i></p>
+
+<p style="margin-left:22%;">Where <b>EXEC</b> is <b>file
+normalize [info nameofexecutable]/../lib</b> or <b>file
+normalize [::tcl::pkgconfig get libdir,runtime]</b></p>
+
+<p style="margin-left:22%; margin-top: 1em">This sets of
+paths is handled equivalently to the set coming before,
+except that it is anchored in <b>EXEC_PREFIX</b>. For a
+build with <b>PREFIX</b> = <b>EXEC_PREFIX</b> the two sets
+are identical.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>SITE
+SPECIFIC PATHS <br>
+file normalize [info
+library]/../tcl</b><i>X</i><b>/site-tcl</b></p>
+
+<p style="margin-left:22%;">Note that this is always a
+single entry because <i>X</i> is always a specific value
+(the current major version of Tcl).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>USER
+SPECIFIC PATHS <br>
+$::env(TCL</b><i>X</i><b>_</b><i>y</i><b>_TM_PATH)</b></p>
+
+<p style="margin-left:22%;">A list of paths, separated by
+either <b>:</b> (Unix) or <b>;</b> (Windows). This is user
+and site specific as this environment variable can be set
+not only by the user&rsquo;s profile, but by system
+configuration scripts as well.</p>
+
+
+<p style="margin-left:11%;"><b>$::env(TCL</b><i>X</i><b>.</b><i>y</i><b>_TM_PATH)</b></p>
+
+<p style="margin-left:22%;">Same meaning and content as the
+previous variable. However the use of dot &rsquo;.&rsquo; to
+separate major and minor version number makes this name less
+to non-portable and its use is discouraged. Support of this
+variable has been kept only for backward compatibility with
+the original specification, i.e. TIP 189.</p>
+
+<p style="margin-left:11%; margin-top: 1em">These paths are
+seen and therefore shared by all Tcl shells in the
+<b>$::env(PATH)</b> of the user.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+<i>X</i> and <i>y</i> follow the general rules set out
+above. In other words, Tcl 8.4, for example, will look at
+these 5 environment variables:</p>
+
+<p style="margin-left:22%;"><b>$::env(TCL8.4_TM_PATH)
+$::env(TCL8_4_TM_PATH) <br>
+$::env(TCL8.3_TM_PATH) $::env(TCL8_3_TM_PATH) <br>
+$::env(TCL8.2_TM_PATH) $::env(TCL8_2_TM_PATH) <br>
+$::env(TCL8.1_TM_PATH) $::env(TCL8_1_TM_PATH) <br>
+$::env(TCL8.0_TM_PATH) $::env(TCL8_0_TM_PATH)</b></p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">package(n), Tcl
+Improvement Proposal #189 &ldquo;<i>Tcl Modules</i>&rdquo;
+(online at http://tip.tcl.tk/189.html), Tcl Improvement
+Proposal #190 &ldquo;<i>Implementation Choices for Tcl
+Modules</i>&rdquo; (online at
+http://tip.tcl.tk/190.html)</p>
+
+<h2>KEYWORDS
+<a name="KEYWORDS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">modules,
+package</p>
+<hr>
+</body>
+</html>

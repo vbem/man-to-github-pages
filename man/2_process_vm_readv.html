@@ -1,0 +1,401 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:41 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PROCESS_VM_READV</title>
+
+</head>
+<body>
+
+<h1 align="center">PROCESS_VM_READV</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">process_vm_readv,
+process_vm_writev &minus; transfer data between process
+address spaces</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;sys/uio.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>ssize_t
+process_vm_readv(pid_t</b> <i>pid</i><b>, <br>
+const struct iovec *</b><i>local_iov</i><b>, <br>
+unsigned long</b> <i>liovcnt</i><b>, <br>
+const struct iovec *</b><i>remote_iov</i><b>, <br>
+unsigned long</b> <i>riovcnt</i><b>, <br>
+unsigned long</b> <i>flags</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>ssize_t
+process_vm_writev(pid_t</b> <i>pid</i><b>, <br>
+const struct iovec *</b><i>local_iov</i><b>, <br>
+unsigned long</b> <i>liovcnt</i><b>, <br>
+const struct iovec *</b><i>remote_iov</i><b>, <br>
+unsigned long</b> <i>riovcnt</i><b>, <br>
+unsigned long</b> <i>flags</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These system
+calls transfer data between the address space of the calling
+process (&quot;the local process&quot;) and the process
+identified by <i>pid</i> (&quot;the remote process&quot;).
+The data moves directly between the address spaces of the
+two processes, without passing through kernel space.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>process_vm_readv</b>() system call transfers data from
+the remote process to the local process. The data to be
+transferred is identified by <i>remote_iov</i> and
+<i>riovcnt</i>: <i>remote_iov</i> is a pointer to an array
+describing address ranges in the process <i>pid</i>, and
+<i>riovcnt</i> specifies the number of elements in
+<i>remote_iov</i>. The data is transferred to the locations
+specified by <i>local_iov</i> and <i>liovcnt</i>:
+<i>local_iov</i> is a pointer to an array describing address
+ranges in the calling process, and <i>liovcnt</i> specifies
+the number of elements in <i>local_iov</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>process_vm_writev</b>() system call is the converse of
+<b>process_vm_readv</b>()&mdash;it transfers data from the
+local process to the remote process. Other than the
+direction of the transfer, the arguments <i>liovcnt</i>,
+<i>local_iov</i>, <i>riovcnt</i>, and <i>remote_iov</i> have
+the same meaning as for <b>process_vm_readv</b>().</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>local_iov</i> and <i>remote_iov</i> arguments point to an
+array of <i>iovec</i> structures, defined in
+<i>&lt;sys/uio.h&gt;</i> as:</p>
+
+<p style="margin-left:17%; margin-top: 1em">struct iovec {
+<br>
+void *iov_base; /* Starting address */ <br>
+size_t iov_len; /* Number of bytes to transfer */ <br>
+};</p>
+
+<p style="margin-left:11%; margin-top: 1em">Buffers are
+processed in array order. This means that
+<b>process_vm_readv</b>() completely fills
+<i>local_iov[0]</i> before proceeding to
+<i>local_iov[1]</i>, and so on. Likewise,
+<i>remote_iov[0]</i> is completely read before proceeding to
+<i>remote_iov[1]</i>, and so on.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Similarly,
+<b>process_vm_writev</b>() writes out the entire contents of
+<i>local_iov[0]</i> before proceeding to
+<i>local_iov[1]</i>, and it completely fills
+<i>remote_iov[0]</i> before proceeding to
+<i>remote_iov[1]</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The lengths of
+<i>remote_iov[i].iov_len</i> and <i>local_iov[i].iov_len</i>
+do not have to be the same. Thus, it is possible to split a
+single local buffer into multiple remote buffers, or vice
+versa.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>flags</i> argument is currently unused and must be set to
+0.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The values
+specified in the <i>liovcnt</i> and <i>riovcnt</i> arguments
+must be less than or equal to <b>IOV_MAX</b> (defined in
+<i>&lt;limits.h&gt;</i> or accessible via the call
+<i>sysconf(_SC_IOV_MAX)</i>).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The count
+arguments and <i>local_iov</i> are checked before doing any
+transfers. If the counts are too big, or <i>local_iov</i> is
+invalid, or the addresses refer to regions that are
+inaccessible to the local process, none of the vectors will
+be processed and an error will be returned immediately.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note, however,
+that these system calls do not check the memory regions in
+the remote process until just before doing the read/write.
+Consequently, a partial read/write (see RETURN VALUE) may
+result if one of the <i>remote_iov</i> elements points to an
+invalid memory region in the remote process. No further
+reads/writes will be attempted beyond that point. Keep this
+in mind when attempting to read data of unknown length (such
+as C strings that are null-terminated) from a remote
+process, by avoiding spanning memory pages (typically 4KiB)
+in a single remote <i>iovec</i> element. (Instead, split the
+remote read into two <i>remote_iov</i> elements and have
+them merge back into a single write <i>local_iov</i> entry.
+The first read entry goes up to the page boundary, while the
+second starts on the next page boundary.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">In order to
+read from or write to another process, either the caller
+must have the capability <b>CAP_SYS_PTRACE</b>, or the real
+user ID, effective user ID, and saved set-user-ID of the
+remote process must match the real user ID of the caller
+<i>and</i> the real group ID, effective group ID, and saved
+set-group-ID of the remote process must match the real group
+ID of the caller. (The permission required is exactly the
+same as that required to perform a <b>ptrace</b>(2)
+<b>PTRACE_ATTACH</b> on the remote process.)</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success,
+<b>process_vm_readv</b>() returns the number of bytes read
+and <b>process_vm_writev</b>() returns the number of bytes
+written. This return value may be less than the total number
+of requested bytes, if a partial read/write occurred.
+(Partial transfers apply at the granularity of <i>iovec</i>
+elements. These system calls won&rsquo;t perform a partial
+transfer that splits a single <i>iovec</i> element.) The
+caller should check the return value to determine whether a
+partial read/write occurred.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On error,
+&minus;1 is returned and <i>errno</i> is set
+appropriately.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">The sum of the <i>iov_len</i>
+values of either <i>local_iov</i> or <i>remote_iov</i>
+overflows a <i>ssize_t</i> value.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>flags</i> is not 0.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>liovcnt</i> or <i>riovcnt</i> is too large.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The memory described by <i>local_iov</i> is outside the
+caller&rsquo;s accessible address space.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The memory described by <i>remote_iov</i> is outside the
+accessible address space of the process <i>pid</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Could not allocate memory for internal copies of the
+<i>iovec</i> structures.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EPERM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The caller does not have permission to access the
+address space of the process <i>pid</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ESRCH</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>No process with ID <i>pid</i> exists.</p></td></tr>
+</table>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These system
+calls were added in Linux 3.2. Support is provided in glibc
+since version 2.15.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These system
+calls are nonstandard Linux extensions.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The data
+transfers performed by <b>process_vm_readv</b>() and
+<b>process_vm_writev</b>() are not guaranteed to be atomic
+in any way.</p>
+
+<p style="margin-left:11%; margin-top: 1em">These system
+calls were designed to permit fast message passing by
+allowing messages to be exchanged with a single copy
+operation (rather than the double copy that would be
+required when using, for example, shared memory or
+pipes).</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+code sample demonstrates the use of
+<b>process_vm_readv</b>(). It reads 20 bytes at the address
+0x10000 from the process with PID 10 and writes the first 10
+bytes into <i>buf1</i> and the second 10 bytes into
+<i>buf2</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">#include
+&lt;sys/uio.h&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">int <br>
+main(void) <br>
+{ <br>
+struct iovec local[2]; <br>
+struct iovec remote[1]; <br>
+char buf1[10]; <br>
+char buf2[10]; <br>
+ssize_t nread; <br>
+pid_t pid = 10; /* PID of remote process */</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">local[0].iov_base
+= buf1; <br>
+local[0].iov_len = 10; <br>
+local[1].iov_base = buf2; <br>
+local[1].iov_len = 10; <br>
+remote[0].iov_base = (void *) 0x10000; <br>
+remote[1].iov_len = 20;</p>
+
+<p style="margin-left:11%; margin-top: 1em">nread =
+process_vm_readv(pid, local, 2, remote, 1, 0); <br>
+if (nread != 20) <br>
+return 1; <br>
+else <br>
+return 0; <br>
+}</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>readv</b>(2),
+<b>writev</b>(2)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

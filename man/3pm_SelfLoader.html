@@ -1,0 +1,385 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:33:11 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SelfLoader</title>
+
+</head>
+<body>
+
+<h1 align="center">SelfLoader</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#Multiple packages and fully qualified subroutine names">Multiple packages and fully qualified subroutine names</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#COPYRIGHT AND LICENSE">COPYRIGHT AND LICENSE</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">SelfLoader
+&minus; load functions only on demand</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">    package FOOBAR;
+    use SelfLoader;
+    ... (initializing code)
+    __DATA__
+    sub {....</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This module
+tells its users that functions in the <small>FOOBAR</small>
+package are to be autoloaded from after the
+<tt>&quot;__DATA__&quot;</tt> token. See also
+&quot;Autoloading&quot; in perlsub.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>The __DATA__
+token</b> <br>
+The <tt>&quot;__DATA__&quot;</tt> token tells the perl
+compiler that the perl code for compilation is finished.
+Everything after the <tt>&quot;__DATA__&quot;</tt> token is
+available for reading via the filehandle
+<small>FOOBAR::DATA</small> , where <small>FOOBAR</small> is
+the name of the current package when the
+<tt>&quot;__DATA__&quot;</tt> token is reached. This works
+just the same as <tt>&quot;__END__&quot;</tt> does in
+package &rsquo;main&rsquo;, but for other modules data after
+<tt>&quot;__END__&quot;</tt> is not automatically
+retrievable, whereas data after
+<tt>&quot;__DATA__&quot;</tt> is. The
+<tt>&quot;__DATA__&quot;</tt> token is not recognized in
+versions of perl prior to 5.001m.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that it is
+possible to have <tt>&quot;__DATA__&quot;</tt> tokens in the
+same package in multiple files, and that the last
+<tt>&quot;__DATA__&quot;</tt> token in a given package that
+is encountered by the compiler is the one accessible by the
+filehandle. This also applies to
+<tt>&quot;__END__&quot;</tt> and main, i.e. if the
+&rsquo;main&rsquo; program has an
+<tt>&quot;__END__&quot;</tt>, but a module
+&rsquo;require&rsquo;d (_not_ &rsquo;use&rsquo;d) by that
+program has a &rsquo;package main;&rsquo; declaration
+followed by an &rsquo;<tt>&quot;__DATA__&quot;</tt>&rsquo;,
+then the <tt>&quot;DATA&quot;</tt> filehandle is set to
+access the data after the <tt>&quot;__DATA__&quot;</tt> in
+the module, _not_ the data after the
+<tt>&quot;__END__&quot;</tt> token in the &rsquo;main&rsquo;
+program, since the compiler encounters the
+&rsquo;require&rsquo;d file later.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>SelfLoader
+autoloading</b> <br>
+The <b>SelfLoader</b> works by the user placing the
+<tt>&quot;__DATA__&quot;</tt> token <i>after</i> perl code
+which needs to be compiled and run at &rsquo;require&rsquo;
+time, but <i>before</i> subroutine declarations that can be
+loaded in later &minus; usually because they may never be
+called.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>SelfLoader</b> will read from the
+<small>FOOBAR::DATA</small> filehandle to load in the data
+after <tt>&quot;__DATA__&quot;</tt>, and load in any
+subroutine when it is called. The costs are the one-time
+parsing of the data after <tt>&quot;__DATA__&quot;</tt>, and
+a load delay for the _first_ call of any autoloaded
+function. The benefits (hopefully) are a speeded up
+compilation phase, with no need to load functions which are
+never used.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>SelfLoader</b> will stop reading from
+<tt>&quot;__DATA__&quot;</tt> if it encounters the
+<tt>&quot;__END__&quot;</tt> token &minus; just as you would
+expect. If the <tt>&quot;__END__&quot;</tt> token is
+present, and is followed by the token <small>DATA</small> ,
+then the <b>SelfLoader</b> leaves the
+<small>FOOBAR::DATA</small> filehandle open on the line
+after that token.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>SelfLoader</b> exports the <tt>&quot;AUTOLOAD&quot;</tt>
+subroutine to the package using the <b>SelfLoader</b>, and
+this loads the called subroutine when it is first
+called.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is no
+advantage to putting subroutines which will _always_ be
+called after the <tt>&quot;__DATA__&quot;</tt> token.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Autoloading
+and package lexicals</b> <br>
+A &rsquo;my <tt>$pack_lexical</tt>&rsquo; statement makes
+the variable <tt>$pack_lexical</tt> local _only_ to the file
+up to the <tt>&quot;__DATA__&quot;</tt> token. Subroutines
+declared elsewhere _cannot_ see these types of variables,
+just as if you declared subroutines in the package but in
+another file, they cannot see these variables.</p>
+
+<p style="margin-left:11%; margin-top: 1em">So
+specifically, autoloaded functions cannot see package
+lexicals (this applies to both the <b>SelfLoader</b> and the
+Autoloader). The <tt>&quot;vars&quot;</tt> pragma provides
+an alternative to defining package-level globals that will
+be visible to autoloaded routines. See the documentation on
+<b>vars</b> in the pragma section of perlmod.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>SelfLoader
+and AutoLoader</b> <br>
+The <b>SelfLoader</b> can replace the AutoLoader &minus;
+just change &rsquo;use AutoLoader&rsquo; to &rsquo;use
+SelfLoader&rsquo; (though note that the <b>SelfLoader</b>
+exports the <small>AUTOLOAD</small> function &minus; but if
+you have your own <small>AUTOLOAD</small> and are using the
+AutoLoader too, you probably know what you&rsquo;re doing),
+and the <tt>&quot;__END__&quot;</tt> token to
+<tt>&quot;__DATA__&quot;</tt>. You will need perl version
+5.001m or later to use this (version 5.001 with all patches
+up to patch m).</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is no
+need to inherit from the <b>SelfLoader</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>SelfLoader</b> works similarly to the AutoLoader, but
+picks up the subs from after the
+<tt>&quot;__DATA__&quot;</tt> instead of in the
+&rsquo;lib/auto&rsquo; directory. There is a maintenance
+gain in not needing to run AutoSplit on the module at
+installation, and a runtime gain in not needing to keep
+opening and closing files to load subs. There is a runtime
+loss in needing to parse the code after the
+<tt>&quot;__DATA__&quot;</tt>. Details of the
+<b>AutoLoader</b> and another view of these distinctions can
+be found in that module&rsquo;s documentation.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>__DATA__,
+__END__, and the <small>FOOBAR::DATA</small> filehandle.</b>
+<br>
+This section is only relevant if you want to use the
+<tt>&quot;FOOBAR::DATA&quot;</tt> together with the
+<b>SelfLoader</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Data after the
+<tt>&quot;__DATA__&quot;</tt> token in a module is read
+using the <small>FOOBAR::DATA</small> filehandle.
+<tt>&quot;__END__&quot;</tt> can still be used to denote the
+end of the <tt>&quot;__DATA__&quot;</tt> section if followed
+by the token <small>DATA</small> &minus; this is supported
+by the <b>SelfLoader</b>. The
+<tt>&quot;FOOBAR::DATA&quot;</tt> filehandle is left open if
+an <tt>&quot;__END__&quot;</tt> followed by a
+<small>DATA</small> is found, with the filehandle positioned
+at the start of the line after the
+<tt>&quot;__END__&quot;</tt> token. If no
+<tt>&quot;__END__&quot;</tt> token is present, or an
+<tt>&quot;__END__&quot;</tt> token with no
+<small>DATA</small> token on the same line, then the
+filehandle is closed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>SelfLoader</b> reads from wherever the current position
+of the <tt>&quot;FOOBAR::DATA&quot;</tt> filehandle is,
+until the <small>EOF</small> or
+<tt>&quot;__END__&quot;</tt>. This means that if you want to
+use that filehandle (and <small>ONLY</small> if you want
+to), you should either</p>
+
+<p style="margin-left:11%; margin-top: 1em">1. Put all your
+subroutine declarations immediately after the
+<tt>&quot;__DATA__&quot;</tt> token and put your own data
+after those declarations, using the
+<tt>&quot;__END__&quot;</tt> token to mark the end of
+subroutine declarations. You must also ensure that the
+<b>SelfLoader</b> reads first by calling
+&rsquo;SelfLoader&minus;&gt;<i>load_stubs()</i>;&rsquo;, or
+by using a function which is selfloaded;</p>
+
+<p style="margin-left:11%; margin-top: 1em">or</p>
+
+<p style="margin-left:11%; margin-top: 1em">2. You should
+read the <tt>&quot;FOOBAR::DATA&quot;</tt> filehandle first,
+leaving the handle open and positioned at the first line of
+subroutine declarations.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You could
+conceivably do both.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Classes and
+inherited methods.</b> <br>
+For modules which are not classes, this section is not
+relevant. This section is only relevant if you have methods
+which could be inherited.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A subroutine
+stub (or forward declaration) looks like</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  sub stub;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">i.e. it is a
+subroutine declaration without the body of the subroutine.
+For modules which are not classes, there is no real need for
+stubs as far as autoloading is concerned.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For modules
+which <small>ARE</small> classes, and need to handle
+inherited methods, stubs are needed to ensure that the
+method inheritance mechanism works properly. You can load
+the stubs into the module at &rsquo;require&rsquo; time, by
+adding the statement
+&rsquo;SelfLoader&minus;&gt;<i>load_stubs()</i>;&rsquo; to
+the module to do this.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The alternative
+is to put the stubs in before the
+<tt>&quot;__DATA__&quot;</tt> token <small>BEFORE</small>
+releasing the module, and for this purpose the
+<tt>&quot;Devel::SelfStubber&quot;</tt> module is available.
+However this does require the extra step of ensuring that
+the stubs are in the module. If this is done I strongly
+recommend that this is done <small>BEFORE</small> releasing
+the module &minus; it should <small>NOT</small> be done at
+install time in general.</p>
+
+<h2>Multiple packages and fully qualified subroutine names
+<a name="Multiple packages and fully qualified subroutine names"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Subroutines in
+multiple packages within the same file are supported &minus;
+but you should note that this requires exporting the
+<tt>&quot;SelfLoader::AUTOLOAD&quot;</tt> to every package
+which requires it. This is done automatically by the
+<b>SelfLoader</b> when it first loads the subs into the
+cache, but you should really specify it in the
+initialization before the <tt>&quot;__DATA__&quot;</tt> by
+putting a &rsquo;use SelfLoader&rsquo; statement in each
+package.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Fully qualified
+subroutine names are also supported. For example,</p>
+
+<pre style="margin-left:11%; margin-top: 1em">   __DATA__
+   sub foo::bar {23}
+   package baz;
+   sub dob {32}</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">will all be
+loaded correctly by the <b>SelfLoader</b>, and the
+<b>SelfLoader</b> will ensure that the packages
+&rsquo;foo&rsquo; and &rsquo;baz&rsquo; correctly have the
+<b>SelfLoader</b> <tt>&quot;AUTOLOAD&quot;</tt> method when
+the data after <tt>&quot;__DATA__&quot;</tt> is first
+parsed.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;SelfLoader&quot;</tt>
+is maintained by the perl5&minus;porters. Please direct any
+questions to the canonical mailing list. Anything that is
+applicable to the <small>CPAN</small> release can be sent to
+its maintainer, though.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Author and
+Maintainer: The Perl5&minus;Porters
+&lt;perl5&minus;porters@perl.org&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">Maintainer of
+the <small>CPAN</small> release: Steffen Mueller
+&lt;smueller@cpan.org&gt;</p>
+
+<h2>COPYRIGHT AND LICENSE
+<a name="COPYRIGHT AND LICENSE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This package
+has been part of the perl core since the first release of
+perl5. It has been released separately to
+<small>CPAN</small> so older installations can benefit from
+bug fixes.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This package
+has the same copyright and license as the perl core:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">             Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999,
+        2000, 2001, 2002, 2003, 2004, 2005, 2006 by Larry Wall and others
+                            All rights reserved.
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of either:
+        a) the GNU General Public License as published by the Free
+        Software Foundation; either version 1, or (at your option) any
+        later version, or
+        b) the &quot;Artistic License&quot; which comes with this Kit.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See either
+    the GNU General Public License or the Artistic License for more details.
+    You should have received a copy of the Artistic License with this
+    Kit, in the file named &quot;Artistic&quot;.  If not, I'll be glad to provide one.
+    You should also have received a copy of the GNU General Public License
+    along with this program in the file named &quot;Copying&quot;. If not, write to the
+    Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+    MA 02110&minus;1301, USA or visit their web page on the internet at
+    http://www.gnu.org/copyleft/gpl.html.
+    For those of you that choose to use the GNU General Public License,
+    my interpretation of the GNU General Public License is that no Perl
+    script falls under the terms of the GPL unless you explicitly put
+    said script under the terms of the GPL yourself.  Furthermore, any
+    object code linked with perl does not automatically fall under the
+    terms of the GPL, provided such object code only adds definitions
+    of subroutines and variables, and does not otherwise impair the
+    resulting interpreter from executing any standard Perl script.  I
+    consider linking in C subroutines in this manner to be the moral
+    equivalent of defining subroutines in the Perl language itself.  You
+    may sell such an object file as proprietary provided that you provide
+    or offer to provide the Perl source, as specified by the GNU General
+    Public License.  (This is merely an alternate way of specifying input
+    to the program.)  You may also sell a binary produced by the dumping of
+    a running Perl script that belongs to you, provided that you provide or
+    offer to provide the Perl source as specified by the GPL.  (The
+    fact that a Perl interpreter and your code are in the same binary file
+    is, in this case, a form of mere aggregation.)  This is my interpretation
+    of the GPL.  If you still have concerns or difficulties understanding
+    my intent, feel free to contact me.  Of course, the Artistic License
+    spells all this out for your protection, so you may prefer to use that.</pre>
+<hr>
+</body>
+</html>

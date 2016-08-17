@@ -1,0 +1,212 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:38:21 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>VCS</title>
+
+</head>
+<body>
+
+<h1 align="center">VCS</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#FILES">FILES</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">vcs, vcsa
+&minus; virtual console memory</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>/dev/vcs0</i>
+is a character device with major number 7 and minor number
+0, usually of mode 0644 and owner root.tty. It refers to the
+memory of the currently displayed virtual console
+terminal.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>/dev/vcs[1&minus;63]</i>
+are character devices for virtual console terminals, they
+have major number 7 and minor number 1 to 63, usually mode
+0644 and owner root.tty. <i>/dev/vcsa[0&minus;63]</i> are
+the same, but using <i>unsigned short</i>s (in host byte
+order) that include attributes, and prefixed with four bytes
+giving the screen dimensions and cursor position:
+<i>lines</i>, <i>columns</i>, <i>x</i>, <i>y</i>. (<i>x</i>
+= <i>y</i> = 0 at the top left corner of the screen.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">When a
+512-character font is loaded, the 9th bit position can be
+fetched by applying the <b>ioctl</b>(2)
+<b>VT_GETHIFONTMASK</b> operation (available in Linux
+kernels 2.6.18 and above) on <i>/dev/tty[1&minus;63]</i>;
+the value is returned in the <i>unsigned short</i> pointed
+to by the third <b>ioctl</b>(2) argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">These devices
+replace the screendump <b>ioctl</b>(2) operations of
+<b>console</b>(4), so the system administrator can control
+access using file system permissions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The devices for
+the first eight virtual consoles may be created by:</p>
+
+<p style="margin-left:11%; margin-top: 1em">for x in 0 1 2
+3 4 5 6 7 8; do <br>
+mknod &minus;m 644 /dev/vcs$x c 7 $x; <br>
+mknod &minus;m 644 /dev/vcsa$x c 7 $[$x+128]; <br>
+done <br>
+chown root:tty /dev/vcs*</p>
+
+<p style="margin-left:11%; margin-top: 1em">No
+<b>ioctl</b>(2) requests are supported.</p>
+
+<h2>FILES
+<a name="FILES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">/dev/vcs[0&minus;63]
+<br>
+/dev/vcsa[0&minus;63]</p>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Introduced with
+version 1.1.92 of the Linux kernel.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">You may do a
+screendump on vt3 by switching to vt1 and typing</p>
+
+<p style="margin-left:11%; margin-top: 1em">cat /dev/vcs3
+&gt;foo</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that the
+output does not contain newline characters, so some
+processing may be required, like in</p>
+
+<p style="margin-left:11%; margin-top: 1em">old &minus;w 81
+/dev/vcs3 | lpr</p>
+
+<p style="margin-left:11%; margin-top: 1em">or
+(horrors)</p>
+
+<p style="margin-left:11%; margin-top: 1em">xetterm
+&minus;dump 3 &minus;file /proc/self/fd/1</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>/dev/vcsa0</i> device is used for Braille support.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This program
+displays the character and screen attributes under the
+cursor of the second virtual console, then changes the
+background color there:</p>
+
+<p style="margin-left:11%; margin-top: 1em">#include
+&lt;unistd.h&gt; <br>
+#include &lt;stdlib.h&gt; <br>
+#include &lt;stdio.h&gt; <br>
+#include &lt;fcntl.h&gt; <br>
+#include &lt;sys/ioctl.h&gt; <br>
+#include &lt;linux/vt.h&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">int <br>
+main(void) <br>
+{ <br>
+int fd; <br>
+char *device = &quot;/dev/vcsa2&quot;; <br>
+char *console = &quot;/dev/tty2&quot;; <br>
+struct {unsigned char lines, cols, x, y;} scrn; <br>
+unsigned short s; <br>
+unsigned short mask; <br>
+unsigned char ch, attrib;</p>
+
+<p style="margin-left:11%; margin-top: 1em">fd =
+open(console, O_RDWR); <br>
+if (fd &lt; 0) { <br>
+perror(console); <br>
+exit(EXIT_FAILURE); <br>
+} <br>
+if (ioctl(fd, VT_GETHIFONTMASK, &amp;mask) &lt; 0) { <br>
+perror(&quot;VT_GETHIFONTMASK&quot;); <br>
+exit(EXIT_FAILURE); <br>
+} <br>
+(void) close(fd); <br>
+fd = open(device, O_RDWR); <br>
+if (fd &lt; 0) { <br>
+perror(device); <br>
+exit(EXIT_FAILURE); <br>
+} <br>
+(void) read(fd, &amp;scrn, 4); <br>
+(void) lseek(fd, 4 + 2*(scrn.y*scrn.cols + scrn.x), 0); <br>
+(void) read(fd, &amp;s, 2); <br>
+ch = s &amp; 0xff; <br>
+if (attrib &amp; mask) <br>
+ch |= 0x100; <br>
+attrib = ((s &amp; ~mask) &gt;&gt; 8); <br>
+printf(&quot;ch='%c' attrib=0x%02x\n&quot;, ch, attrib);
+<br>
+attrib ^= 0x10; <br>
+(void) lseek(fd, &minus;1, 1); <br>
+(void) write(fd, &amp;attrib, 1); <br>
+exit(EXIT_SUCCESS); <br>
+}</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>console</b>(4),
+<b>tty</b>(4), <b>ttyS</b>(4), <b>gpm</b>(8)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

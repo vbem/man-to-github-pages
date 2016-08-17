@@ -1,0 +1,664 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:18:03 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>TIMERFD_CREATE</title>
+
+</head>
+<body>
+
+<h1 align="center">TIMERFD_CREATE</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">timerfd_create,
+timerfd_settime, timerfd_gettime &minus; timers that notify
+via file descriptors</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;sys/timerfd.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+timerfd_create(int</b> <i>clockid</i><b>, int</b>
+<i>flags</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+timerfd_settime(int</b> <i>fd</i><b>, int</b>
+<i>flags</i><b>, <br>
+const struct itimerspec *</b><i>new_value</i><b>, <br>
+struct itimerspec *</b><i>old_value</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+timerfd_gettime(int</b> <i>fd</i><b>, struct itimerspec
+*</b><i>curr_value</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These system
+calls create and operate on a timer that delivers timer
+expiration notifications via a file descriptor. They provide
+an alternative to the use of <b>setitimer</b>(2) or
+<b>timer_create</b>(2), with the advantage that the file
+descriptor may be monitored by <b>select</b>(2),
+<b>poll</b>(2), and <b>epoll</b>(7).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The use of
+these three system calls is analogous to the use of
+<b>timer_create</b>(2), <b>timer_settime</b>(2), and
+<b>timer_gettime</b>(2). (There is no analog of
+<b>timer_getoverrun</b>(2), since that functionality is
+provided by <b>read</b>(2), as described below.)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>timerfd_create()
+<br>
+timerfd_create</b>() creates a new timer object, and returns
+a file descriptor that refers to that timer. The
+<i>clockid</i> argument specifies the clock that is used to
+mark the progress of the timer, and must be either
+<b>CLOCK_REALTIME</b> or <b>CLOCK_MONOTONIC</b>.
+<b>CLOCK_REALTIME</b> is a settable system-wide clock.
+<b>CLOCK_MONOTONIC</b> is a nonsettable clock that is not
+affected by discontinuous changes in the system clock (e.g.,
+manual changes to system time). The current value of each of
+these clocks can be retrieved using
+<b>clock_gettime</b>(2).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Starting with
+Linux 2.6.27, the following values may be bitwise ORed in
+<i>flags</i> to change the behavior of
+<b>timerfd_create</b>():</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="18%">
+
+
+<p><b>TFD_NONBLOCK</b></p></td>
+<td width="3%"></td>
+<td width="68%">
+
+
+<p>Set the <b>O_NONBLOCK</b> file status flag on the new
+open file description. Using this flag saves extra calls to
+<b>fcntl</b>(2) to achieve the same result.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="18%">
+
+
+<p><b>TFD_CLOEXEC</b></p></td>
+<td width="3%"></td>
+<td width="68%">
+
+
+<p>Set the close-on-exec (<b>FD_CLOEXEC</b>) flag on the
+new file descriptor. See the description of the
+<b>O_CLOEXEC</b> flag in <b>open</b>(2) for reasons why this
+may be useful.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">In Linux
+versions up to and including 2.6.26, <i>flags</i> must be
+specified as zero.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>timerfd_settime()
+<br>
+timerfd_settime</b>() arms (starts) or disarms (stops) the
+timer referred to by the file descriptor <i>fd</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>new_value</i> argument specifies the initial expiration
+and interval for the timer. The <i>itimer</i> structure used
+for this argument contains two fields, each of which is in
+turn a structure of type <i>timespec</i>:</p>
+
+<p style="margin-left:17%; margin-top: 1em">struct timespec
+{ <br>
+time_t tv_sec; /* Seconds */ <br>
+long tv_nsec; /* Nanoseconds */ <br>
+};</p>
+
+<p style="margin-left:17%; margin-top: 1em">struct
+itimerspec { <br>
+struct timespec it_interval; /* Interval for periodic timer
+*/ <br>
+struct timespec it_value; /* Initial expiration */ <br>
+};</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>new_value.it_value</i>
+specifies the initial expiration of the timer, in seconds
+and nanoseconds. Setting either field of
+<i>new_value.it_value</i> to a nonzero value arms the timer.
+Setting both fields of <i>new_value.it_value</i> to zero
+disarms the timer.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Setting one or
+both fields of <i>new_value.it_interval</i> to nonzero
+values specifies the period, in seconds and nanoseconds, for
+repeated timer expirations after the initial expiration. If
+both fields of <i>new_value.it_interval</i> are zero, the
+timer expires just once, at the time specified by
+<i>new_value.it_value</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>flags</i> argument is either 0, to start a relative timer
+(<i>new_value.it_value</i> specifies a time relative to the
+current value of the clock specified by <i>clockid</i>), or
+<b>TFD_TIMER_ABSTIME</b>, to start an absolute timer
+(<i>new_value.it_value</i> specifies an absolute time for
+the clock specified by <i>clockid</i>; that is, the timer
+will expire when the value of that clock reaches the value
+specified in <i>new_value.it_value</i>).</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+<i>old_value</i> argument is not NULL, then the
+<i>itimerspec</i> structure that it points to is used to
+return the setting of the timer that was current at the time
+of the call; see the description of <b>timerfd_gettime</b>()
+following.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>timerfd_gettime()
+<br>
+timerfd_gettime</b>() returns, in <i>curr_value</i>, an
+<i>itimerspec</i> structure that contains the current
+setting of the timer referred to by the file descriptor
+<i>fd</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>it_value</i> field returns the amount of time until the
+timer will next expire. If both fields of this structure are
+zero, then the timer is currently disarmed. This field
+always contains a relative value, regardless of whether the
+<b>TFD_TIMER_ABSTIME</b> flag was specified when setting the
+timer.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>it_interval</i> field returns the interval of the timer.
+If both fields of this structure are zero, then the timer is
+set to expire just once, at the time specified by
+<i>curr_value.it_value</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Operating on
+a timer file descriptor</b> <br>
+The file descriptor returned by <b>timerfd_create</b>()
+supports the following operations: <b><br>
+read</b>(2)</p>
+
+<p style="margin-left:22%;">If the timer has already
+expired one or more times since its settings were last
+modified using <b>timerfd_settime</b>(), or since the last
+successful <b>read</b>(2), then the buffer given to
+<b>read</b>(2) returns an unsigned 8-byte integer
+(<i>uint64_t</i>) containing the number of expirations that
+have occurred. (The returned value is in host byte order,
+i.e., the native byte order for integers on the host
+machine.)</p>
+
+<p style="margin-left:22%; margin-top: 1em">If no timer
+expirations have occurred at the time of the <b>read</b>(2),
+then the call either blocks until the next timer expiration,
+or fails with the error <b>EAGAIN</b> if the file descriptor
+has been made nonblocking (via the use of the
+<b>fcntl</b>(2) <b>F_SETFL</b> operation to set the
+<b>O_NONBLOCK</b> flag).</p>
+
+<p style="margin-left:22%; margin-top: 1em">A
+<b>read</b>(2) will fail with the error <b>EINVAL</b> if the
+size of the supplied buffer is less than 8 bytes.</p>
+
+<p style="margin-left:11%;"><b>poll</b>(2),
+<b>select</b>(2) (and similar)</p>
+
+<p style="margin-left:22%;">The file descriptor is readable
+(the <b>select</b>(2) <i>readfds</i> argument; the
+<b>poll</b>(2) <b>POLLIN</b> flag) if one or more timer
+expirations have occurred.</p>
+
+<p style="margin-left:22%; margin-top: 1em">The file
+descriptor also supports the other file-descriptor
+multiplexing APIs: <b>pselect</b>(2), <b>ppoll</b>(2), and
+<b>epoll</b>(7).</p>
+
+<p style="margin-left:11%;"><b>close</b>(2)</p>
+
+<p style="margin-left:22%;">When the file descriptor is no
+longer required it should be closed. When all file
+descriptors associated with the same timer object have been
+closed, the timer is disarmed and its resources are freed by
+the kernel.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>fork(2)
+semantics</b> <br>
+After a <b>fork</b>(2), the child inherits a copy of the
+file descriptor created by <b>timerfd_create</b>(). The file
+descriptor refers to the same underlying timer object as the
+corresponding file descriptor in the parent, and
+<b>read</b>(2)s in the child will return information about
+expirations of the timer.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>execve(2)
+semantics</b> <br>
+A file descriptor created by <b>timerfd_create</b>() is
+preserved across <b>execve</b>(2), and continues to generate
+timer expirations if the timer was armed.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success,
+<b>timerfd_create</b>() returns a new file descriptor. On
+error, &minus;1 is returned and <i>errno</i> is set to
+indicate the error.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>timerfd_settime</b>()
+and <b>timerfd_gettime</b>() return 0 on success; on error
+they return &minus;1, and set <i>errno</i> to indicate the
+error.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>timerfd_create</b>()
+can fail with the following errors:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The <i>clockid</i> argument is neither
+<b>CLOCK_MONOTONIC</b> nor <b>CLOCK_REALTIME</b>;</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>flags</i> is invalid; or, in Linux 2.6.26 or earlier,
+<i>flags</i> is nonzero.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EMFILE</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The per-process limit of open file descriptors has been
+reached.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENFILE</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The system-wide limit on the total number of open files
+has been reached.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENODEV</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Could not mount (internal) anonymous inode device.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>There was insufficient kernel memory to create the
+timer.</p> </td></tr>
+</table>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>timerfd_settime</b>()
+and <b>timerfd_gettime</b>() can fail with the following
+errors:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EBADF</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em"><i>fd</i> is not a valid file
+descriptor.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>new_value</i>, <i>old_value</i>, or <i>curr_value</i>
+is not valid a pointer.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>fd</i> is not a valid timerfd file descriptor.</p></td></tr>
+</table>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>timerfd_settime</b>()
+can also fail with the following errors:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em"><i>new_value</i> is not properly
+initialized (one of the <i>tv_nsec</i> falls outside the
+range zero to 999,999,999).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>flags</i> is invalid.</p></td></tr>
+</table>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These system
+calls are available on Linux since kernel 2.6.25. Library
+support is provided by glibc since version 2.8.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These system
+calls are Linux-specific.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Currently,
+<b>timerfd_create</b>() supports fewer types of clock IDs
+than <b>timer_create</b>(2).</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+program creates a timer and then monitors its progress. The
+program accepts up to three command-line arguments. The
+first argument specifies the number of seconds for the
+initial expiration of the timer. The second argument
+specifies the interval for the timer, in seconds. The third
+argument specifies the number of times the program should
+allow the timer to expire before terminating. The second and
+third command-line arguments are optional.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+shell session demonstrates the use of the program:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ <b>a.out 3 1
+100</b> <br>
+0.000: timer started <br>
+3.000: read: 1; total=1 <br>
+4.000: read: 1; total=2 <b><br>
+^Z</b> # type control-Z to suspend the program <br>
+[1]+ Stopped ./timerfd3_demo 3 1 100 <br>
+$ <b>fg</b> # Resume execution after a few seconds <br>
+a.out 3 1 100 <br>
+9.660: read: 5; total=7 <br>
+10.000: read: 1; total=8 <br>
+11.000: read: 1; total=9 <b><br>
+^C</b> # type control-C to suspend the program</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Program
+source</b> <br>
+#include &lt;sys/timerfd.h&gt; <br>
+#include &lt;time.h&gt; <br>
+#include &lt;unistd.h&gt; <br>
+#include &lt;stdlib.h&gt; <br>
+#include &lt;stdio.h&gt; <br>
+#include &lt;stdint.h&gt; /* Definition of uint64_t */</p>
+
+<p style="margin-left:11%; margin-top: 1em">#define
+handle_error(msg) \ <br>
+do { perror(msg); exit(EXIT_FAILURE); } while (0)</p>
+
+<p style="margin-left:11%; margin-top: 1em">static void
+<br>
+print_elapsed_time(void) <br>
+{ <br>
+static struct timespec start; <br>
+struct timespec curr; <br>
+static int first_call = 1; <br>
+int secs, nsecs;</p>
+
+<p style="margin-left:11%; margin-top: 1em">if (first_call)
+{ <br>
+first_call = 0; <br>
+if (clock_gettime(CLOCK_MONOTONIC, &amp;start) == &minus;1)
+<br>
+handle_error(&quot;clock_gettime&quot;); <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">if
+(clock_gettime(CLOCK_MONOTONIC, &amp;curr) == &minus;1) <br>
+handle_error(&quot;clock_gettime&quot;);</p>
+
+<p style="margin-left:11%; margin-top: 1em">secs =
+curr.tv_sec &minus; start.tv_sec; <br>
+nsecs = curr.tv_nsec &minus; start.tv_nsec; <br>
+if (nsecs &lt; 0) { <br>
+secs&minus;&minus;; <br>
+nsecs += 1000000000; <br>
+} <br>
+printf(&quot;%d.%03d: &quot;, secs, (nsecs + 500000) /
+1000000); <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">int <br>
+main(int argc, char *argv[]) <br>
+{ <br>
+struct itimerspec new_value; <br>
+int max_exp, fd; <br>
+struct timespec now; <br>
+uint64_t exp, tot_exp; <br>
+ssize_t s;</p>
+
+<p style="margin-left:11%; margin-top: 1em">if ((argc != 2)
+&amp;&amp; (argc != 4)) { <br>
+fprintf(stderr, &quot;%s init&minus;secs
+[interval&minus;secs max&minus;exp]\n&quot;, <br>
+argv[0]); <br>
+exit(EXIT_FAILURE); <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">if
+(clock_gettime(CLOCK_REALTIME, &amp;now) == &minus;1) <br>
+handle_error(&quot;clock_gettime&quot;);</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* Create a
+CLOCK_REALTIME absolute timer with initial <br>
+expiration and interval as specified in command line */</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">new_value.it_value.tv_sec
+= now.tv_sec + atoi(argv[1]); <br>
+new_value.it_value.tv_nsec = now.tv_nsec; <br>
+if (argc == 2) { <br>
+new_value.it_interval.tv_sec = 0; <br>
+max_exp = 1; <br>
+} else { <br>
+new_value.it_interval.tv_sec = atoi(argv[2]); <br>
+max_exp = atoi(argv[3]); <br>
+} <br>
+new_value.it_interval.tv_nsec = 0;</p>
+
+<p style="margin-left:11%; margin-top: 1em">fd =
+timerfd_create(CLOCK_REALTIME, 0); <br>
+if (fd == &minus;1) <br>
+handle_error(&quot;timerfd_create&quot;);</p>
+
+<p style="margin-left:11%; margin-top: 1em">if
+(timerfd_settime(fd, TFD_TIMER_ABSTIME, &amp;new_value,
+NULL) == &minus;1) <br>
+handle_error(&quot;timerfd_settime&quot;);</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">print_elapsed_time();
+<br>
+printf(&quot;timer started\n&quot;);</p>
+
+<p style="margin-left:11%; margin-top: 1em">for (tot_exp =
+0; tot_exp &lt; max_exp;) { <br>
+s = read(fd, &amp;exp, sizeof(uint64_t)); <br>
+if (s != sizeof(uint64_t)) <br>
+handle_error(&quot;read&quot;);</p>
+
+<p style="margin-left:11%; margin-top: 1em">tot_exp += exp;
+<br>
+print_elapsed_time(); <br>
+printf(&quot;read: %llu; total=%llu\n&quot;, <br>
+(unsigned long long) exp, <br>
+(unsigned long long) tot_exp); <br>
+}</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">exit(EXIT_SUCCESS);
+<br>
+}</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>eventfd</b>(2),
+<b>poll</b>(2), <b>read</b>(2), <b>select</b>(2),
+<b>setitimer</b>(2), <b>signalfd</b>(2),
+<b>timer_create</b>(2), <b>timer_gettime</b>(2),
+<b>timer_settime</b>(2), <b>epoll</b>(7), <b>time</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

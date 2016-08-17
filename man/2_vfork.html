@@ -1,0 +1,282 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:18:05 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>VFORK</title>
+
+</head>
+<body>
+
+<h1 align="center">VFORK</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">vfork &minus;
+create a child process and block parent</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;sys/types.h&gt; <br>
+#include &lt;unistd.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>pid_t
+vfork(void);</b></p>
+
+<p style="margin-left:5%; margin-top: 1em">Feature Test
+Macro Requirements for glibc (see
+<b>feature_test_macros</b>(7)):</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>vfork</b>():</p>
+
+<p style="margin-left:17%;">Since glibc 2.12:</p>
+
+<p style="margin-left:23%;">_BSD_SOURCE || <br>
+(_XOPEN_SOURCE&nbsp;&gt;=&nbsp;500 || <br>
+_XOPEN_SOURCE&nbsp;&amp;&amp;&nbsp;_XOPEN_SOURCE_EXTENDED)
+&amp;&amp; <br>
+!(_POSIX_C_SOURCE&nbsp;&gt;=&nbsp;200809L ||
+_XOPEN_SOURCE&nbsp;&gt;=&nbsp;700)</p>
+
+<p style="margin-left:17%;">Before glibc 2.12:</p>
+
+<p style="margin-left:23%;">_BSD_SOURCE ||
+_XOPEN_SOURCE&nbsp;&gt;=&nbsp;500 ||
+_XOPEN_SOURCE&nbsp;&amp;&amp;&nbsp;_XOPEN_SOURCE_EXTENDED</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Standard
+description</b> <br>
+(From POSIX.1) The <b>vfork</b>() function has the same
+effect as <b>fork</b>(2), except that the behavior is
+undefined if the process created by <b>vfork</b>() either
+modifies any data other than a variable of type <i>pid_t</i>
+used to store the return value from <b>vfork</b>(), or
+returns from the function in which <b>vfork</b>() was
+called, or calls any other function before successfully
+calling <b>_exit</b>(2) or one of the <b>exec</b>(3) family
+of functions.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Linux
+description <br>
+vfork</b>(), just like <b>fork</b>(2), creates a child
+process of the calling process. For details and return value
+and errors, see <b>fork</b>(2).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>vfork</b>()
+is a special case of <b>clone</b>(2). It is used to create
+new processes without copying the page tables of the parent
+process. It may be useful in performance-sensitive
+applications where a child is created which then immediately
+issues an <b>execve</b>(2).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>vfork</b>()
+differs from <b>fork</b>(2) in that the calling thread is
+suspended until the child terminates (either normally, by
+calling <b>_exit</b>(2), or abnormally, after delivery of a
+fatal signal), or it makes a call to <b>execve</b>(2). Until
+that point, the child shares all memory with its parent,
+including the stack. The child must not return from the
+current function or call <b>exit</b>(3), but may call
+<b>_exit</b>(2).</p>
+
+<p style="margin-left:11%; margin-top: 1em">As with
+<b>fork</b>(2), the child process created by <b>vfork</b>()
+inherits copies of various of the caller&rsquo;s process
+attributes (e.g., file descriptors, signal dispositions, and
+current working directory); the <b>vfork</b>() call differs
+only in the treatment of the virtual address space, as
+described above.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Signals sent to
+the parent arrive after the child releases the
+parent&rsquo;s memory (i.e., after the child terminates or
+calls <b>execve</b>(2)).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Historic
+description</b> <br>
+Under Linux, <b>fork</b>(2) is implemented using
+copy-on-write pages, so the only penalty incurred by
+<b>fork</b>(2) is the time and memory required to duplicate
+the parent&rsquo;s page tables, and to create a unique task
+structure for the child. However, in the bad old days a
+<b>fork</b>(2) would require making a complete copy of the
+caller&rsquo;s data space, often needlessly, since usually
+immediately afterward an <b>exec</b>(3) is done. Thus, for
+greater efficiency, BSD introduced the <b>vfork</b>() system
+call, which did not fully copy the address space of the
+parent process, but borrowed the parent&rsquo;s memory and
+thread of control until a call to <b>execve</b>(2) or an
+exit occurred. The parent process was suspended while the
+child was using its resources. The use of <b>vfork</b>() was
+tricky: for example, not modifying data in the parent
+process depended on knowing which variables were held in a
+register.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">4.3BSD;
+POSIX.1-2001 (but marked OBSOLETE). POSIX.1-2008 removes the
+specification of <b>vfork</b>().</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+requirements put on <b>vfork</b>() by the standards are
+weaker than those put on <b>fork</b>(2), so an
+implementation where the two are synonymous is compliant. In
+particular, the programmer cannot rely on the parent
+remaining blocked until the child either terminates or calls
+<b>execve</b>(2), and cannot rely on any specific behavior
+with respect to shared memory.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Some consider
+the semantics of <b>vfork</b>() to be an architectural
+blemish, and the 4.2BSD man page stated: &quot;This system
+call will be eliminated when proper system sharing
+mechanisms are implemented. Users should not depend on the
+memory sharing semantics of <b>vfork</b>() as it will, in
+that case, be made synonymous to <b>fork</b>(2).&quot;
+However, even though modern memory management hardware has
+decreased the performance difference between <b>fork</b>(2)
+and <b>vfork</b>(), there are various reasons why Linux and
+other systems have retained <b>vfork</b>():</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>Some performance-critical applications require the small
+performance advantage conferred by <b>vfork</b>().</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p><b>vfork</b>() can be implemented on systems that lack a
+memory-management unit (MMU), but <b>fork</b>(2) can&rsquo;t
+be implemented on such systems. (POSIX.1-2008 removed
+<b>vfork</b>() from the standard; the POSIX rationale for
+the <b>posix_spawn</b>(3) function notes that that function,
+which provides functionality equivalent to
+<b>fork</b>(2)+<b>exec</b>(3), is designed to be
+implementable on systems that lack an MMU.)</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Linux
+notes</b> <br>
+Fork handlers established using <b>pthread_atfork</b>(3) are
+not called when a multithreaded program employing the NPTL
+threading library calls <b>vfork</b>(). Fork handlers are
+called in this case in a program using the LinuxThreads
+threading library. (See <b>pthreads</b>(7) for a description
+of Linux threading libraries.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">A call to
+<b>vfork</b>() is equivalent to calling <b>clone</b>(2) with
+<i>flags</i> specified as:</p>
+
+<p style="margin-left:11%; margin-top: 1em">CLONE_VM |
+CLONE_VFORK | SIGCHLD</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>History</b>
+<br>
+The <b>vfork</b>() system call appeared in 3.0BSD. In 4.4BSD
+it was made synonymous to <b>fork</b>(2) but NetBSD
+introduced it again, cf.
+<a href="http://www.netbsd.org/Documentation/kernel/vfork.html">http://www.netbsd.org/Documentation/kernel/vfork.html</a>.
+In Linux, it has been equivalent to <b>fork</b>(2) until
+2.2.0-pre6 or so. Since 2.2.0-pre9 (on i386, somewhat later
+on other architectures) it is an independent system call.
+Support was added in glibc 2.0.112.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Details of the
+signal handling are obscure and differ between systems. The
+BSD man page states: &quot;To avoid a possible deadlock
+situation, processes that are children in the middle of a
+<b>vfork</b>() are never sent <b>SIGTTOU</b> or
+<b>SIGTTIN</b> signals; rather, output or <i>ioctl</i>s are
+allowed and input attempts result in an end-of-file
+indication.&quot;</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>clone</b>(2),
+<b>execve</b>(2), <b>fork</b>(2), <b>unshare</b>(2),
+<b>wait</b>(2)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

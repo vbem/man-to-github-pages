@@ -1,0 +1,363 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:54 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SIGALTSTACK</title>
+
+</head>
+<body>
+
+<h1 align="center">SIGALTSTACK</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">sigaltstack
+&minus; set and/or get signal stack context</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;signal.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+sigaltstack(const stack_t *</b><i>ss</i><b>, stack_t
+*</b><i>oss</i><b>);</b></p>
+
+<p style="margin-left:5%; margin-top: 1em">Feature Test
+Macro Requirements for glibc (see
+<b>feature_test_macros</b>(7)):</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>sigaltstack</b>():</p>
+
+<p style="margin-left:17%;">_BSD_SOURCE ||
+_XOPEN_SOURCE&nbsp;&gt;=&nbsp;500 ||
+_XOPEN_SOURCE&nbsp;&amp;&amp;&nbsp;_XOPEN_SOURCE_EXTENDED
+<br>
+|| /* Since glibc 2.12: */
+_POSIX_C_SOURCE&nbsp;&gt;=&nbsp;200809L</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>sigaltstack</b>()
+allows a process to define a new alternate signal stack
+and/or retrieve the state of an existing alternate signal
+stack. An alternate signal stack is used during the
+execution of a signal handler if the establishment of that
+handler (see <b>sigaction</b>(2)) requested it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The normal
+sequence of events for using an alternate signal stack is
+the following:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>1.</p></td>
+<td width="1%"></td>
+<td width="85%">
+
+
+<p>Allocate an area of memory to be used for the alternate
+signal stack.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>2.</p></td>
+<td width="1%"></td>
+<td width="85%">
+
+
+<p>Use <b>sigaltstack</b>() to inform the system of the
+existence and location of the alternate signal stack.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>3.</p></td>
+<td width="1%"></td>
+<td width="85%">
+
+
+<p>When establishing a signal handler using
+<b>sigaction</b>(2), inform the system that the signal
+handler should be executed on the alternate signal stack by
+specifying the <b>SA_ONSTACK</b> flag.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>ss</i>
+argument is used to specify a new alternate signal stack,
+while the <i>oss</i> argument is used to retrieve
+information about the currently established signal stack. If
+we are interested in performing just one of these tasks then
+the other argument can be specified as NULL. Each of these
+arguments is a structure of the following type:</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef struct
+{ <br>
+void *ss_sp; /* Base address of stack */ <br>
+int ss_flags; /* Flags */ <br>
+size_t ss_size; /* Number of bytes in stack */ <br>
+} stack_t;</p>
+
+<p style="margin-left:11%; margin-top: 1em">To establish a
+new alternate signal stack, <i>ss.ss_flags</i> is set to
+zero, and <i>ss.ss_sp</i> and <i>ss.ss_size</i> specify the
+starting address and size of the stack. The constant
+<b>SIGSTKSZ</b> is defined to be large enough to cover the
+usual size requirements for an alternate signal stack, and
+the constant <b>MINSIGSTKSZ</b> defines the minimum size
+required to execute a signal handler.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When a signal
+handler is invoked on the alternate stack, the kernel
+automatically aligns the address given in <i>ss.ss_sp</i> to
+a suitable address boundary for the underlying hardware
+architecture.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To disable an
+existing stack, specify <i>ss.ss_flags</i> as
+<b>SS_DISABLE</b>. In this case, the remaining fields in
+<i>ss</i> are ignored.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If <i>oss</i>
+is not NULL, then it is used to return information about the
+alternate signal stack which was in effect prior to the call
+to <b>sigaltstack</b>(). The <i>oss.ss_sp</i> and
+<i>oss.ss_size</i> fields return the starting address and
+size of that stack. The <i>oss.ss_flags</i> may return
+either of the following values: <b><br>
+SS_ONSTACK</b></p>
+
+<p style="margin-left:22%;">The process is currently
+executing on the alternate signal stack. (Note that it is
+not possible to change the alternate signal stack if the
+process is currently executing on it.)</p>
+
+<p style="margin-left:11%;"><b>SS_DISABLE</b></p>
+
+<p style="margin-left:22%;">The alternate signal stack is
+currently disabled.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>sigaltstack</b>()
+returns 0 on success, or &minus;1 on failure with
+<i>errno</i> set to indicate the error.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">Either <i>ss</i> or <i>oss</i>
+is not NULL and points to an area outside of the
+process&rsquo;s address space.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>ss</i> is not NULL and the <i>ss_flags</i> field
+contains a nonzero value other than <b>SS_DISABLE</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The specified size of the new alternate signal stack
+(<i>ss.ss_size</i>) was less than <b>MINSTKSZ</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EPERM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>An attempt was made to change the alternate signal stack
+while it was active (i.e., the process was already executing
+on the current alternate signal stack).</p></td></tr>
+</table>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">SUSv2, SVr4,
+POSIX.1-2001.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The most common
+usage of an alternate signal stack is to handle the
+<b>SIGSEGV</b> signal that is generated if the space
+available for the normal process stack is exhausted: in this
+case, a signal handler for <b>SIGSEGV</b> cannot be invoked
+on the process stack; if we wish to handle it, we must use
+an alternate signal stack.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Establishing an
+alternate signal stack is useful if a process expects that
+it may exhaust its standard stack. This may occur, for
+example, because the stack grows so large that it encounters
+the upwardly growing heap, or it reaches a limit established
+by a call to <b>setrlimit(RLIMIT_STACK, &amp;rlim)</b>. If
+the standard stack is exhausted, the kernel sends the
+process a <b>SIGSEGV</b> signal. In these circumstances the
+only way to catch this signal is on an alternate signal
+stack.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On most
+hardware architectures supported by Linux, stacks grow
+downward. <b>sigaltstack</b>() automatically takes account
+of the direction of stack growth.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Functions
+called from a signal handler executing on an alternate
+signal stack will also use the alternate signal stack. (This
+also applies to any handlers invoked for other signals while
+the process is executing on the alternate signal stack.)
+Unlike the standard stack, the system does not automatically
+extend the alternate signal stack. Exceeding the allocated
+size of the alternate signal stack will lead to
+unpredictable results.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A successful
+call to <b>execve</b>(2) removes any existing alternate
+signal stack. A child process created via <b>fork</b>(2)
+inherits a copy of its parent&rsquo;s alternate signal stack
+settings.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>sigaltstack</b>()
+supersedes the older <b>sigstack</b>() call. For backward
+compatibility, glibc also provides <b>sigstack</b>(). All
+new applications should be written using
+<b>sigaltstack</b>().</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>History</b>
+<br>
+4.2BSD had a <b>sigstack</b>() system call. It used a
+slightly different struct, and had the major disadvantage
+that the caller had to know the direction of stack
+growth.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+code segment demonstrates the use of
+<b>sigaltstack</b>():</p>
+
+<p style="margin-left:17%; margin-top: 1em">stack_t ss;</p>
+
+<p style="margin-left:17%; margin-top: 1em">ss.ss_sp =
+malloc(SIGSTKSZ); <br>
+if (ss.ss_sp == NULL) <br>
+/* Handle error */; <br>
+ss.ss_size = SIGSTKSZ; <br>
+ss.ss_flags = 0; <br>
+if (sigaltstack(&amp;ss, NULL) == &minus;1) <br>
+/* Handle error */;</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>execve</b>(2),
+<b>setrlimit</b>(2), <b>sigaction</b>(2),
+<b>siglongjmp</b>(3), <b>sigsetjmp</b>(3),
+<b>signal</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

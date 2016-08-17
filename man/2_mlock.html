@@ -1,0 +1,461 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:32 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>MLOCK</title>
+
+</head>
+<body>
+
+<h1 align="center">MLOCK</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#AVAILABILITY">AVAILABILITY</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mlock, munlock,
+mlockall, munlockall &minus; lock and unlock memory</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;sys/mman.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+mlock(const void *</b><i>addr</i><b>, size_t</b>
+<i>len</i><b>); <br>
+int munlock(const void *</b><i>addr</i><b>, size_t</b>
+<i>len</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+mlockall(int</b> <i>flags</i><b>); <br>
+int munlockall(void);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mlock</b>()
+and <b>mlockall</b>() respectively lock part or all of the
+calling process&rsquo;s virtual address space into RAM,
+preventing that memory from being paged to the swap area.
+<b>munlock</b>() and <b>munlockall</b>() perform the
+converse operation, respectively unlocking part or all of
+the calling process&rsquo;s virtual address space, so that
+pages in the specified virtual address range may once more
+to be swapped out if required by the kernel memory manager.
+Memory locking and unlocking are performed in units of whole
+pages.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>mlock() and
+munlock() <br>
+mlock</b>() locks pages in the address range starting at
+<i>addr</i> and continuing for <i>len</i> bytes. All pages
+that contain a part of the specified address range are
+guaranteed to be resident in RAM when the call returns
+successfully; the pages are guaranteed to stay in RAM until
+later unlocked.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>munlock</b>()
+unlocks pages in the address range starting at <i>addr</i>
+and continuing for <i>len</i> bytes. After this call, all
+pages that contain a part of the specified memory range can
+be moved to external swap space again by the kernel.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>mlockall()
+and munlockall() <br>
+mlockall</b>() locks all pages mapped into the address space
+of the calling process. This includes the pages of the code,
+data and stack segment, as well as shared libraries, user
+space kernel data, shared memory, and memory-mapped files.
+All mapped pages are guaranteed to be resident in RAM when
+the call returns successfully; the pages are guaranteed to
+stay in RAM until later unlocked.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>flags</i> argument is constructed as the bitwise OR of
+one or more of the following constants:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p><b>MCL_CURRENT</b></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Lock all pages which are currently mapped into the
+address space of the process.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="17%">
+
+
+<p><b>MCL_FUTURE</b></p></td>
+<td width="1%"></td>
+<td width="71%">
+
+
+<p>Lock all pages which will become mapped into the address
+space of the process in the future. These could be for
+instance new pages required by a growing heap and stack as
+well as new memory mapped files or shared memory
+regions.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b>MCL_FUTURE</b> has been specified, then a later system
+call (e.g., <b>mmap</b>(2), <b>sbrk</b>(2),
+<b>malloc</b>(3)), may fail if it would cause the number of
+locked bytes to exceed the permitted maximum (see below). In
+the same circumstances, stack growth may likewise fail: the
+kernel will deny stack expansion and deliver a
+<b>SIGSEGV</b> signal to the process.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>munlockall</b>()
+unlocks all pages mapped into the address space of the
+calling process.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success
+these system calls return 0. On error, &minus;1 is returned,
+<i>errno</i> is set appropriately, and no changes are made
+to any locks in the address space of the process.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">(Linux 2.6.9 and later) the
+caller had a nonzero <b>RLIMIT_MEMLOCK</b> soft resource
+limit, but tried to lock more memory than the limit
+permitted. This limit is not enforced if the process is
+privileged (<b>CAP_IPC_LOCK</b>).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>(Linux 2.4 and earlier) the calling process tried to
+lock more than half of RAM.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EPERM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The caller is not privileged, but needs privilege
+(<b>CAP_IPC_LOCK</b>) to perform the requested
+operation.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">For
+<b>mlock</b>() and <b>munlock</b>():</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EAGAIN</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">Some or all of the specified
+address range could not be locked.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The result of the addition <i>start</i>+<i>len</i> was
+less than <i>start</i> (e.g., the addition may have resulted
+in an overflow).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>(Not on Linux) <i>addr</i> was not a multiple of the
+page size.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Some of the specified address range does not correspond
+to mapped pages in the address space of the process.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">For
+<b>mlockall</b>():</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="44%">
+
+
+<p style="margin-top: 1em">Unknown <i>flags</i> were
+specified.</p> </td>
+<td width="34%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">For
+<b>munlockall</b>():</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p style="margin-top: 1em"><b>EPERM</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">(Linux 2.6.8 and earlier) The
+caller was not privileged (<b>CAP_IPC_LOCK</b>).</p></td></tr>
+</table>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">POSIX.1-2001,
+SVr4.</p>
+
+<h2>AVAILABILITY
+<a name="AVAILABILITY"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On POSIX
+systems on which <b>mlock</b>() and <b>munlock</b>() are
+available, <b>_POSIX_MEMLOCK_RANGE</b> is defined in
+<i>&lt;unistd.h&gt;</i> and the number of bytes in a page
+can be determined from the constant <b>PAGESIZE</b> (if
+defined) in <i>&lt;limits.h&gt;</i> or by calling
+<i>sysconf(_SC_PAGESIZE)</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On POSIX
+systems on which <b>mlockall</b>() and <b>munlockall</b>()
+are available, <b>_POSIX_MEMLOCK</b> is defined in
+<i>&lt;unistd.h&gt;</i> to a value greater than 0. (See also
+<b>sysconf</b>(3).)</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Memory locking
+has two main applications: real-time algorithms and
+high-security data processing. Real-time applications
+require deterministic timing, and, like scheduling, paging
+is one major cause of unexpected program execution delays.
+Real-time applications will usually also switch to a
+real-time scheduler with <b>sched_setscheduler</b>(2).
+Cryptographic security software often handles critical bytes
+like passwords or secret keys as data structures. As a
+result of paging, these secrets could be transferred onto a
+persistent swap store medium, where they might be accessible
+to the enemy long after the security software has erased the
+secrets in RAM and terminated. (But be aware that the
+suspend mode on laptops and some desktop computers will save
+a copy of the system&rsquo;s RAM to disk, regardless of
+memory locks.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Real-time
+processes that are using <b>mlockall</b>() to prevent delays
+on page faults should reserve enough locked stack pages
+before entering the time-critical section, so that no page
+fault can be caused by function calls. This can be achieved
+by calling a function that allocates a sufficiently large
+automatic variable (an array) and writes to the memory
+occupied by this array in order to touch these stack pages.
+This way, enough pages will be mapped for the stack and can
+be locked into RAM. The dummy writes ensure that not even
+copy-on-write page faults can occur in the critical
+section.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Memory locks
+are not inherited by a child created via <b>fork</b>(2) and
+are automatically removed (unlocked) during an
+<b>execve</b>(2) or when the process terminates.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The memory lock
+on an address range is automatically removed if the address
+range is unmapped via <b>munmap</b>(2).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Memory locks do
+not stack, that is, pages which have been locked several
+times by calls to <b>mlock</b>() or <b>mlockall</b>() will
+be unlocked by a single call to <b>munlock</b>() for the
+corresponding range or by <b>munlockall</b>(). Pages which
+are mapped to several locations or by several processes stay
+locked into RAM as long as they are locked at least at one
+location or by at least one process.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Linux
+notes</b> <br>
+Under Linux, <b>mlock</b>() and <b>munlock</b>()
+automatically round <i>addr</i> down to the nearest page
+boundary. However, POSIX.1-2001 allows an implementation to
+require that <i>addr</i> is page aligned, so portable
+applications should ensure this.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>VmLck</i> field of the Linux-specific
+<i>/proc/PID/status</i> file shows how many kilobytes of
+memory the process with ID <i>PID</i> has locked using
+<b>mlock</b>(), <b>mlockall</b>(), and <b>mmap</b>(2)
+<b>MAP_LOCKED</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Limits and
+permissions</b> <br>
+In Linux 2.6.8 and earlier, a process must be privileged
+(<b>CAP_IPC_LOCK</b>) in order to lock memory and the
+<b>RLIMIT_MEMLOCK</b> soft resource limit defines a limit on
+how much memory the process may lock.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since Linux
+2.6.9, no limits are placed on the amount of memory that a
+privileged process can lock and the <b>RLIMIT_MEMLOCK</b>
+soft resource limit instead defines a limit on how much
+memory an unprivileged process may lock.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In the 2.4
+series Linux kernels up to and including 2.4.17, a bug
+caused the <b>mlockall</b>() <b>MCL_FUTURE</b> flag to be
+inherited across a <b>fork</b>(2). This was rectified in
+kernel 2.4.18.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since kernel
+2.6.9, if a privileged process calls
+<i>mlockall(MCL_FUTURE)</i> and later drops privileges
+(loses the <b>CAP_IPC_LOCK</b> capability by, for example,
+setting its effective UID to a nonzero value), then
+subsequent memory allocations (e.g., <b>mmap</b>(2),
+<b>brk</b>(2)) will fail if the <b>RLIMIT_MEMLOCK</b>
+resource limit is encountered.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>mmap</b>(2),
+<b>setrlimit</b>(2), <b>shmctl</b>(2), <b>sysconf</b>(3),
+<b>proc</b>(5), <b>capabilities</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

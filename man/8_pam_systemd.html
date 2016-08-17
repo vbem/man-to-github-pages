@@ -1,0 +1,326 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:40:36 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PAM_SYSTEMD</title>
+
+</head>
+<body>
+
+<h1 align="center">PAM_SYSTEMD</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#MODULE TYPES PROVIDED">MODULE TYPES PROVIDED</a><br>
+<a href="#ENVIRONMENT">ENVIRONMENT</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#NOTES">NOTES</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">pam_systemd
+&minus; Register user sessions in the systemd login
+manager</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">pam_systemd.so</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>pam_systemd</b>
+registers user sessions with the systemd login manager
+<b>systemd-logind.service</b>(8), and hence the systemd
+control group hierarchy.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On login, this
+module ensures the following:</p>
+
+<p style="margin-left:17%; margin-top: 1em">1. If it does
+not exist yet, the user runtime directory /run/user/$USER is
+created and its ownership changed to the user that is
+logging in.</p>
+
+<p style="margin-left:17%; margin-top: 1em">2. The
+<i>$XDG_SESSION_ID</i> environment variable is initialized.
+If auditing is available and <b>pam_loginuid.so</b> was run
+before this module (which is highly recommended), the
+variable is initialized from the auditing session id
+(/proc/self/sessionid). Otherwise, an independent session
+counter is used.</p>
+
+<p style="margin-left:17%; margin-top: 1em">3. A new
+systemd scope unit is created for the session. If this is
+the first concurrent session of the user, an implicit slice
+below user.slice is automatically created and the scope
+placed into it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">On logout, this
+module ensures the following:</p>
+
+<p style="margin-left:17%; margin-top: 1em">1. If enabled
+in <b>logind.conf</b>(5), all processes of the session are
+terminated. If the last concurrent session of a user ends,
+the user's slice unit will be terminated too.</p>
+
+<p style="margin-left:17%; margin-top: 1em">2. If the last
+concurrent session of a user ends, the
+<i>$XDG_RUNTIME_DIR</i> directory and all its contents are
+removed, too.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the system
+was not booted up with systemd as init system, this module
+does nothing and immediately returns <b>PAM_SUCCESS</b>.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+options are understood:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>class=</b></p>
+
+<p style="margin-left:17%;">Takes a string argument which
+sets the session class. The XDG_SESSION_CLASS environmental
+variable takes precedence. One of &quot;user&quot;,
+&quot;greeter&quot;, &quot;lock&minus;screen&quot; or
+&quot;background&quot;. See <b>sd_session_get_class</b>(3)
+for details about the session class.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>type=</b></p>
+
+<p style="margin-left:17%;">Takes a string argument which
+sets the session type. The XDG_SESSION_TYPE environmental
+variable takes precedence. One of &quot;unspecified&quot;,
+&quot;tty&quot;, &quot;x11&quot;, &quot;wayland&quot; or
+&quot;mir&quot;. See <b>sd_session_get_type</b>(3) for
+details about the session type.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>debug[=]</b></p>
+
+<p style="margin-left:17%;">Takes an optional boolean
+argument. If yes or without the argument, the module will
+log debugging information as it operates.</p>
+
+<h2>MODULE TYPES PROVIDED
+<a name="MODULE TYPES PROVIDED"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Only
+<b>session</b> is provided.</p>
+
+<h2>ENVIRONMENT
+<a name="ENVIRONMENT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+environment variables are set for the processes of the
+user's session:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>$XDG_SESSION_ID</i></p>
+
+<p style="margin-left:17%;">A session identifier, suitable
+to be used in filenames. The string itself should be
+considered opaque, although often it is just the audit
+session ID as reported by /proc/self/sessionid. Each ID will
+be assigned only once during machine uptime. It may hence be
+used to uniquely label files or other resources of this
+session.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>$XDG_RUNTIME_DIR</i></p>
+
+<p style="margin-left:17%;">Path to a user&minus;private
+user&minus;writable directory that is bound to the user
+login time on the machine. It is automatically created the
+first time a user logs in and removed on the user's final
+logout. If a user logs in twice at the same time, both
+sessions will see the same <i>$XDG_RUNTIME_DIR</i> and the
+same contents. If a user logs in once, then logs out again,
+and logs in again, the directory contents will have been
+lost in between, but applications should not rely on this
+behavior and must be able to deal with stale files. To store
+session&minus;private data in this directory, the user
+should include the value of <i>$XDG_SESSION_ID</i> in the
+filename. This directory shall be used for runtime file
+system objects such as <b>AF_UNIX</b> sockets, FIFOs, PID
+files and similar. It is guaranteed that this directory is
+local and offers the greatest possible file system feature
+set the operating system provides. For further details see
+the <b><font color="#0000FF">XDG Base Directory
+Specification</font></b>
+<small><font color="#000000">[1]</font></small>
+<font color="#000000">.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The
+following environment variables are read by the module and
+may be used by the PAM service to pass metadata to the
+module:</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>$XDG_SESSION_TYPE</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">The
+session type. This may be used instead of <b>session=</b> on
+the module parameter line, and is usually
+preferred.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>$XDG_SESSION_CLASS</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">The
+session class. This may be used instead of <b>class=</b> on
+the module parameter line, and is usually
+preferred.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>$XDG_SESSION_DESKTOP</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">A single,
+short identifier string for the desktop environment. This
+may be used to indicate the session desktop used, where this
+applies and if this information is available. For example:
+&quot;GNOME&quot;, or &quot;KDE&quot;. It is recommended to
+use the same identifiers and capitalization as for
+<i>$XDG_CURRENT_DESKTOP</i>, as defined by the</font>
+<b><font color="#0000FF">Desktop Entry
+Specification</font></b>
+<small><font color="#000000">[2]</font></small>
+<font color="#000000">. (However, note that
+<i>$XDG_SESSION_DESKTOP</i> only takes a single item, and
+not a colon&minus;separated list like
+<i>$XDG_CURRENT_DESKTOP</i>.) See
+<b>sd_session_get_desktop</b>(3) for more
+details.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>$XDG_SEAT</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">The seat
+name the session shall be registered for, if any.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><i>$XDG_VTNR</i></font></p>
+
+<p style="margin-left:17%;"><font color="#000000">The VT
+number the session shall be registered for, if any. (Only
+applies to seats with a VT available, such as
+&quot;seat0&quot;)</font></p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000">#%PAM&minus;1.0
+<br>
+auth required pam_unix.so <br>
+auth required pam_nologin.so <br>
+account required pam_unix.so <br>
+password required pam_unix.so <br>
+session required pam_unix.so <br>
+session required pam_loginuid.so <br>
+session required pam_systemd.so</font></p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>systemd</b>(1),
+<b>systemd-logind.service</b>(8), <b>logind.conf</b>(5),
+<b>loginctl</b>(1), <b>pam.conf</b>(5), <b>pam.d</b>(5),
+<b>pam</b>(8), <b>pam_loginuid</b>(8),
+<b>systemd.scope</b>(5), <b>systemd.slice</b>(5),
+<b>systemd.service</b>(5)</font></p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">1.</font></p> </td>
+<td width="2%"></td>
+<td width="49%">
+
+
+<p style="margin-top: 1em"><font color="#000000">XDG Base
+Directory Specification</font></p></td>
+<td width="34%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">2.</font></p> </td>
+<td width="2%"></td>
+<td width="41%">
+
+
+<p style="margin-top: 1em"><font color="#000000">Desktop
+Entry Specification</font></p></td>
+<td width="42%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">http://standards.freedesktop.org/desktop-entry-spec/latest/</font></p>
+<hr>
+</body>
+</html>

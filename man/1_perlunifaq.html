@@ -1,0 +1,506 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:15:24 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERLUNIFAQ</title>
+
+</head>
+<body>
+
+<h1 align="center">PERLUNIFAQ</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#Q and A">Q and A</a><br>
+<a href="#INTERNALS">INTERNALS</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlunifaq
+&minus; Perl Unicode FAQ</p>
+
+<h2>Q and A
+<a name="Q and A"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is a list
+of questions and answers about Unicode in Perl, intended to
+be read after perlunitut.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>perlunitut
+isn&rsquo;t really a Unicode tutorial, is it?</b> <br>
+No, and this isn&rsquo;t really a Unicode <small>FAQ</small>
+.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl has an
+abstracted interface for all supported character encodings,
+so this is actually a generic <tt>&quot;Encode&quot;</tt>
+tutorial and <tt>&quot;Encode&quot;</tt> <small>FAQ</small>
+. But many people think that Unicode is special and magical,
+and I didn&rsquo;t want to disappoint them, so I decided to
+call the document a Unicode tutorial.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>What
+character encodings does Perl support?</b> <br>
+To find out which character encodings your Perl supports,
+run:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    perl &minus;MEncode &minus;le &quot;print for Encode&minus;&gt;encodings(':all')&quot;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Which
+version of perl should I use?</b> <br>
+Well, if you can, upgrade to the most recent, but certainly
+<tt>5.8.1</tt> or newer. The tutorial and <small>FAQ</small>
+assume the latest release.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You should also
+check your modules, and upgrade them if necessary. For
+example, HTML::Entities requires version &gt;= 1.32 to
+function correctly, even though the changelog is silent
+about this.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>What about
+binary data, like images?</b> <br>
+Well, apart from a bare <tt>&quot;binmode $fh&quot;</tt>,
+you shouldn&rsquo;t treat them specially. (The binmode is
+needed because otherwise Perl may convert line endings on
+Win32 systems.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Be careful,
+though, to never combine text strings with binary strings.
+If you need text in a binary stream, encode your text
+strings first using the appropriate encoding, then join them
+with binary strings. See also: &quot;What if I don&rsquo;t
+encode?&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>When should
+I decode or encode?</b> <br>
+Whenever you&rsquo;re communicating text with anything that
+is external to your perl process, like a database, a text
+file, a socket, or another program. Even if the thing
+you&rsquo;re communicating with is also written in Perl.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>What if I
+don&rsquo;t decode?</b> <br>
+Whenever your encoded, binary string is used together with a
+text string, Perl will assume that your binary string was
+encoded with <small>ISO&minus;8859&minus;1</small> , also
+known as latin&minus;1. If it wasn&rsquo;t latin&minus;1,
+then your data is unpleasantly converted. For example, if it
+was <small>UTF&minus;8</small> , the individual bytes of
+multibyte characters are seen as separate characters, and
+then again converted to <small>UTF&minus;8</small> . Such
+double encoding can be compared to double
+<small>HTML</small> encoding
+(<tt>&quot;&amp;amp;gt;&quot;</tt>), or double
+<small>URI</small> encoding (<tt>%253E</tt>).</p>
+
+<p style="margin-left:11%; margin-top: 1em">This silent
+implicit decoding is known as &quot;upgrading&quot;. That
+may sound positive, but it&rsquo;s best to avoid it.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>What if I
+don&rsquo;t encode?</b> <br>
+Your text string will be sent using the bytes in
+Perl&rsquo;s internal format. In some cases, Perl will warn
+you that you&rsquo;re doing something wrong, with a friendly
+warning:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    Wide character in print at example.pl line 2.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Because the
+internal format is often <small>UTF&minus;8</small> , these
+bugs are hard to spot, because <small>UTF&minus;8</small> is
+usually the encoding you wanted! But don&rsquo;t be lazy,
+and don&rsquo;t use the fact that Perl&rsquo;s internal
+format is <small>UTF&minus;8</small> to your advantage.
+Encode explicitly to avoid weird bugs, and to show to
+maintenance programmers that you thought this through.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Is there a
+way to automatically decode or encode?</b> <br>
+If all data that comes from a certain handle is encoded in
+exactly the same way, you can tell the PerlIO system to
+automatically decode everything, with the
+<tt>&quot;encoding&quot;</tt> layer. If you do this, you
+can&rsquo;t accidentally forget to decode or encode anymore,
+on things that use the layered handle.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can provide
+this layer when <tt>&quot;open&quot;</tt>ing the file:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  open my $fh, '&gt;:encoding(UTF&minus;8)', $filename;  # auto encoding on write
+  open my $fh, '&lt;:encoding(UTF&minus;8)', $filename;  # auto decoding on read</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Or if you
+already have an open filehandle:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  binmode $fh, ':encoding(UTF&minus;8)';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Some database
+drivers for <small>DBI</small> can also automatically encode
+and decode, but that is sometimes limited to the
+<small>UTF&minus;8</small> encoding.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>What if I
+don&rsquo;t know which encoding was used?</b> <br>
+Do whatever you can to find out, and if you have to: guess.
+(Don&rsquo;t forget to document your guess with a
+comment.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">You could open
+the document in a web browser, and change the character set
+or character encoding until you can visually confirm that
+all characters look the way they should.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is no way
+to reliably detect the encoding automatically, so if people
+keep sending you data without charset indication, you may
+have to educate them.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Can I use
+Unicode in my Perl sources?</b> <br>
+Yes, you can! If your sources are <small>UTF&minus;8</small>
+encoded, you can indicate that with the <tt>&quot;use
+utf8&quot;</tt> pragma.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use utf8;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This
+doesn&rsquo;t do anything to your input, or to your output.
+It only influences the way your sources are read. You can
+use Unicode in string literals, in identifiers (but they
+still have to be &quot;word characters&quot; according to
+<tt>&quot;\w&quot;</tt>), and even in custom delimiters.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Data::Dumper
+doesn&rsquo;t restore the <small>UTF8</small> flag; is it
+broken?</b> <br>
+No, Data::Dumper&rsquo;s Unicode abilities are as they
+should be. There have been some complaints that it should
+restore the <small>UTF8</small> flag when the data is read
+again with <tt>&quot;eval&quot;</tt>. However, you should
+really not look at the flag, and nothing indicates that
+Data::Dumper should break this rule.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here&rsquo;s
+what happens: when Perl reads in a string literal, it sticks
+to 8 bit encoding as long as it can. (But perhaps originally
+it was internally encoded as <small>UTF&minus;8</small> ,
+when you dumped it.) When it has to give that up because
+other characters are added to the text string, it silently
+upgrades the string to <small>UTF&minus;8</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you properly
+encode your strings for output, none of this is of your
+concern, and you can just <tt>&quot;eval&quot;</tt> dumped
+data as always.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Why do regex
+character classes sometimes match only in the
+<small>ASCII</small> range? <br>
+Why do some characters not uppercase or lowercase
+correctly?</b> <br>
+Starting in Perl 5.14 (and partially in Perl 5.12), just put
+a <tt>&quot;use feature 'unicode_strings'&quot;</tt> near
+the beginning of your program. Within its lexical scope you
+shouldn&rsquo;t have this problem. It also is automatically
+enabled under <tt>&quot;use feature ':5.12'&quot;</tt> or
+using <tt>&quot;&minus;E&quot;</tt> on the command line for
+Perl 5.12 or higher.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The rationale
+for requiring this is to not break older programs that rely
+on the way things worked before Unicode came along. Those
+older programs knew only about the <small>ASCII</small>
+character set, and so may not work properly for additional
+characters. When a string is encoded in
+<small>UTF&minus;8</small> , Perl assumes that the program
+is prepared to deal with Unicode, but when the string
+isn&rsquo;t, Perl assumes that only <small>ASCII</small>
+(unless it is an <small>EBCDIC</small> platform) is wanted,
+and so those characters that are not <small>ASCII</small>
+characters aren&rsquo;t recognized as to what they would be
+in Unicode. <tt>&quot;use feature
+'unicode_strings'&quot;</tt> tells Perl to treat all
+characters as Unicode, whether the string is encoded in
+<small>UTF&minus;8</small> or not, thus avoiding the
+problem.</p>
+
+<p style="margin-left:11%; margin-top: 1em">However, on
+earlier Perls, or if you pass strings to subroutines outside
+the feature&rsquo;s scope, you can force Unicode semantics
+by changing the encoding to <small>UTF&minus;8</small> by
+doing <tt>&quot;utf8::upgrade($string)&quot;</tt>. This can
+be used safely on any string, as it checks and does not
+change strings that have already been upgraded.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For a more
+detailed discussion, see Unicode::Semantics on
+<small>CPAN</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How can I
+determine if a string is a text string or a binary
+string?</b> <br>
+You can&rsquo;t. Some use the <small>UTF8</small> flag for
+this, but that&rsquo;s misuse, and makes well behaved
+modules like Data::Dumper look bad. The flag is useless for
+this purpose, because it&rsquo;s off when an 8 bit encoding
+(by default <small>ISO&minus;8859&minus;1</small> ) is used
+to store the string.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is
+something you, the programmer, has to keep track of; sorry.
+You could consider adopting a kind of &quot;Hungarian
+notation&quot; to help with this.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>How do I
+convert from encoding <small>FOO</small> to encoding
+<small>BAR</small> ?</b> <br>
+By first converting the FOO-encoded byte string to a text
+string, and then the text string to a BAR-encoded byte
+string:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    my $text_string = decode('FOO', $foo_string);
+    my $bar_string  = encode('BAR', $text_string);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">or by skipping
+the text string part, and going directly from one binary
+encoding to the other:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use Encode qw(from_to);
+    from_to($string, 'FOO', 'BAR');  # changes contents of $string</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">or by letting
+automatic decoding and encoding do all the work:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    open my $foofh, '&lt;:encoding(FOO)', 'example.foo.txt';
+    open my $barfh, '&gt;:encoding(BAR)', 'example.bar.txt';
+    print { $barfh } $_ while &lt;$foofh&gt;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>What are
+&quot;decode_utf8&quot; and &quot;encode_utf8&quot;?</b>
+<br>
+These are alternate syntaxes for <tt>&quot;decode('utf8',
+...)&quot;</tt> and <tt>&quot;encode('utf8',
+...)&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>What is a
+&quot;wide character&quot;?</b> <br>
+This is a term used both for characters with an ordinal
+value greater than 127, characters with an ordinal value
+greater than 255, or any character occupying more than one
+byte, depending on the context.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The Perl
+warning &quot;Wide character in ...&quot; is caused by a
+character with an ordinal value greater than 255. With no
+specified encoding layer, Perl tries to fit things in
+<small>ISO&minus;8859&minus;1</small> for backward
+compatibility reasons. When it can&rsquo;t, it emits this
+warning (if warnings are enabled), and outputs
+<small>UTF&minus;8</small> encoded data instead.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To avoid this
+warning and to avoid having different output encodings in a
+single stream, always specify an encoding explicitly, for
+example with a PerlIO layer:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    binmode STDOUT, &quot;:encoding(UTF&minus;8)&quot;;</pre>
+
+
+<h2>INTERNALS
+<a name="INTERNALS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>What is
+&quot;the <small>UTF8</small> flag&quot;?</b> <br>
+Please, unless you&rsquo;re hacking the internals, or
+debugging weirdness, don&rsquo;t think about the
+<small>UTF8</small> flag at all. That means that you very
+probably shouldn&rsquo;t use <tt>&quot;is_utf8&quot;</tt>,
+<tt>&quot;_utf8_on&quot;</tt> or
+<tt>&quot;_utf8_off&quot;</tt> at all.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<small>UTF8</small> flag, also called SvUTF8, is an internal
+flag that indicates that the current internal representation
+is <small>UTF&minus;8</small> . Without the flag, it is
+assumed to be <small>ISO&minus;8859&minus;1</small> . Perl
+converts between these automatically. (Actually Perl usually
+assumes the representation is <small>ASCII</small> ; see
+&quot;Why do regex character classes sometimes match only in
+the <small>ASCII</small> range?&quot; above.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">One of
+Perl&rsquo;s internal formats happens to be
+<small>UTF&minus;8</small> . Unfortunately, Perl can&rsquo;t
+keep a secret, so everyone knows about this. That is the
+source of much confusion. It&rsquo;s better to pretend that
+the internal format is some unknown encoding, and that you
+always have to encode and decode explicitly.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>What about
+the &quot;use bytes&quot; pragma?</b> <br>
+Don&rsquo;t use it. It makes no sense to deal with bytes in
+a text string, and it makes no sense to deal with characters
+in a byte string. Do the proper conversions (by
+decoding/encoding), and things will work out well: you get
+character counts for decoded data, and byte counts for
+encoded data.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;use
+bytes&quot;</tt> is usually a failed attempt to do something
+useful. Just forget about it.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>What about
+the &quot;use encoding&quot; pragma?</b> <br>
+Don&rsquo;t use it. Unfortunately, it assumes that the
+programmer&rsquo;s environment and that of the user will use
+the same encoding. It will use the same encoding for the
+source code and for <small>STDIN</small> and
+<small>STDOUT</small> . When a program is copied to another
+machine, the source code does not change, but the
+<small>STDIO</small> environment might.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you need
+non-ASCII characters in your source code, make it a
+<small>UTF&minus;8</small> encoded file and <tt>&quot;use
+utf8&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you need to
+set the encoding for <small>STDIN</small> ,
+<small>STDOUT</small> , and <small>STDERR</small> , for
+example based on the user&rsquo;s locale, <tt>&quot;use
+open&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>What is the
+difference between &quot;:encoding&quot; and
+&quot;:utf8&quot;?</b> <br>
+Because <small>UTF&minus;8</small> is one of Perl&rsquo;s
+internal formats, you can often just skip the encoding or
+decoding step, and manipulate the <small>UTF8</small> flag
+directly.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Instead of
+<tt>&quot;:encoding(UTF&minus;8)&quot;</tt>, you can simply
+use <tt>&quot;:utf8&quot;</tt>, which skips the encoding
+step if the data was already represented as
+<small>UTF8</small> internally. This is widely accepted as
+good behavior when you&rsquo;re writing, but it can be
+dangerous when reading, because it causes internal
+inconsistency when you have invalid byte sequences. Using
+<tt>&quot;:utf8&quot;</tt> for input can sometimes result in
+security breaches, so please use
+<tt>&quot;:encoding(UTF&minus;8)&quot;</tt> instead.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Instead of
+<tt>&quot;decode&quot;</tt> and <tt>&quot;encode&quot;</tt>,
+you could use <tt>&quot;_utf8_on&quot;</tt> and
+<tt>&quot;_utf8_off&quot;</tt>, but this is considered bad
+style. Especially <tt>&quot;_utf8_on&quot;</tt> can be
+dangerous, for the same reason that
+<tt>&quot;:utf8&quot;</tt> can.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There are some
+shortcuts for oneliners; see &minus;C in perlrun.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>What&rsquo;s
+the difference between &quot;UTF&minus;8&quot; and
+&quot;utf8&quot;?</b> <tt><br>
+&quot;UTF&minus;8&quot;</tt> is the official standard.
+<tt>&quot;utf8&quot;</tt> is Perl&rsquo;s way of being
+liberal in what it accepts. If you have to communicate with
+things that aren&rsquo;t so liberal, you may want to
+consider using <tt>&quot;UTF&minus;8&quot;</tt>. If you have
+to communicate with things that are too liberal, you may
+have to use <tt>&quot;utf8&quot;</tt>. The full explanation
+is in Encode.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;UTF&minus;8&quot;</tt>
+is internally known as
+<tt>&quot;utf&minus;8&minus;strict&quot;</tt>. The tutorial
+uses <small>UTF&minus;8</small> consistently, even where
+utf8 is actually used internally, because the distinction
+can be hard to make, and is mostly irrelevant.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For example,
+utf8 can be used for code points that don&rsquo;t exist in
+Unicode, like 9999999, but if you encode that to
+<small>UTF&minus;8</small> , you get a substitution
+character (by default; see &quot;Handling Malformed
+Data&quot; in Encode for more ways of dealing with
+this.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Okay, if you
+insist: the &quot;internal format&quot; is utf8, not
+<small>UTF&minus;8</small> . (When it&rsquo;s not some other
+encoding.)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>I lost
+track; what encoding is the internal format really?</b> <br>
+It&rsquo;s good that you lost track, because you
+shouldn&rsquo;t depend on the internal format being any
+specific encoding. But since you asked: by default, the
+internal format is either
+<small>ISO&minus;8859&minus;1</small> (latin&minus;1), or
+utf8, depending on the history of the string. On
+<small>EBCDIC</small> platforms, this may be different
+even.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl knows how
+it stored the string internally, and will use that knowledge
+when you <tt>&quot;encode&quot;</tt>. In other words:
+don&rsquo;t try to find out what the internal encoding for a
+certain string is, but instead just encode it into the
+encoding that you want.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Juerd Waalboer
+&lt;#####@juerd.nl&gt;</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlunicode,
+perluniintro, Encode</p>
+<hr>
+</body>
+</html>

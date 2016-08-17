@@ -1,0 +1,599 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:39:13 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>INOTIFY</title>
+
+</head>
+<body>
+
+<h1 align="center">INOTIFY</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">inotify &minus;
+monitoring file system events</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>inotify</i> API provides a mechanism for monitoring file
+system events. Inotify can be used to monitor individual
+files, or to monitor directories. When a directory is
+monitored, inotify will return events for the directory
+itself, and for files inside the directory.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+system calls are used with this API: <b>inotify_init</b>(2)
+(or <b>inotify_init1</b>(2)), <b>inotify_add_watch</b>(2),
+<b>inotify_rm_watch</b>(2), <b>read</b>(2), and
+<b>close</b>(2).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>inotify_init</b>(2)
+creates an inotify instance and returns a file descriptor
+referring to the inotify instance. The more recent
+<b>inotify_init1</b>(2) is like <b>inotify_init</b>(2), but
+provides some extra functionality.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>inotify_add_watch</b>(2)
+manipulates the &quot;watch list&quot; associated with an
+inotify instance. Each item (&quot;watch&quot;) in the watch
+list specifies the pathname of a file or directory, along
+with some set of events that the kernel should monitor for
+the file referred to by that pathname.
+<b>inotify_add_watch</b>(2) either creates a new watch item,
+or modifies an existing watch. Each watch has a unique
+&quot;watch descriptor&quot;, an integer returned by
+<b>inotify_add_watch</b>(2) when the watch is created.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>inotify_rm_watch</b>(2)
+removes an item from an inotify watch list.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When all file
+descriptors referring to an inotify instance have been
+closed, the underlying object and its resources are freed
+for reuse by the kernel; all associated watches are
+automatically freed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To determine
+what events have occurred, an application <b>read</b>(2)s
+from the inotify file descriptor. If no events have so far
+occurred, then, assuming a blocking file descriptor,
+<b>read</b>(2) will block until at least one event occurs
+(unless interrupted by a signal, in which case the call
+fails with the error <b>EINTR</b>; see
+<b>signal</b>(7)).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Each successful
+<b>read</b>(2) returns a buffer containing one or more of
+the following structures:</p>
+
+<p style="margin-left:17%; margin-top: 1em">struct
+inotify_event { <br>
+int wd; /* Watch descriptor */ <br>
+uint32_t mask; /* Mask of events */ <br>
+uint32_t cookie; /* Unique cookie associating related <br>
+events (for rename(2)) */ <br>
+uint32_t len; /* Size of <i>name</i> field */ <br>
+char name[]; /* Optional null-terminated name */ <br>
+};</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>wd</i>
+identifies the watch for which this event occurs. It is one
+of the watch descriptors returned by a previous call to
+<b>inotify_add_watch</b>(2).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>mask</i>
+contains bits that describe the event that occurred (see
+below).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>cookie</i>
+is a unique integer that connects related events. Currently
+this is used only for rename events, and allows the
+resulting pair of <b>IN_MOVED_FROM</b> and
+<b>IN_MOVED_TO</b> events to be connected by the
+application. For all other event types, <i>cookie</i> is set
+to 0.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>name</i>
+field is present only when an event is returned for a file
+inside a watched directory; it identifies the file pathname
+relative to the watched directory. This pathname is
+null-terminated, and may include further null bytes ('\0')
+to align subsequent reads to a suitable address
+boundary.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>len</i>
+field counts all of the bytes in <i>name</i>, including the
+null bytes; the length of each <i>inotify_event</i>
+structure is thus <i>sizeof(struct
+inotify_event)+len</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The behavior
+when the buffer given to <b>read</b>(2) is too small to
+return information about the next event depends on the
+kernel version: in kernels before 2.6.21, <b>read</b>(2)
+returns 0; since kernel 2.6.21, <b>read</b>(2) fails with
+the error <b>EINVAL</b>. Specifying a buffer of size</p>
+
+<p style="margin-left:11%; margin-top: 1em">sizeof(struct
+inotify_event) + NAME_MAX + 1</p>
+
+<p style="margin-left:11%; margin-top: 1em">will be
+sufficient to read at least one event.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>inotify
+events</b> <br>
+The <b>inotify_add_watch</b>(2) <i>mask</i> argument and the
+<i>mask</i> field of the <i>inotify_event</i> structure
+returned when <b>read</b>(2)ing an inotify file descriptor
+are both bit masks identifying inotify events. The following
+bits can be specified in <i>mask</i> when calling
+<b>inotify_add_watch</b>(2) and may be returned in the
+<i>mask</i> field returned by <b>read</b>(2):</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="25%">
+
+
+<p><b>IN_ACCESS</b></p></td>
+<td width="3%"></td>
+<td width="55%">
+
+
+<p>File was accessed (read) (*).</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="25%">
+
+
+<p><b>IN_ATTRIB</b></p></td>
+<td width="3%"></td>
+<td width="55%">
+
+
+<p>Metadata changed, e.g., permissions, timestamps,
+extended attributes, link count (since Linux 2.6.25), UID,
+GID, etc. (*).</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="25%">
+
+
+<p><b>IN_CLOSE_WRITE</b></p></td>
+<td width="3%"></td>
+<td width="55%">
+
+
+<p>File opened for writing was closed (*).</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="25%">
+
+
+<p><b>IN_CLOSE_NOWRITE</b></p></td>
+<td width="3%"></td>
+<td width="55%">
+
+
+<p>File not opened for writing was closed (*).</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="25%">
+
+
+<p><b>IN_CREATE</b></p></td>
+<td width="3%"></td>
+<td width="55%">
+
+
+<p>File/directory created in watched directory (*).</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="25%">
+
+
+<p><b>IN_DELETE</b></p></td>
+<td width="3%"></td>
+<td width="55%">
+
+
+<p>File/directory deleted from watched directory (*).</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="25%">
+
+
+<p><b>IN_DELETE_SELF</b></p></td>
+<td width="3%"></td>
+<td width="55%">
+
+
+<p>Watched file/directory was itself deleted.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="25%">
+
+
+<p><b>IN_MODIFY</b></p></td>
+<td width="3%"></td>
+<td width="55%">
+
+
+<p>File was modified (*).</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="25%">
+
+
+<p><b>IN_MOVE_SELF</b></p></td>
+<td width="3%"></td>
+<td width="55%">
+
+
+<p>Watched file/directory was itself moved.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="25%">
+
+
+<p><b>IN_MOVED_FROM</b></p></td>
+<td width="3%"></td>
+<td width="55%">
+
+
+<p>Generated for the directory containing the old filename
+when a file is renamed (*).</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="25%">
+
+
+<p><b>IN_MOVED_TO</b></p></td>
+<td width="3%"></td>
+<td width="55%">
+
+
+<p>Generated for the directory containing the new filename
+when a file is renamed (*).</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="25%">
+
+
+<p><b>IN_OPEN</b></p></td>
+<td width="3%"></td>
+<td width="55%">
+
+
+<p>File was opened (*).</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">When monitoring
+a directory, the events marked with an asterisk (*) above
+can occur for files in the directory, in which case the
+<i>name</i> field in the returned <i>inotify_event</i>
+structure identifies the name of the file within the
+directory.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>IN_ALL_EVENTS</b> macro is defined as a bit mask of all
+of the above events. This macro can be used as the
+<i>mask</i> argument when calling
+<b>inotify_add_watch</b>(2).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Two additional
+convenience macros are <b>IN_MOVE</b>, which equates to
+IN_MOVED_FROM|IN_MOVED_TO, and <b>IN_CLOSE</b>, which
+equates to IN_CLOSE_WRITE|IN_CLOSE_NOWRITE.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+further bits can be specified in <i>mask</i> when calling
+<b>inotify_add_watch</b>(2):</p>
+
+<p style="margin-left:17%;"><b>IN_DONT_FOLLOW</b> (since
+Linux 2.6.15)</p>
+
+<p style="margin-left:45%;">Don&rsquo;t dereference
+<i>pathname</i> if it is a symbolic link.</p>
+
+<p style="margin-left:17%;"><b>IN_EXCL_UNLINK</b> (since
+Linux 2.6.36)</p>
+
+<p style="margin-left:45%;">By default, when watching
+events on the children of a directory, events are generated
+for children even after they have been unlinked from the
+directory. This can result in large numbers of uninteresting
+events for some applications (e.g., if watching <i>/tmp</i>,
+in which many applications create temporary files whose
+names are immediately unlinked). Specifying
+<b>IN_EXCL_UNLINK</b> changes the default behavior, so that
+events are not generated for children after they have been
+unlinked from the watched directory.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="17%">
+
+
+<p><b>IN_MASK_ADD</b></p></td>
+<td width="11%"></td>
+<td width="55%">
+
+
+<p>Add (OR) events to watch mask for this pathname if it
+already exists (instead of replacing mask).</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="17%">
+
+
+<p><b>IN_ONESHOT</b></p></td>
+<td width="11%"></td>
+<td width="55%">
+
+
+<p>Monitor <i>pathname</i> for one event, then remove from
+watch list.</p></td></tr>
+</table>
+
+<p style="margin-left:17%;"><b>IN_ONLYDIR</b> (since Linux
+2.6.15)</p>
+
+<p style="margin-left:45%;">Only watch <i>pathname</i> if
+it is a directory.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+bits may be set in the <i>mask</i> field returned by
+<b>read</b>(2):</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="20%">
+
+
+<p><b>IN_IGNORED</b></p></td>
+<td width="8%"></td>
+<td width="55%">
+
+
+<p>Watch was removed explicitly
+(<b>inotify_rm_watch</b>(2)) or automatically (file was
+deleted, or file system was unmounted).</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="20%">
+
+
+<p><b>IN_ISDIR</b></p></td>
+<td width="8%"></td>
+<td width="55%">
+
+
+<p>Subject of this event is a directory.</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="20%">
+
+
+<p><b>IN_Q_OVERFLOW</b></p></td>
+<td width="8%"></td>
+<td width="55%">
+
+
+<p>Event queue overflowed (<i>wd</i> is &minus;1 for this
+event).</p> </td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="20%">
+
+
+<p><b>IN_UNMOUNT</b></p></td>
+<td width="8%"></td>
+<td width="55%">
+
+
+<p>File system containing watched object was unmounted.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>/proc
+interfaces</b> <br>
+The following interfaces can be used to limit the amount of
+kernel memory consumed by inotify: <i><br>
+/proc/sys/fs/inotify/max_queued_events</i></p>
+
+<p style="margin-left:22%;">The value in this file is used
+when an application calls <b>inotify_init</b>(2) to set an
+upper limit on the number of events that can be queued to
+the corresponding inotify instance. Events in excess of this
+limit are dropped, but an <b>IN_Q_OVERFLOW</b> event is
+always generated.</p>
+
+
+<p style="margin-left:11%;"><i>/proc/sys/fs/inotify/max_user_instances</i></p>
+
+<p style="margin-left:22%;">This specifies an upper limit
+on the number of inotify instances that can be created per
+real user ID.</p>
+
+
+<p style="margin-left:11%;"><i>/proc/sys/fs/inotify/max_user_watches</i></p>
+
+<p style="margin-left:22%;">This specifies an upper limit
+on the number of watches that can be created per real user
+ID.</p>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Inotify was
+merged into the 2.6.13 Linux kernel. The required library
+interfaces were added to glibc in version 2.4.
+(<b>IN_DONT_FOLLOW</b>, <b>IN_MASK_ADD</b>, and
+<b>IN_ONLYDIR</b> were added in version 2.5.)</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The inotify API
+is Linux-specific.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Inotify file
+descriptors can be monitored using <b>select</b>(2),
+<b>poll</b>(2), and <b>epoll</b>(7). When an event is
+available, the file descriptor indicates as readable.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since Linux
+2.6.25, signal-driven I/O notification is available for
+inotify file descriptors; see the discussion of
+<b>F_SETFL</b> (for setting the <b>O_ASYNC</b> flag),
+<b>F_SETOWN</b>, and <b>F_SETSIG</b> in <b>fcntl</b>(2). The
+<i>siginfo_t</i> structure (described in
+<b>sigaction</b>(2)) that is passed to the signal handler
+has the following fields set: <i>si_fd</i> is set to the
+inotify file descriptor number; <i>si_signo</i> is set to
+the signal number; <i>si_code</i> is set to <b>POLL_IN</b>;
+and <b>POLLIN</b> is set in <i>si_band</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If successive
+output inotify events produced on the inotify file
+descriptor are identical (same <i>wd</i>, <i>mask</i>,
+<i>cookie</i>, and <i>name</i>) then they are coalesced into
+a single event if the older event has not yet been read (but
+see BUGS).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The events
+returned by reading from an inotify file descriptor form an
+ordered queue. Thus, for example, it is guaranteed that when
+renaming from one directory to another, events will be
+produced in the correct order on the inotify file
+descriptor.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <b>FIONREAD
+ioctl</b>(2) returns the number of bytes available to read
+from an inotify file descriptor.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Limitations
+and caveats</b> <br>
+Inotify monitoring of directories is not recursive: to
+monitor subdirectories under a directory, additional watches
+must be created. This can take a significant amount time for
+large directory trees.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The inotify API
+provides no information about the user or process that
+triggered the inotify event. In particular, there is no easy
+way for a process that is monitoring events via inotify to
+distinguish events that it triggers itself from those that
+are triggered by other processes.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that the
+event queue can overflow. In this case, events are lost.
+Robust applications should handle the possibility of lost
+events gracefully.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The inotify API
+identifies affected files by filename. However, by the time
+an application processes an inotify event, the filename may
+already have been deleted or renamed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If monitoring
+an entire directory subtree, and a new subdirectory is
+created in that tree, be aware that by the time you create a
+watch for the new subdirectory, new files may already have
+been created in the subdirectory. Therefore, you may want to
+scan the contents of the subdirectory immediately after
+adding the watch.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In kernels
+before 2.6.16, the <b>IN_ONESHOT</b> <i>mask</i> flag does
+not work.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Before kernel
+2.6.25, the kernel code that was intended to coalesce
+successive identical events (i.e., the two most recent
+events could potentially be coalesced if the older had not
+yet been read) instead checked if the most recent event
+could be coalesced with the <i>oldest</i> unread event.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>inotify_add_watch</b>(2),
+<b>inotify_init</b>(2), <b>inotify_init1</b>(2),
+<b>inotify_rm_watch</b>(2), <b>read</b>(2),
+<b>stat</b>(2)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>Documentation/filesystems/inotify.txt</i>
+in the Linux kernel source tree</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,980 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:15:15 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERLSOLARIS</title>
+
+</head>
+<body>
+
+<h1 align="center">PERLSOLARIS</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RESOURCES">RESOURCES</a><br>
+<a href="#SETTING UP">SETTING UP</a><br>
+<a href="#RUN CONFIGURE.">RUN CONFIGURE.</a><br>
+<a href="#MAKE PROBLEMS.">MAKE PROBLEMS.</a><br>
+<a href="#MAKE TEST">MAKE TEST</a><br>
+<a href="#PREBUILT BINARIES OF PERL FOR SOLARIS.">PREBUILT BINARIES OF PERL FOR SOLARIS.</a><br>
+<a href="#RUNTIME ISSUES FOR PERL ON SOLARIS.">RUNTIME ISSUES FOR PERL ON SOLARIS.</a><br>
+<a href="#SOLARIS-SPECIFIC MODULES.">SOLARIS-SPECIFIC MODULES.</a><br>
+<a href="#SOLARIS-SPECIFIC PROBLEMS WITH MODULES.">SOLARIS-SPECIFIC PROBLEMS WITH MODULES.</a><br>
+<a href="#SunOS 4.x">SunOS 4.x</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perlsolaris
+&minus; Perl version 5 on Solaris systems</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This document
+describes various features of Sun&rsquo;s Solaris operating
+system that will affect how Perl version 5 (hereafter just
+perl) is compiled and/or runs. Some issues relating to the
+older SunOS 4.x are also discussed, though they may be out
+of date.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For the most
+part, everything should just work.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Starting with
+Solaris 8, perl5.00503 (or higher) is supplied with the
+operating system, so you might not even need to build a
+newer version of perl at all. The Sun-supplied version is
+installed in /usr/perl5 with <i>/usr/bin/perl</i> pointing
+to <i>/usr/perl5/bin/perl</i>. Do not disturb that
+installation unless you really know what you are doing. If
+you remove the perl supplied with the <small>OS</small> ,
+you will render some bits of your system inoperable. If you
+wish to install a newer version of perl, install it under a
+different prefix from /usr/perl5. Common prefixes to use are
+/usr/local and /opt/perl.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You may wish to
+put your version of perl in the <small>PATH</small> of all
+users by changing the link <i>/usr/bin/perl</i>. This is
+probably <small>OK</small> , as most perl scripts shipped
+with Solaris use an explicit path. (There are a few
+exceptions, such as <i>/usr/bin/rpm2cpio</i> and
+<i>/etc/rcm/scripts/README</i>, but these are also
+sufficiently generic that the actual version of perl
+probably doesn&rsquo;t matter too much.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Solaris ships
+with a range of Solaris-specific modules. If you choose to
+install your own version of perl you will find the source of
+many of these modules is available on <small>CPAN</small>
+under the Sun::Solaris:: namespace.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Solaris may
+include two versions of perl, e.g. Solaris 9 includes both
+5.005_03 and 5.6.1. This is to provide stability across
+Solaris releases, in cases where a later perl version has
+incompatibilities with the version included in the preceding
+Solaris release. The default perl version will always be the
+most recent, and in general the old version will only be
+retained for one Solaris release. Note also that the default
+perl will <small>NOT</small> be configured to search for
+modules in the older version, again due to
+compatibility/stability concerns. As a consequence if you
+upgrade Solaris, you will have to rebuild/reinstall any
+additional <small>CPAN</small> modules that you installed
+for the previous Solaris version. See the
+<small>CPAN</small> manpage under &rsquo;autobundle&rsquo;
+for a quick way of doing this.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As an interim
+measure, you may either change the #! line of your scripts
+to specifically refer to the old perl version, e.g. on
+Solaris 9 use #!/usr/perl5/5.00503/bin/perl to use the perl
+version that was the default for Solaris 8, or if you have a
+large number of scripts it may be more convenient to make
+the old version of perl the default on your system. You can
+do this by changing the appropriate symlinks under
+/usr/perl5 as follows (example for Solaris 9):</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> # cd /usr/perl5
+ # rm bin man pod
+ # ln &minus;s ./5.00503/bin
+ # ln &minus;s ./5.00503/man
+ # ln &minus;s ./5.00503/lib/pod
+ # rm /usr/bin/perl
+ # ln &minus;s ../perl5/5.00503/bin/perl /usr/bin/perl</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">In both cases
+this should only be considered to be a temporary measure
+&minus; you should upgrade to the later version of perl as
+soon as is practicable.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note also that
+the perl command-line utilities (e.g. perldoc) and any that
+are added by modules that you install will be under
+/usr/perl5/bin, so that directory should be added to your
+<small>PATH</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Solaris
+Version Numbers.</b> <br>
+For consistency with common usage, perl&rsquo;s Configure
+script performs some minor manipulations on the operating
+system name and version number as reported by uname.
+Here&rsquo;s a partial translation table:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">          Sun:                      perl's Configure:
+ uname    uname &minus;r   Name           osname     osvers
+ SunOS    4.1.3     Solaris 1.1     sunos      4.1.3
+ SunOS    5.6       Solaris 2.6     solaris    2.6
+ SunOS    5.8       Solaris 8       solaris    2.8
+ SunOS    5.9       Solaris 9       solaris    2.9
+ SunOS    5.10      Solaris 10      solaris    2.10</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The complete
+table can be found in the Sun Managers&rsquo;
+<small>FAQ</small>
+&lt;ftp://ftp.cs.toronto.edu/pub/jdd/sunmanagers/faq&gt;
+under &quot;9.1) Which Sun models run which versions of
+SunOS?&quot;.</p>
+
+<h2>RESOURCES
+<a name="RESOURCES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">There are many,
+many sources for Solaris information. A few of the important
+ones for perl: <br>
+Solaris <small>FAQ</small></p>
+
+<p style="margin-left:17%;">The Solaris <small>FAQ</small>
+is available at
+&lt;http://www.science.uva.nl/pub/solaris/solaris2.html&gt;.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The Sun
+Managers&rsquo; <small>FAQ</small> is available at
+&lt;ftp://ftp.cs.toronto.edu/pub/jdd/sunmanagers/faq&gt;</p>
+
+<p style="margin-left:11%;">Precompiled Binaries</p>
+
+<p style="margin-left:17%;">Precompiled binaries, links to
+many sites, and much, much more are available at
+&lt;http://www.sunfreeware.com/&gt; and
+&lt;http://www.blastwave.org/&gt;.</p>
+
+<p style="margin-left:11%;">Solaris Documentation</p>
+
+<p style="margin-left:17%;">All Solaris documentation is
+available on-line at &lt;http://docs.sun.com/&gt;.</p>
+
+<h2>SETTING UP
+<a name="SETTING UP"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>File
+Extraction Problems on Solaris.</b> <br>
+Be sure to use a tar program compiled under Solaris (not
+SunOS 4.x) to extract the perl&minus;5.x.x.tar.gz file. Do
+not use <small>GNU</small> tar compiled for SunOS4 on
+Solaris. ( <small>GNU</small> tar compiled for Solaris
+should be fine.) When you run SunOS4 binaries on Solaris,
+the run-time system magically alters pathnames matching
+m#lib/locale# so that when tar tries to create
+lib/locale.pm, a file named lib/oldlocale.pm gets created
+instead. If you found this advice too late and used a
+SunOS4&minus;compiled tar anyway, you must find the
+incorrectly renamed file and move it back to
+lib/locale.pm.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Compiler and
+Related Tools on Solaris.</b> <br>
+You must use an <small>ANSI</small> C compiler to build
+perl. Perl can be compiled with either Sun&rsquo;s add-on C
+compiler or with gcc. The C compiler that shipped with
+SunOS4 will not do.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Include
+/usr/ccs/bin/ in your <small>PATH</small> .</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Several tools
+needed to build perl are located in /usr/ccs/bin/: ar, as,
+ld, and make. Make sure that /usr/ccs/bin/ is in your
+<small>PATH</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">On all the
+released versions of Solaris (8, 9 and 10) you need to make
+sure the following packages are installed (this info is
+extracted from the Solaris <small>FAQ</small> ):</p>
+
+<p style="margin-left:11%; margin-top: 1em">for tools
+(sccs, lex, yacc, make, nm, truss, ld, as): SUNWbtool,
+SUNWsprot, SUNWtoo</p>
+
+<p style="margin-left:11%; margin-top: 1em">for libraries
+&amp; headers: SUNWhea, SUNWarc, SUNWlibm, SUNWlibms,
+SUNWdfbh, SUNWcg6h, SUNWxwinc</p>
+
+<p style="margin-left:11%; margin-top: 1em">Additionaly, on
+Solaris 8 and 9 you also need:</p>
+
+<p style="margin-left:11%; margin-top: 1em">for 64 bit
+development: SUNWarcx, SUNWbtoox, SUNWdplx, SUNWscpux,
+SUNWsprox, SUNWtoox, SUNWlmsx, SUNWlmx, SUNWlibCx</p>
+
+<p style="margin-left:11%; margin-top: 1em">And only on
+Solaris 8 you also need:</p>
+
+<p style="margin-left:11%; margin-top: 1em">for libraries
+&amp; headers: SUNWolinc</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you are in
+doubt which package contains a file you are missing, try to
+find an installation that has that file. Then do a</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> $ grep /my/missing/file /var/sadm/install/contents</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This will
+display a line like this:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">/usr/include/sys/errno.h
+f none 0644 root bin 7471 37605 956241356 SUNWhea</p>
+
+<p style="margin-left:11%; margin-top: 1em">The last item
+listed (SUNWhea in this example) is the package you
+need.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Avoid
+/usr/ucb/cc.</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">You don&rsquo;t
+need to have /usr/ucb/ in your <small>PATH</small> to build
+perl. If you want /usr/ucb/ in your <small>PATH</small>
+anyway, make sure that /usr/ucb/ is <small>NOT</small> in
+your <small>PATH</small> before the directory containing the
+right C compiler.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Sun&rsquo;s
+C Compiler</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">If you use
+Sun&rsquo;s C compiler, make sure the correct directory
+(usually /opt/SUNWspro/bin/) is in your <small>PATH</small>
+(before /usr/ucb/).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i><small>GCC</small></i></p>
+
+<p style="margin-left:11%; margin-top: 1em">If you use gcc,
+make sure your installation is recent and complete. perl
+versions since 5.6.0 build fine with gcc &gt; 2.8.1 on
+Solaris &gt;= 2.6.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You must
+Configure perl with</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> $ sh Configure &minus;Dcc=gcc</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you
+don&rsquo;t, you may experience strange build errors.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you have
+updated your Solaris version, you may also have to update
+your gcc. For example, if you are running Solaris 2.6 and
+your gcc is installed under /usr/local, check in
+/usr/local/lib/gcc&minus;lib and make sure you have the
+appropriate directory, sparc&minus;sun&minus;solaris2.6/ or
+i386&minus;pc&minus;solaris2.6/. If gcc&rsquo;s directory is
+for a different version of Solaris than you are running,
+then you will need to rebuild gcc for your new version of
+Solaris.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can get a
+precompiled version of gcc from
+&lt;http://www.sunfreeware.com/&gt; or
+&lt;http://www.blastwave.org/&gt;. Make sure you pick up the
+package for your Solaris release.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you wish to
+use gcc to build add-on modules for use with the perl
+shipped with Solaris, you should use the Solaris::PerlGcc
+module which is available from <small>CPAN</small> . The
+perl shipped with Solaris is configured and built with the
+Sun compilers, and the compiler configuration information
+stored in Config.pm is therefore only relevant to the Sun
+compilers. The Solaris:PerlGcc module contains a replacement
+Config.pm that is correct for gcc &minus; see the module for
+details.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i><small>GNU</small>
+as and <small>GNU</small> ld</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+information applies to gcc version 2. Volunteers to update
+it as appropriately for gcc version 3 would be
+appreciated.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The versions of
+as and ld supplied with Solaris work fine for building perl.
+There is normally no need to install the <small>GNU</small>
+versions to compile perl.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you decide
+to ignore this advice and use the <small>GNU</small>
+versions anyway, then be sure that they are relatively
+recent. Versions newer than 2.7 are apparently new enough.
+Older versions may have trouble with dynamic loading.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you wish to
+use <small>GNU</small> ld, then you need to pass it the
+&minus;Wl,&minus;E flag. The hints/solaris_2.sh file tries
+to do this automatically by setting the following Configure
+variables:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> ccdlflags=&quot;$ccdlflags &minus;Wl,&minus;E&quot;
+ lddlflags=&quot;$lddlflags &minus;Wl,&minus;E &minus;G&quot;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">However, over
+the years, changes in gcc, <small>GNU</small> ld, and
+Solaris ld have made it difficult to automatically detect
+which ld ultimately gets called. You may have to manually
+edit config.sh and add the &minus;Wl,&minus;E flags
+yourself, or else run Configure interactively and add the
+flags at the appropriate prompts.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If your gcc is
+configured to use <small>GNU</small> as and ld but you want
+to use the Solaris ones instead to build perl, then
+you&rsquo;ll need to add &minus;B/usr/ccs/bin/ to the gcc
+command line. One convenient way to do that is with</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> $ sh Configure &minus;Dcc='gcc &minus;B/usr/ccs/bin/'</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Note that the
+trailing slash is required. This will result in some
+harmless warnings as Configure is run:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> gcc: file path prefix `/usr/ccs/bin/' never used</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">These messages
+may safely be ignored. (Note that for a SunOS4 system, you
+must use &minus;B/bin/ instead.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">Alternatively,
+you can use the <small>GCC_EXEC_PREFIX</small> environment
+variable to ensure that Sun&rsquo;s as and ld are used.
+Consult your gcc documentation for further information on
+the &minus;B option and the <small>GCC_EXEC_PREFIX</small>
+variable.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Sun and
+<small>GNU</small> make</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">The make under
+/usr/ccs/bin works fine for building perl. If you have the
+Sun C compilers, you will also have a parallel version of
+make (dmake). This works fine to build perl, but can
+sometimes cause problems when running &rsquo;make
+test&rsquo; due to underspecified dependencies between the
+different test harness files. The same problem can also
+affect the building of some add-on modules, so in those
+cases either specify &rsquo;&minus;m serial&rsquo; on the
+dmake command line, or use /usr/ccs/bin/make instead. If you
+wish to use <small>GNU</small> make, be sure that the
+set-group-id bit is not set. If it is, then arrange your
+<small>PATH</small> so that /usr/ccs/bin/make is before
+<small>GNU</small> make or else have the system
+administrator disable the set-group-id bit on
+<small>GNU</small> make.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Avoid
+libucb.</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Solaris
+provides some BSD-compatibility functions in
+/usr/ucblib/libucb.a. Perl will not build and run correctly
+if linked against &minus;lucb since it contains routines
+that are incompatible with the standard Solaris libc.
+Normally this is not a problem since the solaris hints file
+prevents Configure from even looking in /usr/ucblib for
+libraries, and also explicitly omits &minus;lucb.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Environment
+for Compiling perl on Solaris</b> <i><small><br>
+PATH</small></i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Make sure your
+<small>PATH</small> includes the compiler
+(/opt/SUNWspro/bin/ if you&rsquo;re using Sun&rsquo;s
+compiler) as well as /usr/ccs/bin/ to pick up the other
+development tools (such as make, ar, as, and ld). Make sure
+your path either doesn&rsquo;t include /usr/ucb or that it
+includes it after the compiler and compiler tools and other
+standard Solaris directories. You definitely don&rsquo;t
+want /usr/ucb/cc.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i><small>LD_LIBRARY_PATH</small></i></p>
+
+<p style="margin-left:11%; margin-top: 1em">If you have the
+<small>LD_LIBRARY_PATH</small> environment variable set, be
+sure that it does <small>NOT</small> include /lib or
+/usr/lib. If you will be building extensions that call
+third-party shared libraries (e.g. Berkeley
+<small>DB</small> ) then make sure that your
+<small>LD_LIBRARY_PATH</small> environment variable includes
+the directory with that library (e.g. /usr/local/lib).</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you get an
+error message</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> dlopen: stub interception failed</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">it is probably
+because your <small>LD_LIBRARY_PATH</small> environment
+variable includes a directory which is a symlink to /usr/lib
+(such as /lib). The reason this causes a problem is quite
+subtle. The file libdl.so.1.0 actually *only* contains
+functions which generate &rsquo;stub interception
+failed&rsquo; errors! The runtime linker intercepts links to
+&quot;/usr/lib/libdl.so.1.0&quot; and links in internal
+implementations of those functions instead. [Thanks to Tim
+Bunce for this explanation.]</p>
+
+<h2>RUN CONFIGURE.
+<a name="RUN CONFIGURE."></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">See the
+<small>INSTALL</small> file for general information
+regarding Configure. Only Solaris-specific issues are
+discussed here. Usually, the defaults should be fine.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>64&minus;bit
+perl on Solaris.</b> <br>
+See the <small>INSTALL</small> file for general information
+regarding 64&minus;bit compiles. In general, the defaults
+should be fine for most people.</p>
+
+<p style="margin-left:11%; margin-top: 1em">By default,
+perl&minus;5.6.0 (or later) is compiled as a 32&minus;bit
+application with largefile and long-long support.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>General
+32&minus;bit vs. 64&minus;bit issues.</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">Solaris 7 and
+above will run in either 32 bit or 64 bit mode on
+<small>SPARC</small> CPUs, via a reboot. You can build 64
+bit apps whilst running 32 bit mode and vice-versa. 32 bit
+apps will run under Solaris running in either 32 or 64 bit
+mode. 64 bit apps require Solaris to be running 64 bit
+mode.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Existing 32 bit
+apps are properly known as <small>LP32</small> , i.e. Longs
+and Pointers are 32 bit. 64&minus;bit apps are more properly
+known as <small>LP64</small> . The discriminating feature of
+a <small>LP64</small> bit app is its ability to utilise a
+64&minus;bit address space. It is perfectly possible to have
+a <small>LP32</small> bit app that supports both
+64&minus;bit integers (long long) and largefiles (&gt; 2GB),
+and this is the default for perl&minus;5.6.0.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For a more
+complete explanation of 64&minus;bit issues, see the
+&quot;Solaris 64&minus;bit Developer&rsquo;s Guide&quot; at
+&lt;http://docs.sun.com/&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can detect
+the <small>OS</small> mode using &quot;isainfo
+&minus;v&quot;, e.g.</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> $ isainfo &minus;v   # Ultra 30 in 64 bit mode
+ 64&minus;bit sparcv9 applications
+ 32&minus;bit sparc applications</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">By default,
+perl will be compiled as a 32&minus;bit application. Unless
+you want to allocate more than ~ 4GB of memory inside perl,
+or unless you need more than 255 open file descriptors, you
+probably don&rsquo;t need perl to be a 64&minus;bit app.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Large File
+Support</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">For Solaris 2.6
+and onwards, there are two different ways for 32&minus;bit
+applications to manipulate large files (files whose size is
+&gt; 2GByte). (A 64&minus;bit application automatically has
+largefile support built in by default.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">First is the
+&quot;transitional compilation environment&quot;, described
+in <i>lfcompile64</i>(5). According to the man page,</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> The transitional compilation  environment  exports  all  the
+ explicit 64&minus;bit functions (xxx64()) and types in addition to
+ all the regular functions (xxx()) and types. Both xxx()  and
+ xxx64()  functions  are  available to the program source.  A
+ 32&minus;bit application must use the xxx64() functions in  order
+ to  access  large  files.  See the lf64(5) manual page for a
+ complete listing of the 64&minus;bit transitional interfaces.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+transitional compilation environment is obtained with the
+following compiler and linker flags:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> getconf LFS64_CFLAGS        &minus;D_LARGEFILE64_SOURCE
+ getconf LFS64_LDFLAG        # nothing special needed
+ getconf LFS64_LIBS          # nothing special needed</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Second is the
+&quot;large file compilation environment&quot;, described in
+<i>lfcompile</i>(5). According to the man page,</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> Each interface named xxx() that needs to access 64&minus;bit entities
+ to  access  large  files maps to a xxx64() call in the
+ resulting binary. All relevant data types are defined to  be
+ of correct size (for example, off_t has a typedef definition
+ for a 64&minus;bit entity).
+ An application compiled in this environment is able  to  use
+ the  xxx()  source interfaces to access both large and small
+ files, rather than having to explicitly utilize the  transitional
+ xxx64()  interface  calls to access large files.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Two exceptions
+are <i>fseek()</i> and <i>ftell()</i>. 32&minus;bit
+applications should use fseeko(3C) and ftello(3C). These
+will get automatically mapped to <i>fseeko64()</i> and
+<i>ftello64()</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The large file
+compilation environment is obtained with</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> getconf LFS_CFLAGS      &minus;D_LARGEFILE_SOURCE &minus;D_FILE_OFFSET_BITS=64
+ getconf LFS_LDFLAGS     # nothing special needed
+ getconf LFS_LIBS        # nothing special needed</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">By default,
+perl uses the large file compilation environment and relies
+on Solaris to do the underlying mapping of interfaces.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Building an
+<small>LP64</small> perl</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">To compile a
+64&minus;bit application on an UltraSparc with a recent Sun
+Compiler, you need to use the flag
+&quot;&minus;xarch=v9&quot;. <i>getconf</i>(1) will tell you
+this, e.g.</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> $ getconf &minus;a | grep v9
+ XBS5_LP64_OFF64_CFLAGS:         &minus;xarch=v9
+ XBS5_LP64_OFF64_LDFLAGS:        &minus;xarch=v9
+ XBS5_LP64_OFF64_LINTFLAGS:      &minus;xarch=v9
+ XBS5_LPBIG_OFFBIG_CFLAGS:       &minus;xarch=v9
+ XBS5_LPBIG_OFFBIG_LDFLAGS:      &minus;xarch=v9
+ XBS5_LPBIG_OFFBIG_LINTFLAGS:    &minus;xarch=v9
+ _XBS5_LP64_OFF64_CFLAGS:        &minus;xarch=v9
+ _XBS5_LP64_OFF64_LDFLAGS:       &minus;xarch=v9
+ _XBS5_LP64_OFF64_LINTFLAGS:     &minus;xarch=v9
+ _XBS5_LPBIG_OFFBIG_CFLAGS:      &minus;xarch=v9
+ _XBS5_LPBIG_OFFBIG_LDFLAGS:     &minus;xarch=v9
+ _XBS5_LPBIG_OFFBIG_LINTFLAGS:   &minus;xarch=v9</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This flag is
+supported in Sun WorkShop Compilers 5.0 and onwards (now
+marketed under the name Forte) when used on Solaris 7 or
+later on UltraSparc systems.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you are
+using gcc, you would need to use &minus;mcpu=v9 &minus;m64
+instead. This option is not yet supported as of gcc 2.95.2;
+from install/SPECIFIC in that release:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> GCC version 2.95 is not able to compile code correctly for sparc64
+ targets. Users of the Linux kernel, at least, can use the sparc32
+ program to start up a new shell invocation with an environment that
+ causes configure to recognize (via uname &minus;a) the system as sparc&minus;*&minus;*
+ instead.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">All this should
+be handled automatically by the hints file, if
+requested.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Long
+Doubles.</i></p>
+
+<p style="margin-left:11%; margin-top: 1em">As of 5.8.1,
+long doubles are working if you use the Sun compilers
+(needed for additional math routines not included in
+libm).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Threads in
+perl on Solaris.</b> <br>
+It is possible to build a threaded version of perl on
+Solaris. The entire perl thread implementation is still
+experimental, however, so beware.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Malloc
+Issues with perl on Solaris.</b> <br>
+Starting from perl 5.7.1 perl uses the Solaris malloc, since
+the perl malloc breaks when dealing with more than 2GB of
+memory, and the Solaris malloc also seems to be faster.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you for some
+reason (such as binary backward compatibility) really need
+to use perl&rsquo;s malloc, you can rebuild perl from the
+sources and Configure the build with</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> $ sh Configure &minus;Dusemymalloc</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You should not
+use perl&rsquo;s malloc if you are building with gcc. There
+are reports of core dumps, especially in the
+<small>PDL</small> module. The problem appears to go away
+under &minus;DDEBUGGING, so it has been difficult to track
+down. Sun&rsquo;s compiler appears to be okay with or
+without perl&rsquo;s malloc. [ <small>XXX</small> further
+investigation is needed here.]</p>
+
+<h2>MAKE PROBLEMS.
+<a name="MAKE PROBLEMS."></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Dynamic Loading
+Problems With <small>GNU</small> as and <small>GNU</small>
+ld</p>
+
+<p style="margin-left:17%;">If you have problems with
+dynamic loading using gcc on SunOS or Solaris, and you are
+using <small>GNU</small> as and <small>GNU</small> ld, see
+the section &quot; <small>GNU</small> as and
+<small>GNU</small> ld&quot; above.</p>
+
+<p style="margin-left:11%;">ld.so.1: ./perl: fatal:
+relocation error:</p>
+
+<p style="margin-left:17%;">If you get this message on
+SunOS or Solaris, and you&rsquo;re using gcc, it&rsquo;s
+probably the <small>GNU</small> as or <small>GNU</small> ld
+problem in the previous item &quot; <small>GNU</small> as
+and <small>GNU</small> ld&quot;.</p>
+
+<p style="margin-left:11%;">dlopen: stub interception
+failed</p>
+
+<p style="margin-left:17%;">The primary cause of the
+&rsquo;dlopen: stub interception failed&rsquo; message is
+that the <small>LD_LIBRARY_PATH</small> environment variable
+includes a directory which is a symlink to /usr/lib (such as
+/lib). See &quot; <small>LD_LIBRARY_PATH</small> &quot;
+above.</p>
+
+<p style="margin-left:11%;">#error &quot;No
+<small>DATAMODEL_NATIVE</small> specified&quot;</p>
+
+<p style="margin-left:17%;">This is a common error when
+trying to build perl on Solaris 2.6 with a gcc installation
+from Solaris 2.5 or 2.5.1. The Solaris header files changed,
+so you need to update your gcc installation. You can either
+rerun the fixincludes script from gcc or take the
+opportunity to update your gcc installation.</p>
+
+<p style="margin-left:11%;">sh: ar: not found</p>
+
+<p style="margin-left:17%;">This is a message from your
+shell telling you that the command &rsquo;ar&rsquo; was not
+found. You need to check your <small>PATH</small>
+environment variable to make sure that it includes the
+directory with the &rsquo;ar&rsquo; command. This is a
+common problem on Solaris, where &rsquo;ar&rsquo; is in the
+/usr/ccs/bin/ directory.</p>
+
+<h2>MAKE TEST
+<a name="MAKE TEST"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>op/stat.t
+test 4 in Solaris</b> <i><br>
+op/stat.t</i> test 4 may fail if you are on a tmpfs of some
+sort. Building in /tmp sometimes shows this behavior. The
+test suite detects if you are building in /tmp, but it may
+not be able to catch all tmpfs situations.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>nss_delete
+core dump from op/pwent or op/grent</b> <br>
+See &quot;nss_delete core dump from op/pwent or
+op/grent&quot; in perlhpux.</p>
+
+<h2>PREBUILT BINARIES OF PERL FOR SOLARIS.
+<a name="PREBUILT BINARIES OF PERL FOR SOLARIS."></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can pick up
+prebuilt binaries for Solaris from
+&lt;http://www.sunfreeware.com/&gt;,
+&lt;http://www.blastwave.org&gt;, ActiveState
+&lt;http://www.activestate.com/&gt;, and
+&lt;http://www.perl.com/&gt; under the Binaries list at the
+top of the page. There are probably other sources as well.
+Please note that these sites are under the control of their
+respective owners, not the perl developers.</p>
+
+<h2>RUNTIME ISSUES FOR PERL ON SOLARIS.
+<a name="RUNTIME ISSUES FOR PERL ON SOLARIS."></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Limits on
+Numbers of Open Files on Solaris.</b> <br>
+The stdio(3C) manpage notes that for <small>LP32</small>
+applications, only 255 files may be opened using
+<i>fopen()</i>, and only file descriptors 0 through 255 can
+be used in a stream. Since perl calls <i>open()</i> and then
+fdopen(3C) with the resulting file descriptor, perl is
+limited to 255 simultaneous open files, even if
+<i>sysopen()</i> is used. If this proves to be an
+insurmountable problem, you can compile perl as a
+<small>LP64</small> application, see &quot;Building an
+<small>LP64</small> perl&quot; for details. Note also that
+the default resource limit for open file descriptors on
+Solaris is 255, so you will have to modify your ulimit or
+rctl (Solaris 9 onwards) appropriately.</p>
+
+<h2>SOLARIS-SPECIFIC MODULES.
+<a name="SOLARIS-SPECIFIC MODULES."></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">See the modules
+under the Solaris:: and Sun::Solaris namespaces on
+<small>CPAN</small> , see
+http://www.cpan.org/modules/by&minus;module/Solaris/
+&lt;http://www.cpan.org/modules/by-module/Solaris/&gt; and
+http://www.cpan.org/modules/by&minus;module/Sun/
+&lt;http://www.cpan.org/modules/by-module/Sun/&gt;.</p>
+
+<h2>SOLARIS-SPECIFIC PROBLEMS WITH MODULES.
+<a name="SOLARIS-SPECIFIC PROBLEMS WITH MODULES."></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Proc::ProcessTable
+on Solaris</b> <br>
+Proc::ProcessTable does not compile on Solaris with
+perl5.6.0 and higher if you have <small>LARGEFILES</small>
+defined. Since largefile support is the default in 5.6.0 and
+later, you have to take special steps to use this
+module.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The problem is
+that various structures visible via procfs use off_t, and if
+you compile with largefile support these change from 32 bits
+to 64 bits. Thus what you get back from procfs doesn&rsquo;t
+match up with the structures in perl, resulting in garbage.
+See <i>proc</i>(4) for further discussion.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A fix for
+Proc::ProcessTable is to edit Makefile to explicitly remove
+the largefile flags from the ones MakeMaker picks up from
+Config.pm. This will result in Proc::ProcessTable being
+built under the correct environment. Everything should then
+be <small>OK</small> as long as Proc::ProcessTable
+doesn&rsquo;t try to share off_t&rsquo;s with the rest of
+perl, or if it does they should be explicitly specified as
+off64_t.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>BSD::Resource
+on Solaris</b> <br>
+BSD::Resource versions earlier than 1.09 do not compile on
+Solaris with perl 5.6.0 and higher, for the same reasons as
+Proc::ProcessTable. BSD::Resource versions starting from
+1.09 have a workaround for the problem.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Net::SSLeay
+on Solaris</b> <br>
+Net::SSLeay requires a /dev/urandom to be present. This
+device is available from Solaris 9 onwards. For earlier
+Solaris versions you can either get the package SUNWski
+(packaged with several Sun software products, for example
+the Sun WebServer, which is part of the Solaris Server
+Intranet Extension, or the Sun Directory Services, part of
+Solaris for ISPs) or download the ANDIrand package from
+&lt;http://www.cosy.sbg.ac.at/~andi/&gt;. If you use
+SUNWski, make a symbolic link /dev/urandom pointing to
+/dev/random. For more details, see Document
+<small>ID27606</small> entitled &quot;Differing /dev/random
+support requirements within Solaris[ <small>TM</small> ]
+Operating Environments&quot;, available at
+&lt;http://sunsolve.sun.com&gt; .</p>
+
+<p style="margin-left:11%; margin-top: 1em">It may be
+possible to use the Entropy Gathering Daemon (written in
+Perl!), available from
+&lt;http://www.lothar.com/tech/crypto/&gt;.</p>
+
+<h2>SunOS 4.x
+<a name="SunOS 4.x"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In SunOS 4.x
+you most probably want to use the SunOS ld, /usr/bin/ld,
+since the more recent versions of <small>GNU</small> ld
+(like 2.13) do not seem to work for building Perl anymore.
+When linking the extensions, the <small>GNU</small> ld gets
+very unhappy and spews a lot of errors like this</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  ... relocation truncated to fit: BASE13 ...</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">and dies.
+Therefore the SunOS 4.1 hints file explicitly sets the ld to
+be <i>/usr/bin/ld</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">As of Perl
+5.8.1 the dynamic loading of libraries (DynaLoader,
+XSLoader) also seems to have become broken in in SunOS 4.x.
+Therefore the default is to build Perl statically.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Running the
+test suite in SunOS 4.1 is a bit tricky since the
+<i>lib/Tie/File/t/09_gen_rs</i> test hangs (subtest #51,
+<small>FWIW</small> ) for some unknown reason. Just stop the
+test and kill that particular Perl process.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There are
+various other failures, that as of SunOS 4.1.4 and gcc 3.2.2
+look a lot like gcc bugs. Many of the failures happen in the
+Encode tests, where for example when the test expects
+&quot;0&quot; you get &quot;&amp;#48;&quot; which should
+after a little squinting look very odd indeed. Another
+example is earlier in <i>t/run/fresh_perl</i> where
+<i>chr</i>(0xff) is expected but the test fails because the
+result is <i>chr</i>(0xff). Exactly.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is the
+&quot;make test&quot; result from the said combination:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  Failed 27 test scripts out of 745, 96.38% okay.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Running the
+<tt>&quot;harness&quot;</tt> is painful because of the many
+failing Unicode-related tests will output megabytes of
+failure messages, but if one patiently waits, one gets these
+results:</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> Failed Test                     Stat Wstat Total Fail  Failed  List of Failed
+ &minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;
+ ...
+ ../ext/Encode/t/at&minus;cn.t            4  1024    29    4  13.79%  14&minus;17
+ ../ext/Encode/t/at&minus;tw.t           10  2560    17   10  58.82%  2 4 6 8 10 12
+                                                                14&minus;17
+ ../ext/Encode/t/enc_data.t        29  7424    ??   ??       %  ??
+ ../ext/Encode/t/enc_eucjp.t       29  7424    ??   ??       %  ??
+ ../ext/Encode/t/enc_module.t      29  7424    ??   ??       %  ??
+ ../ext/Encode/t/encoding.t        29  7424    ??   ??       %  ??
+ ../ext/Encode/t/grow.t            12  3072    24   12  50.00%  2 4 6 8 10 12 14
+                                                                16 18 20 22 24
+  Failed Test                     Stat Wstat Total Fail  Failed  List of Failed
+ &minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;
+ ../ext/Encode/t/guess.t          255 65280    29   40 137.93%  10&minus;29
+ ../ext/Encode/t/jperl.t           29  7424    15   30 200.00%  1&minus;15
+ ../ext/Encode/t/mime&minus;header.t      2   512    10    2  20.00%  2&minus;3
+ ../ext/Encode/t/perlio.t          22  5632    38   22  57.89%  1&minus;4 9&minus;16 19&minus;20
+                                                                23&minus;24 27&minus;32
+ ../ext/List/Util/t/shuffle.t       0   139    ??   ??       %  ??
+ ../ext/PerlIO/t/encoding.t                    14    1   7.14%  11
+ ../ext/PerlIO/t/fallback.t                     9    2  22.22%  3 5
+ ../ext/Socket/t/socketpair.t       0     2    45   70 155.56%  11&minus;45
+ ../lib/CPAN/t/vcmp.t                          30    1   3.33%  25
+ ../lib/Tie/File/t/09_gen_rs.t      0    15    ??   ??       %  ??
+ ../lib/Unicode/Collate/t/test.t              199   30  15.08%  7 26&minus;27 71&minus;75
+                                                                81&minus;88 95 101
+                                                                103&minus;104 106 108&minus;
+                                                                109 122 124 161
+                                                                169&minus;172
+ ../lib/sort.t                      0   139   119   26  21.85%  107&minus;119
+ op/alarm.t                                     4    1  25.00%  4
+ op/utfhash.t                                  97    1   1.03%  31
+ run/fresh_perl.t                              91    1   1.10%  32
+ uni/tr_7jis.t                                 ??   ??       %  ??
+ uni/tr_eucjp.t                    29  7424     6   12 200.00%  1&minus;6
+ uni/tr_sjis.t                     29  7424     6   12 200.00%  1&minus;6
+ 56 tests and 467 subtests skipped.
+ Failed 27/811 test scripts, 96.67% okay. 1383/75399 subtests failed, 98.17% okay.</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>alarm()</i> test failure is caused by <i>system()</i>
+apparently blocking <i>alarm()</i>. That is probably a libc
+bug, and given that SunOS 4.x has been end-of-lifed years
+ago, don&rsquo;t hold your breath for a fix. In addition to
+that, don&rsquo;t try anything too Unicode-y, especially
+with Encode, and you should be fine in SunOS 4.x.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The original
+was written by Andy Dougherty <i>doughera@lafayette.edu</i>
+drawing heavily on advice from Alan Burlison, Nick
+Ing-Simmons, Tim Bunce, and many other Solaris users over
+the years.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Please report
+any errors, updates, or suggestions to
+<i>perlbug@perl.org</i>.</p>
+<hr>
+</body>
+</html>

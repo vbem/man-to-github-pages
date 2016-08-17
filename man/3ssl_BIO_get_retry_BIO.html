@@ -1,0 +1,207 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:33:33 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>BIO_should_retry</title>
+
+</head>
+<body>
+
+<h1 align="center">BIO_should_retry</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">BIO_should_retry,
+BIO_should_read, BIO_should_write, BIO_should_io_special,
+BIO_retry_type, BIO_should_retry, BIO_get_retry_BIO,
+BIO_get_retry_reason &minus; BIO retry functions</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> #include &lt;openssl/bio.h&gt;
+ #define BIO_should_read(a)             ((a)&minus;&gt;flags &amp; BIO_FLAGS_READ)
+ #define BIO_should_write(a)            ((a)&minus;&gt;flags &amp; BIO_FLAGS_WRITE)
+ #define BIO_should_io_special(a)       ((a)&minus;&gt;flags &amp; BIO_FLAGS_IO_SPECIAL)
+ #define BIO_retry_type(a)              ((a)&minus;&gt;flags &amp; BIO_FLAGS_RWS)
+ #define BIO_should_retry(a)            ((a)&minus;&gt;flags &amp; BIO_FLAGS_SHOULD_RETRY)
+ #define BIO_FLAGS_READ         0x01
+ #define BIO_FLAGS_WRITE        0x02
+ #define BIO_FLAGS_IO_SPECIAL   0x04
+ #define BIO_FLAGS_RWS (BIO_FLAGS_READ|BIO_FLAGS_WRITE|BIO_FLAGS_IO_SPECIAL)
+ #define BIO_FLAGS_SHOULD_RETRY 0x08
+ BIO *  BIO_get_retry_BIO(BIO *bio, int *reason);
+ int    BIO_get_retry_reason(BIO *bio);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These functions
+determine why a <small>BIO</small> is not able to read or
+write data. They will typically be called after a failed
+<i>BIO_read()</i> or <i>BIO_write()</i> call.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BIO_should_retry()</i>
+is true if the call that produced this condition should then
+be retried at a later time.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<i>BIO_should_retry()</i> is false then the cause is an
+error condition.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BIO_should_read()</i>
+is true if the cause of the condition is that a
+<small>BIO</small> needs to read data.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BIO_should_write()</i>
+is true if the cause of the condition is that a
+<small>BIO</small> needs to read data.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BIO_should_io_special()</i>
+is true if some &quot;special&quot; condition, that is a
+reason other than reading or writing is the cause of the
+condition.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BIO_retry_type()</i>
+returns a mask of the cause of a retry condition consisting
+of the values <b><small>BIO_FLAGS_READ</small></b> ,
+<b><small>BIO_FLAGS_WRITE</small></b> ,
+<b><small>BIO_FLAGS_IO_SPECIAL</small></b> though current
+<small>BIO</small> types will only set one of these.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BIO_get_retry_BIO()</i>
+determines the precise reason for the special condition, it
+returns the <small>BIO</small> that caused this condition
+and if <b>reason</b> is not <small>NULL</small> it contains
+the reason code. The meaning of the reason code and the
+action that should be taken depends on the type of
+<small>BIO</small> that resulted in this condition.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BIO_get_retry_reason()</i>
+returns the reason for a special condition if passed the
+relevant <small>BIO,</small> for example as returned by
+<i>BIO_get_retry_BIO()</i>.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If
+<i>BIO_should_retry()</i> returns false then the precise
+&quot;error condition&quot; depends on the
+<small>BIO</small> type that caused it and the return code
+of the <small>BIO</small> operation. For example if a call
+to <i>BIO_read()</i> on a socket <small>BIO</small> returns
+0 and <i>BIO_should_retry()</i> is false then the cause will
+be that the connection closed. A similar condition on a file
+<small>BIO</small> will mean that it has reached
+<small>EOF.</small> Some <small>BIO</small> types may place
+additional information on the error queue. For more details
+see the individual <small>BIO</small> type manual pages.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+underlying I/O structure is in a blocking mode almost all
+current <small>BIO</small> types will not request a retry,
+because the underlying I/O calls will not. If the
+application knows that the <small>BIO</small> type will
+never signal a retry then it need not call
+<i>BIO_should_retry()</i> after a failed <small>BIO
+I/O</small> call. This is typically done with file BIOs.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>SSL</small>
+BIOs are the only current exception to this rule: they can
+request a retry even if the underlying I/O structure is
+blocking, if a handshake occurs during a call to
+<i>BIO_read()</i>. An application can retry the failed call
+immediately or avoid this situation by setting
+<small>SSL_MODE_AUTO_RETRY</small> on the underlying
+<small>SSL</small> structure.</p>
+
+<p style="margin-left:11%; margin-top: 1em">While an
+application may retry a failed non blocking call immediately
+this is likely to be very inefficient because the call will
+fail repeatedly until data can be processed or is available.
+An application will normally wait until the necessary
+condition is satisfied. How this is done depends on the
+underlying I/O structure.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For example if
+the cause is ultimately a socket and
+<i>BIO_should_read()</i> is true then a call to
+<i>select()</i> may be made to wait until data is available
+and then retry the <small>BIO</small> operation. By
+combining the retry conditions of several non blocking BIOs
+in a single <i>select()</i> call it is possible to service
+several BIOs in a single thread, though the performance may
+be poor if <small>SSL</small> BIOs are present because long
+delays can occur during the initial handshake process.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is possible
+for a <small>BIO</small> to block indefinitely if the
+underlying I/O structure cannot process or return any data.
+This depends on the behaviour of the platforms I/O
+functions. This is often not desirable: one solution is to
+use non blocking I/O and use a timeout on the
+<i>select()</i> (or equivalent) call.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The OpenSSL
+<small>ASN1</small> functions cannot gracefully deal with
+non blocking I/O: that is they cannot retry after a partial
+read or write. This is usually worked around by only passing
+the relevant data to <small>ASN1</small> functions when the
+entire structure can be read or written.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>TBA</small></p>
+<hr>
+</body>
+</html>

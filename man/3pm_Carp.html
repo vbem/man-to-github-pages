@@ -1,0 +1,423 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:32:42 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Carp</title>
+
+</head>
+<body>
+
+<h1 align="center">Carp</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#GLOBAL VARIABLES">GLOBAL VARIABLES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+<a href="#LICENSE">LICENSE</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Carp &minus;
+alternative warn and die for modules</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">    use Carp;
+    # warn user (from perspective of caller)
+    carp &quot;string trimmed to 80 chars&quot;;
+    # die of errors (from perspective of caller)
+    croak &quot;We're outta here!&quot;;
+    # die of errors with stack backtrace
+    confess &quot;not implemented&quot;;
+    # cluck not exported by default
+    use Carp qw(cluck);
+    cluck &quot;This is how we got here!&quot;;</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The Carp
+routines are useful in your own modules because they act
+like <i>die()</i> or <i>warn()</i>, but with a message which
+is more likely to be useful to a user of your module. In the
+case of cluck, confess, and longmess that context is a
+summary of every call in the call-stack. For a shorter
+message you can use <tt>&quot;carp&quot;</tt> or
+<tt>&quot;croak&quot;</tt> which report the error as being
+from where your module was called. There is no guarantee
+that that is where the error was, but it is a good educated
+guess.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can also
+alter the way the output and logic of
+<tt>&quot;Carp&quot;</tt> works, by changing some global
+variables in the <tt>&quot;Carp&quot;</tt> namespace. See
+the section on <tt>&quot;GLOBAL VARIABLES&quot;</tt>
+below.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here is a more
+complete description of how <tt>&quot;carp&quot;</tt> and
+<tt>&quot;croak&quot;</tt> work. What they do is search the
+call-stack for a function call stack where they have not
+been told that there shouldn&rsquo;t be an error. If every
+call is marked safe, they give up and give a full stack
+backtrace instead. In other words they presume that the
+first likely looking potential suspect is guilty. Their
+rules for telling whether a call shouldn&rsquo;t generate
+errors work as follows:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>1.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>Any call from a package to itself is safe.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>2.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>Packages claim that there won&rsquo;t be errors on calls
+to or from packages explicitly marked as safe by inclusion
+in <tt>@CARP_NOT</tt>, or (if that array is empty)
+<tt>@ISA</tt>. The ability to override what <tt>@ISA</tt>
+says is new in 5.8.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>3.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>The trust in item 2 is transitive. If A trusts B, and B
+trusts C, then A trusts C. So if you do not override
+<tt>@ISA</tt> with <tt>@CARP_NOT</tt>, then this trust
+relationship is identical to, &quot;inherits from&quot;.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>4.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>Any call from an internal Perl module is safe. (Nothing
+keeps user modules from marking themselves as internal to
+Perl, but this practice is discouraged.)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>5.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p>Any call to Perl&rsquo;s warning system (eg Carp itself)
+is safe. (This rule is what keeps it from reporting the
+error at the point where you call <tt>&quot;carp&quot;</tt>
+or <tt>&quot;croak&quot;</tt>.)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>6.</p></td>
+<td width="3%"></td>
+<td width="83%">
+
+
+<p><tt>$Carp::CarpLevel</tt> can be set to skip a fixed
+number of additional call levels. Using this is not
+recommended because it is very difficult to get it to behave
+correctly.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Forcing a
+Stack Trace</b> <br>
+As a debugging aid, you can force Carp to treat a croak as a
+confess and a carp as a cluck across <i>all</i> modules. In
+other words, force a detailed stack trace to be given. This
+can be very helpful when trying to understand why, or from
+where, a warning or error is being generated.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This feature is
+enabled by &rsquo;importing&rsquo; the non-existent symbol
+&rsquo;verbose&rsquo;. You would typically enable it by
+saying</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    perl &minus;MCarp=verbose script.pl</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">or by including
+the string <tt>&quot;&minus;MCarp=verbose&quot;</tt> in the
+<small>PERL5OPT</small> environment variable.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Alternately,
+you can set the global variable <tt>$Carp::Verbose</tt> to
+true. See the <tt>&quot;GLOBAL VARIABLES&quot;</tt> section
+below.</p>
+
+<h2>GLOBAL VARIABLES
+<a name="GLOBAL VARIABLES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>$Carp::MaxEvalLen</b>
+<br>
+This variable determines how many characters of a
+string-eval are to be shown in the output. Use a value of
+<tt>0</tt> to show all text.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Defaults to
+<tt>0</tt>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>$Carp::MaxArgLen</b>
+<br>
+This variable determines how many characters of each
+argument to a function to print. Use a value of <tt>0</tt>
+to show the full length of the argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Defaults to
+<tt>64</tt>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>$Carp::MaxArgNums</b>
+<br>
+This variable determines how many arguments to each function
+to show. Use a value of <tt>0</tt> to show all arguments to
+a function call.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Defaults to
+<tt>8</tt>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>$Carp::Verbose</b>
+<br>
+This variable makes <tt>&quot;carp&quot;</tt> and
+<tt>&quot;croak&quot;</tt> generate stack backtraces just
+like <tt>&quot;cluck&quot;</tt> and
+<tt>&quot;confess&quot;</tt>. This is how <tt>&quot;use Carp
+'verbose'&quot;</tt> is implemented internally.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Defaults to
+<tt>0</tt>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>@CARP_NOT</b>
+<br>
+This variable, <i>in your package</i>, says which packages
+are <i>not</i> to be considered as the location of an error.
+The <tt>&quot;carp()&quot;</tt> and
+<tt>&quot;cluck()&quot;</tt> functions will skip over
+callers when reporting where an error occurred.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><small>NB:</small>
+This variable must be in the package&rsquo;s symbol table,
+thus:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    # These work
+    our @CARP_NOT; # file scope
+    use vars qw(@CARP_NOT); # package scope
+    @My::Package::CARP_NOT = ... ; # explicit package variable
+    # These don't work
+    sub xyz { ... @CARP_NOT = ... } # w/o declarations above
+    my @CARP_NOT; # even at top&minus;level</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Example of
+use:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    package My::Carping::Package;
+    use Carp;
+    our @CARP_NOT;
+    sub bar     { .... or _error('Wrong input') }
+    sub _error  {
+        # temporary control of where'ness, __PACKAGE__ is implicit
+        local @CARP_NOT = qw(My::Friendly::Caller);
+        carp(@_)
+    }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This would make
+<tt>&quot;Carp&quot;</tt> report the error as coming from a
+caller not in <tt>&quot;My::Carping::Package&quot;</tt>, nor
+from <tt>&quot;My::Friendly::Caller&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also read the
+&quot; <small>DESCRIPTION&quot;</small> section above, about
+how <tt>&quot;Carp&quot;</tt> decides where the error is
+reported from.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Use
+<tt>@CARP_NOT</tt>, instead of
+<tt>$Carp::CarpLevel</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Overrides
+<tt>&quot;Carp&quot;</tt>&rsquo;s use of <tt>@ISA</tt>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>%Carp::Internal</b>
+<br>
+This says what packages are internal to Perl.
+<tt>&quot;Carp&quot;</tt> will never report an error as
+being from a line in a package that is internal to Perl. For
+example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $Carp::Internal{ (__PACKAGE__) }++;
+    # time passes...
+    sub foo { ... or confess(&quot;whatever&quot;) };</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">would give a
+full stack backtrace starting from the first caller outside
+of __PACKAGE__. (Unless that package was also internal to
+Perl.)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>%Carp::CarpInternal</b>
+<br>
+This says which packages are internal to Perl&rsquo;s
+warning system. For generating a full stack backtrace this
+is the same as being internal to Perl, the stack backtrace
+will not start inside packages that are listed in
+<tt>%Carp::CarpInternal</tt>. But it is slightly different
+for the summary message generated by
+<tt>&quot;carp&quot;</tt> or <tt>&quot;croak&quot;</tt>.
+There errors will not be reported on any lines that are
+calling packages in <tt>%Carp::CarpInternal</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For example
+<tt>&quot;Carp&quot;</tt> itself is listed in
+<tt>%Carp::CarpInternal</tt>. Therefore the full stack
+backtrace from <tt>&quot;confess&quot;</tt> will not start
+inside of <tt>&quot;Carp&quot;</tt>, and the short message
+from calling <tt>&quot;croak&quot;</tt> is not placed on the
+line where <tt>&quot;croak&quot;</tt> was called.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>$Carp::CarpLevel</b>
+<br>
+This variable determines how many additional call frames are
+to be skipped that would not otherwise be when reporting
+where an error occurred on a call to one of
+<tt>&quot;Carp&quot;</tt>&rsquo;s functions. It is fairly
+easy to count these call frames on calls that generate a
+full stack backtrace. However it is much harder to do this
+accounting for calls that generate a short message. Usually
+people skip too many call frames. If they are lucky they
+skip enough that <tt>&quot;Carp&quot;</tt> goes all of the
+way through the call stack, realizes that something is
+wrong, and then generates a full stack backtrace. If they
+are unlucky then the error is reported from somewhere
+misleading very high in the call stack.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Therefore it is
+best to avoid <tt>$Carp::CarpLevel</tt>. Instead use
+<tt>@CARP_NOT</tt>, <tt>%Carp::Internal</tt> and
+<tt>%Carp::CarpInternal</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Defaults to
+<tt>0</tt>.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The Carp
+routines don&rsquo;t handle exception objects currently. If
+called with a first argument that is a reference, they
+simply call <i>die()</i> or <i>warn()</i>, as
+appropriate.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Carp::Always,
+Carp::Clan</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The Carp module
+first appeared in Larry Wall&rsquo;s perl 5.000
+distribution. Since then it has been modified by several of
+the perl 5 porters. Andrew Main (Zefram)
+&lt;zefram@fysh.org&gt; divested Carp into an independent
+distribution.</p>
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (C)
+1994&minus;2012 Larry Wall</p>
+
+<p style="margin-left:11%; margin-top: 1em">Copyright (C)
+2011, 2012 Andrew Main (Zefram) &lt;zefram@fysh.org&gt;</p>
+
+<h2>LICENSE
+<a name="LICENSE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This module is
+free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,1114 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:38:52 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title></title>
+</head>
+<body>
+
+<hr>
+
+
+<p>SUDOERS.LDAP(5) BSD File Formats Manual
+SUDOERS.LDAP(5)</p>
+
+<p style="margin-top: 1em"><b>NAME</b></p>
+
+<p style="margin-left:6%;"><b>sudoers.ldap</b> &mdash; sudo
+LDAP configuration</p>
+
+<p style="margin-top: 1em"><b>DESCRIPTION</b></p>
+
+<p style="margin-left:6%;">In addition to the standard
+<i>sudoers</i> file, <b>sudo</b> may be configured via LDAP.
+This can be especially useful for synchronizing
+<i>sudoers</i> in a large, distributed environment.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Using LDAP for
+<i>sudoers</i> has several benefits:</p>
+
+<p style="margin-top: 1em"><b>&bull;</b></p>
+
+<p style="margin-left:12%;"><b>sudo</b> no longer needs to
+read <i>sudoers</i> in its entirety. When LDAP is used,
+there are only two or three LDAP queries per invocation.
+This makes it especially fast and particularly usable in
+LDAP environments.</p>
+
+<p style="margin-top: 1em"><b>&bull;</b></p>
+
+<p style="margin-left:12%;"><b>sudo</b> no longer exits if
+there is a typo in <i>sudoers</i>. It is not possible to
+load LDAP data into the server that does not conform to the
+sudoers schema, so proper syntax is guaranteed. It is still
+possible to have typos in a user or host name, but this will
+not prevent <b>sudo</b> from running.</p>
+
+<p style="margin-top: 1em"><b>&bull;</b></p>
+
+<p style="margin-left:12%;">It is possible to specify
+per-entry options that override the global default options.
+<i>/etc/sudoers</i> only supports default options and
+limited options associated with user/host/commands/aliases.
+The syntax is complicated and can be difficult for users to
+understand. Placing the options directly in the entry is
+more natural.</p>
+
+<p style="margin-top: 1em"><b>&bull;</b></p>
+
+<p style="margin-left:12%;">The <b>visudo</b> program is no
+longer needed. <b>visudo</b> provides locking and syntax
+checking of the <i>/etc/sudoers</i> file. Since LDAP updates
+are atomic, locking is no longer necessary. Because syntax
+is checked when the data is inserted into LDAP, there is no
+need for a specialized tool to check syntax.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Another major
+difference between LDAP and file-based <i>sudoers</i> is
+that in LDAP, <b>sudo</b>-specific Aliases are not
+supported.</p>
+
+<p style="margin-left:6%; margin-top: 1em">For the most
+part, there is really no need for <b>sudo</b>-specific
+Aliases. Unix groups or user netgroups can be used in place
+of User_Aliases and Runas_Aliases. Host netgroups can be
+used in place of Host_Aliases. Since Unix groups and
+netgroups can also be stored in LDAP there is no real need
+for <b>sudo</b>-specific aliases.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Cmnd_Aliases are
+not really required either since it is possible to have
+multiple users listed in a sudoRole. Instead of defining a
+Cmnd_Alias that is referenced by multiple users, one can
+create a sudoRole that contains the commands and assign
+multiple users to it.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>SUDOers LDAP
+container</b> <br>
+The <i>sudoers</i> configuration is contained in the
+ou=SUDOers LDAP container.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Sudo first looks
+for the cn=default entry in the SUDOers container. If found,
+the multi-valued sudoOption attribute is parsed in the same
+manner as a global Defaults line in <i>/etc/sudoers</i>. In
+the following example, the SSH_AUTH_SOCK variable will be
+preserved in the environment for all users.</p>
+
+<p style="margin-left:12%; margin-top: 1em">dn:
+cn=defaults,ou=SUDOers,dc=example,dc=com <br>
+objectClass: top <br>
+objectClass: sudoRole <br>
+cn: defaults <br>
+description: Default sudoOption&rsquo;s go here <br>
+sudoOption: env_keep+=SSH_AUTH_SOCK</p>
+
+<p style="margin-left:6%; margin-top: 1em">The equivalent
+of a sudoer in LDAP is a sudoRole. It consists of the
+following attributes:</p>
+
+<p style="margin-top: 1em"><b>sudoUser</b></p>
+
+<p style="margin-left:14%;">A user name, user ID (prefixed
+with &lsquo;#&rsquo;), Unix group (prefixed with
+&lsquo;%&rsquo;), Unix group ID (prefixed with
+&lsquo;%#&rsquo;), or user netgroup (prefixed with
+&lsquo;+&rsquo;).</p>
+
+<p style="margin-top: 1em"><b>sudoHost</b></p>
+
+<p style="margin-left:14%;">A host name, IP address, IP
+network, or host netgroup (prefixed with a &lsquo;+&rsquo;).
+The special value ALL will match any host.</p>
+
+<p style="margin-top: 1em"><b>sudoCommand</b></p>
+
+<p style="margin-left:14%;">A Unix command with optional
+command line arguments, potentially including globbing
+characters (aka wild cards). The special value ALL will
+match any command. If a command is prefixed with an
+exclamation point &lsquo;!&rsquo;, the user will be
+prohibited from running that command.</p>
+
+<p style="margin-top: 1em"><b>sudoOption</b></p>
+
+<p style="margin-left:14%;">Identical in function to the
+global options described above, but specific to the sudoRole
+in which it resides.</p>
+
+<p style="margin-top: 1em"><b>sudoRunAsUser</b></p>
+
+<p style="margin-left:14%;">A user name or uid (prefixed
+with &lsquo;#&rsquo;) that commands may be run as or a Unix
+group (prefixed with a &lsquo;%&rsquo;) or user netgroup
+(prefixed with a &lsquo;+&rsquo;) that contains a list of
+users that commands may be run as. The special value ALL
+will match any user.</p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+sudoRunAsUser attribute is only available in <b>sudo</b>
+versions 1.7.0 and higher. Older versions of <b>sudo</b> use
+the sudoRunAs attribute instead.</p>
+
+<p style="margin-top: 1em"><b>sudoRunAsGroup</b></p>
+
+<p style="margin-left:14%;">A Unix group or gid (prefixed
+with &lsquo;#&rsquo;) that commands may be run as. The
+special value ALL will match any group.</p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+sudoRunAsGroup attribute is only available in <b>sudo</b>
+versions 1.7.0 and higher.</p>
+
+<p style="margin-top: 1em"><b>sudoNotBefore</b></p>
+
+<p style="margin-left:14%;">A timestamp in the form
+yyyymmddHHMMSSZ that can be used to provide a start
+date/time for when the sudoRole will be valid. If multiple
+sudoNotBefore entries are present, the earliest is used.
+Note that timestamps must be in Coordinated Universal Time
+(UTC), not the local timezone. The minute and seconds
+portions are optional, but some LDAP servers require that
+they be present (contrary to the RFC).</p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+sudoNotBefore attribute is only available in <b>sudo</b>
+versions 1.7.5 and higher and must be explicitly enabled via
+the <b>SUDOERS_TIMED</b> option in
+<i>/etc/sudo-ldap.conf</i>.</p>
+
+<p style="margin-top: 1em"><b>sudoNotAfter</b></p>
+
+<p style="margin-left:14%;">A timestamp in the form
+yyyymmddHHMMSSZ that indicates an expiration date/time,
+after which the sudoRole will no longer be valid. If
+multiple sudoNotAfter entries are present, the last one is
+used. Note that timestamps must be in Coordinated Universal
+Time (UTC), not the local timezone. The minute and seconds
+portions are optional, but some LDAP servers require that
+they be present (contrary to the RFC).</p>
+
+<p style="margin-left:14%; margin-top: 1em">The
+sudoNotAfter attribute is only available in <b>sudo</b>
+versions 1.7.5 and higher and must be explicitly enabled via
+the <b>SUDOERS_TIMED</b> option in
+<i>/etc/sudo-ldap.conf</i>.</p>
+
+<p style="margin-top: 1em"><b>sudoOrder</b></p>
+
+<p style="margin-left:14%;">The sudoRole entries retrieved
+from the LDAP directory have no inherent order. The
+sudoOrder attribute is an integer (or floating point value
+for LDAP servers that support it) that is used to sort the
+matching entries. This allows LDAP-based sudoers entries to
+more closely mimic the behaviour of the sudoers file, where
+the order of the entries influences the result. If multiple
+entries match, the entry with the highest sudoOrder
+attribute is chosen. This corresponds to the
+&lsquo;&lsquo;last match&rsquo;&rsquo; behavior of the
+sudoers file. If the sudoOrder attribute is not present, a
+value of 0 is assumed.</p>
+
+<p style="margin-left:14%; margin-top: 1em">The sudoOrder
+attribute is only available in <b>sudo</b> versions 1.7.5
+and higher.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Each attribute
+listed above should contain a single value, but there may be
+multiple instances of each attribute type. A sudoRole must
+contain at least one sudoUser, sudoHost and sudoCommand.</p>
+
+<p style="margin-left:6%; margin-top: 1em">The following
+example allows users in group wheel to run any command on
+any host via <b>sudo</b>:</p>
+
+<p style="margin-left:12%; margin-top: 1em">dn:
+cn=%wheel,ou=SUDOers,dc=example,dc=com <br>
+objectClass: top <br>
+objectClass: sudoRole <br>
+cn: %wheel <br>
+sudoUser: %wheel <br>
+sudoHost: ALL <br>
+sudoCommand: ALL</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Anatomy of
+LDAP sudoers lookup</b> <br>
+When looking up a sudoer using LDAP there are only two or
+three LDAP queries per invocation. The first query is to
+parse the global options. The second is to match against the
+user&rsquo;s name and the groups that the user belongs to.
+(The special ALL tag is matched in this query too.) If no
+match is returned for the user&rsquo;s name and groups, a
+third query returns all entries containing user netgroups
+and checks to see if the user belongs to any of them.</p>
+
+<p style="margin-left:6%; margin-top: 1em">If timed entries
+are enabled with the <b>SUDOERS_TIMED</b> configuration
+directive, the LDAP queries include a subfilter that limits
+retrieval to entries that satisfy the time constraints, if
+any.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Differences
+between LDAP and non-LDAP sudoers</b> <br>
+There are some subtle differences in the way sudoers is
+handled once in LDAP. Probably the biggest is that according
+to the RFC, LDAP ordering is arbitrary and you cannot expect
+that Attributes and Entries are returned in any specific
+order.</p>
+
+<p style="margin-left:6%; margin-top: 1em">The order in
+which different entries are applied can be controlled using
+the sudoOrder attribute, but there is no way to guarantee
+the order of attributes within a specific entry. If there
+are conflicting command rules in an entry, the negative
+takes precedence. This is called paranoid behavior (not
+necessarily the most specific match).</p>
+
+<p style="margin-left:6%; margin-top: 1em">Here is an
+example:</p>
+
+<p style="margin-left:12%; margin-top: 1em"># /etc/sudoers:
+<br>
+# Allow all commands except shell <br>
+johnny ALL=(root) ALL,!/bin/sh <br>
+# Always allows all commands because ALL is matched last
+<br>
+puddles ALL=(root) !/bin/sh,ALL</p>
+
+<p style="margin-left:12%; margin-top: 1em"># LDAP
+equivalent of johnny <br>
+# Allows all commands except shell <br>
+dn: cn=role1,ou=Sudoers,dc=my-domain,dc=com <br>
+objectClass: sudoRole <br>
+objectClass: top <br>
+cn: role1 <br>
+sudoUser: johnny <br>
+sudoHost: ALL <br>
+sudoCommand: ALL <br>
+sudoCommand: !/bin/sh</p>
+
+<p style="margin-left:12%; margin-top: 1em"># LDAP
+equivalent of puddles <br>
+# Notice that even though ALL comes last, it still behaves
+like <br>
+# role1 since the LDAP code assumes the more paranoid
+configuration <br>
+dn: cn=role2,ou=Sudoers,dc=my-domain,dc=com <br>
+objectClass: sudoRole <br>
+objectClass: top <br>
+cn: role2 <br>
+sudoUser: puddles <br>
+sudoHost: ALL <br>
+sudoCommand: !/bin/sh <br>
+sudoCommand: ALL</p>
+
+<p style="margin-left:6%; margin-top: 1em">Another
+difference is that negations on the Host, User or Runas are
+currently ignored. For example, the following attributes do
+not behave the way one might expect.</p>
+
+<p style="margin-left:12%; margin-top: 1em"># does not
+match all but joe <br>
+# rather, does not match anyone <br>
+sudoUser: !joe</p>
+
+<p style="margin-left:12%; margin-top: 1em"># does not
+match all but joe <br>
+# rather, matches everyone including Joe <br>
+sudoUser: ALL <br>
+sudoUser: !joe</p>
+
+<p style="margin-left:12%; margin-top: 1em"># does not
+match all but web01 <br>
+# rather, matches all hosts including web01 <br>
+sudoHost: ALL <br>
+sudoHost: !web01</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Sudoers
+schema</b> <br>
+In order to use <b>sudo</b>&rsquo;s LDAP support, the
+<b>sudo</b> schema must be installed on your LDAP server. In
+addition, be sure to index the sudoUser attribute.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Three versions
+of the schema: one for OpenLDAP servers
+(<i>schema.OpenLDAP</i>), one for Netscape-derived servers
+(<i>schema.iPlanet</i>), and one for Microsoft Active
+Directory (<i>schema.ActiveDirectory</i>) may be found in
+the <b>sudo</b> distribution.</p>
+
+<p style="margin-left:6%; margin-top: 1em">The schema for
+<b>sudo</b> in OpenLDAP form is also included in the
+<i>EXAMPLES</i> section.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Configuring
+ldap.conf</b> <br>
+Sudo reads the <i>/etc/sudo-ldap.conf</i> file for
+LDAP-specific configuration. Typically, this file is shared
+amongst different LDAP-aware clients. As such, most of the
+settings are not <b>sudo</b>-specific. Note that <b>sudo</b>
+parses <i>/etc/sudo-ldap.conf</i> itself and may support
+options that differ from those described in the
+system&rsquo;s ldap.conf(8) manual.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Also note that
+on systems using the OpenLDAP libraries, default values
+specified in <i>/etc/openldap/ldap.conf</i> or the
+user&rsquo;s <i>.ldaprc</i> files are not used.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Only those
+options explicitly listed in <i>/etc/sudo-ldap.conf</i> as
+being supported by <b>sudo</b> are honored. Configuration
+options are listed below in upper case but are parsed in a
+case-independent manner.</p>
+
+<p style="margin-top: 1em"><b>URI</b>
+<i>ldap[s]://[hostname[:port]] ...</i></p>
+
+<p style="margin-left:14%;">Specifies a
+whitespace-delimited list of one or more URIs describing the
+LDAP server(s) to connect to. The <i>protocol</i> may be
+either <i>ldap ldaps</i>, the latter being for servers that
+support TLS (SSL) encryption. If no <i>port</i> is
+specified, the default is port 389 for ldap:// or port 636
+for ldaps://. If no <i>hostname</i> is specified,
+<b>sudo</b> will connect to <i>localhost</i>. Multiple
+<b>URI</b> lines are treated identically to a <b>URI</b>
+line containing multiple entries. Only systems using the
+OpenSSL libraries support the mixing of ldap:// and ldaps://
+URIs. Both the Netscape-derived and Tivoli LDAP libraries
+used on most commercial versions of Unix are only capable of
+supporting one or the other.</p>
+
+<p style="margin-top: 1em"><b>HOST</b> <i>name[:port]
+...</i></p>
+
+<p style="margin-left:14%;">If no <b>URI</b> is specified,
+the <b>HOST</b> parameter specifies a whitespace-delimited
+list of LDAP servers to connect to. Each host may include an
+optional <i>port</i> separated by a colon (&lsquo;:&rsquo;).
+The <b>HOST</b> parameter is deprecated in favor of the
+<b>URI</b> specification and is included for backwards
+compatibility.</p>
+
+<p style="margin-top: 1em"><b>PORT</b>
+<i>port_number</i></p>
+
+<p style="margin-left:14%;">If no <b>URI</b> is specified,
+the <b>PORT</b> parameter specifies the default port to
+connect to on the LDAP server if a <b>HOST</b> parameter
+does not specify the port itself. If no <b>PORT</b>
+parameter is used, the default is port 389 for LDAP and port
+636 for LDAP over TLS (SSL). The <b>PORT</b> parameter is
+deprecated in favor of the <b>URI</b> specification and is
+included for backwards compatibility.</p>
+
+<p style="margin-top: 1em"><b>BIND_TIMELIMIT</b>
+<i>seconds</i></p>
+
+<p style="margin-left:14%;">The <b>BIND_TIMELIMIT</b>
+parameter specifies the amount of time, in seconds, to wait
+while trying to connect to an LDAP server. If multiple
+<b>URI</b>s or <b>HOST</b>s are specified, this is the
+amount of time to wait before trying the next one in the
+list.</p>
+
+<p style="margin-top: 1em"><b>NETWORK_TIMEOUT</b>
+<i>seconds</i></p>
+
+<p style="margin-left:14%;">An alias for
+<b>BIND_TIMELIMIT</b> for OpenLDAP compatibility.</p>
+
+<p style="margin-top: 1em"><b>TIMELIMIT</b>
+<i>seconds</i></p>
+
+<p style="margin-left:14%;">The <b>TIMELIMIT</b> parameter
+specifies the amount of time, in seconds, to wait for a
+response to an LDAP query.</p>
+
+<p style="margin-top: 1em"><b>TIMEOUT</b>
+<i>seconds</i></p>
+
+<p style="margin-left:14%;">The <b>TIMEOUT</b> parameter
+specifies the amount of time, in seconds, to wait for a
+response from the various LDAP APIs.</p>
+
+<p style="margin-top: 1em"><b>SUDOERS_BASE</b>
+<i>base</i></p>
+
+<p style="margin-left:14%;">The base DN to use when
+performing <b>sudo</b> LDAP queries. Typically this is of
+the form ou=SUDOers,dc=example,dc=com for the domain
+example.com. Multiple <b>SUDOERS_BASE</b> lines may be
+specified, in which case they are queried in the order
+specified.</p>
+
+<p style="margin-top: 1em"><b>SUDOERS_SEARCH_FILTER</b>
+<i>ldap_filter</i></p>
+
+<p style="margin-left:14%;">An LDAP filter which is used to
+restrict the set of records returned when performing a
+<b>sudo</b> LDAP query. Typically, this is of the form
+attribute=value or
+(&amp;(attribute=value)(attribute2=value2)).</p>
+
+<p style="margin-top: 1em"><b>SUDOERS_TIMED</b>
+<i>on/true/yes/off/false/no</i></p>
+
+<p style="margin-left:14%;">Whether or not to evaluate the
+sudoNotBefore and sudoNotAfter attributes that implement
+time-dependent sudoers entries.</p>
+
+<p style="margin-top: 1em"><b>SUDOERS_DEBUG</b>
+<i>debug_level</i></p>
+
+<p style="margin-left:14%;">This sets the debug level for
+<b>sudo</b> LDAP queries. Debugging information is printed
+to the standard error. A value of 1 results in a moderate
+amount of debugging information. A value of 2 shows the
+results of the matches themselves. This parameter should not
+be set in a production environment as the extra information
+is likely to confuse users.</p>
+
+<p style="margin-top: 1em"><b>BINDDN</b> <i>DN</i></p>
+
+<p style="margin-left:14%;">The <b>BINDDN</b> parameter
+specifies the identity, in the form of a Distinguished Name
+(DN), to use when performing LDAP operations. If not
+specified, LDAP operations are performed with an anonymous
+identity. By default, most LDAP servers will allow anonymous
+access.</p>
+
+<p style="margin-top: 1em"><b>BINDPW</b> <i>secret</i></p>
+
+<p style="margin-left:14%;">The <b>BINDPW</b> parameter
+specifies the password to use when performing LDAP
+operations. This is typically used in conjunction with the
+<b>BINDDN</b> parameter.</p>
+
+<p style="margin-top: 1em"><b>ROOTBINDDN</b> <i>DN</i></p>
+
+<p style="margin-left:14%;">The <b>ROOTBINDDN</b> parameter
+specifies the identity, in the form of a Distinguished Name
+(DN), to use when performing privileged LDAP operations,
+such as <i>sudoers</i> queries. The password corresponding
+to the identity should be stored in <i>/etc/ldap.secret</i>.
+If not specified, the <b>BINDDN</b> identity is used (if
+any).</p>
+
+<p style="margin-top: 1em"><b>LDAP_VERSION</b>
+<i>number</i></p>
+
+<p style="margin-left:14%;">The version of the LDAP
+protocol to use when connecting to the server. The default
+value is protocol version 3.</p>
+
+<p style="margin-top: 1em"><b>SSL</b>
+<i>on/true/yes/off/false/no</i></p>
+
+<p style="margin-left:14%;">If the <b>SSL</b> parameter is
+set to on, true or yes, TLS (SSL) encryption is always used
+when communicating with the LDAP server. Typically, this
+involves connecting to the server on port 636 (ldaps).</p>
+
+<p style="margin-top: 1em"><b>SSL</b> <i>start_tls</i></p>
+
+<p style="margin-left:14%;">If the <b>SSL</b> parameter is
+set to start_tls, the LDAP server connection is initiated
+normally and TLS encryption is begun before the bind
+credentials are sent. This has the advantage of not
+requiring a dedicated port for encrypted communications.
+This parameter is only supported by LDAP servers that honor
+the <i>start_tls</i> extension, such as the OpenLDAP and
+Tivoli Directory servers.</p>
+
+<p style="margin-top: 1em"><b>TLS_CHECKPEER</b>
+<i>on/true/yes/off/false/no</i></p>
+
+<p style="margin-left:14%;">If enabled,
+<b>TLS_CHECKPEER</b> will cause the LDAP server&rsquo;s TLS
+certificated to be verified. If the server&rsquo;s TLS
+certificate cannot be verified (usually because it is signed
+by an unknown certificate authority), <b>sudo</b> will be
+unable to connect to it. If <b>TLS_CHECKPEER</b> is
+disabled, no check is made. Note that disabling the check
+creates an opportunity for man-in-the-middle attacks since
+the server&rsquo;s identity will not be authenticated. If
+possible, the CA&rsquo;s certificate should be installed
+locally so it can be verified. This option is not supported
+by the Tivoli Directory Server LDAP libraries.</p>
+
+<p style="margin-top: 1em"><b>TLS_CACERT</b> <i>file
+name</i></p>
+
+<p style="margin-left:14%;">An alias for
+<b>TLS_CACERTFILE</b> for OpenLDAP compatibility.</p>
+
+<p style="margin-top: 1em"><b>TLS_CACERTFILE</b> <i>file
+name</i></p>
+
+<p style="margin-left:14%;">The path to a certificate
+authority bundle which contains the certificates for all the
+Certificate Authorities the client knows to be valid, e.g.
+<i>/etc/ssl/ca-bundle.pem</i>. This option is only supported
+by the OpenLDAP libraries. Netscape-derived LDAP libraries
+use the same certificate database for CA and client
+certificates (see <b>TLS_CERT</b>).</p>
+
+<p style="margin-top: 1em"><b>TLS_CACERTDIR</b>
+<i>directory</i></p>
+
+<p style="margin-left:14%;">Similar to
+<b>TLS_CACERTFILE</b> but instead of a file, it is a
+directory containing individual Certificate Authority
+certificates, e.g. <i>/etc/ssl/certs</i>. The directory
+specified by <b>TLS_CACERTDIR</b> is checked after
+<b>TLS_CACERTFILE</b>. This option is only supported by the
+OpenLDAP libraries.</p>
+
+<p style="margin-top: 1em"><b>TLS_CERT</b> <i>file
+name</i></p>
+
+<p style="margin-left:14%;">The path to a file containing
+the client certificate which can be used to authenticate the
+client to the LDAP server. The certificate type depends on
+the LDAP libraries used.</p>
+
+<p style="margin-top: 1em">OpenLDAP:</p>
+
+<p style="margin-left:22%;">tls_cert
+/etc/ssl/client_cert.pem</p>
+
+<p style="margin-top: 1em">Netscape-derived:</p>
+
+<p style="margin-left:22%;">tls_cert /var/ldap/cert7.db</p>
+
+<p style="margin-top: 1em">Tivoli Directory Server:</p>
+
+<p style="margin-left:22%;">Unused, the key database
+specified by <b>TLS_KEY</b> contains both keys and
+certificates.</p>
+
+<p style="margin-left:22%; margin-top: 1em">When using
+Netscape-derived libraries, this file may also contain
+Certificate Authority certificates.</p>
+
+<p style="margin-top: 1em"><b>TLS_KEY</b> <i>file
+name</i></p>
+
+<p style="margin-left:14%;">The path to a file containing
+the private key which matches the certificate specified by
+<b>TLS_CERT</b>. The private key must not be
+password-protected. The key type depends on the LDAP
+libraries used.</p>
+
+<p style="margin-top: 1em">OpenLDAP:</p>
+
+<p style="margin-left:22%;">tls_key
+/etc/ssl/client_key.pem</p>
+
+<p style="margin-top: 1em">Netscape-derived:</p>
+
+<p style="margin-left:22%;">tls_key /var/ldap/key3.db</p>
+
+<p style="margin-top: 1em">Tivoli Directory Server:</p>
+
+<p style="margin-left:22%;">tls_cert
+/usr/ldap/ldapkey.kdb</p>
+
+<p style="margin-left:14%;">When using Tivoli LDAP
+libraries, this file may also contain Certificate Authority
+and client certificates and may be encrypted.</p>
+
+<p style="margin-top: 1em"><b>TLS_KEYPW</b>
+<i>secret</i></p>
+
+<p style="margin-left:14%;">The <b>TLS_KEYPW</b> contains
+the password used to decrypt the key database on clients
+using the Tivoli Directory Server LDAP library. If no
+<b>TLS_KEYPW</b> is specified, a <i>stash file</i> will be
+used if it exists. The <i>stash file</i> must have the same
+path as the file specified by <b>TLS_KEY</b>, but use a .sth
+file extension instead of .kdb, e.g. ldapkey.sth. The
+default ldapkey.kdb that ships with Tivoli Directory Server
+is encrypted with the password ssl_password. This option is
+only supported by the Tivoli LDAP libraries.</p>
+
+<p style="margin-top: 1em"><b>TLS_RANDFILE</b> <i>file
+name</i></p>
+
+<p style="margin-left:14%;">The <b>TLS_RANDFILE</b>
+parameter specifies the path to an entropy source for
+systems that lack a random device. It is generally used in
+conjunction with <i>prngd</i> or <i>egd</i>. This option is
+only supported by the OpenLDAP libraries.</p>
+
+<p style="margin-top: 1em"><b>TLS_CIPHERS</b> <i>cipher
+list</i></p>
+
+<p style="margin-left:14%;">The <b>TLS_CIPHERS</b>
+parameter allows the administer to restrict which encryption
+algorithms may be used for TLS (SSL) connections. See the
+OpenLDAP or Tivoli Directory Server manual for a list of
+valid ciphers. This option is not supported by
+Netscape-derived libraries.</p>
+
+<p style="margin-top: 1em"><b>USE_SASL</b>
+<i>on/true/yes/off/false/no</i></p>
+
+<p style="margin-left:14%;">Enable <b>USE_SASL</b> for LDAP
+servers that support SASL authentication.</p>
+
+<p style="margin-top: 1em"><b>SASL_AUTH_ID</b>
+<i>identity</i></p>
+
+<p style="margin-left:14%;">The SASL user name to use when
+connecting to the LDAP server. By default, <b>sudo</b> will
+use an anonymous connection.</p>
+
+<p style="margin-top: 1em"><b>ROOTUSE_SASL</b>
+<i>on/true/yes/off/false/no</i></p>
+
+<p style="margin-left:14%;">Enable <b>ROOTUSE_SASL</b> to
+enable SASL authentication when connecting to an LDAP server
+from a privileged process, such as <b>sudo</b>.</p>
+
+<p style="margin-top: 1em"><b>ROOTSASL_AUTH_ID</b>
+<i>identity</i></p>
+
+<p style="margin-left:14%;">The SASL user name to use when
+<b>ROOTUSE_SASL</b> is enabled.</p>
+
+<p style="margin-top: 1em"><b>SASL_SECPROPS</b>
+<i>none/properties</i></p>
+
+<p style="margin-left:14%;">SASL security properties or
+<i>none</i> for no properties. See the SASL
+programmer&rsquo;s manual for details.</p>
+
+<p style="margin-top: 1em"><b>KRB5_CCNAME</b> <i>file
+name</i></p>
+
+<p style="margin-left:14%;">The path to the Kerberos 5
+credential cache to use when authenticating with the remote
+server.</p>
+
+<p style="margin-top: 1em"><b>DEREF</b>
+<i>never/searching/finding/always</i></p>
+
+<p style="margin-left:14%;">How alias dereferencing is to
+be performed when searching. See the ldap.conf(8) manual for
+a full description of this option.</p>
+
+<p style="margin-left:6%; margin-top: 1em">See the
+<i>ldap.conf</i> entry in the <i>EXAMPLES</i> section.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Configuring
+nsswitch.conf</b> <br>
+Unless it is disabled at build time, <b>sudo</b> consults
+the Name Service Switch file, <i>/etc/nsswitch.conf</i>, to
+specify the <i>sudoers</i> search order. Sudo looks for a
+line beginning with sudoers: and uses this to determine the
+search order. Note that <b>sudo</b> does not stop searching
+after the first match and later matches take precedence over
+earlier ones. The following sources are recognized:</p>
+
+<p style="margin-top: 1em">files</p>
+
+<p style="margin-left:24%; margin-top: 1em">read sudoers
+from <i>/etc/sudoers</i></p>
+
+<p>ldap</p>
+
+<p style="margin-left:24%; margin-top: 1em">read sudoers
+from LDAP</p>
+
+<p style="margin-left:6%; margin-top: 1em">In addition, the
+entry [NOTFOUND=return] will short-circuit the search if the
+user was not found in the preceding source.</p>
+
+<p style="margin-left:6%; margin-top: 1em">To consult LDAP
+first followed by the local sudoers file (if it exists),
+use:</p>
+
+<p style="margin-left:12%; margin-top: 1em">sudoers: ldap
+files</p>
+
+<p style="margin-left:6%; margin-top: 1em">The local
+<i>sudoers</i> file can be ignored completely by using:</p>
+
+<p style="margin-left:12%; margin-top: 1em">sudoers:
+ldap</p>
+
+<p style="margin-left:6%; margin-top: 1em">If the
+<i>/etc/nsswitch.conf</i> file is not present or there is no
+sudoers line, the following default is assumed:</p>
+
+<p style="margin-left:12%; margin-top: 1em">sudoers:
+files</p>
+
+<p style="margin-left:6%; margin-top: 1em">Note that
+<i>/etc/nsswitch.conf</i> is supported even when the
+underlying operating system does not use an nsswitch.conf
+file, except on AIX (see below).</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Configuring
+netsvc.conf</b> <br>
+On AIX systems, the <i>/etc/netsvc.conf</i> file is
+consulted instead of <i>/etc/nsswitch.conf</i>. <b>sudo</b>
+simply treats <i>netsvc.conf</i> as a variant of
+<i>nsswitch.conf</i>; information in the previous section
+unrelated to the file format itself still applies.</p>
+
+<p style="margin-left:6%; margin-top: 1em">To consult LDAP
+first followed by the local sudoers file (if it exists),
+use:</p>
+
+<p style="margin-left:12%; margin-top: 1em">sudoers = ldap,
+files</p>
+
+<p style="margin-left:6%; margin-top: 1em">The local
+<i>sudoers</i> file can be ignored completely by using:</p>
+
+<p style="margin-left:12%; margin-top: 1em">sudoers =
+ldap</p>
+
+<p style="margin-left:6%; margin-top: 1em">To treat LDAP as
+authoratative and only use the local sudoers file if the
+user is not present in LDAP, use:</p>
+
+<p style="margin-left:12%; margin-top: 1em">sudoers = ldap
+= auth, files</p>
+
+<p style="margin-left:6%; margin-top: 1em">Note that in the
+above example, the auth qualfier only affects user lookups;
+both LDAP and <i>sudoers</i> will be queried for Defaults
+entries.</p>
+
+<p style="margin-left:6%; margin-top: 1em">If the
+<i>/etc/netsvc.conf</i> file is not present or there is no
+sudoers line, the following default is assumed:</p>
+
+<p style="margin-left:12%; margin-top: 1em">sudoers =
+files</p>
+
+<p style="margin-top: 1em"><b>FILES</b> <br>
+/etc/sudo-ldap.conf</p>
+
+<p style="margin-left:40%; margin-top: 1em">LDAP
+configuration file</p>
+
+<p style="margin-top: 1em">/etc/nsswitch.conf</p>
+
+<p style="margin-left:40%; margin-top: 1em">determines
+sudoers source order</p>
+
+<p style="margin-top: 1em">/etc/netsvc.conf</p>
+
+<p style="margin-left:40%; margin-top: 1em">determines
+sudoers source order on AIX</p>
+
+<p style="margin-top: 1em"><b>EXAMPLES</b></p>
+
+<p style="margin-left:6%;"><b>Example ldap.conf</b></p>
+
+<p style="margin-left:9%;"># Either specify one or more
+URIs or one or more host:port pairs. <br>
+# If neither is specified sudo will default to localhost,
+port 389. <br>
+# <br>
+#host ldapserver <br>
+#host ldapserver1 ldapserver2:390 <br>
+# <br>
+# Default port if host is specified without one, defaults to
+389. <br>
+#port 389 <br>
+# <br>
+# URI will override the host and port settings. <br>
+uri ldap://ldapserver <br>
+#uri ldaps://secureldapserver <br>
+#uri ldaps://secureldapserver ldap://ldapserver <br>
+# <br>
+# The amount of time, in seconds, to wait while trying to
+connect to <br>
+# an LDAP server. <br>
+bind_timelimit 30 <br>
+# <br>
+# The amount of time, in seconds, to wait while performing
+an LDAP query. <br>
+timelimit 30 <br>
+# <br>
+# Must be set or sudo will ignore LDAP; may be specified
+multiple times. <br>
+sudoers_base ou=SUDOers,dc=example,dc=com <br>
+# <br>
+# verbose sudoers matching from ldap <br>
+#sudoers_debug 2 <br>
+# <br>
+# Enable support for time-based entries in sudoers. <br>
+#sudoers_timed yes <br>
+# <br>
+# optional proxy credentials <br>
+#binddn &lt;who to search as&gt; <br>
+#bindpw &lt;password&gt; <br>
+#rootbinddn &lt;who to search as, uses /etc/ldap.secret for
+bindpw&gt; <br>
+# <br>
+# LDAP protocol version, defaults to 3 <br>
+#ldap_version 3 <br>
+# <br>
+# Define if you want to use an encrypted LDAP connection.
+<br>
+# Typically, you must also set the port to 636 (ldaps). <br>
+#ssl on <br>
+# <br>
+# Define if you want to use port 389 and switch to <br>
+# encryption before the bind credentials are sent. <br>
+# Only supported by LDAP servers that support the start_tls
+<br>
+# extension such as OpenLDAP. <br>
+#ssl start_tls <br>
+# <br>
+# Additional TLS options follow that allow tweaking of the
+<br>
+# SSL/TLS connection. <br>
+# <br>
+#tls_checkpeer yes # verify server SSL certificate <br>
+#tls_checkpeer no # ignore server SSL certificate <br>
+# <br>
+# If you enable tls_checkpeer, specify either tls_cacertfile
+<br>
+# or tls_cacertdir. Only supported when using OpenLDAP. <br>
+# <br>
+#tls_cacertfile /etc/certs/trusted_signers.pem <br>
+#tls_cacertdir /etc/certs <br>
+# <br>
+# For systems that don&rsquo;t have /dev/random <br>
+# use this along with PRNGD or EGD.pl to seed the <br>
+# random number pool to generate cryptographic session keys.
+<br>
+# Only supported when using OpenLDAP. <br>
+# <br>
+#tls_randfile /etc/egd-pool <br>
+# <br>
+# You may restrict which ciphers are used. Consult your SSL
+<br>
+# documentation for which options go here. <br>
+# Only supported when using OpenLDAP. <br>
+# <br>
+#tls_ciphers &lt;cipher-list&gt; <br>
+# <br>
+# Sudo can provide a client certificate when communicating
+to <br>
+# the LDAP server. <br>
+# Tips: <br>
+# * Enable both lines at the same time. <br>
+# * Do not password protect the key file. <br>
+# * Ensure the keyfile is only readable by root. <br>
+# <br>
+# For OpenLDAP: <br>
+#tls_cert /etc/certs/client_cert.pem <br>
+#tls_key /etc/certs/client_key.pem <br>
+# <br>
+# For SunONE or iPlanet LDAP, tls_cert and tls_key may
+specify either <br>
+# a directory, in which case the files in the directory must
+have the <br>
+# default names (e.g. cert8.db and key4.db), or the path to
+the cert <br>
+# and key files themselves. However, a bug in version 5.0 of
+the LDAP <br>
+# SDK will prevent specific file names from working. For
+this reason <br>
+# it is suggested that tls_cert and tls_key be set to a
+directory, <br>
+# not a file name. <br>
+# <br>
+# The certificate database specified by tls_cert may contain
+CA certs <br>
+# and/or the client&rsquo;s cert. If the client&rsquo;s cert
+is included, tls_key <br>
+# should be specified as well. <br>
+# For backward compatibility, &quot;sslpath&quot; may be
+used in place of tls_cert. <br>
+#tls_cert /var/ldap <br>
+#tls_key /var/ldap <br>
+# <br>
+# If using SASL authentication for LDAP (OpenSSL) <br>
+# use_sasl yes <br>
+# sasl_auth_id &lt;SASL user name&gt; <br>
+# rootuse_sasl yes <br>
+# rootsasl_auth_id &lt;SASL user name for root access&gt;
+<br>
+# sasl_secprops none <br>
+# krb5_ccname /etc/.ldapcache</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Sudo schema
+for OpenLDAP</b> <br>
+The following schema, in OpenLDAP format, is included with
+<b>sudo</b> source and binary distributions as
+<i>schema.OpenLDAP</i>. Simply copy it to the schema
+directory (e.g. <i>/etc/openldap/schema</i>), add the proper
+include line in <i>slapd.conf</i> and restart
+<b>slapd</b>.</p>
+
+<p style="margin-left:9%; margin-top: 1em">attributetype (
+1.3.6.1.4.1.15953.9.1.1 <br>
+NAME &rsquo;sudoUser&rsquo; <br>
+DESC &rsquo;User(s) who may run sudo&rsquo; <br>
+EQUALITY caseExactIA5Match <br>
+SUBSTR caseExactIA5SubstringsMatch <br>
+SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )</p>
+
+<p style="margin-left:9%; margin-top: 1em">attributetype (
+1.3.6.1.4.1.15953.9.1.2 <br>
+NAME &rsquo;sudoHost&rsquo; <br>
+DESC &rsquo;Host(s) who may run sudo&rsquo; <br>
+EQUALITY caseExactIA5Match <br>
+SUBSTR caseExactIA5SubstringsMatch <br>
+SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )</p>
+
+<p style="margin-left:9%; margin-top: 1em">attributetype (
+1.3.6.1.4.1.15953.9.1.3 <br>
+NAME &rsquo;sudoCommand&rsquo; <br>
+DESC &rsquo;Command(s) to be executed by sudo&rsquo; <br>
+EQUALITY caseExactIA5Match <br>
+SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )</p>
+
+<p style="margin-left:9%; margin-top: 1em">attributetype (
+1.3.6.1.4.1.15953.9.1.4 <br>
+NAME &rsquo;sudoRunAs&rsquo; <br>
+DESC &rsquo;User(s) impersonated by sudo&rsquo; <br>
+EQUALITY caseExactIA5Match <br>
+SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )</p>
+
+<p style="margin-left:9%; margin-top: 1em">attributetype (
+1.3.6.1.4.1.15953.9.1.5 <br>
+NAME &rsquo;sudoOption&rsquo; <br>
+DESC &rsquo;Options(s) followed by sudo&rsquo; <br>
+EQUALITY caseExactIA5Match <br>
+SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )</p>
+
+<p style="margin-left:9%; margin-top: 1em">attributetype (
+1.3.6.1.4.1.15953.9.1.6 <br>
+NAME &rsquo;sudoRunAsUser&rsquo; <br>
+DESC &rsquo;User(s) impersonated by sudo&rsquo; <br>
+EQUALITY caseExactIA5Match <br>
+SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )</p>
+
+<p style="margin-left:9%; margin-top: 1em">attributetype (
+1.3.6.1.4.1.15953.9.1.7 <br>
+NAME &rsquo;sudoRunAsGroup&rsquo; <br>
+DESC &rsquo;Group(s) impersonated by sudo&rsquo; <br>
+EQUALITY caseExactIA5Match <br>
+SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )</p>
+
+<p style="margin-left:9%; margin-top: 1em">attributetype (
+1.3.6.1.4.1.15953.9.1.8 <br>
+NAME &rsquo;sudoNotBefore&rsquo; <br>
+DESC &rsquo;Start of time interval for which the entry is
+valid&rsquo; <br>
+EQUALITY generalizedTimeMatch <br>
+ORDERING generalizedTimeOrderingMatch <br>
+SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 )</p>
+
+<p style="margin-left:9%; margin-top: 1em">attributetype (
+1.3.6.1.4.1.15953.9.1.9 <br>
+NAME &rsquo;sudoNotAfter&rsquo; <br>
+DESC &rsquo;End of time interval for which the entry is
+valid&rsquo; <br>
+EQUALITY generalizedTimeMatch <br>
+ORDERING generalizedTimeOrderingMatch <br>
+SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 )</p>
+
+<p style="margin-left:9%; margin-top: 1em">attributeTypes (
+1.3.6.1.4.1.15953.9.1.10 <br>
+NAME &rsquo;sudoOrder&rsquo; <br>
+DESC &rsquo;an integer to order the sudoRole entries&rsquo;
+<br>
+EQUALITY integerMatch <br>
+ORDERING integerOrderingMatch <br>
+SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 )</p>
+
+<p style="margin-left:9%; margin-top: 1em">objectclass (
+1.3.6.1.4.1.15953.9.2.1 NAME &rsquo;sudoRole&rsquo; SUP top
+STRUCTURAL <br>
+DESC &rsquo;Sudoer Entries&rsquo; <br>
+MUST ( cn ) <br>
+MAY ( sudoUser $ sudoHost $ sudoCommand $ sudoRunAs $
+sudoRunAsUser $</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="19%"></td>
+<td width="10%">
+
+
+<p>sudoRunAsGroup $ sudoOption $ sudoNotBefore $
+sudoNotAfter $</p></td>
+<td width="71%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="19%"></td>
+<td width="10%">
+
+
+<p>sudoOrder $ description )</p></td>
+<td width="71%">
+</td></tr>
+</table>
+
+<p style="margin-left:9%;">)</p>
+
+<p style="margin-top: 1em"><b>SEE ALSO</b></p>
+
+<p style="margin-left:6%;">ldap.conf(8), sudoers(8)</p>
+
+<p style="margin-top: 1em"><b>CAVEATS</b></p>
+
+<p style="margin-left:6%;">Note that there are differences
+in the way that LDAP-based <i>sudoers</i> is parsed compared
+to file-based <i>sudoers</i>. See the <i>Differences between
+LDAP and non-LDAP sudoers</i> section for more
+information.</p>
+
+<p style="margin-top: 1em"><b>BUGS</b></p>
+
+<p style="margin-left:6%;">If you feel you have found a bug
+in <b>sudo</b>, please submit a bug report at
+http://www.sudo.ws/sudo/bugs/</p>
+
+<p style="margin-top: 1em"><b>SUPPORT</b></p>
+
+<p style="margin-left:6%;">Limited free support is
+available via the sudo-users mailing list, see
+http://www.sudo.ws/mailman/listinfo/sudo-users to subscribe
+or search the archives.</p>
+
+<p style="margin-top: 1em"><b>DISCLAIMER</b></p>
+
+<p style="margin-left:6%;"><b>sudo</b> is provided
+&lsquo;&lsquo;AS IS&rsquo;&rsquo; and any express or implied
+warranties, including, but not limited to, the implied
+warranties of merchantability and fitness for a particular
+purpose are disclaimed. See the LICENSE file distributed
+with <b>sudo</b> or http://www.sudo.ws/sudo/license.html for
+complete details.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Sudo 1.8.6p7
+July&nbsp;12, 2012 Sudo 1.8.6p7</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:33:14 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Tie::Array</title>
+
+</head>
+<body>
+
+<h1 align="center">Tie::Array</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#CAVEATS">CAVEATS</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Tie::Array
+&minus; base class for tied arrays</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">    package Tie::NewArray;
+    use Tie::Array;
+    @ISA = ('Tie::Array');
+    # mandatory methods
+    sub TIEARRAY { ... }
+    sub FETCH { ... }
+    sub FETCHSIZE { ... }
+    sub STORE { ... }        # mandatory if elements writeable
+    sub STORESIZE { ... }    # mandatory if elements can be added/deleted
+    sub EXISTS { ... }       # mandatory if exists() expected to work
+    sub DELETE { ... }       # mandatory if delete() expected to work
+    # optional methods &minus; for efficiency
+    sub CLEAR { ... }
+    sub PUSH { ... }
+    sub POP { ... }
+    sub SHIFT { ... }
+    sub UNSHIFT { ... }
+    sub SPLICE { ... }
+    sub EXTEND { ... }
+    sub DESTROY { ... }
+    package Tie::NewStdArray;
+    use Tie::Array;
+    @ISA = ('Tie::StdArray');
+    # all methods provided by default
+    package main;
+    $object = tie @somearray,'Tie::NewArray';
+    $object = tie @somearray,'Tie::StdArray';
+    $object = tie @somearray,'Tie::NewStdArray';</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This module
+provides methods for array-tying classes. See perltie for a
+list of the functions required in order to tie an array to a
+package. The basic <b>Tie::Array</b> package provides stub
+<tt>&quot;DESTROY&quot;</tt>, and
+<tt>&quot;EXTEND&quot;</tt> methods that do nothing, stub
+<tt>&quot;DELETE&quot;</tt> and <tt>&quot;EXISTS&quot;</tt>
+methods that <i>croak()</i> if the <i>delete()</i> or
+<i>exists()</i> builtins are ever called on the tied array,
+and implementations of <tt>&quot;PUSH&quot;</tt>,
+<tt>&quot;POP&quot;</tt>, <tt>&quot;SHIFT&quot;</tt>,
+<tt>&quot;UNSHIFT&quot;</tt>, <tt>&quot;SPLICE&quot;</tt>
+and <tt>&quot;CLEAR&quot;</tt> in terms of basic
+<tt>&quot;FETCH&quot;</tt>, <tt>&quot;STORE&quot;</tt>,
+<tt>&quot;FETCHSIZE&quot;</tt>,
+<tt>&quot;STORESIZE&quot;</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>Tie::StdArray</b> package provides efficient methods
+required for tied arrays which are implemented as blessed
+references to an &quot;inner&quot; perl array. It inherits
+from <b>Tie::Array</b>, and should cause tied arrays to
+behave exactly like standard arrays, allowing for selective
+overloading of methods.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For developers
+wishing to write their own tied arrays, the required methods
+are briefly defined below. See the perltie section for more
+detailed descriptive, as well as example code: <small><br>
+TIEARRAY</small> classname, <small>LIST</small></p>
+
+<p style="margin-left:17%;">The class method is invoked by
+the command <tt>&quot;tie @array, classname&quot;</tt>.
+Associates an array instance with the specified class.
+<tt>&quot;LIST&quot;</tt> would represent additional
+arguments (along the lines of AnyDBM_File and compatriots)
+needed to complete the association. The method should return
+an object of a class which provides the methods below.</p>
+
+<p style="margin-left:11%;"><small>STORE</small> this,
+index, value</p>
+
+<p style="margin-left:17%;">Store datum <i>value</i> into
+<i>index</i> for the tied array associated with object
+<i>this</i>. If this makes the array larger then
+class&rsquo;s mapping of <tt>&quot;undef&quot;</tt> should
+be returned for new positions.</p>
+
+<p style="margin-left:11%;"><small>FETCH</small> this,
+index</p>
+
+<p style="margin-left:17%;">Retrieve the datum in
+<i>index</i> for the tied array associated with object
+<i>this</i>.</p>
+
+<p style="margin-left:11%;"><small>FETCHSIZE</small>
+this</p>
+
+<p style="margin-left:17%;">Returns the total number of
+items in the tied array associated with object <i>this</i>.
+(Equivalent to <tt>&quot;scalar(@array)&quot;</tt>).</p>
+
+<p style="margin-left:11%;"><small>STORESIZE</small> this,
+count</p>
+
+<p style="margin-left:17%;">Sets the total number of items
+in the tied array associated with object <i>this</i> to be
+<i>count</i>. If this makes the array larger then
+class&rsquo;s mapping of <tt>&quot;undef&quot;</tt> should
+be returned for new positions. If the array becomes smaller
+then entries beyond count should be deleted.</p>
+
+<p style="margin-left:11%;"><small>EXTEND</small> this,
+count</p>
+
+<p style="margin-left:17%;">Informative call that array is
+likely to grow to have <i>count</i> entries. Can be used to
+optimize allocation. This method need do nothing.</p>
+
+<p style="margin-left:11%;"><small>EXISTS</small> this,
+key</p>
+
+<p style="margin-left:17%;">Verify that the element at
+index <i>key</i> exists in the tied array <i>this</i>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The
+<b>Tie::Array</b> implementation is a stub that simply
+croaks.</p>
+
+<p style="margin-left:11%;"><small>DELETE</small> this,
+key</p>
+
+<p style="margin-left:17%;">Delete the element at index
+<i>key</i> from the tied array <i>this</i>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The
+<b>Tie::Array</b> implementation is a stub that simply
+croaks.</p>
+
+<p style="margin-left:11%;"><small>CLEAR</small> this</p>
+
+<p style="margin-left:17%;">Clear (remove, delete, ...) all
+values from the tied array associated with object
+<i>this</i>.</p>
+
+<p style="margin-left:11%;"><small>DESTROY</small> this</p>
+
+<p style="margin-left:17%;">Normal object destructor
+method.</p>
+
+<p style="margin-left:11%;"><small>PUSH</small> this,
+<small>LIST</small></p>
+
+<p style="margin-left:17%;">Append elements of
+<small>LIST</small> to the array.</p>
+
+<p style="margin-left:11%;"><small>POP</small> this</p>
+
+<p style="margin-left:17%;">Remove last element of the
+array and return it.</p>
+
+<p style="margin-left:11%;"><small>SHIFT</small> this</p>
+
+<p style="margin-left:17%;">Remove the first element of the
+array (shifting other elements down) and return it.</p>
+
+<p style="margin-left:11%;"><small>UNSHIFT</small> this,
+<small>LIST</small></p>
+
+<p style="margin-left:17%;">Insert <small>LIST</small>
+elements at the beginning of the array, moving existing
+elements up to make room.</p>
+
+<p style="margin-left:11%;"><small>SPLICE</small> this,
+offset, length, <small>LIST</small></p>
+
+<p style="margin-left:17%;">Perform the equivalent of
+<tt>&quot;splice&quot;</tt> on the array.</p>
+
+<p style="margin-left:17%; margin-top: 1em"><i>offset</i>
+is optional and defaults to zero, negative values count back
+from the end of the array.</p>
+
+<p style="margin-left:17%; margin-top: 1em"><i>length</i>
+is optional and defaults to rest of the array.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><i><small>LIST</small></i>
+may be empty.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Returns a list
+of the original <i>length</i> elements at <i>offset</i>.</p>
+
+<h2>CAVEATS
+<a name="CAVEATS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">There is no
+support at present for tied <tt>@ISA</tt>. There is a
+potential conflict between magic entries needed to notice
+setting of <tt>@ISA</tt>, and those needed to implement
+&rsquo;tie&rsquo;.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Nick
+Ing-Simmons &lt;nik@tiuk.ti.com&gt;</p>
+<hr>
+</body>
+</html>

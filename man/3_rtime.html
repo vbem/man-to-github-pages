@@ -1,0 +1,238 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:25:06 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>RTIME</title>
+
+</head>
+<body>
+
+<h1 align="center">RTIME</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">rtime &minus;
+get time from a remote machine</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;rpc/des_crypt.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+rtime(struct sockaddr_in *</b><i>addrp</i><b>, struct
+rpc_timeval *</b><i>timep</i><b>, <br>
+struct rpc_timeval *</b><i>timeout</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This function
+uses the Time Server Protocol as described in RFC&nbsp;868
+to obtain the time from a remote machine.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The Time Server
+Protocol gives the time in seconds since 00:00:00 UTC, 1 Jan
+1900, and this function subtracts the appropriate constant
+in order to convert the result to seconds since the Epoch,
+1970-01-01 00:00:00 +0000 (UTC).</p>
+
+<p style="margin-left:11%; margin-top: 1em">When
+<i>timeout</i> is non-NULL, the udp/time socket (port 37) is
+used. Otherwise, the tcp/time socket (port 37) is used.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success, 0
+is returned, and the obtained 32-bit time value is stored in
+<i>timep&minus;&gt;tv_sec</i>. In case of error &minus;1 is
+returned, and <i>errno</i> is set appropriately.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">All errors for
+underlying functions (<b>sendto</b>(2), <b>poll</b>(2),
+<b>recvfrom</b>(2), <b>connect</b>(2), <b>read</b>(2)) can
+occur. Moreover:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="4%">
+
+
+<p><b>EIO</b></p></td>
+<td width="7%"></td>
+<td width="58%">
+
+
+<p>The number of returned bytes is not 4.</p></td>
+<td width="20%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>ETIMEDOUT</b></p>
+
+<p style="margin-left:22%;">The waiting time as defined in
+timeout has expired.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Only IPv4 is
+supported.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Some
+<i>in.timed</i> versions support only TCP. Try the example
+program with <i>use_tcp</i> set to 1.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Libc5 uses the
+prototype <br>
+int rtime(struct sockaddr_in *, struct timeval *, struct
+timeval *); <br>
+and requires <i>&lt;sys/time.h&gt;</i> instead of
+<i>&lt;rpc/auth_des.h&gt;</i>.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>rtime</b>()
+in glibc 2.2.5 and earlier does not work properly on 64-bit
+machines.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This example
+requires that port 37 is up and open. You may check that the
+time entry within <i>/etc/inetd.conf</i> is not commented
+out. <br>
+The program connects to a computer called &quot;linux&quot;.
+Using &quot;localhost&quot; does not work. The result is the
+localtime of the computer &quot;linux&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">#include
+&lt;stdio.h&gt; <br>
+#include &lt;stdlib.h&gt; <br>
+#include &lt;errno.h&gt; <br>
+#include &lt;string.h&gt; <br>
+#include &lt;time.h&gt; <br>
+#include &lt;rpc/auth_des.h&gt; <br>
+#include &lt;netdb.h&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">int use_tcp =
+0; <br>
+char *servername = &quot;linux&quot;;</p>
+
+<p style="margin-left:11%; margin-top: 1em">int <br>
+main(void) <br>
+{ <br>
+struct sockaddr_in name; <br>
+struct rpc_timeval time1 = {0,0}; <br>
+struct rpc_timeval timeout = {1,0}; <br>
+struct hostent *hent; <br>
+int ret;</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">memset(&amp;name,
+0, sizeof(name)); <br>
+sethostent(1); <br>
+hent = gethostbyname(servername); <br>
+memcpy(&amp;name.sin_addr, hent&minus;&gt;h_addr,
+hent&minus;&gt;h_length);</p>
+
+<p style="margin-left:11%; margin-top: 1em">ret =
+rtime(&amp;name, &amp;time1, use_tcp ? NULL : &amp;timeout);
+<br>
+if (ret &lt; 0) <br>
+perror(&quot;rtime error&quot;); <br>
+else {</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="8%"></td>
+<td width="7%"></td>
+<td width="85%">
+
+
+<p>time_t t = time1.tv_sec;</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">printf(&quot;%s\n&quot;,
+ctime(&amp;t)); <br>
+}</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">exit(EXIT_SUCCESS);
+<br>
+}</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>ntpdate</b>(1),
+<b>inetd</b>(8)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

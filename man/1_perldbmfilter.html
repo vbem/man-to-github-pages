@@ -1,0 +1,240 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:14:46 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PERLDBMFILTER</title>
+
+</head>
+<body>
+
+<h1 align="center">PERLDBMFILTER</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">perldbmfilter
+&minus; Perl DBM Filters</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">    $db = tie %hash, 'DBM', ...
+    $old_filter = $db&minus;&gt;filter_store_key  ( sub { ... } );
+    $old_filter = $db&minus;&gt;filter_store_value( sub { ... } );
+    $old_filter = $db&minus;&gt;filter_fetch_key  ( sub { ... } );
+    $old_filter = $db&minus;&gt;filter_fetch_value( sub { ... } );</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The four
+<tt>&quot;filter_*&quot;</tt> methods shown above are
+available in all the <small>DBM</small> modules that ship
+with Perl, namely DB_File, GDBM_File, NDBM_File, ODBM_File
+and SDBM_File.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Each of the
+methods works identically, and is used to install (or
+uninstall) a single <small>DBM</small> Filter. The only
+difference between them is the place that the filter is
+installed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To summarise:
+<b><br>
+filter_store_key</b></p>
+
+<p style="margin-left:18%;">If a filter has been installed
+with this method, it will be invoked every time you write a
+key to a <small>DBM</small> database.</p>
+
+<p style="margin-left:11%;"><b>filter_store_value</b></p>
+
+<p style="margin-left:18%;">If a filter has been installed
+with this method, it will be invoked every time you write a
+value to a <small>DBM</small> database.</p>
+
+<p style="margin-left:11%;"><b>filter_fetch_key</b></p>
+
+<p style="margin-left:18%;">If a filter has been installed
+with this method, it will be invoked every time you read a
+key from a <small>DBM</small> database.</p>
+
+<p style="margin-left:11%;"><b>filter_fetch_value</b></p>
+
+<p style="margin-left:18%;">If a filter has been installed
+with this method, it will be invoked every time you read a
+value from a <small>DBM</small> database.</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can use any
+combination of the methods from none to all four.</p>
+
+<p style="margin-left:11%; margin-top: 1em">All filter
+methods return the existing filter, if present, or
+<tt>&quot;undef&quot;</tt> if not.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To delete a
+filter pass <tt>&quot;undef&quot;</tt> to it.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>The
+Filter</b> <br>
+When each filter is called by Perl, a local copy of
+<tt>$_</tt> will contain the key or value to be filtered.
+Filtering is achieved by modifying the contents of
+<tt>$_</tt>. The return code from the filter is ignored.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>An Example:
+the <small>NULL</small> termination problem.</b> <small><br>
+DBM</small> Filters are useful for a class of problems where
+you <i>always</i> want to make the same transformation to
+all keys, all values or both.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For example,
+consider the following scenario. You have a
+<small>DBM</small> database that you need to share with a
+third-party C application. The C application assumes that
+<i>all</i> keys and values are <small>NULL</small>
+terminated. Unfortunately when Perl writes to
+<small>DBM</small> databases it doesn&rsquo;t use
+<small>NULL</small> termination, so your Perl application
+will have to manage <small>NULL</small> termination itself.
+When you write to the database you will have to use
+something like this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $hash{&quot;$key\0&quot;} = &quot;$value\0&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Similarly the
+<small>NULL</small> needs to be taken into account when you
+are considering the length of existing keys/values.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It would be
+much better if you could ignore the <small>NULL</small>
+terminations issue in the main application code and have a
+mechanism that automatically added the terminating
+<small>NULL</small> to all keys and values whenever you
+write to the database and have them removed when you read
+from the database. As I&rsquo;m sure you have already
+guessed, this is a problem that <small>DBM</small> Filters
+can fix very easily.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use strict;
+    use warnings;
+    use SDBM_File;
+    use Fcntl;
+    my %hash;
+    my $filename = &quot;filt&quot;;
+    unlink $filename;
+    my $db = tie(%hash, 'SDBM_File', $filename, O_RDWR|O_CREAT, 0640)
+      or die &quot;Cannot open $filename: $!\n&quot;;
+    # Install DBM Filters
+    $db&minus;&gt;filter_fetch_key  ( sub { s/\0$//    } );
+    $db&minus;&gt;filter_store_key  ( sub { $_ .= &quot;\0&quot; } );
+    $db&minus;&gt;filter_fetch_value(
+        sub { no warnings 'uninitialized'; s/\0$// } );
+    $db&minus;&gt;filter_store_value( sub { $_ .= &quot;\0&quot; } );
+    $hash{&quot;abc&quot;} = &quot;def&quot;;
+    my $a = $hash{&quot;ABC&quot;};
+    # ...
+    undef $db;
+    untie %hash;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The code above
+uses SDBM_File, but it will work with any of the
+<small>DBM</small> modules.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Hopefully the
+contents of each of the filters should be self-explanatory.
+Both &quot;fetch&quot; filters remove the terminating
+<small>NULL</small> , and both &quot;store&quot; filters add
+a terminating <small>NULL</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Another
+Example: Key is a C int.</b> <br>
+Here is another real-life example. By default, whenever Perl
+writes to a <small>DBM</small> database it always writes the
+key and value as strings. So when you use this:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $hash{12345} = &quot;something&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">the key 12345
+will get stored in the <small>DBM</small> database as the 5
+byte string &quot;12345&quot;. If you actually want the key
+to be stored in the <small>DBM</small> database as a C int,
+you will have to use <tt>&quot;pack&quot;</tt> when writing,
+and <tt>&quot;unpack&quot;</tt> when reading.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here is a
+<small>DBM</small> Filter that does it:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    use strict;
+    use warnings;
+    use DB_File;
+    my %hash;
+    my $filename = &quot;filt&quot;;
+    unlink $filename;
+    my $db = tie %hash, 'DB_File', $filename, O_CREAT|O_RDWR, 0666, $DB_HASH
+      or die &quot;Cannot open $filename: $!\n&quot;;
+    $db&minus;&gt;filter_fetch_key  ( sub { $_ = unpack(&quot;i&quot;, $_) } );
+    $db&minus;&gt;filter_store_key  ( sub { $_ = pack (&quot;i&quot;, $_) } );
+    $hash{123} = &quot;def&quot;;
+    # ...
+    undef $db;
+    untie %hash;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The code above
+uses DB_File, but again it will work with any of the
+<small>DBM</small> modules.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This time only
+two filters have been used; we only need to manipulate the
+contents of the key, so it wasn&rsquo;t necessary to install
+any value filters.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">DB_File,
+GDBM_File, NDBM_File, ODBM_File and SDBM_File.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Paul
+Marquess</p>
+<hr>
+</body>
+</html>

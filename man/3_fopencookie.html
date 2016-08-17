@@ -1,0 +1,560 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:23:31 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>FOPENCOOKIE</title>
+
+</head>
+<body>
+
+<h1 align="center">FOPENCOOKIE</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">fopencookie
+&minus; opening a custom stream</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#define
+_GNU_SOURCE</b> /* See feature_test_macros(7) */ <b><br>
+#include &lt;stdio.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>FILE
+*fopencookie(void *</b><i>cookie</i><b>, const char
+*</b><i>mode</i><b>, <br>
+cookie_io_functions_t</b> <i>io_funcs</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>fopencookie</b>() function allows the programmer to
+create a custom implementation for a standard I/O stream.
+This implementation can store the stream&rsquo;s data at a
+location of its own choosing; for example,
+<b>fopencookie</b>() is used to implement
+<b>fmemopen</b>(3), which provides a stream interface to
+data that is stored in a buffer in memory.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In order to
+create a custom stream the programmer must:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>Implement four &quot;hook&quot; functions that are used
+internally by the standard I/O library when performing I/O
+on the stream.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>Define a &quot;cookie&quot; data type, a structure that
+provides bookkeeping information (e.g., where to store data)
+used by the aforementioned hook functions. The standard I/O
+package knows nothing about the contents of this cookie
+(thus it is typed as <i>void&nbsp;*</i> when passed to
+<b>fopencookie</b>()), but automatically supplies the cookie
+as the first argument when calling the hook functions.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>*</p></td>
+<td width="3%"></td>
+<td width="85%">
+
+
+<p>Call <b>fopencookie</b>() to open a new stream and
+associate the cookie and hook functions with that
+stream.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>fopencookie</b>() function serves a purpose similar to
+<b>fopen</b>(3): it opens a new stream and returns a pointer
+to a <i>FILE</i> object that is used to operate on that
+stream.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>cookie</i> argument is a pointer to the caller&rsquo;s
+cookie structure that is to be associated with the new
+stream. This pointer is supplied as the first argument when
+the standard I/O library invokes any of the hook functions
+described below.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>mode</i>
+argument serves the same purpose as for <b>fopen</b>(3). The
+following modes are supported: <i>r</i>, <i>w</i>, <i>a</i>,
+<i>r+</i>, <i>w+</i>, and <i>a+</i>. See <b>fopen</b>(3) for
+details.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>io_funcs</i> argument is a structure that contains four
+fields pointing to the programmer-defined hook functions
+that are used to implement this stream. The structure is
+defined as follows</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef struct
+{ <br>
+cookie_read_function_t *read; <br>
+cookie_write_function_t *write; <br>
+cookie_seek_function_t *seek; <br>
+cookie_close_function_t *close; <br>
+} cookie_io_functions_t;</p>
+
+<p style="margin-left:11%; margin-top: 1em">The four fields
+are as follows: <i><br>
+cookie_read_function_t *read</i></p>
+
+<p style="margin-left:22%;">This function implements read
+operations for the stream. When called, it receives three
+arguments:</p>
+
+<p style="margin-left:22%; margin-top: 1em">ssize_t
+read(void *cookie, char *buf, size_t size);</p>
+
+<p style="margin-left:22%; margin-top: 1em">The <i>buf</i>
+and <i>size</i> arguments are, respectively, a buffer into
+which input data can be placed and the size of that buffer.
+As its function result, the <i>read</i> function should
+return the number of bytes copied into <i>buf</i>, 0 on end
+of file, or &minus;1 on error. The <i>read</i> function
+should update the stream offset appropriately.</p>
+
+<p style="margin-left:22%; margin-top: 1em">If <i>*read</i>
+is a NULL pointer, then reads from the custom stream always
+return end of file.</p>
+
+<p style="margin-left:11%;"><i>cookie_write_function_t
+*write</i></p>
+
+<p style="margin-left:22%;">This function implements write
+operations for the stream. When called, it receives three
+arguments:</p>
+
+<p style="margin-left:22%; margin-top: 1em">ssize_t
+write(void *cookie, const char *buf, size_t size);</p>
+
+<p style="margin-left:22%; margin-top: 1em">The <i>buf</i>
+and <i>size</i> arguments are, respectively, a buffer of
+data to be output to the stream and the size of that buffer.
+As its function result, the <i>write</i> function should
+return the number of bytes copied from <i>buf</i>, or 0 on
+error. (The function must not return a negative value.) The
+<i>write</i> function should update the stream offset
+appropriately.</p>
+
+<p style="margin-left:22%; margin-top: 1em">If
+<i>*write</i> is a NULL pointer, then output to the stream
+is discarded.</p>
+
+<p style="margin-left:11%;"><i>cookie_seek_function_t
+*seek</i></p>
+
+<p style="margin-left:22%;">This function implements seek
+operations on the stream. When called, it receives three
+arguments:</p>
+
+<p style="margin-left:22%; margin-top: 1em">int seek(void
+*cookie, off64_t *offset, int whence);</p>
+
+<p style="margin-left:22%; margin-top: 1em">The
+<i>*offset</i> argument specifies the new file offset
+depending on which of the following three values is supplied
+in <i>whence</i>:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="12%">
+
+
+<p><b>SEEK_SET</b></p></td>
+<td width="3%"></td>
+<td width="63%">
+
+
+<p>The stream offset should be set <i>*offset</i> bytes
+from the start of the stream.</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="12%">
+
+
+<p><b>SEEK_CUR</b></p></td>
+<td width="3%"></td>
+<td width="63%">
+
+
+<p><i>*offset</i> should be added to the current stream
+offset.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="12%">
+
+
+<p><b>SEEK_END</b></p></td>
+<td width="3%"></td>
+<td width="63%">
+
+
+<p>The stream offset should be set to the size of the
+stream plus <i>*offset</i>.</p></td></tr>
+</table>
+
+<p style="margin-left:22%; margin-top: 1em">Before
+returning, the <i>seek</i> function should update
+<i>*offset</i> to indicate the new stream offset.</p>
+
+<p style="margin-left:22%; margin-top: 1em">As its function
+result, the <i>seek</i> function should return 0 on success,
+and &minus;1 on error.</p>
+
+<p style="margin-left:22%; margin-top: 1em">If <i>*seek</i>
+is a NULL pointer, then it is not possible to perform seek
+operations on the stream.</p>
+
+<p style="margin-left:11%;"><i>cookie_close_function_t
+*close</i></p>
+
+<p style="margin-left:22%;">This function closes the
+stream. The hook function can do things such as freeing
+buffers allocated for the stream. When called, it receives
+one argument:</p>
+
+<p style="margin-left:22%; margin-top: 1em">int close(void
+*cookie);</p>
+
+<p style="margin-left:22%; margin-top: 1em">The
+<i>cookie</i> argument is the cookie that the programmer
+supplied when calling <b>fopencookie</b>().</p>
+
+<p style="margin-left:22%; margin-top: 1em">As its function
+result, the <i>close</i> function should return 0 on
+success, and <b>EOF</b> on error.</p>
+
+<p style="margin-left:22%; margin-top: 1em">If
+<i>*close</i> is NULL, then no special action is performed
+when the stream is closed.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success
+<b>fopencookie</b>() returns a pointer to the new stream. On
+error, NULL is returned.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This function
+is a nonstandard GNU extension.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The program
+below implements a custom stream whose functionality is
+similar (but not identical) to that available via
+<b>fmemopen</b>(3). It implements a stream whose data is
+stored in a memory buffer. The program writes its
+command-line arguments to the stream, and then seeks through
+the stream reading two out of every five characters and
+writing them to standard output. The following shell session
+demonstrates the use of the program:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ <b>./a.out
+'hello world'</b> <br>
+/he/ <br>
+/ w/ <br>
+/d/ <br>
+Reached end of file</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that a
+more general version of the program below could be improved
+to more robustly handle various error situations (e.g.,
+opening a stream with a cookie that already has an open
+stream; closing a stream that has already been closed).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Program
+source</b> <br>
+#define _GNU_SOURCE <br>
+#include &lt;sys/types.h&gt; <br>
+#include &lt;stdio.h&gt; <br>
+#include &lt;stdlib.h&gt; <br>
+#include &lt;unistd.h&gt; <br>
+#include &lt;string.h&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">#define
+INIT_BUF_SIZE 4</p>
+
+<p style="margin-left:11%; margin-top: 1em">struct
+memfile_cookie { <br>
+char *buf; /* Dynamically sized buffer for data */ <br>
+size_t allocated; /* Size of buf */ <br>
+size_t endpos; /* Number of characters in buf */ <br>
+off_t offset; /* Current file offset in buf */ <br>
+};</p>
+
+<p style="margin-left:11%; margin-top: 1em">ssize_t <br>
+memfile_write(void *c, const char *buf, size_t size) <br>
+{ <br>
+char *new_buff; <br>
+struct memfile_cookie *cookie = c;</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* Buffer too
+small? Keep doubling size until big enough */</p>
+
+<p style="margin-left:11%; margin-top: 1em">while (size +
+cookie&minus;&gt;offset &gt; cookie&minus;&gt;allocated) {
+<br>
+new_buff = realloc(cookie&minus;&gt;buf,
+cookie&minus;&gt;allocated * 2); <br>
+if (new_buff == NULL) { <br>
+return &minus;1; <br>
+} else { <br>
+cookie&minus;&gt;allocated *= 2; <br>
+cookie&minus;&gt;buf = new_buff; <br>
+} <br>
+}</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">memcpy(cookie&minus;&gt;buf
++ cookie&minus;&gt;offset, buf, size);</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">cookie&minus;&gt;offset
++= size; <br>
+if (cookie&minus;&gt;offset &gt; cookie&minus;&gt;endpos)
+<br>
+cookie&minus;&gt;endpos = cookie&minus;&gt;offset;</p>
+
+<p style="margin-left:11%; margin-top: 1em">return size;
+<br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">ssize_t <br>
+memfile_read(void *c, char *buf, size_t size) <br>
+{ <br>
+ssize_t xbytes; <br>
+struct memfile_cookie *cookie = c;</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* Fetch
+minimum of bytes requested and bytes available */</p>
+
+<p style="margin-left:11%; margin-top: 1em">xbytes = size;
+<br>
+if (cookie&minus;&gt;offset + size &gt;
+cookie&minus;&gt;endpos) <br>
+xbytes = cookie&minus;&gt;endpos &minus;
+cookie&minus;&gt;offset; <br>
+if (xbytes &lt; 0) /* offset may be past endpos */ <br>
+xbytes = 0;</p>
+
+<p style="margin-left:11%; margin-top: 1em">memcpy(buf,
+cookie&minus;&gt;buf + cookie&minus;&gt;offset, xbytes);</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">cookie&minus;&gt;offset
++= xbytes; <br>
+return xbytes; <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">int <br>
+memfile_seek(void *c, off64_t *offset, int whence) <br>
+{ <br>
+off64_t new_offset; <br>
+struct memfile_cookie *cookie = c;</p>
+
+<p style="margin-left:11%; margin-top: 1em">if (whence ==
+SEEK_SET) <br>
+new_offset = *offset; <br>
+else if (whence == SEEK_END) <br>
+new_offset = cookie&minus;&gt;endpos + *offset; <br>
+else if (whence == SEEK_CUR) <br>
+new_offset = cookie&minus;&gt;offset + *offset; <br>
+else <br>
+return &minus;1;</p>
+
+<p style="margin-left:11%; margin-top: 1em">if (new_offset
+&lt; 0) <br>
+return &minus;1;</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">cookie&minus;&gt;offset
+= new_offset; <br>
+*offset = new_offset; <br>
+return 0; <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">int <br>
+memfile_close(void *c) <br>
+{ <br>
+struct memfile_cookie *cookie = c;</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">free(cookie&minus;&gt;buf);
+<br>
+cookie&minus;&gt;allocated = 0; <br>
+cookie&minus;&gt;buf = NULL;</p>
+
+<p style="margin-left:11%; margin-top: 1em">return 0; <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">int <br>
+main(int argc, char *argv[]) <br>
+{ <br>
+cookie_io_functions_t memfile_func = { <br>
+.read = memfile_read, <br>
+.write = memfile_write, <br>
+.seek = memfile_seek, <br>
+.close = memfile_close <br>
+}; <br>
+FILE *fp; <br>
+struct memfile_cookie mycookie; <br>
+ssize_t nread; <br>
+long p; <br>
+int j; <br>
+char buf[1000];</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* Set up the
+cookie before calling fopencookie() */</p>
+
+<p style="margin-left:11%; margin-top: 1em">mycookie.buf =
+malloc(INIT_BUF_SIZE); <br>
+if (mycookie.buf == NULL) { <br>
+perror(&quot;malloc&quot;); <br>
+exit(EXIT_FAILURE); <br>
+}</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">mycookie.allocated
+= INIT_BUF_SIZE; <br>
+mycookie.offset = 0; <br>
+mycookie.endpos = 0;</p>
+
+<p style="margin-left:11%; margin-top: 1em">fp =
+fopencookie(&amp;mycookie,&quot;w+&quot;, memfile_func);
+<br>
+if (fp == NULL) { <br>
+perror(&quot;fopencookie&quot;); <br>
+exit(EXIT_FAILURE); <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* Write
+command&minus;line arguments to our file */</p>
+
+<p style="margin-left:11%; margin-top: 1em">for (j = 1; j
+&lt; argc; j++) <br>
+if (fputs(argv[j], fp) == EOF) { <br>
+perror(&quot;fputs&quot;); <br>
+exit(EXIT_FAILURE); <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* Read two
+bytes out of every five, until EOF */</p>
+
+<p style="margin-left:11%; margin-top: 1em">for (p = 0; ; p
++= 5) { <br>
+if (fseek(fp, p, SEEK_SET) == &minus;1) { <br>
+perror(&quot;fseek&quot;); <br>
+exit(EXIT_FAILURE); <br>
+} <br>
+nread = fread(buf, 1, 2, fp); <br>
+if (nread == &minus;1) { <br>
+perror(&quot;fread&quot;); <br>
+exit(EXIT_FAILURE); <br>
+} <br>
+if (nread == 0) { <br>
+printf(&quot;Reached end of file\n&quot;); <br>
+break; <br>
+}</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">printf(&quot;/%.*s/\n&quot;,
+nread, buf); <br>
+}</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">exit(EXIT_SUCCESS);
+<br>
+}</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>fclose</b>(3),
+<b>fmemopen</b>(3), <b>fopen</b>(3), <b>fseek</b>(3)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

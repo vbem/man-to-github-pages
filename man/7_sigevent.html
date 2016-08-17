@@ -1,0 +1,207 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:39:47 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SIGEVENT</title>
+
+</head>
+<body>
+
+<h1 align="center">SIGEVENT</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">sigevent
+&minus; structure for notification from asynchronous
+routines</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">union sigval {
+/* Data passed with notification */ <br>
+int sival_int; /* Integer value */ <br>
+void *sival_ptr; /* Pointer value */ <br>
+};</p>
+
+<p style="margin-left:11%; margin-top: 1em">struct sigevent
+{ <br>
+int sigev_notify; /* Notification method */ <br>
+int sigev_signo; /* Notification signal */ <br>
+union sigval sigev_value; /* Data passed with <br>
+notification */ <br>
+void (*sigev_notify_function) (union sigval); <br>
+/* Function used for thread <br>
+notification (SIGEV_THREAD) */ <br>
+void *sigev_notify_attributes; <br>
+/* Attributes for notification thread <br>
+(SIGEV_THREAD) */ <br>
+pid_t sigev_notify_thread_id; <br>
+/* ID of thread to signal (SIGEV_THREAD_ID) */ <br>
+};</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>sigevent</i> structure is used by various APIs to
+describe the way a process is to be notified about an event
+(e.g., completion of an asynchronous request, expiration of
+a timer, or the arrival of a message).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The definition
+shown in the SYNOPSIS is approximate: some of the fields in
+the <i>sigevent</i> structure may be defined as part of a
+union. Programs should employ only those fields relevant to
+the value specified in <i>sigev_notify</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>sigev_notify</i> field specifies how notification is to
+be performed. This field can have one of the following
+values: <b><br>
+SIGEV_NONE</b></p>
+
+<p style="margin-left:23%;">A &quot;null&quot;
+notification: don&rsquo;t do anything when the event
+occurs.</p>
+
+<p style="margin-left:11%;"><b>SIGEV_SIGNAL</b></p>
+
+<p style="margin-left:23%;">Notify the process by sending
+the signal specified in <i>sigev_signo</i>.</p>
+
+<p style="margin-left:23%; margin-top: 1em">If the signal
+is caught with a signal handler that was registered using
+the <b>sigaction</b>(2) <b>SA_SIGINFO</b> flag, then the
+following fields are set in the <i>siginfo_t</i> structure
+that is passed as the second argument of the handler:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="23%"></td>
+<td width="12%">
+
+
+<p><i>si_code</i></p></td>
+<td width="3%"></td>
+<td width="62%">
+
+
+<p>This field is set to a value that depends on the API
+delivering the notification.</p></td></tr>
+<tr valign="top" align="left">
+<td width="23%"></td>
+<td width="12%">
+
+
+<p><i>si_signo</i></p></td>
+<td width="3%"></td>
+<td width="62%">
+
+
+<p>This field is set to the signal number (i.e., the same
+value as in <i>sigev_signo</i>).</p></td></tr>
+<tr valign="top" align="left">
+<td width="23%"></td>
+<td width="12%">
+
+
+<p><i>si_value</i></p></td>
+<td width="3%"></td>
+<td width="62%">
+
+
+<p>This field is set to the value specified in
+<i>sigev_value</i>.</p> </td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">Depending on
+the API, other fields may also be set in the
+<i>siginfo_t</i> structure.</p>
+
+<p style="margin-left:23%; margin-top: 1em">The same
+information is also available if the signal is accepted
+using <b>sigwaitinfo</b>(2).</p>
+
+<p style="margin-left:11%;"><b>SIGEV_THREAD</b></p>
+
+<p style="margin-left:23%;">Notify the process by invoking
+<i>sigev_notify_function</i> &quot;as if&quot; it were the
+start function of a new thread. (Among the implementation
+possibilities here are that each timer notification could
+result in the creation of a new thread, or that a single
+thread is created to receive all notifications.) The
+function is invoked with <i>sigev_value</i> as its sole
+argument. If <i>sigev_notify_attributes</i> is not NULL, it
+should point to a <i>pthread_attr_t</i> structure that
+defines attributes for the new thread (see
+<b>pthread_attr_init</b>(3)).</p>
+
+<p style="margin-left:11%;"><b>SIGEV_THREAD_ID</b>
+(Linux-specific)</p>
+
+<p style="margin-left:23%;">Currently used only by POSIX
+timers; see <b>timer_create</b>(2).</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">POSIX.1-2001.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>timer_create</b>(2),
+<b>aio_fsync</b>(3), <b>aio_read</b>(3),
+<b>aio_write</b>(3), <b>getaddrinfo_a</b>(3),
+<b>lio_listio</b>(3), <b>mq_notify</b>(3), <b>aio</b>(7),
+<b>pthreads</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,1870 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:40:07 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>DRACUT</title>
+
+</head>
+<body>
+
+<h1 align="center">DRACUT</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#USAGE">USAGE</a><br>
+<a href="#TROUBLESHOOTING">TROUBLESHOOTING</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#FILES">FILES</a><br>
+<a href="#AVAILABILITY">AVAILABILITY</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#NOTES">NOTES</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">dracut &minus;
+low&minus;level tool for generating an initramfs image</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>dracut</b>
+[<i>OPTION...</i>] [<i>&lt;image&gt;</i> [<i>&lt;kernel
+version&gt;</i>]]</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Create an
+initramfs &lt;image&gt; for the kernel with the version
+&lt;kernel version&gt;. If &lt;kernel version&gt; is
+omitted, then the version of the actual running kernel is
+used. If &lt;image&gt; is omitted or empty, then the default
+location /boot/initramfs&minus;&lt;kernel version&gt;.img is
+used.</p>
+
+<p style="margin-left:11%; margin-top: 1em">dracut creates
+an initial image used by the kernel for preloading the block
+device modules (such as IDE, SCSI or RAID) which are needed
+to access the root filesystem, mounting the root filesystem
+and booting into the real system.</p>
+
+<p style="margin-left:11%; margin-top: 1em">At boot time,
+the kernel unpacks that archive into RAM disk, mounts and
+uses it as initial root file system. All finding of the root
+device happens in this early userspace.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For a complete
+list of kernel command line options see
+<b>dracut.cmdline</b>(7).</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you are
+dropped to an emergency shell, while booting your initramfs,
+the file <i>/run/initramfs/rdsosreport.txt</i> is created,
+which can be safed to a (to be mounted by hand) partition
+(usually /boot) or a USB stick. Additional debugging info
+can be produced by adding <b>rd.debug</b> to the kernel
+command line. <i>/run/initramfs/rdsosreport.txt</i> contains
+all logs and the output of some tools. It should be attached
+to any report about dracut problems.</p>
+
+<h2>USAGE
+<a name="USAGE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">To create a
+initramfs image, the most simple command is:</p>
+
+<p style="margin-left:17%; margin-top: 1em"># dracut</p>
+
+<p style="margin-left:11%; margin-top: 1em">This will
+generate a general purpose initramfs image, with all
+possible functionality resulting of the combination of the
+installed dracut modules and system tools. The image is
+/boot/initramfs&minus;<i>&lt;kernel version&gt;</i>.img and
+contains the kernel modules of the currently active kernel
+with version <i>&lt;kernel version&gt;</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+initramfs image already exists, dracut will display an error
+message, and to overwrite the existing image, you have to
+use the &minus;&minus;force option.</p>
+
+<p style="margin-left:17%; margin-top: 1em"># dracut
+&minus;&minus;force</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+specify another filename for the resulting image you would
+issue a command like:</p>
+
+<p style="margin-left:17%; margin-top: 1em"># dracut
+foobar.img</p>
+
+<p style="margin-left:11%; margin-top: 1em">To generate an
+image for a specific kernel version, the command would
+be:</p>
+
+<p style="margin-left:17%; margin-top: 1em"># dracut
+foobar.img 2.6.40&minus;1.rc5.f20</p>
+
+<p style="margin-left:11%; margin-top: 1em">A shortcut to
+generate the image at the default location for a specific
+kernel version is:</p>
+
+<p style="margin-left:17%; margin-top: 1em"># dracut
+&minus;&minus;kver 2.6.40&minus;1.rc5.f20</p>
+
+<p style="margin-left:11%; margin-top: 1em">If you want to
+create lighter, smaller initramfs images, you may want to
+specify the &minus;&minus;hostonly or &minus;H option. Using
+this option, the resulting image will contain only those
+dracut modules, kernel modules and filesystems, which are
+needed to boot this specific machine. This has the drawback,
+that you can&rsquo;t put the disk on another controller or
+machine, and that you can&rsquo;t switch to another root
+filesystem, without recreating the initramfs image.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><b><big>Note</big></b>
+<br>
+On RHEL&minus;7 the hostonly mode is the default mode.
+Generic &quot;non&minus;hostonly&quot; images are created,
+if the dracut&minus;config&minus;generic rpm is installed.
+The rescue kernel entry in the bootloader menu is also a
+generic image.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><big>Inspecting
+the Contents</big></b> <big><br>
+To see the contents of the image created by dracut, you can
+use the lsinitrd tool.</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big># lsinitrd
+| less</big></p>
+
+<p style="margin-left:11%; margin-top: 1em"><big>To display
+the contents of a file in the initramfs also use the
+lsinitrd tool:</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big># lsinitrd
+&minus;f /etc/ld.so.conf <br>
+include ld.so.conf.d/*.conf</big></p>
+
+<p style="margin-left:11%; margin-top: 1em"><big><b>Adding
+dracut Modules</b> <br>
+Some dracut modules are turned off by default and have to be
+activated manually. You can do this by adding the dracut
+modules to the configuration file <i>/etc/dracut.conf</i> or
+<i>/etc/dracut.conf.d/myconf.conf</i>. See
+<b>dracut.conf</b>(5). You can also add dracut modules on
+the command line by using the &minus;a or &minus;&minus;add
+option:</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big># dracut
+&minus;&minus;add bootchart
+initramfs&minus;bootchart.img</big></p>
+
+<p style="margin-left:11%; margin-top: 1em"><big>To see a
+list of available dracut modules, use the
+&minus;&minus;list&minus;modules option:</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big># dracut
+&minus;&minus;list&minus;modules</big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><b>Omitting
+dracut Modules</b> <br>
+Sometimes you don&rsquo;t want a dracut module to be
+included for reasons of speed, size or functionality. To do
+this, either specify the omit_dracutmodules variable in the
+<i>dracut.conf</i> or <i>/etc/dracut.conf.d/myconf.conf</i>
+configuration file (see <b>dracut.conf</b>(5)), or use the
+&minus;o or &minus;&minus;omit option on the command
+line:</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big># dracut
+&minus;o &quot;multipath lvm&quot;
+no&minus;multipath&minus;lvm.img</big></p>
+
+<p style="margin-left:11%; margin-top: 1em"><big><b>Adding
+Kernel Modules</b> <br>
+If you need a special kernel module in the initramfs, which
+is not automatically picked up by dracut, you have the use
+the &minus;&minus;add&minus;drivers option on the command
+line or the drivers vaiable in the <i>/etc/dracut.conf</i>
+or <i>/etc/dracut.conf.d/myconf.conf</i> configuration file
+(see <b>dracut.conf</b>(5)):</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big># dracut
+&minus;&minus;add&minus;drivers mymod
+initramfs&minus;with&minus;mymod.img</big></p>
+
+<p style="margin-left:11%; margin-top: 1em"><big><b>Boot
+parameters</b> <br>
+An initramfs generated without the &quot;hostonly&quot;
+mode, does not contain any system configuration files
+(except for some special exceptions), so the configuration
+has to be done on the kernel command line. With this
+flexibility, you can easily boot from a changed root
+partition, without the need to recompile the initramfs
+image. So, you could completly change your root partition
+(move it inside a md raid with encryption and LVM on top),
+as long as you specify the correct filesystem LABEL or UUID
+on the kernel command line for your root device, dracut will
+find it and boot from it.</big></p>
+
+<p style="margin-left:11%; margin-top: 1em"><big>The kernel
+command line usually can be configured in
+<i>/boot/grub2/grub.cfg</i> (or
+<i>/boot/efi/EFI/redhat/grub.cfg</i> for EFI systems), if
+grub2 is your bootloader and it also can be edited in the
+real boot process in the grub menu.</big></p>
+
+<p style="margin-left:11%; margin-top: 1em"><big>The kernel
+command line can also be provided by the dhcp server with
+the root&minus;path option. See the section called
+&ldquo;Network Boot&rdquo;.</big></p>
+
+<p style="margin-left:11%; margin-top: 1em"><big>For a full
+reference of all kernel command line parameters, see
+<b>dracut.cmdline</b>(5).</big></p>
+
+<p style="margin-left:11%; margin-top: 1em"><big>To get a
+quick start for the suitable kernel command line on your
+system, use the <i>&minus;&minus;print&minus;cmdline</i>
+option:</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big># dracut
+&minus;&minus;print&minus;cmdline <br>
+
+root=UUID=8b8b6f91&minus;95c7&minus;4da2&minus;831b&minus;171e12179081
+rootflags=rw,relatime,discard,data=ordered
+rootfstype=ext4</big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><b><big>Specifying
+the root Device</big></b></big></p>
+
+<p style="margin-left:17%;"><big>This is the only option
+dracut really needs to boot from your root partition.
+Because your root partition can live in various
+environments, there are a lot of formats for the root=
+option. The most basic one is root=<i>&lt;path to device
+node&gt;</i>:</big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big>root=/dev/sda2</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big>Because
+device node names can change, dependent on the drive
+ordering, you are encouraged to use the filesystem
+identifier (UUID) or filesystem label (LABEL) to specify
+your root partition:</big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big>root=UUID=19e9dda3&minus;5a38&minus;484d&minus;a9b0&minus;fa6b067d0331</big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big>or</big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big>root=LABEL=myrootpartitionlabel</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big>To see all
+UUIDs or LABELs on your system, do:</big></p>
+
+<p style="margin-left:23%; margin-top: 1em"><big># ls
+&minus;l /dev/disk/by&minus;uuid</big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big>or</big></p>
+
+<p style="margin-left:23%; margin-top: 1em"><big># ls
+&minus;l /dev/disk/by&minus;label</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big>If your
+root partition is on the network see the section called
+&ldquo;Network Boot&rdquo;.</big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><b><big>Keyboard
+Settings</big></b></big></p>
+
+<p style="margin-left:17%;"><big>If you have to input
+passwords for encrypted disk volumes, you might want to set
+the keyboard layout and specify a display font.</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big>A typical
+german kernel command would contain:</big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big>rd.vconsole.font=latarcyrheb&minus;sun16
+rd.vconsole.keymap=de&minus;latin1&minus;nodeadkeys
+rd.locale.LANG=de_DE.UTF&minus;8</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big>Setting
+these options can override the setting stored on your
+system, if you use a modern init system, like
+systemd.</big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><b><big>Blacklisting
+Kernel Modules</big></b></big></p>
+
+<p style="margin-left:17%;"><big>Sometimes it is required
+to prevent the automatic kernel module loading of a specific
+kernel module. To do this, just add
+rd.blacklist=<i>&lt;kernel module name&gt;</i>, with
+<i>&lt;kernel module name&gt;</i> not containing the
+<i>.ko</i> suffix, to the kernel command line. For
+example:</big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big>rd.driver.blacklist=mptsas
+rd.driver.blacklist=nouveau</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big>The option
+can be specified multiple times on the kernel command
+line.</big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><b><big>Speeding
+up the Boot Process</big></b></big></p>
+
+<p style="margin-left:17%;"><big>If you want to speed up
+the boot process, you can specify as much information for
+dracut on the kernel command as possible. For example, you
+can tell dracut, that you root partition is not on a LVM
+volume or not on a raid partition, or that it lives inside a
+specific crypto LUKS encrypted volume. By default, dracut
+searches everywhere. A typical dracut kernel command line
+for a plain primary or logical partition would
+contain:</big></p>
+
+<p style="margin-left:23%; margin-top: 1em"><big>rd.luks=0
+rd.lvm=0 rd.md=0 rd.dm=0</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big>This turns
+off every automatic assembly of LVM, MD raids, DM raids and
+crypto LUKS.</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big>Of course,
+you could also omit the dracut modules in the initramfs
+creation process, but then you would lose the posibility to
+turn it on on demand.</big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><b>Injecting
+custom Files</b> <br>
+To add your own files to the initramfs image, you have
+several possibilities.</big></p>
+
+<p style="margin-left:11%; margin-top: 1em"><big>The
+&minus;&minus;include option let you specify a source path
+and a target path. For example</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big># dracut
+&minus;&minus;include cmdline&minus;preset
+/etc/cmdline.d/mycmdline.conf
+initramfs&minus;cmdline&minus;pre.img</big></p>
+
+<p style="margin-left:11%; margin-top: 1em"><big>will
+create an initramfs image, where the file
+cmdline&minus;preset will be copied inside the initramfs to
+<i>/etc/cmdline.d/mycmdline.conf</i>. &minus;&minus;include
+can only be specified once.</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big># mkdir
+&minus;p rd.live.overlay/etc/cmdline.d <br>
+# mkdir &minus;p rd.live.overlay/etc/conf.d <br>
+# echo &quot;ip=dhcp&quot; &gt;&gt;
+rd.live.overlay/etc/cmdline.d/mycmdline.conf <br>
+# echo export FOO=testtest &gt;&gt;
+rd.live.overlay/etc/conf.d/testvar.conf <br>
+# echo export BAR=testtest &gt;&gt;
+rd.live.overlay/etc/conf.d/testvar.conf <br>
+# tree rd.live.overlay/ <br>
+rd.live.overlay/ <br>
+&lsquo;&minus;&minus; etc <br>
+|&minus;&minus; cmdline.d <br>
+| &lsquo;&minus;&minus; mycmdline.conf <br>
+&lsquo;&minus;&minus; conf.d <br>
+&lsquo;&minus;&minus; testvar.conf</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big># dracut
+&minus;&minus;include rd.live.overlay /
+initramfs&minus;rd.live.overlay.img</big></p>
+
+<p style="margin-left:11%; margin-top: 1em"><big>This will
+put the contents of the rd.live.overlay directory into the
+root of the initramfs image.</big></p>
+
+<p style="margin-left:11%; margin-top: 1em"><big>The
+&minus;&minus;install option let you specify several files,
+which will get installed in the initramfs image at the same
+location, as they are present on initramfs creation
+time.</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big># dracut
+&minus;&minus;install 'strace fsck.ext3 ssh'
+initramfs&minus;dbg.img</big></p>
+
+<p style="margin-left:11%; margin-top: 1em"><big>This will
+create an initramfs with the strace, fsck.ext3 and ssh
+executables, together with the libraries needed to start
+those. The &minus;&minus;install option can be specified
+multiple times.</big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><b>Network
+Boot</b> <br>
+If your root partition is on a network drive, you have to
+have the network dracut modules installed to create a
+network aware initramfs image.</big></p>
+
+<p style="margin-left:11%; margin-top: 1em"><big>On a Red
+Hat Enterprise Linux or Fedora system, this means, you have
+to install the <i>dracut&minus;network</i> rpm
+package:</big></p>
+
+<p style="margin-left:17%; margin-top: 1em"><big># yum
+install dracut&minus;network</big></p>
+
+<p style="margin-left:11%; margin-top: 1em"><big>The
+resulting initramfs image can be served by a boot manager
+residing on your local hard drive or it can be served by a
+PXE/TFTP server.</big></p>
+
+<p style="margin-left:11%; margin-top: 1em"><big>How to
+setup your PXE/TFTP server can be found in the
+<b><font color="#0000FF">Red Hat Enterprise Linux Storage
+Administration Guide</font></b></big>
+<font color="#000000">[1] <big>.</big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>If
+you specify ip=dhcp on the kernel command line, then dracut
+asks a dhcp server about the ip adress for the machine. The
+dhcp server can also serve an additional root&minus;path,
+which will set the root device for dracut. With this
+mechanism, you have static configuration on your client
+machine and a centralized boot configuration on your
+TFTP/DHCP server. If you can&rsquo;t pass a kernel command
+line, then you can inject
+<i>/etc/cmdline.d/mycmdline.conf</i>, with a method
+described in the section called &ldquo;Injecting custom
+Files&rdquo;.</big></font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big><b><big>Reducing
+the Image Size</big></b></big></font></p>
+
+<p style="margin-left:17%;"><font color="#000000"><big>To
+reduce the size of the initramfs, you should create it with
+by ommitting all dracut modules, which you know, you
+don&rsquo;t need to boot the machine.</big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big>You
+can also specify the exact dracut and kernel modules to
+produce a very tiny initramfs image.</big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big>For
+example for a NFS image, you would do:</big></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000"><big>#
+dracut &minus;m &quot;nfs network base&quot;
+initramfs&minus;nfs&minus;only.img</big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big>Then
+you would boot from this image with your target machine and
+reduce the size once more by creating it on the target
+machine with the &minus;&minus;host&minus;only
+option:</big></font></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><font color="#000000"><big>#
+dracut &minus;m &quot;nfs network base&quot;
+&minus;&minus;host&minus;only
+initramfs&minus;nfs&minus;host&minus;only.img</big></font></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><font color="#000000"><big>This
+will reduce the size of the initramfs image
+significantly.</big></font></p>
+
+<h2>TROUBLESHOOTING
+<a name="TROUBLESHOOTING"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><big>If
+the boot process does not succeed, you have several options
+to debug the situation. Some of the basic operations are
+covered here. For more information you should also
+visit:</big></font>
+<big><b><font color="#0000FF">http://fedoraproject.org/wiki/How_to_debug_Dracut_problems</font></b></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><b><font color="#000000">Identifying
+your problem area</font></b></big></p>
+
+<p style="margin-left:17%;"><big><font color="#000000">1.
+Remove <i>'rhgb</i>' and <i>'quiet</i>' from the kernel
+command line</font></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><font color="#000000">2.
+Add <i>'rd.shell</i>' to the kernel command line. This will
+present a shell should dracut be unable to locate your root
+device</font></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><font color="#000000">3.
+Add <i>'rd.shell rd.debug log_buf_len=1M</i>' to the kernel
+command line so that dracut shell commands are printed as
+they are executed</font></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><font color="#000000">4.
+The file /run/initramfs/rdsosreport.txt is generated, which
+contains all the logs and the output of all significant
+tools, which are mentioned later.</font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000">If
+you want to save that output, simply mount /boot by hand or
+insert an USB stick and mount that. Then you can store the
+output for later inspection.</font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><b>Information
+to include in your report <big><br>
+All bug reports</big></b></font></big></p>
+
+<p style="margin-left:17%;"><big><font color="#000000">In
+all cases, the following should be mentioned and attached to
+your bug report:</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">&bull;
+The exact kernel command&minus;line used. Typically from the
+bootloader configuration file (e.g.
+<i>/boot/grub2/grub.cfg</i> (or
+<i>/boot/efi/EFI/redhat/grub.cfg</i> for EFI systems)) or
+from <i>/proc/cmdline</i>.</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">&bull;
+A copy of your disk partition information from
+<i>/etc/fstab</i>, which might be obtained booting an old
+working initramfs or a rescue medium.</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">&bull;
+Turn on dracut debugging (see <i>the debugging dracut
+section</i>), and attach the file
+/run/initramfs/rdsosreport.txt.</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">&bull;
+If you use a dracut configuration file, please include
+<i>/etc/dracut.conf</i> and all files in
+<i>/etc/dracut.conf.d/*.conf</i></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><b><big>Network
+root device related problems</big></b></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000">This
+section details information to include when experiencing
+problems on a system whose root device is located on a
+network attached volume (e.g. iSCSI, NFS or NBD). As well as
+the information from the section called &ldquo;All bug
+reports&rdquo;, include the following
+information:</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">&bull;
+Please include the output of</font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000">#
+/sbin/ifup &lt;interfacename&gt; <br>
+# ip addr show</font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><b>Debugging
+dracut <big><br>
+Configure a serial console</big></b></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000">Successfully
+debugging dracut will require some form of console logging
+during the system boot. This section documents configuring a
+serial console connection to record boot
+messages.</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">1.
+In <i>/boot/grub2/grub.cfg</i> (or
+<i>/boot/efi/EFI/redhat/grub.cfg</i> for EFI systems), add
+the following boot arguments to the <i>'linux16</i>'
+line:</font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000">console=tty0
+console=ttyS0,9600</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">2.
+More detailed information on how to configure the kernel for
+console output can be found at</font>
+<b><font color="#0000FF">http://www.faqs.org/docs/Linux&minus;HOWTO/Remote&minus;Serial&minus;Console&minus;HOWTO.html#CONFIGURE&minus;KERNEL</font></b><font color="#000000">.</font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><b><big>Using
+the dracut shell</big></b></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000">dracut
+offers a shell for interactive debugging in the event dracut
+fails to locate your root filesystem. To enable the
+shell:</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">1.
+Add the boot parameter <i>'rd.shell</i>' to your bootloader
+configuration file (e.g. <i>/boot/grub2/grub.cfg</i> (or
+<i>/boot/efi/EFI/redhat/grub.cfg</i> for EFI
+systems))</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">2.
+Remove the boot arguments <i>'rhgb</i>' and
+<i>'quiet</i>'</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">A
+sample <i>grub.cfg</i> bootloader configuration file snippet
+is listed below.</font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000">menuentry
+'Red Hat Enterprise Linux Server
+(3.10.0&minus;308.el7.x86_64) 7.0 (Maipo)' [...] { <br>
+[...] <br>
+linux16 /vmlinuz&minus;3.10.0&minus;308.el7.x86_64 ro
+root=/dev/mapper/vg_uc1&minus;lv_root console=tty0 rd.shell
+<br>
+initrd16 /initramfs&minus;3.10.0&minus;308.el7.x86_64.img
+<br>
+[...] <br>
+}</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">3.
+If system boot fails, you will be dropped into a shell as
+seen in the example below.</font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000">No
+root device found <br>
+Dropping to debug shell.</font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000">#</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">4.
+Use this shell prompt to gather the information requested
+above (see the section called &ldquo;All bug
+reports&rdquo;).</font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><b><big>Accessing
+the root volume from the dracut
+shell</big></b></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000">From
+the dracut debug shell, you can manually perform the task of
+locating and preparing your root volume for boot. The
+required steps will depend on how your root volume is
+configured. Common scenarios include:</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">&bull;
+A block device (e.g. <i>/dev/sda7</i>)</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">&bull;
+A LVM logical volume (e.g.
+<i>/dev/VolGroup00/LogVol00</i>)</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">&bull;
+An encrypted device (e.g.
+<i>/dev/mapper/luks&minus;4d5972ea&minus;901c&minus;4584&minus;bd75&minus;1da802417d83</i>)</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">&bull;
+A network attached device (e.g.
+<i>netroot=iscsi:@192.168.0.4::3260::iqn.2009&minus;02.org.example:for.all</i>)</font></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><font color="#000000">The
+exact method for locating and preparing will vary. However,
+to continue with a successful boot, the objective is to
+locate your root volume and create a symlink
+<i>/dev/root</i> which points to the file system. For
+example, the following example demonstrates accessing and
+booting a root volume that is an encrypted LVM Logical
+volume.</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">1.
+Inspect your partitions using parted</font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000">#
+parted /dev/sda &minus;s p <br>
+Model: ATA HTS541060G9AT00 (scsi) <br>
+Disk /dev/sda: 60.0GB <br>
+Sector size (logical/physical): 512B/512B <br>
+Partition Table: msdos <br>
+Number Start End Size Type File system Flags <br>
+1 32.3kB 10.8GB 107MB primary ext4 boot <br>
+2 10.8GB 55.6GB 44.7GB logical lvm</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">2.
+You recall that your root volume was a LVM logical volume.
+Scan and activate any logical volumes.</font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000">#
+lvm vgscan <br>
+# lvm vgchange &minus;ay</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">3.
+You should see any logical volumes now using the command
+blkid:</font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000">#
+blkid <br>
+/dev/sda1:
+UUID=&quot;3de247f3&minus;5de4&minus;4a44&minus;afc5&minus;1fe179750cf7&quot;
+TYPE=&quot;ext4&quot; <br>
+/dev/sda2:
+UUID=&quot;Ek4dQw&minus;cOtq&minus;5MJu&minus;OGRF&minus;xz5k&minus;O2l8&minus;wdDj0I&quot;
+TYPE=&quot;LVM2_member&quot; <br>
+/dev/mapper/linux&minus;root:
+UUID=&quot;def0269e&minus;424b&minus;4752&minus;acf3&minus;1077bf96ad2c&quot;
+TYPE=&quot;crypto_LUKS&quot; <br>
+/dev/mapper/linux&minus;home:
+UUID=&quot;c69127c1&minus;f153&minus;4ea2&minus;b58e&minus;4cbfa9257c5e&quot;
+TYPE=&quot;ext3&quot; <br>
+/dev/mapper/linux&minus;swap:
+UUID=&quot;47b4d329&minus;975c&minus;4c08&minus;b218&minus;f9c9bf3635f1&quot;
+TYPE=&quot;swap&quot;</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">4.
+From the output above, you recall that your root volume
+exists on an encrypted block device. Following the guidance
+disk encryption guidance from the Installation Guide, you
+unlock your encrypted root volume.</font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000">#
+UUID=$(cryptsetup luksUUID /dev/mapper/linux&minus;root)
+<br>
+# cryptsetup luksOpen /dev/mapper/linux&minus;root
+luks&minus;$UUID <br>
+Enter passphrase for /dev/mapper/linux&minus;root: <br>
+Key slot 0 unlocked.</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">5.
+Next, make a symbolic link to the unlocked root
+volume</font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000">#
+ln &minus;s /dev/mapper/luks&minus;$UUID
+/dev/root</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">6.
+With the root volume available, you may continue booting the
+system by exiting the dracut shell</font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000">#
+exit</font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><b><big>Additional
+dracut boot parameters</big></b></font></big></p>
+
+<p style="margin-left:17%;"><big><font color="#000000">For
+more debugging options, see
+<b>dracut.cmdline</b>(7).</font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><b><big>Debugging
+dracut on shutdown</big></b></font></big></p>
+
+<p style="margin-left:17%;"><big><font color="#000000">To
+debug the shutdown sequence on systemd systems, you can
+<i>rd.break</i> on <i>pre&minus;shutdown</i> or
+<i>shutdown</i>.</font></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><font color="#000000">To
+do this from an already booted system:</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000">#
+mkdir &minus;p /run/initramfs/etc/cmdline.d <br>
+# echo &quot;rd.break=pre&minus;shutdown&quot; &gt;
+/run/initramfs/etc/cmdline.d/debug.conf <br>
+# touch /run/initramfs/.need_shutdown</font></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><font color="#000000">This
+will give you a dracut shell after the system pivot&rsquo;ed
+back in the initramfs.</font></big></p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><b>&minus;&minus;kver</b>
+<i>&lt;kernel version&gt;</i></font></big></p>
+
+<p style="margin-left:17%;"><big><font color="#000000">set
+the kernel version. This enables to specify the kernel
+version, without specifying the location of the initramfs
+image. For example:</font></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><font color="#000000">#
+dracut &minus;&minus;kver
+3.5.0&minus;0.rc7.git1.2.fc18.x86_64</font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><b>&minus;f,
+&minus;&minus;force</b></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000">overwrite
+existing initramfs file.</font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><b>&minus;m,
+&minus;&minus;modules</b> <i>&lt;list of dracut
+modules&gt;</i></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000">specify
+a space&minus;separated list of dracut modules to call when
+building the initramfs. Modules are located in
+<i>/usr/lib/dracut/modules.d</i>. This parameter can be
+specified multiple times.</font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000"><b><big>Note</big></b>
+<br>
+If [LIST] has multiple arguments, then you have to put these
+in quotes. For example:</font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000">#
+dracut &minus;&minus;modules &quot;module1 module2&quot;
+...</font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><b><big>&minus;o,
+&minus;&minus;omit&nbsp;</big></b><big><i>&lt;list of dracut
+modules&gt;</i></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big>omit
+a space&minus;separated list of dracut modules. This
+parameter can be specified multiple
+times.</big></font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000"><big><b><big>Note</big></b>
+<br>
+If [LIST] has multiple arguments, then you have to put these
+in quotes. For example:</big></font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000"><big>#
+dracut &minus;&minus;omit &quot;module1 module2&quot;
+...</big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><b><big>&minus;a,
+&minus;&minus;add&nbsp;</big></b><big><i>&lt;list of dracut
+modules&gt;</i></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big>add
+a space&minus;separated list of dracut modules to the
+default set of modules. This parameter can be specified
+multiple times.</big></big></font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000"><big><big><b><big>Note</big></b>
+<br>
+If [LIST] has multiple arguments, then you have to put these
+in quotes. For example:</big></big></font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000"><big><big>#
+dracut &minus;&minus;add &quot;module1 module2&quot;
+...</big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><b><big>&minus;&minus;force&minus;add&nbsp;</big></b><big><i>&lt;list
+of dracut modules&gt;</i></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big>force
+to add a space&minus;separated list of dracut modules to the
+default set of modules, when &minus;H is specified. This
+parameter can be specified multiple
+times.</big></big></big></font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000"><big><big><big><b><big>Note</big></b>
+<br>
+If [LIST] has multiple arguments, then you have to put these
+in quotes. For example:</big></big></big></font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000"><big><big><big>#
+dracut &minus;&minus;force&minus;add &quot;module1
+module2&quot; ...</big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><b><big>&minus;d,
+&minus;&minus;drivers&nbsp;</big></b><big><i>&lt;list of
+kernel
+modules&gt;</i></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big>specify
+a space&minus;separated list of kernel modules to
+exclusively include in the initramfs. The kernel modules
+have to be specified without the &quot;.ko&quot; suffix.
+This parameter can be specified multiple
+times.</big></big></big></big></font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><b><big>Note</big></b>
+<br>
+If [LIST] has multiple arguments, then you have to put these
+in quotes. For
+example:</big></big></big></big></font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000"><big><big><big><big>#
+dracut &minus;&minus;drivers &quot;kmodule1 kmodule2&quot;
+...</big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><b><big>&minus;&minus;add&minus;drivers&nbsp;</big></b><big><i>&lt;list
+of kernel
+modules&gt;</i></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big>specify
+a space&minus;separated list of kernel modules to add to the
+initramfs. The kernel modules have to be specified without
+the &quot;.ko&quot; suffix. This parameter can be specified
+multiple
+times.</big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><b><big>Note</big></b>
+<br>
+If [LIST] has multiple arguments, then you have to put these
+in quotes. For
+example:</big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big>#
+dracut &minus;&minus;add&minus;drivers &quot;kmodule1
+kmodule2&quot;
+...</big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><b><big>&minus;&minus;omit&minus;drivers&nbsp;</big></b><big><i>&lt;list
+of kernel
+modules&gt;</i></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big>specify
+a space&minus;separated list of kernel modules not to add to
+the initramfs. The kernel modules have to be specified
+without the &quot;.ko&quot; suffix. This parameter can be
+specified multiple
+times.</big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><b><big>Note</big></b>
+<br>
+If [LIST] has multiple arguments, then you have to put these
+in quotes. For
+example:</big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big>#
+dracut &minus;&minus;omit&minus;drivers &quot;kmodule1
+kmodule2&quot;
+...</big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><b><big>&minus;&minus;filesystems&nbsp;</big></b><big><i>&lt;list
+of
+filesystems&gt;</i></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big>specify
+a space&minus;separated list of kernel filesystem modules to
+exclusively include in the generic initramfs. This parameter
+can be specified multiple
+times.</big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><b><big>Note</big></b>
+<br>
+If [LIST] has multiple arguments, then you have to put these
+in quotes. For
+example:</big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big>#
+dracut &minus;&minus;filesystems &quot;filesystem1
+filesystem2&quot;
+...</big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><b><big>&minus;k,
+&minus;&minus;kmoddir&nbsp;</big></b><big><i>&lt;kernel
+directory&gt;</i></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big>specify
+the directory, where to look for kernel
+modules</big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><b>&minus;&minus;fwdir&nbsp;</b><i>&lt;dir&gt;[:&lt;dir&gt;...]++</i></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big>specify
+additional directories, where to look for firmwares. This
+parameter can be specified multiple
+times.</big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><b>&minus;&minus;kernel&minus;cmdline
+&lt;parameters&gt;</b></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big>specify
+default kernel command line
+parameters</big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><b>&minus;&minus;kernel&minus;only</b></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big>only
+install kernel drivers and firmware
+files</big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><b>&minus;&minus;no&minus;kernel</b></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big>do
+not install kernel drivers and firmware
+files</big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><b>&minus;&minus;early&minus;microcode</b></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big>Combine
+early microcode with
+ramdisk</big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><b>&minus;&minus;no&minus;early&minus;microcode</b></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big>Do
+not combine early microcode with
+ramdisk</big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><b>&minus;&minus;print&minus;cmdline</b></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big>print
+the kernel command line for the current disk
+layout</big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><b>&minus;&minus;mdadmconf</b></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big>include
+local
+<i>/etc/mdadm.conf</i></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><b>&minus;&minus;nomdadmconf</b></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big>do
+not include local
+<i>/etc/mdadm.conf</i></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><b>&minus;&minus;lvmconf</b></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big>include
+local
+<i>/etc/lvm/lvm.conf</i></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><b>&minus;&minus;nolvmconf</b></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big>do
+not include local
+<i>/etc/lvm/lvm.conf</i></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><b>&minus;&minus;fscks</b>
+[LIST]</big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big>add
+a space&minus;separated list of fsck tools, in addition to
+<i>dracut.conf</i>'s specification; the installation is
+opportunistic (non&minus;existing tools are
+ignored)</big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><b><big>Note</big></b>
+<br>
+If [LIST] has multiple arguments, then you have to put these
+in quotes. For
+example:</big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big>#
+dracut &minus;&minus;fscks &quot;fsck.foo barfsck&quot;
+...</big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><b><big>&minus;&minus;nofscks</big></b></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>inhibit
+installation of any fsck
+tools</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;&minus;strip</b></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>strip
+binaries in the initramfs
+(default)</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;&minus;nostrip</b></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>do
+not strip binaries in the
+initramfs</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;&minus;prelink</b></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>prelink
+binaries in the initramfs
+(default)</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;&minus;noprelink</b></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>do
+not prelink binaries in the
+initramfs</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;&minus;hardlink</b></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>hardlink
+files in the initramfs
+(default)</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;&minus;nohardlink</b></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>do
+not hardlink files in the
+initramfs</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;&minus;prefix&nbsp;</b><i>&lt;dir&gt;</i></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>prefix
+initramfs files with the specified
+directory</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;&minus;noprefix</b></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>do
+not prefix initramfs files
+(default)</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;h,
+&minus;&minus;help</b></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>display
+help text and
+exit.</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;&minus;debug</b></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>output
+debug information of the build
+process</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;v,
+&minus;&minus;verbose</b></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>increase
+verbosity level (default is
+info(4))</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;q,
+&minus;&minus;quiet</b></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>decrease
+verbosity level (default is
+info(4))</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;c,
+&minus;&minus;conf&nbsp;</b><i>&lt;dracut configuration
+file&gt;</i></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>specify
+configuration file to
+use.</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>Default:
+<i>/etc/dracut.conf</i></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;&minus;confdir&nbsp;</b><i>&lt;configuration
+directory&gt;</i></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>specify
+configuration directory to
+use.</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>Default:
+<i>/etc/dracut.conf.d</i></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;&minus;tmpdir&nbsp;</b><i>&lt;temporary
+directory&gt;</i></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>specify
+temporary directory to
+use.</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>Default:
+<i>/var/tmp</i></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;&minus;sshkey&nbsp;</b><i>&lt;sshkey
+file&gt;</i></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>ssh
+key file used with ssh&minus;client
+module.</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;&minus;logfile&nbsp;</b><i>&lt;logfile&gt;</i></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>logfile
+to use; overrides any setting from the configuration
+files.</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>Default:
+<i>/var/log/dracut.log</i></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;l,
+&minus;&minus;local</b></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>activates
+the local mode. dracut will use modules from the current
+working directory instead of the system&minus;wide installed
+modules in <i>/usr/lib/dracut/modules.d</i>. This is useful
+when running dracut from a git
+checkout.</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b>&minus;H,
+&minus;&minus;hostonly</b></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big>Host&minus;Only
+mode: Install only what is needed for booting the local host
+instead of a generic host and generate host&minus;specific
+configuration.</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b><big>Warning</big></b>
+<br>
+If chrooted to another root other than the real root device,
+use &quot;&minus;&minus;fstab&quot; and provide a valid
+<i>/etc/fstab</i>.</big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><b><big>&minus;N,
+&minus;&minus;no&minus;hostonly</big></b></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big>Disable
+Host&minus;Only
+mode</big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><b>&minus;&minus;hostonly&minus;cmdline</b>:
+Store kernel command line arguments needed in the
+initramfs</big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><b>&minus;&minus;no&minus;hostonly&minus;cmdline</b>:
+Do not store kernel command line arguments needed in the
+initramfs</big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><b>&minus;&minus;persistent&minus;policy</b>
+<i>&lt;policy&gt;</i></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big>Use
+<i>&lt;policy&gt;</i> to address disks and partitions.
+<i>&lt;policy&gt;</i> can be any directory name found in
+/dev/disk. E.g. &quot;by&minus;uuid&quot;,
+&quot;by&minus;label&quot;</big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><b>&minus;&minus;fstab</b></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big>Use
+<i>/etc/fstab</i> instead of
+<i>/proc/self/mountinfo</i>.</big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><b>&minus;&minus;add&minus;fstab</b>
+<i>&lt;filename&gt;</i></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big>Add
+entries of <i>&lt;filename&gt;</i> to the initramfs
+/etc/fstab.</big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><b>&minus;&minus;mount&nbsp;</b>&quot;<i>&lt;device&gt;
+&lt;mountpoint&gt; &lt;filesystem type&gt;</i>
+[<i>&lt;filesystem options&gt;</i> [<i>&lt;dump
+frequency&gt;</i> [<i>&lt;fsck
+order&gt;</i>]]]&quot;</big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big>Mount
+<i>&lt;device&gt;</i> on <i>&lt;mountpoint&gt;</i> with
+<i>&lt;filesystem type&gt;</i> in the initramfs.
+<i>&lt;filesystem options&gt;</i>, <i>&lt;dump
+options&gt;</i> and <i>&lt;fsck order&gt;</i> can be
+specified, see fstab manpage for the details. The default
+<i>&lt;filesystem options&gt;</i> is &quot;defaults&quot;.
+The default <i>&lt;dump frequency&gt;</i> is &quot;0&quot;.
+the default <i>&lt;fsck order&gt;</i> is
+&quot;2&quot;.</big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><b>&minus;&minus;add&minus;device</b>
+<i>&lt;device&gt;</i></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big>Bring
+up <i>&lt;device&gt;</i> in initramfs, <i>&lt;device&gt;</i>
+should be the device name. This can be useful in hostonly
+mode for resume support when your swap is on LVM or an
+encrypted partition. [NB &minus;&minus;device can be used
+for compatibility with earlier
+releases]</big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><b>&minus;i,
+&minus;&minus;include</b> <i>&lt;SOURCE&gt;
+&lt;TARGET&gt;</i></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big>include
+the files in the SOURCE directory into the TARGET directory
+in the final initramfs. If SOURCE is a file, it will be
+installed to TARGET in the final initramfs. This parameter
+can be specified multiple
+times.</big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><b>&minus;I,
+&minus;&minus;install</b> <i>&lt;file
+list&gt;</i></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big>install
+the space separated list of files into the
+initramfs.</big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><b><big>Note</big></b>
+<br>
+If [LIST] has multiple arguments, then you have to put these
+in quotes. For
+example:</big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:29%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big>#
+dracut &minus;&minus;install &quot;/bin/foo /sbin/bar&quot;
+...</big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><b><big>&minus;&minus;gzip</big></b></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big>Compress
+the generated initramfs using gzip. This will be done by
+default, unless another compression option or
+&minus;&minus;no&minus;compress is passed. Equivalent to
+&quot;&minus;&minus;compress=gzip
+&minus;9&quot;</big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><b>&minus;&minus;bzip2</b></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big>Compress
+the generated initramfs using
+bzip2.</big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><b><big>Warning</big></b>
+<br>
+Make sure your kernel has bzip2 decompression support
+compiled in, otherwise you will not be able to boot.
+Equivalent to
+&quot;&minus;&minus;compress=bzip2&quot;</big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><b><big>&minus;&minus;lzma</big></b></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big>Compress
+the generated initramfs using
+lzma.</big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><b><big>Warning</big></b>
+<br>
+Make sure your kernel has lzma decompression support
+compiled in, otherwise you will not be able to boot.
+Equivalent to &quot;lzma &minus;&minus;compress=lzma
+&minus;9&quot;</big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><b><big>&minus;&minus;xz</big></b></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big>Compress
+the generated initramfs using
+xz.</big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:23%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><b><big>Warning</big></b>
+<br>
+Make sure your kernel has xz decompression support compiled
+in, otherwise you will not be able to boot. Equivalent to
+&quot;lzma &minus;&minus;compress=xz
+&minus;&minus;check=crc32
+&minus;&minus;lzma2=dict=1MiB&quot;</big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><b><big>&minus;&minus;lzo</big></b></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big>Compress
+the generated initramfs using
+lzop.</big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><b><big>Warning</big></b>
+<br>
+Make sure your kernel has lzo decompression support compiled
+in, otherwise you will not be able to
+boot.</big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><b><big>&minus;&minus;lz4</big></b></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>Compress
+the generated initramfs using
+lz4.</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><b><big>Warning</big></b>
+<br>
+Make sure your kernel has lz4 decompression support compiled
+in, otherwise you will not be able to
+boot.</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><b><big>&minus;&minus;compress&nbsp;</big></b><big><i>&lt;compressor&gt;</i></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>Compress
+the generated initramfs using the passed compression
+program. If you pass it just the name of a compression
+program, it will call that program with known&minus;working
+arguments. If you pass a quoted string with arguments, it
+will be called with exactly those arguments. Depending on
+what you pass, this may result in an initramfs that the
+kernel cannot
+decompress.</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><b>&minus;&minus;no&minus;compress</b></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>Do
+not compress the generated initramfs. This will override any
+other compression
+options.</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><b>&minus;&minus;list&minus;modules</b></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>List
+all available dracut
+modules.</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><b>&minus;M,
+&minus;&minus;show&minus;modules</b></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>Print
+included module&rsquo;s name to standard output during
+build.</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><b>&minus;&minus;keep</b></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>Keep
+the initramfs temporary directory for debugging
+purposes.</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><b>&minus;&minus;printsize</b></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>Print
+out the module install
+size</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><b>&minus;&minus;profile</b>:
+Output profile information of the build
+process</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><b>&minus;&minus;ro&minus;mnt</b>:
+Mount / and /usr read&minus;only by
+default.</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><b>&minus;L,
+&minus;&minus;stdlog&nbsp;</b><i>&lt;level&gt;</i></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>[0&minus;6]
+Specify logging level (to standard
+error)</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>0
+&minus; suppress any messages <br>
+1 &minus; only fatal errors <br>
+2 &minus; all errors <br>
+3 &minus; warnings <br>
+4 &minus; info <br>
+5 &minus; debug info (here starts lots of output) <br>
+6 &minus; trace info (and even
+more)</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><b>&minus;&minus;regenerate&minus;all</b></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>Regenerate
+all initramfs images at the default location with the kernel
+versions found on the system. Additional parameters are
+passed
+through.</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+<h2>FILES
+<a name="FILES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><i>/var/log/dracut.log</i></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>logfile
+of initramfs image
+creation</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><i>/tmp/dracut.log</i></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>logfile
+of initramfs image creation, if <i>/var/log/dracut.log</i>
+is not
+writable</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><i>/etc/dracut.conf</i></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>see
+dracut.conf5</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><i>/etc/dracut.conf.d/*.conf</i></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>see
+dracut.conf5</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><i>/usr/lib/dracut/dracut.conf.d/*.conf</i></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>see
+dracut.conf5</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><b>Configuration
+in the initramfs</b> <i><br>
+
+/etc/conf.d/</i></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>Any
+files found in <i>/etc/conf.d/</i> will be sourced in the
+initramfs to set initial values. Command line options will
+override these values set in the configuration
+files.</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><i>/etc/cmdline</i></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>Can
+contain additional command line options. Deprecated, better
+use
+/etc/cmdline.d/*.conf.</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><i>/etc/cmdline.d/*.conf</i></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+
+<p style="margin-left:17%;"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>Can
+contain additional command line
+options.</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font></big></p>
+
+<h2>AVAILABILITY
+<a name="AVAILABILITY"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><font color="#000000"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big>The
+dracut command is part of the dracut package and is
+available
+from</big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></font>
+<big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><b><font color="#0000FF">https://dracut.wiki.kernel.org</font></b></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></p>
+
+<h2>AUTHORS
+<a name="AUTHORS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><font color="#000000">Harald
+Hoyer</font></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><font color="#000000">Victor
+Lowther</font></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><font color="#000000">Philippe
+Seewer</font></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><font color="#000000">Warren
+Togami</font></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><font color="#000000">Amadeusz
+&#379;o&#322;nowski</font></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><font color="#000000">Jeremy
+Katz</font></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><font color="#000000">David
+Dillow</font></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><font color="#000000">Will
+Woods</font></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><font color="#000000"><b>dracut.cmdline</b>(7)
+<b>dracut.conf</b>(5)</font></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><font color="#000000">1.</font></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></p> </td>
+<td width="2%"></td>
+<td width="81%">
+
+
+
+<p style="margin-top: 1em"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><font color="#000000">Red
+Hat Enterprise Linux Storage Administration
+Guide</font></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></p> </td>
+<td width="2%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><big><font color="#000000">http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/6/html/Storage_Administration_Guide/</font></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></big></p>
+<hr>
+</body>
+</html>

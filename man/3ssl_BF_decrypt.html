@@ -1,0 +1,205 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:33:26 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>blowfish</title>
+
+</head>
+<body>
+
+<h1 align="center">blowfish</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUES">RETURN VALUES</a><br>
+<a href="#NOTE">NOTE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#HISTORY">HISTORY</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">blowfish,
+BF_set_key, BF_encrypt, BF_decrypt, BF_ecb_encrypt,
+BF_cbc_encrypt, BF_cfb64_encrypt, BF_ofb64_encrypt,
+BF_options &minus; Blowfish encryption</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> #include &lt;openssl/blowfish.h&gt;
+ void BF_set_key(BF_KEY *key, int len, const unsigned char *data);
+ void BF_ecb_encrypt(const unsigned char *in, unsigned char *out,
+         BF_KEY *key, int enc);
+ void BF_cbc_encrypt(const unsigned char *in, unsigned char *out,
+         long length, BF_KEY *schedule, unsigned char *ivec, int enc);
+ void BF_cfb64_encrypt(const unsigned char *in, unsigned char *out,
+         long length, BF_KEY *schedule, unsigned char *ivec, int *num,
+         int enc);
+ void BF_ofb64_encrypt(const unsigned char *in, unsigned char *out,
+         long length, BF_KEY *schedule, unsigned char *ivec, int *num);
+ const char *BF_options(void);
+ void BF_encrypt(BF_LONG *data,const BF_KEY *key);
+ void BF_decrypt(BF_LONG *data,const BF_KEY *key);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This library
+implements the Blowfish cipher, which was invented and
+described by Counterpane (see
+http://www.counterpane.com/blowfish.html ).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Blowfish is a
+block cipher that operates on 64 bit (8 byte) blocks of
+data. It uses a variable size key, but typically, 128 bit
+(16 byte) keys are considered good for strong encryption.
+Blowfish can be used in the same modes as <small>DES</small>
+(see <i>des_modes</i>(7)). Blowfish is currently one of the
+faster block ciphers. It is quite a bit faster than
+<small>DES,</small> and much faster than <small>IDEA</small>
+or <small>RC2.</small></p>
+
+<p style="margin-left:11%; margin-top: 1em">Blowfish
+consists of a key setup phase and the actual encryption or
+decryption phase.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BF_set_key()</i>
+sets up the <b><small>BF_KEY</small> key</b> using the
+<b>len</b> bytes long key at <b>data</b>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BF_ecb_encrypt()</i>
+is the basic Blowfish encryption and decryption function. It
+encrypts or decrypts the first 64 bits of <b>in</b> using
+the key <b>key</b>, putting the result in <b>out</b>.
+<b>enc</b> decides if encryption (
+<b><small>BF_ENCRYPT</small></b> ) or decryption (
+<b><small>BF_DECRYPT</small></b> ) shall be performed. The
+vector pointed at by <b>in</b> and <b>out</b> must be 64
+bits in length, no less. If they are larger, everything
+after the first 64 bits is ignored.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The mode
+functions <i>BF_cbc_encrypt()</i>, <i>BF_cfb64_encrypt()</i>
+and <i>BF_ofb64_encrypt()</i> all operate on variable length
+data. They all take an initialization vector <b>ivec</b>
+which needs to be passed along into the next call of the
+same function for the same message. <b>ivec</b> may be
+initialized with anything, but the recipient needs to know
+what it was initialized with, or it won&rsquo;t be able to
+decrypt. Some programs and protocols simplify this, like
+<small>SSH,</small> where <b>ivec</b> is simply initialized
+to zero. <i>BF_cbc_encrypt()</i> operates on data that is a
+multiple of 8 bytes long, while <i>BF_cfb64_encrypt()</i>
+and <i>BF_ofb64_encrypt()</i> are used to encrypt an
+variable number of bytes (the amount does not have to be an
+exact multiple of 8). The purpose of the latter two is to
+simulate stream ciphers, and therefore, they need the
+parameter <b>num</b>, which is a pointer to an integer where
+the current offset in <b>ivec</b> is stored between calls.
+This integer must be initialized to zero when <b>ivec</b> is
+initialized.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BF_cbc_encrypt()</i>
+is the Cipher Block Chaining function for Blowfish. It
+encrypts or decrypts the 64 bits chunks of <b>in</b> using
+the key <b>schedule</b>, putting the result in <b>out</b>.
+<b>enc</b> decides if encryption ( <small>BF_ENCRYPT</small>
+) or decryption ( <small>BF_DECRYPT</small> ) shall be
+performed. <b>ivec</b> must point at an 8 byte long
+initialization vector.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BF_cfb64_encrypt()</i>
+is the <small>CFB</small> mode for Blowfish with 64 bit
+feedback. It encrypts or decrypts the bytes in <b>in</b>
+using the key <b>schedule</b>, putting the result in
+<b>out</b>. <b>enc</b> decides if encryption (
+<b><small>BF_ENCRYPT</small></b> ) or decryption (
+<b><small>BF_DECRYPT</small></b> ) shall be performed.
+<b>ivec</b> must point at an 8 byte long initialization
+vector. <b>num</b> must point at an integer which must be
+initially zero.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BF_ofb64_encrypt()</i>
+is the <small>OFB</small> mode for Blowfish with 64 bit
+feedback. It uses the same parameters as
+<i>BF_cfb64_encrypt()</i>, which must be initialized the
+same way.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>BF_encrypt()</i>
+and <i>BF_decrypt()</i> are the lowest level functions for
+Blowfish encryption. They encrypt/decrypt the first 64 bits
+of the vector pointed by <b>data</b>, using the key
+<b>key</b>. These functions should not be used unless you
+implement &rsquo;modes&rsquo; of Blowfish. The alternative
+is to use <i>BF_ecb_encrypt()</i>. If you still want to use
+these functions, you should be aware that they take each
+32&minus;bit chunk in host-byte order, which is
+little-endian on little-endian platforms and big-endian on
+big-endian ones.</p>
+
+<h2>RETURN VALUES
+<a name="RETURN VALUES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">None of the
+functions presented here return any value.</p>
+
+<h2>NOTE
+<a name="NOTE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Applications
+should use the higher level functions
+<i>EVP_EncryptInit</i>(3) etc. instead of calling the
+blowfish functions directly.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>des_modes</i>(7)</p>
+
+<h2>HISTORY
+<a name="HISTORY"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The Blowfish
+functions are available in all versions of SSLeay and
+OpenSSL.</p>
+<hr>
+</body>
+</html>

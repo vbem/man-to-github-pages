@@ -1,0 +1,240 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:33:58 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>CMS_verify</title>
+
+</head>
+<body>
+
+<h1 align="center">CMS_verify</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#VERIFY PROCESS">VERIFY PROCESS</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#RETURN VALUES">RETURN VALUES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#HISTORY">HISTORY</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> CMS_verify &minus; verify a CMS SignedData structure</pre>
+
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> #include &lt;openssl/cms.h&gt;
+ int CMS_verify(CMS_ContentInfo *cms, STACK_OF(X509) *certs, X509_STORE *store, BIO *indata, BIO *out, unsigned int flags);
+ STACK_OF(X509) *CMS_get0_signers(CMS_ContentInfo *cms);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>CMS_verify()</i>
+verifies a <small>CMS</small> SignedData structure.
+<b>cms</b> is the CMS_ContentInfo structure to verify.
+<b>certs</b> is a set of certificates in which to search for
+the signing certificate(s). <b>store</b> is a trusted
+certificate store used for chain verification. <b>indata</b>
+is the detached content if the content is not present in
+<b>cms</b>. The content is written to <b>out</b> if it is
+not <small>NULL.</small></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>flags</b> is
+an optional set of flags, which can be used to modify the
+verify operation.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>CMS_get0_signers()</i>
+retrieves the signing certificate(s) from <b>cms</b>, it
+must be called after a successful <i>CMS_verify()</i>
+operation.</p>
+
+<h2>VERIFY PROCESS
+<a name="VERIFY PROCESS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Normally the
+verify process proceeds as follows.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Initially some
+sanity checks are performed on <b>cms</b>. The type of
+<b>cms</b> must be SignedData. There must be at least one
+signature on the data and if the content is detached
+<b>indata</b> cannot be <b><small>NULL</small></b> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">An attempt is
+made to locate all the signing certificate(s), first looking
+in the <b>certs</b> parameter (if it is not
+<small>NULL</small> ) and then looking in any certificates
+contained in the <b>cms</b> structure itself. If any signing
+certificate cannot be located the operation fails.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Each signing
+certificate is chain verified using the <b>smimesign</b>
+purpose and the supplied trusted certificate store. Any
+internal certificates in the message are used as untrusted
+CAs. If <small>CRL</small> checking is enabled in
+<b>store</b> any internal CRLs are used in addition to
+attempting to look them up in <b>store</b>. If any chain
+verify fails an error code is returned.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Finally the
+signed content is read (and written to <b>out</b> is it is
+not <small>NULL</small> ) and the signature&rsquo;s
+checked.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If all
+signature&rsquo;s verify correctly then the function is
+successful.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Any of the
+following flags (ored together) can be passed in the
+<b>flags</b> parameter to change the default verify
+behaviour.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b><small>CMS_NOINTERN</small></b> is set the certificates
+in the message itself are not searched when locating the
+signing certificate(s). This means that all the signing
+certificates must be in the <b>certs</b> parameter.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b><small>CMS_NOCRL</small></b> is set and
+<small>CRL</small> checking is enabled in <b>store</b> then
+any CRLs in the message itself are ignored.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+<b><small>CMS_TEXT</small></b> flag is set
+<small>MIME</small> headers for type <b>text/plain</b> are
+deleted from the content. If the content is not of type
+<b>text/plain</b> then an error is returned.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b><small>CMS_NO_SIGNER_CERT_VERIFY</small></b> is set the
+signing certificates are not verified.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b><small>CMS_NO_ATTR_VERIFY</small></b> is set the signed
+attributes signature is not verified.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b><small>CMS_NO_CONTENT_VERIFY</small></b> is set then the
+content digest is not checked.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">One application
+of <b><small>CMS_NOINTERN</small></b> is to only accept
+messages signed by a small number of certificates. The
+acceptable certificates would be passed in the <b>certs</b>
+parameter. In this case if the signer is not one of the
+certificates supplied in <b>certs</b> then the verify will
+fail because the signer cannot be found.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In some cases
+the standard techniques for looking up and validating
+certificates are not appropriate: for example an application
+may wish to lookup certificates in a database or perform
+customised verification. This can be achieved by setting and
+verifying the signers certificates manually using the signed
+data utility functions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Care should be
+taken when modifying the default verify behaviour, for
+example setting <b><small>CMS_NO_CONTENT_VERIFY</small></b>
+will totally disable all content verification and any
+modified content will be considered valid. This combination
+is however useful if one merely wishes to write the content
+to <b>out</b> and its validity is not considered
+important.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Chain
+verification should arguably be performed using the signing
+time rather than the current time. However since the signing
+time is supplied by the signer it cannot be trusted without
+additional evidence (such as a trusted timestamp).</p>
+
+<h2>RETURN VALUES
+<a name="RETURN VALUES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>CMS_verify()</i>
+returns 1 for a successful verification and zero if an error
+occurred.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>CMS_get0_signers()</i>
+returns all signers or <small>NULL</small> if an error
+occurred.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The error can
+be obtained from <i>ERR_get_error</i>(3)</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The trusted
+certificate store is not searched for the signing
+certificate, this is primarily due to the inadequacies of
+the current <b>X509_STORE</b> functionality.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The lack of
+single pass processing means that the signed content must
+all be held in memory if it is not detached.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>ERR_get_error</i>(3),
+<i>CMS_sign</i>(3)</p>
+
+<h2>HISTORY
+<a name="HISTORY"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>CMS_verify()</i>
+was added to OpenSSL 0.9.8</p>
+<hr>
+</body>
+</html>

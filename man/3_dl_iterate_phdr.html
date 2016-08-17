@@ -1,0 +1,249 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:23:11 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>DL_ITERATE_PHDR</title>
+
+</head>
+<body>
+
+<h1 align="center">DL_ITERATE_PHDR</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">dl_iterate_phdr
+&minus; walk through list of shared objects</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#define
+_GNU_SOURCE</b> /* See feature_test_macros(7) */ <b><br>
+#include &lt;link.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+dl_iterate_phdr( <br>
+int (*</b><i>callback</i><b>) (struct dl_phdr_info
+*</b><i>info</i><b>, <br>
+size_t</b> <i>size</i><b>, void *</b><i>data</i><b>, <br>
+void *</b><i>data</i><b>;</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>dl_iterate_phdr</b>() function allows an application to
+inquire at run time to find out which shared objects it has
+loaded.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>dl_iterate_phdr</b>() function walks through the list of
+an application&rsquo;s shared objects and calls the function
+<i>callback</i> once for each object, until either all
+shared objects have been processed or <i>callback</i>
+returns a nonzero value.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Each call to
+<i>callback</i> receives three arguments: <i>info</i>, which
+is a pointer to a structure containing information about the
+shared object; <i>size</i>, which is the size of the
+structure pointed to by <i>info</i>; and <i>data</i>, which
+is a copy of whatever value was passed by the calling
+program as the second argument (also named <i>data</i>) in
+the call to <b>dl_iterate_phdr</b>().</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>info</i>
+argument is a structure of the following type:</p>
+
+<p style="margin-left:17%; margin-top: 1em">struct
+dl_phdr_info { <br>
+ElfW(Addr) dlpi_addr; /* Base address of object */ <br>
+const char *dlpi_name; /* (Null-terminated) name of <br>
+object */ <br>
+const ElfW(Phdr) *dlpi_phdr; /* Pointer to array of <br>
+ELF program headers <br>
+for this object */ <br>
+ElfW(Half) dlpi_phnum; /* # of items in <i>dlpi_phdr</i> */
+<br>
+};</p>
+
+<p style="margin-left:11%; margin-top: 1em">(The
+<i>ElfW</i>() macro definition turns its argument into the
+name of an ELF data type suitable for the hardware
+architecture. For example, on a 32-bit platform, ElfW(Addr)
+yields the data type name Elf32_Addr. Further information on
+these types can be found in the <i>&lt;elf.h&gt;</i> and
+<i>&lt;link.h&gt;</i> header files.)</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>dlpi_addr</i> field indicates the base address of the
+shared object (i.e., the difference between the virtual
+memory address of the shared object and the offset of that
+object in the file from which it was loaded). The
+<i>dlpi_name</i> field is a null-terminated string giving
+the pathname from which the shared object was loaded.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To understand
+the meaning of the <i>dlpi_phdr</i> and <i>dlpi_phnum</i>
+fields, we need to be aware that an ELF shared object
+consists of a number of segments, each of which has a
+corresponding program header describing the segment. The
+<i>dlpi_phdr</i> field is a pointer to an array of the
+program headers for this shared object. The
+<i>dlpi_phnum</i> field indicates the size of this
+array.</p>
+
+<p style="margin-left:11%; margin-top: 1em">These program
+headers are structures of the following form:</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef struct
+{ <br>
+Elf32_Word p_type; /* Segment type */ <br>
+Elf32_Off p_offset; /* Segment file offset */ <br>
+Elf32_Addr p_vaddr; /* Segment virtual address */ <br>
+Elf32_Addr p_paddr; /* Segment physical address */ <br>
+Elf32_Word p_filesz; /* Segment size in file */ <br>
+Elf32_Word p_memsz; /* Segment size in memory */ <br>
+Elf32_Word p_flags; /* Segment flags */ <br>
+Elf32_Word p_align; /* Segment alignment */ <br>
+} Elf32_Phdr;</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that we
+can calculate the location of a particular program header,
+<i>x</i>, in virtual memory using the formula:</p>
+
+<p style="margin-left:11%; margin-top: 1em">addr ==
+info&minus;&gt;dlpi_addr +
+info&minus;&gt;dlpi_phdr[x].p_vaddr;</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>dl_iterate_phdr</b>() function returns whatever value was
+returned by the last call to <i>callback</i>.</p>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>dl_iterate_phdr</b>()
+has been supported in glibc since version 2.2.4.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>dl_iterate_phdr</b>() function is Linux-specific and
+should be avoided in portable applications.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+program displays a list of pathnames of the shared objects
+it has loaded. For each shared object, the program lists the
+virtual addresses at which the object&rsquo;s ELF segments
+are loaded.</p>
+
+<p style="margin-left:11%; margin-top: 1em">#define
+_GNU_SOURCE <br>
+#include &lt;link.h&gt; <br>
+#include &lt;stdlib.h&gt; <br>
+#include &lt;stdio.h&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">static int <br>
+callback(struct dl_phdr_info *info, size_t size, void *data)
+<br>
+{ <br>
+int j;</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">printf(&quot;name=%s
+(%d segments)\n&quot;, info&minus;&gt;dlpi_name, <br>
+info&minus;&gt;dlpi_phnum);</p>
+
+<p style="margin-left:11%; margin-top: 1em">for (j = 0; j
+&lt; info&minus;&gt;dlpi_phnum; j++) <br>
+printf(&quot;\t\t header %2d: address=%10p\n&quot;, j, <br>
+(void *) (info&minus;&gt;dlpi_addr +
+info&minus;&gt;dlpi_phdr[j].p_vaddr)); <br>
+return 0; <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">int <br>
+main(int argc, char *argv[]) <br>
+{ <br>
+dl_iterate_phdr(callback, NULL);</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">exit(EXIT_SUCCESS);
+<br>
+}</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>ldd</b>(1),
+<b>objdump</b>(1), <b>readelf</b>(1), <b>dlopen</b>(3),
+<b>elf</b>(5), <b>ld.so</b>(8)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Executable
+and Linking Format Specification</i>, available at various
+locations online.</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

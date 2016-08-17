@@ -1,0 +1,371 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:33 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>MOVE_PAGES</title>
+
+</head>
+<body>
+
+<h1 align="center">MOVE_PAGES</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">move_pages
+&minus; move individual pages of a process to another
+node</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;numaif.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>long
+move_pages(int</b> <i>pid</i><b>, unsigned long count, void
+**</b><i>pages</i><b>, <br>
+const int *</b><i>nodes</i><b>, int *</b><i>status</i><b>,
+int</b> <i>flags</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">Link with
+<i>&minus;lnuma</i>.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>move_pages</b>()
+moves the specified <i>pages</i> of the process <i>pid</i>
+to the memory nodes specified by <i>nodes</i>. The result of
+the move is reflected in <i>status</i>. The <i>flags</i>
+indicate constraints on the pages to be moved.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>pid</i> is
+the ID of the process in which pages are to be moved. To
+move pages in another process, the caller must be privileged
+(<b>CAP_SYS_NICE</b>) or the real or effective user ID of
+the calling process must match the real or saved-set user ID
+of the target process. If <i>pid</i> is 0, then
+<b>move_pages</b>() moves pages of the calling process.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>count</i> is
+the number of pages to move. It defines the size of the
+three arrays <i>pages</i>, <i>nodes</i>, and
+<i>status</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>pages</i> is
+an array of pointers to the pages that should be moved.
+These are pointers that should be aligned to page
+boundaries. Addresses are specified as seen by the process
+specified by <i>pid</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>nodes</i> is
+an array of integers that specify the desired location for
+each page. Each element in the array is a node number.
+<i>nodes</i> can also be NULL, in which case
+<b>move_pages</b>() does not move any pages but instead will
+return the node where each page currently resides, in the
+<i>status</i> array. Obtaining the status of each page may
+be necessary to determine pages that need to be moved.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>status</i>
+is an array of integers that return the status of each page.
+The array contains valid values only if <b>move_pages</b>()
+did not return an error.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>flags</i>
+specify what types of pages to move. <b>MPOL_MF_MOVE</b>
+means that only pages that are in exclusive use by the
+process are to be moved. <b>MPOL_MF_MOVE_ALL</b> means that
+pages shared between multiple processes can also be moved.
+The process must be privileged (<b>CAP_SYS_NICE</b>) to use
+<b>MPOL_MF_MOVE_ALL</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Page states
+in the status array</b> <br>
+The following values can be returned in each element of the
+<i>status</i> array. <b><br>
+0..MAX_NUMNODES</b></p>
+
+<p style="margin-left:22%;">Identifies the node on which
+the page resides.</p>
+
+<p style="margin-left:11%;"><b>-EACCES</b></p>
+
+<p style="margin-left:22%;">The page is mapped by multiple
+processes and can be moved only if <b>MPOL_MF_MOVE_ALL</b>
+is specified.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>-EBUSY</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The page is currently busy and cannot be moved. Try
+again later. This occurs if a page is undergoing I/O or
+another kernel subsystem is holding a reference to the
+page.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>-EFAULT</b></p>
+
+<p style="margin-left:22%;">This is a zero page or the
+memory area is not mapped by the process.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p><b>-EIO</b></p></td>
+<td width="5%"></td>
+<td width="78%">
+
+
+<p>Unable to write back a page. The page has to be written
+back in order to move it since the page is dirty and the
+file system does not provide a migration function that would
+allow the move of dirty pages.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>-EINVAL</b></p>
+
+<p style="margin-left:22%;">A dirty page cannot be moved.
+The file system does not provide a migration function and
+has no ability to write back pages.</p>
+
+<p style="margin-left:11%;"><b>-ENOENT</b></p>
+
+<p style="margin-left:22%;">The page is not present.</p>
+
+<p style="margin-left:11%;"><b>-ENOMEM</b></p>
+
+<p style="margin-left:22%;">Unable to allocate memory on
+target node.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success
+<b>move_pages</b>() returns zero. On error, it returns
+&minus;1, and sets <i>errno</i> to indicate the error.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>E2BIG</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">Too many pages to move.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EACCES</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>One of the target nodes is not allowed by the current
+cpuset.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Parameter array could not be accessed.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Flags other than <b>MPOL_MF_MOVE</b> and
+<b>MPOL_MF_MOVE_ALL</b> was specified or an attempt was made
+to migrate pages of a kernel thread.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENODEV</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>One of the target nodes is not online.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOENT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>No pages were found that require moving. All pages are
+either already on the target node, not present, had an
+invalid address or could not be moved because they were
+mapped by multiple processes.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EPERM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The caller specified <b>MPOL_MF_MOVE_ALL</b> without
+sufficient privileges (<b>CAP_SYS_NICE</b>). Or, the caller
+attempted to move pages of a process belonging to another
+user but did not have privilege to do so
+(<b>CAP_SYS_NICE</b>).</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ESRCH</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Process does not exist.</p></td></tr>
+</table>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>move_pages</b>()
+first appeared on Linux in version 2.6.18.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This system
+call is Linux-specific.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">For information
+on library support, see <b>numa</b>(7).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Use
+<b>get_mempolicy</b>(2) with the <b>MPOL_F_MEMS_ALLOWED</b>
+flag to obtain the set of nodes that are allowed by the
+current cpuset. Note that this information is subject to
+change at any time by manual or automatic reconfiguration of
+the cpuset.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Use of this
+function may result in pages whose location (node) violates
+the memory policy established for the specified addresses
+(See <b>mbind</b>(2)) and/or the specified process (See
+<b>set_mempolicy</b>(2)). That is, memory policy does not
+constrain the destination nodes used by
+<b>move_pages</b>().</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>&lt;numaif.h&gt;</i> header is not included with glibc,
+but requires installing <i>libnuma-devel</i> or a similar
+package.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>get_mempolicy</b>(2),
+<b>mbind</b>(2), <b>set_mempolicy</b>(2), <b>numa</b>(3),
+<b>numa_maps</b>(5), <b>cpuset</b>(7), <b>numa</b>(7),
+<b>migratepages</b>(8), <b>numastat</b>(8)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

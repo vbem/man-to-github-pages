@@ -1,0 +1,294 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:13 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>EPOLL_WAIT</title>
+
+</head>
+<body>
+
+<h1 align="center">EPOLL_WAIT</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">epoll_wait,
+epoll_pwait &minus; wait for an I/O event on an epoll file
+descriptor</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;sys/epoll.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+epoll_wait(int</b> <i>epfd</i><b>, struct epoll_event
+*</b><i>events</i><b>, <br>
+int</b> <i>maxevents</i><b>, int</b> <i>timeout</i><b>);
+<br>
+int epoll_pwait(int</b> <i>epfd</i><b>, struct epoll_event
+*</b><i>events</i><b>, <br>
+int</b> <i>maxevents</i><b>, int</b> <i>timeout</i><b>, <br>
+const sigset_t *</b><i>sigmask</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>epoll_wait</b>() system call waits for events on the
+<b>epoll</b>(7) instance referred to by the file descriptor
+<i>epfd</i>. The memory area pointed to by <i>events</i>
+will contain the events that will be available for the
+caller. Up to <i>maxevents</i> are returned by
+<b>epoll_wait</b>(). The <i>maxevents</i> argument must be
+greater than zero.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>timeout</i> argument specifies the minimum number of
+milliseconds that <b>epoll_wait</b>() will block. (This
+interval will be rounded up to the system clock granularity,
+and kernel scheduling delays mean that the blocking interval
+may overrun by a small amount.) Specifying a <i>timeout</i>
+of &minus;1 causes <b>epoll_wait</b>() to block
+indefinitely, while specifying a <i>timeout</i> equal to
+zero cause <b>epoll_wait</b>() to return immediately, even
+if no events are available.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>struct
+epoll_event</i> is defined as :</p>
+
+<p style="margin-left:17%; margin-top: 1em">typedef union
+epoll_data { <br>
+void *ptr; <br>
+int fd; <br>
+uint32_t u32; <br>
+uint64_t u64; <br>
+} epoll_data_t;</p>
+
+<p style="margin-left:17%; margin-top: 1em">struct
+epoll_event { <br>
+uint32_t events; /* Epoll events */ <br>
+epoll_data_t data; /* User data variable */ <br>
+};</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>data</i>
+of each returned structure will contain the same data the
+user set with an <b>epoll_ctl</b>(2)
+(<b>EPOLL_CTL_ADD</b>,<b>EPOLL_CTL_MOD</b>) while the
+<i>events</i> member will contain the returned event bit
+field.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>epoll_pwait()</b>
+<br>
+The relationship between <b>epoll_wait</b>() and
+<b>epoll_pwait</b>() is analogous to the relationship
+between <b>select</b>(2) and <b>pselect</b>(2): like
+<b>pselect</b>(2), <b>epoll_pwait</b>() allows an
+application to safely wait until either a file descriptor
+becomes ready or until a signal is caught.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+<b>epoll_pwait</b>() call:</p>
+
+<p style="margin-left:11%; margin-top: 1em">ready =
+epoll_pwait(epfd, &amp;events, maxevents, timeout,
+&amp;sigmask);</p>
+
+<p style="margin-left:11%; margin-top: 1em">is equivalent
+to <i>atomically</i> executing the following calls:</p>
+
+<p style="margin-left:11%; margin-top: 1em">sigset_t
+origmask;</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">sigprocmask(SIG_SETMASK,
+&amp;sigmask, &amp;origmask); <br>
+ready = epoll_wait(epfd, &amp;events, maxevents, timeout);
+<br>
+sigprocmask(SIG_SETMASK, &amp;origmask, NULL);</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>sigmask</i> argument may be specified as NULL, in which
+case <b>epoll_pwait</b>() is equivalent to
+<b>epoll_wait</b>().</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">When
+successful, <b>epoll_wait</b>() returns the number of file
+descriptors ready for the requested I/O, or zero if no file
+descriptor became ready during the requested <i>timeout</i>
+milliseconds. When an error occurs, <b>epoll_wait</b>()
+returns &minus;1 and <i>errno</i> is set appropriately.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EBADF</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em"><i>epfd</i> is not a valid file
+descriptor.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The memory area pointed to by <i>events</i> is not
+accessible with write permissions.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINTR</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The call was interrupted by a signal handler before
+either any of the requested events occurred or the
+<i>timeout</i> expired; see <b>signal</b>(7).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>epfd</i> is not an <b>epoll</b> file descriptor, or
+<i>maxevents</i> is less than or equal to zero.</p></td></tr>
+</table>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>epoll_wait</b>()
+was added to the kernel in version 2.6. Library support is
+provided in glibc starting with version 2.3.2.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>epoll_pwait</b>()
+was added to Linux in kernel 2.6.19. Library support is
+provided in glibc starting with version 2.6.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>epoll_wait</b>()
+is Linux-specific.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">While one
+thread is blocked in a call to <b>epoll_pwait</b>(), it is
+possible for another thread to add a file descriptor to the
+waited-upon <b>epoll</b> instance. If the new file
+descriptor becomes ready, it will cause the
+<b>epoll_wait</b>() call to unblock.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For a
+discussion of what may happen if a file descriptor in an
+<b>epoll</b> instance being monitored by <b>epoll_wait</b>()
+is closed in another thread, see <b>select</b>(2).</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">In kernels
+before 2.6.37, a <i>timeout</i> value larger than
+approximately <i>LONG_MAX / HZ</i> milliseconds is treated
+as &minus;1 (i.e., infinity). Thus, for example, on a system
+where the <i>sizeof(long)</i> is 4 and the kernel <i>HZ</i>
+value is 1000, this means that timeouts greater than 35.79
+minutes are treated as infinity.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>epoll_create</b>(2),
+<b>epoll_ctl</b>(2), <b>epoll</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

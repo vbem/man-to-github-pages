@@ -1,0 +1,448 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:56 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SPU_RUN</title>
+
+</head>
+<body>
+
+<h1 align="center">SPU_RUN</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">spu_run &minus;
+execute an SPU context</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;sys/spu.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+spu_run(int</b> <i>fd</i><b>, unsigned int
+*</b><i>npc</i><b>, unsigned int
+*</b><i>event</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>Note</i>:
+There is no glibc wrapper for this system call; see
+NOTES.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>spu_run</b>() system call is used on PowerPC machines
+that implement the Cell Broadband Engine Architecture in
+order to access Synergistic Processor Units (SPUs). The
+<i>fd</i> argument is a file descriptor returned by
+<b>spu_create</b>(2) that refers to a specific SPU context.
+When the context gets scheduled to a physical SPU, it starts
+execution at the instruction pointer passed in
+<i>npc</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Execution of
+SPU code happens synchronously, meaning that
+<b>spu_run</b>() blocks while the SPU is still running. If
+there is a need to execute SPU code in parallel with other
+code on either the main CPU or other SPUs, a new thread of
+execution must be created first (e.g., using
+<b>pthread_create</b>(3)).</p>
+
+<p style="margin-left:11%; margin-top: 1em">When
+<b>spu_run</b>() returns, the current value of the SPU
+program counter is written to <i>npc</i>, so successive
+calls to <b>spu_run</b>() can use the same <i>npc</i>
+pointer.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>event</i> argument provides a buffer for an extended
+status code. If the SPU context was created with the
+<b>SPU_CREATE_EVENTS_ENABLED</b> flag, then this buffer is
+populated by the Linux kernel before <b>spu_run</b>()
+returns.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The status code
+may be one (or more) of the following constants: <b><br>
+SPE_EVENT_DMA_ALIGNMENT</b></p>
+
+<p style="margin-left:22%;">A DMA alignment error
+occurred.</p>
+
+
+<p style="margin-left:11%;"><b>SPE_EVENT_INVALID_DMA</b></p>
+
+<p style="margin-left:22%;">An invalid MFC DMA command was
+attempted.</p>
+
+
+<p style="margin-left:11%;"><b>SPE_EVENT_SPE_DATA_STORAGE</b></p>
+
+<p style="margin-left:22%;">A DMA storage error
+occurred.</p>
+
+<p style="margin-left:11%;"><b>SPE_EVENT_SPE_ERROR</b></p>
+
+<p style="margin-left:22%;">An illegal instruction was
+executed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">NULL is a valid
+value for the <i>event</i> argument. In this case, the
+events will not be reported to the calling process.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success,
+<b>spu_run</b>() returns the value of the <i>spu_status</i>
+register. On error it returns &minus;1 and sets <i>errno</i>
+to one of the error codes listed below.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>spu_status</i> register value is a bit mask of status
+codes and optionally a 14-bit code returned from the
+<b>stop-and-signal</b> instruction on the SPU. The bit masks
+for the status codes are:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p><b>0x02</b></p></td>
+<td width="5%"></td>
+<td width="75%">
+
+
+<p>SPU was stopped by a <b>stop-and-signal</b>
+instruction.</p> </td>
+<td width="3%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p><b>0x04</b></p></td>
+<td width="5%"></td>
+<td width="75%">
+
+
+<p>SPU was stopped by a <b>halt</b> instruction.</p></td>
+<td width="3%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p><b>0x08</b></p></td>
+<td width="5%"></td>
+<td width="75%">
+
+
+<p>SPU is waiting for a channel.</p></td>
+<td width="3%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p><b>0x10</b></p></td>
+<td width="5%"></td>
+<td width="75%">
+
+
+<p>SPU is in single-step mode.</p></td>
+<td width="3%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p><b>0x20</b></p></td>
+<td width="5%"></td>
+<td width="75%">
+
+
+<p>SPU has tried to execute an invalid instruction.</p></td>
+<td width="3%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p><b>0x40</b></p></td>
+<td width="5%"></td>
+<td width="75%">
+
+
+<p>SPU has tried to access an invalid channel.</p></td>
+<td width="3%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>0x3fff0000</b></p>
+
+<p style="margin-left:22%;">The bits masked with this value
+contain the code returned from a <b>stop-and-signal</b>
+instruction. These bits are valid only if the 0x02 bit is
+set.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b>spu_run</b>() has not returned an error, one or more bits
+among the lower eight ones are always set.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EBADF</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em"><i>fd</i> is not a valid file
+descriptor.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>npc</i> is not a valid pointer, or <i>event</i> is
+non-NULL and an invalid pointer.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINTR</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>A signal occurred while <b>spu_run</b>() was in
+progress; see <b>signal</b>(7). The <i>npc</i> value has
+been updated to the new program counter value if
+necessary.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>fd</i> is not a valid file descriptor returned from
+<b>spu_create</b>(2).</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>There was not enough memory available to handle a page
+fault resulting from a Memory Flow Controller (MFC) direct
+memory access.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOSYS</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The functionality is not provided by the current system,
+because either the hardware does not provide SPUs or the
+spufs module is not loaded.</p></td></tr>
+</table>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>spu_run</b>() system call was added to Linux in kernel
+2.6.16.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This call is
+Linux-specific and implemented only by the PowerPC
+architecture. Programs using this system call are not
+portable.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Glibc does not
+provide a wrapper for this system call; call it using
+<b>syscall</b>(2). Note however, that <b>spu_run</b>() is
+meant to be used from libraries that implement a more
+abstract interface to SPUs, not to be used from regular
+applications. See
+<a href="http://www.bsc.es/projects/deepcomputing/linuxoncell/">http://www.bsc.es/projects/deepcomputing/linuxoncell/</a>
+for the recommended libraries.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+is an example of running a simple, one-instruction SPU
+program with the <b>spu_run</b>() system call.</p>
+
+<p style="margin-left:11%; margin-top: 1em">#include
+&lt;stdlib.h&gt; <br>
+#include &lt;stdint.h&gt; <br>
+#include &lt;unistd.h&gt; <br>
+#include &lt;stdio.h&gt; <br>
+#include &lt;sys/types.h&gt; <br>
+#include &lt;fcntl.h&gt;</p>
+
+<p style="margin-left:11%; margin-top: 1em">#define
+handle_error(msg) \ <br>
+do { perror(msg); exit(EXIT_FAILURE); } while (0)</p>
+
+<p style="margin-left:11%; margin-top: 1em">int main(void)
+<br>
+{ <br>
+int context, fd, spu_status; <br>
+uint32_t instruction, npc;</p>
+
+<p style="margin-left:11%; margin-top: 1em">context =
+spu_create(&quot;/spu/example&minus;context&quot;, 0, 0755);
+<br>
+if (context == &minus;1) <br>
+handle_error(&quot;spu_create&quot;);</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* write a
+'stop 0x1234' instruction to the SPU's <br>
+* local store memory <br>
+*/ <br>
+instruction = 0x00001234;</p>
+
+<p style="margin-left:11%; margin-top: 1em">fd =
+open(&quot;/spu/example&minus;context/mem&quot;, O_RDWR);
+<br>
+if (fd == &minus;1) <br>
+handle_error(&quot;open&quot;); <br>
+write(fd, &amp;instruction, sizeof(instruction));</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* set npc to
+the starting instruction address of the <br>
+* SPU program. Since we wrote the instruction at the <br>
+* start of the mem file, the entry point will be 0x0 <br>
+*/ <br>
+npc = 0;</p>
+
+<p style="margin-left:11%; margin-top: 1em">spu_status =
+spu_run(context, &amp;npc, NULL); <br>
+if (spu_status == &minus;1) <br>
+handle_error(&quot;open&quot;);</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* we should
+see a status code of 0x1234002: <br>
+* 0x00000002 (spu was stopped due to
+stop&minus;and&minus;signal) <br>
+* | 0x12340000 (the stop&minus;and&minus;signal code) <br>
+*/ <br>
+printf(&quot;SPU Status: 0x%08x\n&quot;, spu_status);</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">exit(EXIT_SUCCESS);
+<br>
+}</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>close</b>(2),
+<b>spu_create</b>(2), <b>capabilities</b>(7),
+<b>spufs</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

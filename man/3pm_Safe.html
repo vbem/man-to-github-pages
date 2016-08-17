@@ -1,0 +1,517 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:33:11 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Safe</title>
+
+</head>
+<body>
+
+<h1 align="center">Safe</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#WARNING">WARNING</a><br>
+<a href="#METHODS">METHODS</a><br>
+<a href="#RISKS">RISKS</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Safe &minus;
+Compile and execute code in restricted compartments</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">  use Safe;
+  $compartment = new Safe;
+  $compartment&minus;&gt;permit(qw(time sort :browse));
+  $result = $compartment&minus;&gt;reval($unsafe_code);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The Safe
+extension module allows the creation of compartments in
+which perl code can be evaluated. Each compartment has <br>
+a new namespace</p>
+
+<p style="margin-left:23%;">The &quot;root&quot; of the
+namespace (i.e. &quot;main::&quot;) is changed to a
+different package and code evaluated in the compartment
+cannot refer to variables outside this namespace, even with
+run-time glob lookups and other tricks.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Code which is
+compiled outside the compartment can choose to place
+variables into (or <i>share</i> variables with) the
+compartment&rsquo;s namespace and only that data will be
+visible to code evaluated in the compartment.</p>
+
+<p style="margin-left:23%; margin-top: 1em">By default, the
+only variables shared with compartments are the
+&quot;underscore&quot; variables <tt>$_</tt> and <tt>@_</tt>
+(and, technically, the less frequently used <tt>%_</tt>, the
+_ filehandle and so on). This is because otherwise perl
+operators which default to <tt>$_</tt> will not work and
+neither will the assignment of arguments to <tt>@_</tt> on
+subroutine entry.</p>
+
+<p style="margin-left:11%;">an operator mask</p>
+
+<p style="margin-left:23%;">Each compartment has an
+associated &quot;operator mask&quot;. Recall that perl code
+is compiled into an internal format before execution.
+Evaluating perl code (e.g. via &quot;eval&quot; or &quot;do
+&rsquo;file&rsquo;&quot;) causes the code to be compiled
+into an internal format and then, provided there was no
+error in the compilation, executed. Code evaluated in a
+compartment compiles subject to the compartment&rsquo;s
+operator mask. Attempting to evaluate code in a compartment
+which contains a masked operator will cause the compilation
+to fail with an error. The code will not be executed.</p>
+
+<p style="margin-left:23%; margin-top: 1em">The default
+operator mask for a newly created compartment is the
+&rsquo;:default&rsquo; optag.</p>
+
+<p style="margin-left:23%; margin-top: 1em">It is important
+that you read the Opcode module documentation for more
+information, especially for detailed definitions of opnames,
+optags and opsets.</p>
+
+<p style="margin-left:23%; margin-top: 1em">Since it is
+only at the compilation stage that the operator mask
+applies, controlled access to potentially unsafe operations
+can be achieved by having a handle to a wrapper subroutine
+(written outside the compartment) placed into the
+compartment. For example,</p>
+
+<pre style="margin-left:23%; margin-top: 1em">    $cpt = new Safe;
+    sub wrapper {
+        # vet arguments and perform potentially unsafe operations
+    }
+    $cpt&minus;&gt;share('&amp;wrapper');</pre>
+
+
+<h2>WARNING
+<a name="WARNING"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The authors
+make <b>no warranty</b>, implied or otherwise, about the
+suitability of this software for safety or security
+purposes.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The authors
+shall not in any case be liable for special, incidental,
+consequential, indirect or other similar damages arising
+from the use of this software.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Your mileage
+will vary. If in any doubt <b>do not use it</b>.</p>
+
+<h2>METHODS
+<a name="METHODS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">To create a new
+compartment, use</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $cpt = new Safe;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Optional
+argument is ( <small>NAMESPACE</small> ), where
+<small>NAMESPACE</small> is the root namespace to use for
+the compartment (defaults to &quot;Safe::Root0&quot;,
+incremented for each new compartment).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+version 1.00 of the Safe module supported a second optional
+parameter, <small>MASK</small> . That functionality has been
+withdrawn pending deeper consideration. Use the permit and
+deny methods described below.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+methods can then be used on the compartment object returned
+by the above constructor. The object argument is implicit in
+each case.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>permit (
+<small>OP</small> , ...)</b> <br>
+Permit the listed operators to be used when compiling code
+in the compartment (in <i>addition</i> to any operators
+already permitted).</p>
+
+<p style="margin-left:11%; margin-top: 1em">You can list
+opcodes by names, or use a tag name; see &quot;Predefined
+Opcode Tags&quot; in Opcode.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>permit_only
+( <small>OP</small> , ...)</b> <br>
+Permit <i>only</i> the listed operators to be used when
+compiling code in the compartment (<i>no</i> other operators
+are permitted).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>deny (
+<small>OP</small> , ...)</b> <br>
+Deny the listed operators from being used when compiling
+code in the compartment (other operators may still be
+permitted).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>deny_only (
+<small>OP</small> , ...)</b> <br>
+Deny <i>only</i> the listed operators from being used when
+compiling code in the compartment (<i>all</i> other
+operators will be permitted, so you probably don&rsquo;t
+want to use this method).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>trap (
+<small>OP</small> , ...) <br>
+untrap ( <small>OP</small> , ...)</b> <br>
+The trap and untrap methods are synonyms for deny and permit
+respectfully.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>share (
+<small>NAME</small> , ...)</b> <br>
+This shares the variable(s) in the argument list with the
+compartment. This is almost identical to exporting variables
+using the Exporter module.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Each
+<small>NAME</small> must be the <b>name</b> of a non-lexical
+variable, typically with the leading type identifier
+included. A bareword is treated as a function name.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Examples of
+legal names are &rsquo;$foo&rsquo; for a scalar,
+&rsquo;@foo&rsquo; for an array, &rsquo;%foo&rsquo; for a
+hash, &rsquo;&amp;foo&rsquo; or &rsquo;foo&rsquo; for a
+subroutine and &rsquo;*foo&rsquo; for a glob (i.e. all
+symbol table entries associated with &quot;foo&quot;,
+including scalar, array, hash, sub and filehandle).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Each
+<small>NAME</small> is assumed to be in the calling package.
+See share_from for an alternative method (which
+<tt>&quot;share&quot;</tt> uses).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>share_from (
+<small>PACKAGE</small> , <small>ARRAYREF</small> )</b> <br>
+This method is similar to <i>share()</i> but allows you to
+explicitly name the package that symbols should be shared
+from. The symbol names (including type characters) are
+supplied as an array reference.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $safe&minus;&gt;share_from('main', [ '$foo', '%bar', 'func' ]);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Names can
+include package names, which are relative to the specified
+<small>PACKAGE</small> . So these two calls have the same
+effect:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $safe&minus;&gt;share_from('Scalar::Util', [ 'reftype' ]);
+    $safe&minus;&gt;share_from('main', [ 'Scalar::Util::reftype' ]);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>varglob (
+<small>VARNAME</small> )</b> <br>
+This returns a glob reference for the symbol table entry of
+<small>VARNAME</small> in the package of the compartment.
+<small>VARNAME</small> must be the <b>name</b> of a variable
+without any leading type marker. For example:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    ${$cpt&minus;&gt;varglob('foo')} = &quot;Hello world&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">has the same
+effect as:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $cpt = new Safe 'Root';
+    $Root::foo = &quot;Hello world&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">but avoids the
+need to know <tt>$cpt</tt>&rsquo;s package name.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>reval (
+<small>STRING</small> , <small>STRICT</small> )</b> <br>
+This evaluates <small>STRING</small> as perl code inside the
+compartment.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The code can
+only see the compartment&rsquo;s namespace (as returned by
+the <b>root</b> method). The compartment&rsquo;s root
+package appears to be the <tt>&quot;main::&quot;</tt>
+package to the code inside the compartment.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Any attempt by
+the code in <small>STRING</small> to use an operator which
+is not permitted by the compartment will cause an error (at
+run-time of the main program but at compile-time for the
+code in <small>STRING</small> ). The error is of the form
+&quot;&rsquo;%s&rsquo; trapped by operation
+mask...&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If an operation
+is trapped in this way, then the code in
+<small>STRING</small> will not be executed. If such a
+trapped operation occurs or any other compile-time or return
+error, then $@ is set to the error message, just as with an
+<i>eval()</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If there is no
+error, then the method returns the value of the last
+expression evaluated, or a return statement may be used,
+just as with subroutines and <b><i>eval()</i></b>. The
+context (list or scalar) is determined by the caller as
+usual.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the return
+value of <i>reval()</i> is (or contains) any code reference,
+those code references are wrapped to be themselves executed
+always in the compartment. See
+&quot;wrap_code_refs_within&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The formerly
+undocumented <small>STRICT</small> argument sets strictness:
+if true &rsquo;use strict;&rsquo; is used, otherwise it uses
+&rsquo;no strict;&rsquo;. <b>Note</b>: if
+<small>STRICT</small> is omitted &rsquo;no strict;&rsquo; is
+the default.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Some points to
+note:</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+entereval op is permitted then the code can use eval
+&quot;...&quot; to &rsquo;hide&rsquo; code which might use
+denied ops. This is not a major problem since when the code
+tries to execute the eval it will fail because the opmask is
+still in effect. However this technique would allow clever,
+and possibly harmful, code to &rsquo;probe&rsquo; the
+boundaries of what is possible.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Any string eval
+which is executed by code executing in a compartment, or by
+code called from code executing in a compartment, will be
+eval&rsquo;d in the namespace of the compartment. This is
+potentially a serious problem.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Consider a
+function <i>foo()</i> in package pkg compiled outside a
+compartment but shared with it. Assume the compartment has a
+root package called &rsquo;Root&rsquo;. If <i>foo()</i>
+contains an eval statement like eval &rsquo;$foo = 1&rsquo;
+then, normally, <tt>$pkg::foo</tt> will be set to 1. If
+<i>foo()</i> is called from the compartment (by whatever
+means) then instead of setting <tt>$pkg::foo</tt>, the eval
+will actually set <tt>$Root::pkg::foo</tt>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This can easily
+be demonstrated by using a module, such as the Socket
+module, which uses eval &quot;...&quot; as part of an
+<small>AUTOLOAD</small> function. You can &rsquo;use&rsquo;
+the module outside the compartment and share an (autoloaded)
+function with the compartment. If an autoload is triggered
+by code in the compartment, or by any code anywhere that is
+called by any means from the compartment, then the eval in
+the Socket module&rsquo;s <small>AUTOLOAD</small> function
+happens in the namespace of the compartment. Any variables
+created or used by the eval&rsquo;d code are now under the
+control of the code in the compartment.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A similar
+effect applies to <i>all</i> runtime symbol lookups in code
+called from a compartment but not compiled within it.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>rdo (
+<small>FILENAME</small> )</b> <br>
+This evaluates the contents of file <small>FILENAME</small>
+inside the compartment. See above documentation on the
+<b>reval</b> method for further details.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>root (
+<small>NAMESPACE</small> )</b> <br>
+This method returns the name of the package that is the root
+of the compartment&rsquo;s namespace.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that this
+behaviour differs from version 1.00 of the Safe module where
+the root module could be used to change the namespace. That
+functionality has been withdrawn pending deeper
+consideration.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>mask (
+<small>MASK</small> )</b> <br>
+This is a get-or-set method for the compartment&rsquo;s
+operator mask.</p>
+
+<p style="margin-left:11%; margin-top: 1em">With no
+<small>MASK</small> argument present, it returns the current
+operator mask of the compartment.</p>
+
+<p style="margin-left:11%; margin-top: 1em">With the
+<small>MASK</small> argument present, it sets the operator
+mask for the compartment (equivalent to calling the
+deny_only method).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>wrap_code_ref
+( <small>CODEREF</small> )</b> <br>
+Returns a reference to an anonymous subroutine that, when
+executed, will call <small>CODEREF</small> with the Safe
+compartment &rsquo;in effect&rsquo;. In other words, with
+the package namespace adjusted and the opmask enabled.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that the
+opmask doesn&rsquo;t affect the already compiled code, it
+only affects any <i>further</i> compilation that the already
+compiled code may try to perform.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This is
+particularly useful when applied to code references returned
+from <i>reval()</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">(It also
+provides a kind of workaround for RT#60374: &quot;Safe.pm
+sort {} bug with &minus;Dusethreads&quot;. See
+&lt;http://rt.perl.org/rt3//Public/Bug/Display.html?id=60374&gt;
+for <i>much</i> more detail.)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>wrap_code_refs_within
+(...)</b> <br>
+Wraps any <small>CODE</small> references found within the
+arguments by replacing each with the result of calling
+&quot;wrap_code_ref&quot; on the <small>CODE</small>
+reference. Any <small>ARRAY</small> or <small>HASH</small>
+references in the arguments are inspected recursively.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Returns
+nothing.</p>
+
+<h2>RISKS
+<a name="RISKS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This section is
+just an outline of some of the things code in a compartment
+might do (intentionally or unintentionally) which can have
+an effect outside the compartment.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>Memory</p></td>
+<td width="3%"></td>
+<td width="72%">
+
+
+<p>Consuming all (or nearly all) available memory.</p></td>
+<td width="5%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><small>CPU</small></p></td>
+<td width="3%"></td>
+<td width="72%">
+
+
+<p>Causing infinite loops etc.</p></td>
+<td width="5%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">Snooping</p>
+
+<p style="margin-left:23%;">Copying private information out
+of your system. Even something as simple as your user name
+is of value to others. Much useful information could be
+gleaned from your environment variables for example.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="11%">
+
+
+<p>Signals</p></td>
+<td width="1%"></td>
+<td width="77%">
+
+
+<p>Causing signals (especially <small>SIGFPE</small> and
+<small>SIGALARM</small> ) to affect your process.</p></td></tr>
+</table>
+
+<p style="margin-left:23%; margin-top: 1em">Setting up a
+signal handler will need to be carefully considered and
+controlled. What mask is in effect when a signal handler
+gets called? If a user can get an imported function to get
+an exception and call the user&rsquo;s signal handler, does
+that user&rsquo;s restricted mask get re-instated before the
+handler is called? Does an imported handler get called with
+its original mask or the user&rsquo;s one?</p>
+
+<p style="margin-left:11%;">State Changes</p>
+
+<p style="margin-left:23%;">Ops such as chdir obviously
+effect the process as a whole and not just the code in the
+compartment. Ops such as rand and srand have a similar but
+more subtle effect.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Originally
+designed and implemented by Malcolm Beattie.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Reworked to use
+the Opcode module and other changes added by Tim Bunce.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Currently
+maintained by the Perl 5 Porters,
+&lt;perl5&minus;porters@perl.org&gt;.</p>
+<hr>
+</body>
+</html>

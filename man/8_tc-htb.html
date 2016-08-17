@@ -1,0 +1,267 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:41:02 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>HTB</title>
+
+</head>
+<body>
+
+<h1 align="center">HTB</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#SHAPING ALGORITHM">SHAPING ALGORITHM</a><br>
+<a href="#CLASSIFICATION">CLASSIFICATION</a><br>
+<a href="#LINK SHARING ALGORITHM">LINK SHARING ALGORITHM</a><br>
+<a href="#QDISC">QDISC</a><br>
+<a href="#CLASSES">CLASSES</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">HTB &minus;
+Hierarchy Token Bucket</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>tc qdisc ...
+dev</b> dev <b>( parent</b> classid <b>| root) [ handle</b>
+major: <b>] htb [ default</b> minor-id <b>]</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>tc class ...
+dev</b> dev <b>parent</b> major:[minor] <b>[ classid</b>
+major:minor <b>] htb rate</b> rate <b>[ ceil</b> rate <b>]
+burst</b> bytes <b>[ cburst</b> bytes <b>] [ prio</b>
+priority <b>]</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">HTB is meant as
+a more understandable and intuitive replacement for the CBQ
+qdisc in Linux. Both CBQ and HTB help you to control the use
+of the outbound bandwidth on a given link. Both allow you to
+use one physical link to simulate several slower links and
+to send different kinds of traffic on different simulated
+links. In both cases, you have to specify how to divide the
+physical link into simulated links and how to decide which
+simulated link to use for a given packet to be sent.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Unlike CBQ, HTB
+shapes traffic based on the Token Bucket Filter algorithm
+which does not depend on interface characteristics and so
+does not need to know the underlying bandwidth of the
+outgoing interface.</p>
+
+<h2>SHAPING ALGORITHM
+<a name="SHAPING ALGORITHM"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Shaping works
+as documented in <b>tc-tbf (8).</b></p>
+
+<h2>CLASSIFICATION
+<a name="CLASSIFICATION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Within the one
+HRB instance many classes may exist. Each of these classes
+contains another qdisc, by default <b>tc-pfifo</b>(8).</p>
+
+<p style="margin-left:11%; margin-top: 1em">When enqueueing
+a packet, HTB starts at the root and uses various methods to
+determine which class should receive the data.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the absence
+of uncommon configuration options, the process is rather
+easy. At each node we look for an instruction, and then go
+to the class the instruction refers us to. If the class
+found is a barren leaf-node (without children), we enqueue
+the packet there. If it is not yet a leaf node, we do the
+whole thing over again starting from that node.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+actions are performed, in order at each node we visit, until
+one sends us to another node, or terminates the process.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p>(i)</p></td>
+<td width="5%"></td>
+<td width="78%">
+
+
+<p>Consult filters attached to the class. If sent to a
+leafnode, we are done. Otherwise, restart.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p>(ii)</p></td>
+<td width="5%"></td>
+<td width="78%">
+
+
+<p>If none of the above returned with an instruction,
+enqueue at this node.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">This algorithm
+makes sure that a packet always ends up somewhere, even
+while you are busy building your configuration.</p>
+
+<h2>LINK SHARING ALGORITHM
+<a name="LINK SHARING ALGORITHM"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">FIXME</p>
+
+<h2>QDISC
+<a name="QDISC"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The root of a
+HTB qdisc class tree has the following parameters: <br>
+parent major:minor | root</p>
+
+<p style="margin-left:22%;">This mandatory parameter
+determines the place of the HTB instance, either at the
+<b>root</b> of an interface or within an existing class.</p>
+
+<p style="margin-left:11%;">handle major:</p>
+
+<p style="margin-left:22%;">Like all other qdiscs, the HTB
+can be assigned a handle. Should consist only of a major
+number, followed by a colon. Optional, but very useful if
+classes will be generated within this qdisc.</p>
+
+<p style="margin-left:11%;">default minor-id</p>
+
+<p style="margin-left:22%;">Unclassified traffic gets sent
+to the class with this minor-id.</p>
+
+<h2>CLASSES
+<a name="CLASSES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Classes have a
+host of parameters to configure their operation. <br>
+parent major:minor</p>
+
+<p style="margin-left:22%;">Place of this class within the
+hierarchy. If attached directly to a qdisc and not to
+another class, minor can be omitted. Mandatory.</p>
+
+<p style="margin-left:11%;">classid major:minor</p>
+
+<p style="margin-left:22%;">Like qdiscs, classes can be
+named. The major number must be equal to the major number of
+the qdisc to which it belongs. Optional, but needed if this
+class is going to have children.</p>
+
+<p style="margin-left:11%;">prio priority</p>
+
+<p style="margin-left:22%;">In the round-robin process,
+classes with the lowest priority field are tried for packets
+first. Mandatory.</p>
+
+<p style="margin-left:11%;">rate rate</p>
+
+<p style="margin-left:22%;">Maximum rate this class and all
+its children are guaranteed. Mandatory.</p>
+
+<p style="margin-left:11%;">ceil rate</p>
+
+<p style="margin-left:22%;">Maximum rate at which a class
+can send, if its parent has bandwidth to spare. Defaults to
+the configured rate, which implies no borrowing</p>
+
+<p style="margin-left:11%;">burst bytes</p>
+
+<p style="margin-left:22%;">Amount of bytes that can be
+burst at <b>ceil</b> speed, in excess of the configured
+<b>rate.</b> Should be at least as high as the highest burst
+of all children.</p>
+
+<p style="margin-left:11%;">cburst bytes</p>
+
+<p style="margin-left:22%;">Amount of bytes that can be
+burst at &rsquo;infinite&rsquo; speed, in other words, as
+fast as the interface can transmit them. For perfect evening
+out, should be equal to at most one average packet. Should
+be at least as high as the highest cburst of all
+children.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Due to Unix
+timing constraints, the maximum ceil rate is not infinite
+and may in fact be quite low. On Intel, there are 100 timer
+events per second, the maximum rate is that rate at which
+&rsquo;burst&rsquo; bytes are sent each timer tick. From
+this, the minimum burst size for a specified rate can be
+calculated. For i386, a 10mbit rate requires a 12 kilobyte
+burst as 100*12kb*8 equals 10mbit.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>tc</b>(8)</p>
+
+<p style="margin-left:11%; margin-top: 1em">HTB website:
+http://luxik.cdi.cz/~devik/qos/htb/</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Martin Devera
+&lt;devik@cdi.cz&gt;. This manpage maintained by bert hubert
+&lt;ahu@ds9a.nl&gt;</p>
+<hr>
+</body>
+</html>

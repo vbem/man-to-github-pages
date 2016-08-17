@@ -1,0 +1,334 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:39:43 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>MQ_OVERVIEW</title>
+
+</head>
+<body>
+
+<h1 align="center">MQ_OVERVIEW</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#EXAMPLE">EXAMPLE</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">mq_overview
+&minus; overview of POSIX message queues</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">POSIX message
+queues allow processes to exchange data in the form of
+messages. This API is distinct from that provided by System
+V message queues (<b>msgget</b>(2), <b>msgsnd</b>(2),
+<b>msgrcv</b>(2), etc.), but provides similar
+functionality.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Message queues
+are created and opened using <b>mq_open</b>(3); this
+function returns a <i>message queue descriptor</i>
+(<i>mqd_t</i>), which is used to refer to the open message
+queue in later calls. Each message queue is identified by a
+name of the form <i>/somename</i>; that is, a
+null-terminated string of up to <b>NAME_MAX</b> (i.e., 255)
+characters consisting of an initial slash, followed by one
+or more characters, none of which are slashes. Two processes
+can operate on the same queue by passing the same name to
+<b>mq_open</b>(3).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Messages are
+transferred to and from a queue using <b>mq_send</b>(3) and
+<b>mq_receive</b>(3). When a process has finished using the
+queue, it closes it using <b>mq_close</b>(3), and when the
+queue is no longer required, it can be deleted using
+<b>mq_unlink</b>(3). Queue attributes can be retrieved and
+(in some cases) modified using <b>mq_getattr</b>(3) and
+<b>mq_setattr</b>(3). A process can request asynchronous
+notification of the arrival of a message on a previously
+empty queue using <b>mq_notify</b>(3).</p>
+
+<p style="margin-left:11%; margin-top: 1em">A message queue
+descriptor is a reference to an <i>open message queue
+description</i> (cf. <b>open</b>(2)). After a
+<b>fork</b>(2), a child inherits copies of its
+parent&rsquo;s message queue descriptors, and these
+descriptors refer to the same open message queue
+descriptions as the corresponding descriptors in the parent.
+Corresponding descriptors in the two processes share the
+flags (<i>mq_flags</i>) that are associated with the open
+message queue description.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Each message
+has an associated <i>priority</i>, and messages are always
+delivered to the receiving process highest priority first.
+Message priorities range from 0 (low) to
+<i>sysconf(_SC_MQ_PRIO_MAX)&nbsp;-&nbsp;1</i> (high). On
+Linux, <i>sysconf(_SC_MQ_PRIO_MAX)</i> returns 32768, but
+POSIX.1-2001 requires only that an implementation support at
+least priorities in the range 0 to 31; some implementations
+provide only this range.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The remainder
+of this section describes some specific details of the Linux
+implementation of POSIX message queues.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Library
+interfaces and system calls</b> <br>
+In most cases the <b>mq_*()</b> library interfaces listed
+above are implemented on top of underlying system calls of
+the same name. Deviations from this scheme are indicated in
+the following table:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Versions</b>
+<br>
+POSIX message queues have been supported on Linux since
+kernel 2.6.6. Glibc support has been provided since version
+2.3.4.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Kernel
+configuration</b> <br>
+Support for POSIX message queues is configurable via the
+<b>CONFIG_POSIX_MQUEUE</b> kernel configuration option. This
+option is enabled by default.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Persistence</b>
+<br>
+POSIX message queues have kernel persistence: if not removed
+by <b>mq_unlink</b>(3), a message queue will exist until the
+system is shut down.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Linking</b>
+<br>
+Programs using the POSIX message queue API must be compiled
+with <i>cc &minus;lrt</i> to link against the real-time
+library, <i>librt</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>/proc
+interfaces</b> <br>
+The following interfaces can be used to limit the amount of
+kernel memory consumed by POSIX message queues: <i><br>
+/proc/sys/fs/mqueue/msg_max</i></p>
+
+<p style="margin-left:22%;">This file can be used to view
+and change the ceiling value for the maximum number of
+messages in a queue. This value acts as a ceiling on the
+<i>attr&minus;&gt;mq_maxmsg</i> argument given to
+<b>mq_open</b>(3). The default value for <i>msg_max</i> is
+10. The minimum value is 1 (10 in kernels before 2.6.28).
+The upper limit is <b>HARD_MAX</b>:
+<i>(131072&nbsp;/&nbsp;sizeof(void&nbsp;*))</i> (32768 on
+Linux/86). This limit is ignored for privileged processes
+(<b>CAP_SYS_RESOURCE</b>), but the <b>HARD_MAX</b> ceiling
+is nevertheless imposed.</p>
+
+
+<p style="margin-left:11%;"><i>/proc/sys/fs/mqueue/msgsize_max</i></p>
+
+<p style="margin-left:22%;">This file can be used to view
+and change the ceiling on the maximum message size. This
+value acts as a ceiling on the
+<i>attr&minus;&gt;mq_msgsize</i> argument given to
+<b>mq_open</b>(3). The default value for <i>msgsize_max</i>
+is 8192 bytes. The minimum value is 128 (8192 in kernels
+before 2.6.28). The upper limit for <i>msgsize_max</i> is
+1,048,576 (in kernels before 2.6.28, the upper limit was
+<b>INT_MAX</b>; that is, 2,147,483,647 on Linux/86). This
+limit is ignored for privileged processes
+(<b>CAP_SYS_RESOURCE</b>).</p>
+
+
+<p style="margin-left:11%;"><i>/proc/sys/fs/mqueue/queues_max</i></p>
+
+<p style="margin-left:22%;">This file can be used to view
+and change the system-wide limit on the number of message
+queues that can be created. Only privileged processes
+(<b>CAP_SYS_RESOURCE</b>) can create new message queues once
+this limit has been reached. The default value for
+<i>queues_max</i> is 256; it can be changed to any value in
+the range 0 to INT_MAX.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Resource
+limit</b> <br>
+The <b>RLIMIT_MSGQUEUE</b> resource limit, which places a
+limit on the amount of space that can be consumed by all of
+the message queues belonging to a process&rsquo;s real user
+ID, is described in <b>getrlimit</b>(2).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Mounting the
+message queue file system</b> <br>
+On Linux, message queues are created in a virtual file
+system. (Other implementations may also provide such a
+feature, but the details are likely to differ.) This file
+system can be mounted (by the superuser) using the following
+commands:</p>
+
+<p style="margin-left:17%; margin-top: 1em"># <b>mkdir
+/dev/mqueue</b> <br>
+# <b>mount &minus;t mqueue none /dev/mqueue</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">The sticky bit
+is automatically enabled on the mount directory.</p>
+
+<p style="margin-left:11%; margin-top: 1em">After the file
+system has been mounted, the message queues on the system
+can be viewed and manipulated using the commands usually
+used for files (e.g., <b>ls</b>(1) and <b>rm</b>(1)).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The contents of
+each file in the directory consist of a single line
+containing information about the queue:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ <b>cat
+/dev/mqueue/mymq</b> <br>
+QSIZE:129 NOTIFY:2 SIGNO:0 NOTIFY_PID:8260</p>
+
+<p style="margin-left:11%; margin-top: 1em">These fields
+are as follows:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>QSIZE</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>Number of bytes of data in all messages in the
+queue.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>NOTIFY_PID</b></p>
+
+<p style="margin-left:22%;">If this is nonzero, then the
+process with this PID has used <b>mq_notify</b>(3) to
+register for asynchronous message notification, and the
+remaining fields describe how notification occurs.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>NOTIFY</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Notification method: 0 is <b>SIGEV_SIGNAL</b>; 1 is
+<b>SIGEV_NONE</b>; and 2 is <b>SIGEV_THREAD</b>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>SIGNO</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Signal number to be used for <b>SIGEV_SIGNAL</b>.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Polling
+message queue descriptors</b> <br>
+On Linux, a message queue descriptor is actually a file
+descriptor, and can be monitored using <b>select</b>(2),
+<b>poll</b>(2), or <b>epoll</b>(7). This is not
+portable.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">POSIX.1-2001.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">System V
+message queues (<b>msgget</b>(2), <b>msgsnd</b>(2),
+<b>msgrcv</b>(2), etc.) are an older API for exchanging
+messages between processes. POSIX message queues provide a
+better designed interface than System V message queues; on
+the other hand POSIX message queues are less widely
+available (especially on older systems) than System V
+message queues.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Linux does not
+currently (2.6.26) support the use of access control lists
+(ACLs) for POSIX message queues.</p>
+
+<h2>EXAMPLE
+<a name="EXAMPLE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">An example of
+the use of various message queue functions is shown in
+<b>mq_notify</b>(3).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>getrlimit</b>(2),
+<b>mq_getsetattr</b>(2), <b>poll</b>(2), <b>select</b>(2),
+<b>mq_close</b>(3), <b>mq_getattr</b>(3),
+<b>mq_notify</b>(3), <b>mq_open</b>(3),
+<b>mq_receive</b>(3), <b>mq_send</b>(3),
+<b>mq_unlink</b>(3), <b>epoll</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

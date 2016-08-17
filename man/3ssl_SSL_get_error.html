@@ -1,0 +1,202 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:35:21 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SSL_get_error</title>
+
+</head>
+<body>
+
+<h1 align="center">SSL_get_error</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUES">RETURN VALUES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#HISTORY">HISTORY</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">SSL_get_error
+&minus; obtain result code for TLS/SSL I/O operation</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> #include &lt;openssl/ssl.h&gt;
+ int SSL_get_error(const SSL *ssl, int ret);</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>SSL_get_error()</i>
+returns a result code (suitable for the C &quot;switch&quot;
+statement) for a preceding call to <i>SSL_connect()</i>,
+<i>SSL_accept()</i>, <i>SSL_do_handshake()</i>,
+<i>SSL_read()</i>, <i>SSL_peek()</i>, or <i>SSL_write()</i>
+on <b>ssl</b>. The value returned by that <small>TLS/SSL
+I/O</small> function must be passed to
+<i>SSL_get_error()</i> in parameter <b>ret</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In addition to
+<b>ssl</b> and <b>ret</b>, <i>SSL_get_error()</i> inspects
+the current thread&rsquo;s OpenSSL error queue. Thus,
+<i>SSL_get_error()</i> must be used in the same thread that
+performed the <small>TLS/SSL I/O</small> operation, and no
+other OpenSSL function calls should appear in between. The
+current thread&rsquo;s error queue must be empty before the
+<small>TLS/SSL I/O</small> operation is attempted, or
+<i>SSL_get_error()</i> will not work reliably.</p>
+
+<h2>RETURN VALUES
+<a name="RETURN VALUES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+return values can currently occur: <small><br>
+SSL_ERROR_NONE</small></p>
+
+<p style="margin-left:17%;">The <small>TLS/SSL I/O</small>
+operation completed. This result code is returned if and
+only if <b>ret &gt; 0</b>.</p>
+
+
+<p style="margin-left:11%;"><small>SSL_ERROR_ZERO_RETURN</small></p>
+
+<p style="margin-left:17%;">The <small>TLS/SSL</small>
+connection has been closed. If the protocol version is
+<small>SSL 3.0</small> or <small>TLS 1.0,</small> this
+result code is returned only if a closure alert has occurred
+in the protocol, i.e. if the connection has been closed
+cleanly. Note that in this case
+<b><small>SSL_ERROR_ZERO_RETURN</small></b> does not
+necessarily indicate that the underlying transport has been
+closed.</p>
+
+<p style="margin-left:11%;"><small>SSL_ERROR_WANT_READ,
+SSL_ERROR_WANT_WRITE</small></p>
+
+<p style="margin-left:17%;">The operation did not complete;
+the same <small>TLS/SSL I/O</small> function should be
+called again later. If, by then, the underlying
+<b><small>BIO</small></b> has data available for reading (if
+the result code is <b><small>SSL_ERROR_WANT_READ</small></b>
+) or allows writing data (
+<b><small>SSL_ERROR_WANT_WRITE</small></b> ), then some
+<small>TLS/SSL</small> protocol progress will take place,
+i.e. at least part of an <small>TLS/SSL</small> record will
+be read or written. Note that the retry may again lead to a
+<b><small>SSL_ERROR_WANT_READ</small></b> or
+<b><small>SSL_ERROR_WANT_WRITE</small></b> condition. There
+is no fixed upper limit for the number of iterations that
+may be necessary until progress becomes visible at
+application protocol level.</p>
+
+<p style="margin-left:17%; margin-top: 1em">For socket
+<b><small>BIO</small></b> s (e.g. when <i>SSL_set_fd()</i>
+was used), <i>select()</i> or <i>poll()</i> on the
+underlying socket can be used to find out when the
+<small>TLS/SSL I/O</small> function should be retried.</p>
+
+<p style="margin-left:17%; margin-top: 1em">Caveat: Any
+<small>TLS/SSL I/O</small> function can lead to either of
+<b><small>SSL_ERROR_WANT_READ</small></b> and
+<b><small>SSL_ERROR_WANT_WRITE</small></b> . In particular,
+<i>SSL_read()</i> or <i>SSL_peek()</i> may want to write
+data and <i>SSL_write()</i> may want to read data. This is
+mainly because <small>TLS/SSL</small> handshakes may occur
+at any time during the protocol (initiated by either the
+client or the server); <i>SSL_read()</i>, <i>SSL_peek()</i>,
+and <i>SSL_write()</i> will handle any pending
+handshakes.</p>
+
+<p style="margin-left:11%;"><small>SSL_ERROR_WANT_CONNECT,
+SSL_ERROR_WANT_ACCEPT</small></p>
+
+<p style="margin-left:17%;">The operation did not complete;
+the same <small>TLS/SSL I/O</small> function should be
+called again later. The underlying <small>BIO</small> was
+not connected yet to the peer and the call would block in
+<i>connect()</i>/<i>accept()</i>. The <small>SSL</small>
+function should be called again when the connection is
+established. These messages can only appear with a
+<i>BIO_s_connect()</i> or <i>BIO_s_accept()</i>
+<small>BIO,</small> respectively. In order to find out, when
+the connection has been successfully established, on many
+platforms <i>select()</i> or <i>poll()</i> for writing on
+the socket file descriptor can be used.</p>
+
+
+<p style="margin-left:11%;"><small>SSL_ERROR_WANT_X509_LOOKUP</small></p>
+
+<p style="margin-left:17%;">The operation did not complete
+because an application callback set by
+<i>SSL_CTX_set_client_cert_cb()</i> has asked to be called
+again. The <small>TLS/SSL I/O</small> function should be
+called again later. Details depend on the application.</p>
+
+
+<p style="margin-left:11%;"><small>SSL_ERROR_SYSCALL</small></p>
+
+<p style="margin-left:17%;">Some I/O error occurred. The
+OpenSSL error queue may contain more information on the
+error. If the error queue is empty (i.e.
+<i>ERR_get_error()</i> returns 0), <b>ret</b> can be used to
+find out more about the error: If <b>ret == 0</b>, an
+<small>EOF</small> was observed that violates the protocol.
+If <b>ret == &minus;1</b>, the underlying
+<b><small>BIO</small></b> reported an I/O error (for socket
+I/O on Unix systems, consult <b>errno</b> for details).</p>
+
+
+<p style="margin-left:11%;"><small>SSL_ERROR_SSL</small></p>
+
+<p style="margin-left:17%;">A failure in the
+<small>SSL</small> library occurred, usually a protocol
+error. The OpenSSL error queue contains more information on
+the error.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>ssl</i>(3),
+<i>err</i>(3)</p>
+
+<h2>HISTORY
+<a name="HISTORY"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>SSL_get_error()</i>
+was added in SSLeay 0.8.</p>
+<hr>
+</body>
+</html>

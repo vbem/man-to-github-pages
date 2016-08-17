@@ -1,0 +1,451 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:41:08 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>WPA_CLI</title>
+
+</head>
+<body>
+
+<h1 align="center">WPA_CLI</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#OVERVIEW">OVERVIEW</a><br>
+<a href="#INTERACTIVE AUTHENTICATION PARAMETERS REQUEST">INTERACTIVE AUTHENTICATION PARAMETERS REQUEST</a><br>
+<a href="#COMMAND ARGUMENTS">COMMAND ARGUMENTS</a><br>
+<a href="#COMMANDS">COMMANDS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#LEGAL">LEGAL</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">wpa_cli &minus;
+WPA command line client</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>wpa_cli</b>
+[ <b>-p</b> <i>path to ctrl sockets</i> ] [ <b>-g</b>
+<i>path to global ctrl_interface socket</i> ] [ <b>-i</b>
+<i>ifname</i> ] [ <b>-hvB</b> ] [ <b>-a</b> <i>action
+file</i> ] [ <b>-P</b> <i>pid file</i> ] [ <b>-G</b> <i>ping
+interval</i> ] [ <i>command ...</i> ]</p>
+
+<h2>OVERVIEW
+<a name="OVERVIEW"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">wpa_cli is a
+text-based frontend program for interacting with
+wpa_supplicant. It is used to query current status, change
+configuration, trigger events, and request interactive user
+input.</p>
+
+<p style="margin-left:11%; margin-top: 1em">wpa_cli can
+show the current authentication status, selected security
+mode, dot11 and dot1x MIBs, etc. In addition, it can
+configure some variables like EAPOL state machine parameters
+and trigger events like reassociation and IEEE 802.1X
+logoff/logon. wpa_cli provides a user interface to request
+authentication information, like username and password, if
+these are not included in the configuration. This can be
+used to implement, e.g., one-time-passwords or generic token
+card authentication where the authentication is based on a
+challenge-response that uses an external device for
+generating the response.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The control
+interface of wpa_supplicant can be configured to allow
+non-root user access (ctrl_interface GROUP= parameter in the
+configuration file). This makes it possible to run wpa_cli
+with a normal user account.</p>
+
+<p style="margin-left:11%; margin-top: 1em">wpa_cli
+supports two modes: interactive and command line. Both modes
+share the same command set and the main difference is in
+interactive mode providing access to unsolicited messages
+(event messages, username/password requests).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Interactive
+mode is started when wpa_cli is executed without including
+the command as a command line parameter. Commands are then
+entered on the wpa_cli prompt. In command line mode, the
+same commands are entered as command line arguments for
+wpa_cli.</p>
+
+<h2>INTERACTIVE AUTHENTICATION PARAMETERS REQUEST
+<a name="INTERACTIVE AUTHENTICATION PARAMETERS REQUEST"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">When
+wpa_supplicant need authentication parameters, like username
+and password, which are not present in the configuration
+file, it sends a request message to all attached frontend
+programs, e.g., wpa_cli in interactive mode. wpa_cli shows
+these requests with
+&quot;CTRL-REQ-&lt;type&gt;-&lt;id&gt;:&lt;text&gt;&quot;
+prefix. &lt;type&gt; is IDENTITY, PASSWORD, or OTP
+(one-time-password). &lt;id&gt; is a unique identifier for
+the current network. &lt;text&gt; is description of the
+request. In case of OTP request, it includes the challenge
+from the authentication server.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The reply to
+these requests can be given with <b>identity</b>,
+<b>password</b>, and <b>otp</b> commands. &lt;id&gt; needs
+to be copied from the matching request. <b>password</b> and
+<b>otp</b> commands can be used regardless of whether the
+request was for PASSWORD or OTP. The main difference between
+these two commands is that values given with <b>password</b>
+are remembered as long as wpa_supplicant is running whereas
+values given with <b>otp</b> are used only once and then
+forgotten, i.e., wpa_supplicant will ask frontend for a new
+value for every use. This can be used to implement
+one-time-password lists and generic token card -based
+authentication.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Example request
+for password and a matching reply:</p>
+
+
+<p style="margin-left:22%; margin-top: 1em">CTRL-REQ-PASSWORD-1:Password
+needed for SSID foobar <br>
+&gt; password 1 mysecretpassword</p>
+
+<p style="margin-left:11%; margin-top: 1em">Example request
+for generic token card challenge-response:</p>
+
+
+<p style="margin-left:22%; margin-top: 1em">CTRL-REQ-OTP-2:Challenge
+1235663 needed for SSID foobar <br>
+&gt; otp 2 9876</p>
+
+<h2>COMMAND ARGUMENTS
+<a name="COMMAND ARGUMENTS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>-p
+path</b></p>
+
+<p style="margin-left:22%;">Change the path where control
+sockets should be found.</p>
+
+<p style="margin-left:11%;"><b>-g control socket
+path</b></p>
+
+<p style="margin-left:22%;">Connect to the global control
+socket at the indicated path rather than an
+interface-specific control socket.</p>
+
+<p style="margin-left:11%;"><b>-i ifname</b></p>
+
+<p style="margin-left:22%;">Specify the interface that is
+being configured. By default, choose the first interface
+found with a control socket in the socket path.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>-h</b></p></td>
+<td width="8%"></td>
+<td width="52%">
+
+
+<p>Help. Show a usage message.</p></td>
+<td width="26%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>-v</b></p></td>
+<td width="8%"></td>
+<td width="52%">
+
+
+<p>Show version information.</p></td>
+<td width="26%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>-B</b></p></td>
+<td width="8%"></td>
+<td width="52%">
+
+
+<p>Run as a daemon in the background.</p></td>
+<td width="26%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>-a file</b></p>
+
+<p style="margin-left:22%;">Run in daemon mode executing
+the action file based on events from wpa_supplicant. The
+specified file will be executed with the first argument set
+to interface name and second to &quot;CONNECTED&quot; or
+&quot;DISCONNECTED&quot; depending on the event. This can be
+used to execute networking tools required to configure the
+interface.</p>
+
+<p style="margin-left:22%; margin-top: 1em">Additionally,
+three environmental variables are available to the file:
+WPA_CTRL_DIR, WPA_ID, and WPA_ID_STR. WPA_CTRL_DIR contains
+the absolute path to the ctrl_interface socket. WPA_ID
+contains the unique network_id identifier assigned to the
+active network, and WPA_ID_STR contains the content of the
+id_str option.</p>
+
+<p style="margin-left:11%;"><b>-P file</b></p>
+
+<p style="margin-left:22%;">Set the location of the PID
+file.</p>
+
+<p style="margin-left:11%;"><b>-G ping interval</b></p>
+
+<p style="margin-left:22%;">Set the interval (in seconds)
+at which wpa_cli pings the supplicant.</p>
+
+<p style="margin-left:11%;"><b>command</b></p>
+
+<p style="margin-left:22%;">Run a command. The available
+commands are listed in the next section.</p>
+
+<h2>COMMANDS
+<a name="COMMANDS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+commands are available:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>status</b></p></td>
+<td width="2%"></td>
+<td width="49%">
+
+
+<p>get current WPA/EAPOL/EAP status</p></td>
+<td width="29%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>mib</b></p></td>
+<td width="2%"></td>
+<td width="49%">
+
+
+<p>get MIB variables (dot1x, dot11)</p></td>
+<td width="29%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>help</b></p></td>
+<td width="2%"></td>
+<td width="49%">
+
+
+<p>show this usage help</p></td>
+<td width="29%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>interface [ifname]</b></p>
+
+<p style="margin-left:22%;">show interfaces/select
+interface</p>
+
+<p style="margin-left:11%;"><b>level &lt;debug
+level&gt;</b></p>
+
+<p style="margin-left:22%;">change debug level</p>
+
+<p style="margin-left:11%;"><b>license</b></p>
+
+<p style="margin-left:22%;">show full wpa_cli license</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>logoff</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>IEEE 802.1X EAPOL state machine logoff</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>logon</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>IEEE 802.1X EAPOL state machine logon</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>set</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>set variables (shows list of variables when run without
+arguments)</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>pmksa</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>show PMKSA cache</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>reassociate</b></p>
+
+<p style="margin-left:22%;">force reassociation</p>
+
+<p style="margin-left:11%;"><b>reconfigure</b></p>
+
+<p style="margin-left:22%;">force wpa_supplicant to re-read
+its configuration file</p>
+
+<p style="margin-left:11%;"><b>preauthenticate
+&lt;BSSID&gt;</b></p>
+
+<p style="margin-left:22%;">force preauthentication</p>
+
+<p style="margin-left:11%;"><b>identity &lt;network id&gt;
+&lt;identity&gt;</b></p>
+
+<p style="margin-left:22%;">configure identity for an
+SSID</p>
+
+<p style="margin-left:11%;"><b>password &lt;network id&gt;
+&lt;password&gt;</b></p>
+
+<p style="margin-left:22%;">configure password for an
+SSID</p>
+
+<p style="margin-left:11%;"><b>pin &lt;network id&gt;
+&lt;pin&gt;</b></p>
+
+<p style="margin-left:22%;">configure pin for an SSID</p>
+
+<p style="margin-left:11%;"><b>otp &lt;network id&gt;
+&lt;password&gt;</b></p>
+
+<p style="margin-left:22%;">configure one-time-password for
+an SSID</p>
+
+<p style="margin-left:11%;"><b>bssid &lt;network id&gt;
+&lt;BSSID&gt;</b></p>
+
+<p style="margin-left:22%;">set preferred BSSID for an
+SSID</p>
+
+<p style="margin-left:11%;"><b>list_networks</b></p>
+
+<p style="margin-left:22%;">list configured networks</p>
+
+<p style="margin-left:11%;"><b>terminate</b></p>
+
+<p style="margin-left:22%;">terminate
+<b>wpa_supplicant</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p><b>quit</b></p></td>
+<td width="5%"></td>
+<td width="18%">
+
+
+<p>exit wpa_cli</p></td>
+<td width="60%">
+</td></tr>
+</table>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>wpa_supplicant</b>(8)</p>
+
+<h2>LEGAL
+<a name="LEGAL"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">wpa_supplicant
+is copyright (c) 2003-2012, Jouni Malinen &lt;j@w1.fi&gt;
+and contributors. All Rights Reserved.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This program is
+licensed under the BSD license (the one with advertisement
+clause removed).</p>
+<hr>
+</body>
+</html>

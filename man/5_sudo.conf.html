@@ -1,0 +1,430 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:38:52 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title></title>
+</head>
+<body>
+
+<hr>
+
+
+<p>SUDO(5) BSD File Formats Manual SUDO(5)</p>
+
+<p style="margin-top: 1em"><b>NAME</b></p>
+
+<p style="margin-left:6%;"><b>sudo.conf</b> &mdash;
+configuration for sudo front end</p>
+
+<p style="margin-top: 1em"><b>DESCRIPTION</b></p>
+
+<p style="margin-left:6%;">The <b>sudo.conf</b> file is
+used to configure the <b>sudo</b> front end. It specifies
+the security policy and I/O logging plugins, debug flags as
+well as plugin-agnostic path names and settings.</p>
+
+<p style="margin-left:6%; margin-top: 1em">The
+<b>sudo.conf</b> file supports the following directives,
+described in detail below.</p>
+
+<p style="margin-top: 1em">Plugin</p>
+
+<p style="margin-left:19%; margin-top: 1em">a security
+policy or I/O logging plugin</p>
+
+<p style="margin-top: 1em">Path</p>
+
+<p style="margin-left:19%; margin-top: 1em">a
+plugin-agnostic path</p>
+
+<p style="margin-top: 1em">Set</p>
+
+<p style="margin-left:19%; margin-top: 1em">a front end
+setting, such as <i>disable_coredump</i> or
+<i>group_source</i></p>
+
+<p style="margin-top: 1em">Debug</p>
+
+<p style="margin-left:19%; margin-top: 1em">debug flags to
+aid in debugging <b>sudo</b>, <b>sudoreplay</b>,
+<b>visudo</b>, and the <b>sudoers</b> plugin.</p>
+
+<p style="margin-left:6%; margin-top: 1em">The pound sign
+(&lsquo;#&rsquo;) is used to indicate a comment. Both the
+comment character and any text after it, up to the end of
+the line, are ignored.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Non-comment
+lines that don&rsquo;t begin with Plugin, Path, Debug, or
+Set are silently ignored.</p>
+
+<p style="margin-left:6%; margin-top: 1em">The
+<b>sudo.conf</b> file is always parsed in the
+&lsquo;&lsquo;C&rsquo;&rsquo; locale.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Plugin
+configuration <br>
+sudo</b> supports a plugin architecture for security
+policies and input/output logging. Third parties can develop
+and distribute their own policy and I/O logging plugins to
+work seamlessly with the <b>sudo</b> front end. Plugins are
+dynamically loaded based on the contents of
+<b>sudo.conf</b>.</p>
+
+<p style="margin-left:6%; margin-top: 1em">A Plugin line
+consists of the Plugin keyword, followed by the
+<i>symbol_name</i> and the <i>path</i> to the shared object
+containing the plugin. The <i>symbol_name</i> is the name of
+the struct policy_plugin or struct io_plugin in the plugin
+shared object. The <i>path</i> may be fully qualified or
+relative. If not fully qualified, it is relative to the
+<i>/usr/libexec</i> directory. In other words:</p>
+
+<p style="margin-left:14%; margin-top: 1em">Plugin
+sudoers_policy sudoers.so</p>
+
+<p style="margin-left:6%; margin-top: 1em">is equivalent
+to:</p>
+
+<p style="margin-left:14%; margin-top: 1em">Plugin
+sudoers_policy /usr/libexec/sudoers.so</p>
+
+<p style="margin-left:6%; margin-top: 1em">Any additional
+parameters after the <i>path</i> are passed as arguments to
+the plugin&rsquo;s <i>open</i> function. For example, to
+override the compile-time default sudoers file mode:</p>
+
+<p style="margin-left:14%; margin-top: 1em">Plugin
+sudoers_policy sudoers.so sudoers_mode=0440</p>
+
+<p style="margin-left:6%; margin-top: 1em">If no
+<b>sudo.conf</b> file is present, or if it contains no
+Plugin lines, the <b>sudoers</b> plugin will be used as the
+default security policy and for I/O logging (if enabled by
+the policy). This is equivalent to the following:</p>
+
+<p style="margin-left:14%; margin-top: 1em">Plugin
+policy_plugin sudoers.so <br>
+Plugin io_plugin sudoers.so</p>
+
+<p style="margin-left:6%; margin-top: 1em">For more
+information on the <b>sudo</b> plugin architecture, see the
+sudo_plugin(8) manual.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Path
+settings</b> <br>
+A Path line consists of the Path keyword, followed by the
+name of the path to set and its value. For example:</p>
+
+<p style="margin-left:14%; margin-top: 1em">Path noexec
+/usr/libexec/sudo_noexec.so <br>
+Path askpass /usr/X11R6/bin/ssh-askpass</p>
+
+<p style="margin-left:6%; margin-top: 1em">The following
+plugin-agnostic paths may be set in the
+<i>/etc/sudo.conf</i> file:</p>
+
+<p style="margin-top: 1em">askpass</p>
+
+<p style="margin-left:19%; margin-top: 1em">The fully
+qualified path to a helper program used to read the
+user&rsquo;s password when no terminal is available. This
+may be the case when <b>sudo</b> is executed from a
+graphical (as opposed to text-based) application. The
+program specified by <i>askpass</i> should display the
+argument passed to it as the prompt and write the
+user&rsquo;s password to the standard output. The value of
+<i>askpass</i> may be overridden by the SUDO_ASKPASS
+environment variable.</p>
+
+<p style="margin-top: 1em">noexec</p>
+
+<p style="margin-left:19%; margin-top: 1em">The
+fully-qualified path to a shared library containing dummy
+versions of the <b>execv</b>(), <b>execve</b>() and
+<b>fexecve</b>() library functions that just return an
+error. This is used to implement the <i>noexec</i>
+functionality on systems that support LD_PRELOAD or its
+equivalent. The default value is:
+<i>/usr/libexec/sudo_noexec.so</i>.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Other
+settings</b> <br>
+The <b>sudo.conf</b> file also supports the following front
+end settings:</p>
+
+<p style="margin-top: 1em">disable_coredump</p>
+
+<p style="margin-left:19%;">Core dumps of <b>sudo</b>
+itself are disabled by default. To aid in debugging
+<b>sudo</b> crashes, you may wish to re-enable core dumps by
+setting &lsquo;&lsquo;disable_coredump&rsquo;&rsquo; to
+false in <b>sudo.conf</b> as follows:</p>
+
+<p style="margin-left:27%; margin-top: 1em">Set
+disable_coredump false</p>
+
+<p style="margin-left:19%; margin-top: 1em">Note that most
+operating systems disable core dumps from setuid programs,
+including <b>sudo</b>. To actually get a <b>sudo</b> core
+file you will likely need to enable core dumps for setuid
+processes. On BSD and Linux systems this is accomplished via
+the sysctl command. On Solaris, the coreadm command is used
+to configure core dump behavior.</p>
+
+<p style="margin-left:19%; margin-top: 1em">This setting is
+only available in <b>sudo</b> version 1.8.4 and higher.</p>
+
+<p style="margin-left:6%; margin-top: 1em"><b>Debug flags
+<br>
+sudo</b> versions 1.8.4 and higher support a flexible
+debugging framework that can help track down what
+<b>sudo</b> is doing internally if there is a problem.</p>
+
+<p style="margin-left:6%; margin-top: 1em">A Debug line
+consists of the Debug keyword, followed by the name of the
+program (or plugin) to debug (<b>sudo</b>, <b>visudo</b>,
+<b>sudoreplay</b>, <b>sudoers</b>), the debug file name and
+a comma-separated list of debug flags. The debug flag syntax
+used by <b>sudo</b> and the <b>sudoers</b> plugin is
+<i>subsystem</i>@<i>priority</i> but a plugin is free to use
+a different format so long as it does not include a comma
+(&lsquo;,&rsquo;).</p>
+
+<p style="margin-left:6%; margin-top: 1em">For example:</p>
+
+<p style="margin-left:14%; margin-top: 1em">Debug sudo
+/var/log/sudo_debug all@warn,plugin@info</p>
+
+<p style="margin-left:6%; margin-top: 1em">would log all
+debugging statements at the <i>warn</i> level and higher in
+addition to those at the <i>info</i> level for the plugin
+subsystem.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Currently, only
+one Debug entry per program is supported. The <b>sudo</b>
+Debug entry is shared by the <b>sudo</b> front end,
+<b>sudoedit</b> and the plugins. A future release may add
+support for per-plugin Debug lines and/or support for
+multiple debugging files for a single program.</p>
+
+<p style="margin-left:6%; margin-top: 1em">The priorities
+used by the <b>sudo</b> front end, in order of decreasing
+severity, are: <i>crit</i>, <i>err</i>, <i>warn</i>,
+<i>notice</i>, <i>diag</i>, <i>info</i>, <i>trace</i> and
+<i>debug</i>. Each priority, when specified, also includes
+all priorities higher than it. For example, a priority of
+<i>notice</i> would include debug messages logged at
+<i>notice</i> and higher.</p>
+
+<p style="margin-left:6%; margin-top: 1em">The following
+subsystems are used by the <b>sudo</b> front-end:</p>
+
+<p style="margin-top: 1em"><i>all</i></p>
+
+<p style="margin-left:22%; margin-top: 1em">matches every
+subsystem</p>
+
+<p style="margin-top: 1em"><i>args</i></p>
+
+<p style="margin-left:22%; margin-top: 1em">command line
+argument processing</p>
+
+<p style="margin-top: 1em"><i>conv</i></p>
+
+<p style="margin-left:22%; margin-top: 1em">user
+conversation</p>
+
+<p style="margin-top: 1em"><i>edit</i></p>
+
+<p style="margin-left:22%; margin-top: 1em">sudoedit</p>
+
+<p style="margin-top: 1em"><i>exec</i></p>
+
+<p style="margin-left:22%; margin-top: 1em">command
+execution</p>
+
+<p style="margin-top: 1em"><i>main</i></p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>sudo</b>
+main function</p>
+
+<p style="margin-top: 1em"><i>netif</i></p>
+
+<p style="margin-left:22%; margin-top: 1em">network
+interface handling</p>
+
+<p style="margin-top: 1em"><i>pcomm</i></p>
+
+<p style="margin-left:22%; margin-top: 1em">communication
+with the plugin</p>
+
+<p style="margin-top: 1em"><i>plugin</i></p>
+
+<p style="margin-left:22%; margin-top: 1em">plugin
+configuration</p>
+
+<p style="margin-top: 1em"><i>pty</i></p>
+
+<p style="margin-left:22%; margin-top: 1em">pseudo-tty
+related code</p>
+
+<p style="margin-top: 1em"><i>selinux</i></p>
+
+
+<p style="margin-left:22%; margin-top: 1em">SELinux-specific
+handling</p>
+
+<p style="margin-top: 1em"><i>util</i></p>
+
+<p style="margin-left:22%; margin-top: 1em">utility
+functions</p>
+
+<p style="margin-top: 1em"><i>utmp</i></p>
+
+<p style="margin-left:22%; margin-top: 1em">utmp
+handling</p>
+
+<p style="margin-top: 1em"><b>FILES</b> <br>
+/etc/sudo.conf</p>
+
+<p style="margin-left:40%; margin-top: 1em"><b>sudo</b>
+front end configuration</p>
+
+<p style="margin-top: 1em"><b>EXAMPLES</b></p>
+
+<p style="margin-left:6%;"># <br>
+# Default /etc/sudo.conf file <br>
+# <br>
+# Format: <br>
+# Plugin plugin_name plugin_path plugin_options ... <br>
+# Path askpass /path/to/askpass <br>
+# Path noexec /path/to/sudo_noexec.so <br>
+# Debug sudo /var/log/sudo_debug all@warn <br>
+# Set disable_coredump true <br>
+# <br>
+# The plugin_path is relative to /usr/libexec unless <br>
+# fully qualified. <br>
+# The plugin_name corresponds to a global symbol in the
+plugin <br>
+# that contains the plugin interface structure. <br>
+# The plugin_options are optional. <br>
+# <br>
+# The sudoers plugin is used by default if no Plugin lines
+are <br>
+# present. <br>
+Plugin policy_plugin sudoers.so <br>
+Plugin io_plugin sudoers.so</p>
+
+<p style="margin-left:6%; margin-top: 1em"># <br>
+# Sudo askpass: <br>
+# <br>
+# An askpass helper program may be specified to provide a
+graphical <br>
+# password prompt for &quot;sudo -A&quot; support. Sudo does
+not ship with <br>
+# its own askpass program but can use the OpenSSH askpass.
+<br>
+# <br>
+# Use the OpenSSH askpass <br>
+#Path askpass /usr/X11R6/bin/ssh-askpass <br>
+# <br>
+# Use the Gnome OpenSSH askpass <br>
+#Path askpass /usr/libexec/openssh/gnome-ssh-askpass</p>
+
+<p style="margin-left:6%; margin-top: 1em"># <br>
+# Sudo noexec: <br>
+# <br>
+# Path to a shared library containing dummy versions of the
+execv(), <br>
+# execve() and fexecve() library functions that just return
+an error. <br>
+# This is used to implement the &quot;noexec&quot;
+functionality on systems that <br>
+# support C&lt;LD_PRELOAD&gt; or its equivalent. <br>
+# The compiled-in value is usually sufficient and should
+only be <br>
+# changed if you rename or move the sudo_noexec.so file.
+<br>
+# <br>
+#Path noexec /usr/libexec/sudo_noexec.so</p>
+
+<p style="margin-left:6%; margin-top: 1em"># <br>
+# Core dumps: <br>
+# <br>
+# By default, sudo disables core dumps while it is executing
+<br>
+# (they are re-enabled for the command that is run). <br>
+# To aid in debugging sudo problems, you may wish to enable
+core <br>
+# dumps by setting &quot;disable_coredump&quot; to false.
+<br>
+# <br>
+#Set disable_coredump false</p>
+
+<p style="margin-top: 1em"><b>SEE ALSO</b></p>
+
+<p style="margin-left:6%;">sudoers(5), sudo(8),
+sudo_plugin(8)</p>
+
+<p style="margin-top: 1em"><b>HISTORY</b></p>
+
+<p style="margin-left:6%;">See the HISTORY file in the
+<b>sudo</b> distribution
+(http://www.sudo.ws/sudo/history.html) for a brief history
+of sudo.</p>
+
+<p style="margin-top: 1em"><b>AUTHORS</b></p>
+
+<p style="margin-left:6%;">Many people have worked on
+<b>sudo</b> over the years; this version consists of code
+written primarily by:</p>
+
+<p style="margin-left:14%; margin-top: 1em">Todd C.
+Miller</p>
+
+<p style="margin-left:6%; margin-top: 1em">See the
+CONTRIBUTORS file in the <b>sudo</b> distribution
+(http://www.sudo.ws/sudo/contributors.html) for an
+exhaustive list of people who have contributed to
+<b>sudo</b>.</p>
+
+<p style="margin-top: 1em"><b>BUGS</b></p>
+
+<p style="margin-left:6%;">If you feel you have found a bug
+in <b>sudo</b>, please submit a bug report at
+http://www.sudo.ws/sudo/bugs/</p>
+
+<p style="margin-top: 1em"><b>SUPPORT</b></p>
+
+<p style="margin-left:6%;">Limited free support is
+available via the sudo-users mailing list, see
+http://www.sudo.ws/mailman/listinfo/sudo-users to subscribe
+or search the archives.</p>
+
+<p style="margin-top: 1em"><b>DISCLAIMER</b></p>
+
+<p style="margin-left:6%;"><b>sudo</b> is provided
+&lsquo;&lsquo;AS IS&rsquo;&rsquo; and any express or implied
+warranties, including, but not limited to, the implied
+warranties of merchantability and fitness for a particular
+purpose are disclaimed. See the LICENSE file distributed
+with <b>sudo</b> or http://www.sudo.ws/sudo/license.html for
+complete details.</p>
+
+<p style="margin-left:6%; margin-top: 1em">Sudo 1.8.6p7
+February&nbsp;5, 2013 Sudo 1.8.6p7</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,971 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:32:59 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Math::BigFloat</title>
+
+</head>
+<body>
+
+<h1 align="center">Math::BigFloat</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#METHODS">METHODS</a><br>
+<a href="#Autocreating constants">Autocreating constants</a><br>
+<a href="#EXPORTS">EXPORTS</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#CAVEATS">CAVEATS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#LICENSE">LICENSE</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Math::BigFloat
+&minus; Arbitrary size floating point math package</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> use Math::BigFloat;
+ # Number creation
+ my $x = Math::BigFloat&minus;&gt;new($str);     # defaults to 0
+ my $y = $x&minus;&gt;copy();                    # make a true copy
+ my $nan  = Math::BigFloat&minus;&gt;bnan();     # create a NotANumber
+ my $zero = Math::BigFloat&minus;&gt;bzero();    # create a +0
+ my $inf = Math::BigFloat&minus;&gt;binf();      # create a +inf
+ my $inf = Math::BigFloat&minus;&gt;binf('&minus;');   # create a &minus;inf
+ my $one = Math::BigFloat&minus;&gt;bone();      # create a +1
+ my $mone = Math::BigFloat&minus;&gt;bone('&minus;');  # create a &minus;1
+ my $pi = Math::BigFloat&minus;&gt;bpi(100);     # PI to 100 digits
+ # the following examples compute their result to 100 digits accuracy:
+ my $cos  = Math::BigFloat&minus;&gt;new(1)&minus;&gt;bcos(100);        # cosinus(1)
+ my $sin  = Math::BigFloat&minus;&gt;new(1)&minus;&gt;bsin(100);        # sinus(1)
+ my $atan = Math::BigFloat&minus;&gt;new(1)&minus;&gt;batan(100);       # arcus tangens(1)
+ my $atan2 = Math::BigFloat&minus;&gt;new(  1 )&minus;&gt;batan2( 1 ,100); # batan(1)
+ my $atan2 = Math::BigFloat&minus;&gt;new(  1 )&minus;&gt;batan2( 8 ,100); # batan(1/8)
+ my $atan2 = Math::BigFloat&minus;&gt;new( &minus;2 )&minus;&gt;batan2( 1 ,100); # batan(&minus;2)
+ # Testing
+ $x&minus;&gt;is_zero();          # true if arg is +0
+ $x&minus;&gt;is_nan();           # true if arg is NaN
+ $x&minus;&gt;is_one();           # true if arg is +1
+ $x&minus;&gt;is_one('&minus;');        # true if arg is &minus;1
+ $x&minus;&gt;is_odd();           # true if odd, false for even
+ $x&minus;&gt;is_even();          # true if even, false for odd
+ $x&minus;&gt;is_pos();           # true if &gt;= 0
+ $x&minus;&gt;is_neg();           # true if &lt;  0
+ $x&minus;&gt;is_inf(sign);       # true if +inf, or &minus;inf (default is '+')
+ $x&minus;&gt;bcmp($y);           # compare numbers (undef,&lt;0,=0,&gt;0)
+ $x&minus;&gt;bacmp($y);          # compare absolutely (undef,&lt;0,=0,&gt;0)
+ $x&minus;&gt;sign();             # return the sign, either +,&minus; or NaN
+ $x&minus;&gt;digit($n);          # return the nth digit, counting from right
+ $x&minus;&gt;digit(&minus;$n);         # return the nth digit, counting from left
+ # The following all modify their first argument. If you want to pre&minus;
+ # serve $x, use $z = $x&minus;&gt;copy()&minus;&gt;bXXX($y); See under L&lt;/CAVEATS&gt; for
+ # necessary when mixing $a = $b assignments with non&minus;overloaded math.
+ # set
+ $x&minus;&gt;bzero();            # set $i to 0
+ $x&minus;&gt;bnan();             # set $i to NaN
+ $x&minus;&gt;bone();             # set $x to +1
+ $x&minus;&gt;bone('&minus;');          # set $x to &minus;1
+ $x&minus;&gt;binf();             # set $x to inf
+ $x&minus;&gt;binf('&minus;');          # set $x to &minus;inf
+ $x&minus;&gt;bneg();             # negation
+ $x&minus;&gt;babs();             # absolute value
+ $x&minus;&gt;bnorm();            # normalize (no&minus;op)
+ $x&minus;&gt;bnot();             # two's complement (bit wise not)
+ $x&minus;&gt;binc();             # increment x by 1
+ $x&minus;&gt;bdec();             # decrement x by 1
+ $x&minus;&gt;badd($y);           # addition (add $y to $x)
+ $x&minus;&gt;bsub($y);           # subtraction (subtract $y from $x)
+ $x&minus;&gt;bmul($y);           # multiplication (multiply $x by $y)
+ $x&minus;&gt;bdiv($y);           # divide, set $x to quotient
+                         # return (quo,rem) or quo if scalar
+ $x&minus;&gt;bmod($y);           # modulus ($x % $y)
+ $x&minus;&gt;bpow($y);           # power of arguments ($x ** $y)
+ $x&minus;&gt;bmodpow($exp,$mod); # modular exponentiation (($num**$exp) % $mod))
+ $x&minus;&gt;blsft($y, $n);      # left shift by $y places in base $n
+ $x&minus;&gt;brsft($y, $n);      # right shift by $y places in base $n
+                         # returns (quo,rem) or quo if in scalar context
+ $x&minus;&gt;blog();             # logarithm of $x to base e (Euler's number)
+ $x&minus;&gt;blog($base);        # logarithm of $x to base $base (f.i. 2)
+ $x&minus;&gt;bexp();             # calculate e ** $x where e is Euler's number
+ $x&minus;&gt;band($y);           # bit&minus;wise and
+ $x&minus;&gt;bior($y);           # bit&minus;wise inclusive or
+ $x&minus;&gt;bxor($y);           # bit&minus;wise exclusive or
+ $x&minus;&gt;bnot();             # bit&minus;wise not (two's complement)
+ $x&minus;&gt;bsqrt();            # calculate square&minus;root
+ $x&minus;&gt;broot($y);          # $y'th root of $x (e.g. $y == 3 =&gt; cubic root)
+ $x&minus;&gt;bfac();             # factorial of $x (1*2*3*4*..$x)
+ $x&minus;&gt;bround($N);         # accuracy: preserve $N digits
+ $x&minus;&gt;bfround($N);        # precision: round to the $Nth digit
+ $x&minus;&gt;bfloor();           # return integer less or equal than $x
+ $x&minus;&gt;bceil();            # return integer greater or equal than $x
+  # The following do not modify their arguments:
+ bgcd(@values);          # greatest common divisor
+ blcm(@values);          # lowest common multiplicator
+ $x&minus;&gt;bstr();             # return string
+ $x&minus;&gt;bsstr();            # return string in scientific notation
+ $x&minus;&gt;as_int();           # return $x as BigInt
+ $x&minus;&gt;exponent();         # return exponent as BigInt
+ $x&minus;&gt;mantissa();         # return mantissa as BigInt
+ $x&minus;&gt;parts();            # return (mantissa,exponent) as BigInt
+ $x&minus;&gt;length();           # number of digits (w/o sign and '.')
+ ($l,$f) = $x&minus;&gt;length(); # number of digits, and length of fraction
+ $x&minus;&gt;precision();        # return P of $x (or global, if P of $x undef)
+ $x&minus;&gt;precision($n);      # set P of $x to $n
+ $x&minus;&gt;accuracy();         # return A of $x (or global, if A of $x undef)
+ $x&minus;&gt;accuracy($n);       # set A $x to $n
+ # these get/set the appropriate global value for all BigFloat objects
+ Math::BigFloat&minus;&gt;precision();   # Precision
+ Math::BigFloat&minus;&gt;accuracy();    # Accuracy
+ Math::BigFloat&minus;&gt;round_mode();  # rounding mode</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">All operators
+(including basic math operations) are overloaded if you
+declare your big floating point numbers as</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  $i = new Math::BigFloat '12_3.456_789_123_456_789E&minus;2';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Operations with
+overloaded operators preserve the arguments, which is
+exactly what you expect.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Canonical
+notation</b> <br>
+Input to these routines are either BigFloat objects, or
+strings of the following four forms:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="2%"></td>
+<td width="41%">
+
+
+<p><tt>&quot;/^[+&minus;]\d+$/&quot;</tt></p></td>
+<td width="45%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="2%"></td>
+<td width="41%">
+
+
+<p><tt>&quot;/^[+&minus;]\d+\.\d*$/&quot;</tt></p></td>
+<td width="45%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="2%"></td>
+<td width="41%">
+
+
+
+<p><tt>&quot;/^[+&minus;]\d+E[+&minus;]?\d+$/&quot;</tt></p> </td>
+<td width="45%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="2%"></td>
+<td width="41%">
+
+
+
+<p><tt>&quot;/^[+&minus;]\d*\.\d+E[+&minus;]?\d+$/&quot;</tt></p> </td>
+<td width="45%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">all with
+optional leading and trailing zeros and/or spaces.
+Additionally, numbers are allowed to have an underscore
+between any two digits.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Empty strings
+as well as other illegal numbers results in
+&rsquo;NaN&rsquo;.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>bnorm()</i>
+on a BigFloat object is now effectively a no-op, since the
+numbers are always stored in normalized form. On a string,
+it creates a BigFloat object.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Output</b>
+<br>
+Output values are BigFloat objects (normalized), except for
+<i>bstr()</i> and <i>bsstr()</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The string
+output will always have leading and trailing zeros stripped
+and drop a plus sign. <tt>&quot;bstr()&quot;</tt> will give
+you always the form with a decimal point, while
+<tt>&quot;bsstr()&quot;</tt> (s for scientific) gives you
+the scientific notation.</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        Input                   bstr()          bsstr()
+        '&minus;0'                    '0'             '0E1'
+        '  &minus;123 123 123'        '&minus;123123123'    '&minus;123123123E0'
+        '00.0123'               '0.0123'        '123E&minus;4'
+        '123.45E&minus;2'             '1.2345'        '12345E&minus;4'
+        '10E+3'                 '10000'         '1E4'</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Some routines
+(<tt>&quot;is_odd()&quot;</tt>,
+<tt>&quot;is_even()&quot;</tt>,
+<tt>&quot;is_zero()&quot;</tt>,
+<tt>&quot;is_one()&quot;</tt>,
+<tt>&quot;is_nan()&quot;</tt>) return true or false, while
+others (<tt>&quot;bcmp()&quot;</tt>,
+<tt>&quot;bacmp()&quot;</tt>) return either undef, &lt;0, 0
+or &gt;0 and are suited for sort.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Actual math is
+done by using the class defined with <tt>&quot;with =&gt;
+Class;&quot;</tt> (which defaults to BigInts) to represent
+the mantissa and exponent.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The sign
+<tt>&quot;/^[+&minus;]$/&quot;</tt> is stored separately.
+The string &rsquo;NaN&rsquo; is used to represent the result
+when input arguments are not numbers, as well as the result
+of dividing by zero.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;mantissa()&quot;,
+&quot;exponent()&quot; and &quot;parts()&quot;</b> <tt><br>
+&quot;mantissa()&quot;</tt> and
+<tt>&quot;exponent()&quot;</tt> return the said parts of the
+BigFloat as BigInts such that:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        $m = $x&minus;&gt;mantissa();
+        $e = $x&minus;&gt;exponent();
+        $y = $m * ( 10 ** $e );
+        print &quot;ok\n&quot; if $x == $y;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">&quot;($m,$e) =
+$x&minus;&gt;parts();&quot; is just a shortcut giving you
+both of them.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A zero is
+represented and returned as <tt>0E1</tt>, <b>not</b>
+<tt>0E0</tt> (after Knuth).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Currently the
+mantissa is reduced as much as possible, favouring higher
+exponents over lower ones (e.g. returning 1e7 instead of
+10e6 or 10000000e0). This might change in the future, so do
+not depend on it.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Accuracy vs.
+Precision</b> <br>
+See also: Rounding.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Math::BigFloat
+supports both precision (rounding to a certain place before
+or after the dot) and accuracy (rounding to a certain number
+of digits). For a full documentation, examples and tips on
+these topics please see the large section about rounding in
+Math::BigInt.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since things
+like <tt>sqrt(2)</tt> or <tt>&quot;1 / 3&quot;</tt> must
+presented with a limited accuracy lest a operation consumes
+all resources, each operation produces no more than the
+requested number of digits.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If there is no
+global precision or accuracy set, <b>and</b> the operation
+in question was not called with a requested precision or
+accuracy, <b>and</b> the input <tt>$x</tt> has no accuracy
+or precision set, then a fallback parameter will be used.
+For historical reasons, it is called
+<tt>&quot;div_scale&quot;</tt> and can be accessed via:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        $d = Math::BigFloat&minus;&gt;div_scale();       # query
+        Math::BigFloat&minus;&gt;div_scale($n);          # set to $n digits</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The default
+value for <tt>&quot;div_scale&quot;</tt> is 40.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In case the
+result of one operation has more digits than specified, it
+is rounded. The rounding mode taken is either the default
+mode, or the one supplied to the operation after the
+<i>scale</i>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    $x = Math::BigFloat&minus;&gt;new(2);
+    Math::BigFloat&minus;&gt;accuracy(5);              # 5 digits max
+    $y = $x&minus;&gt;copy()&minus;&gt;bdiv(3);                 # will give 0.66667
+    $y = $x&minus;&gt;copy()&minus;&gt;bdiv(3,6);               # will give 0.666667
+    $y = $x&minus;&gt;copy()&minus;&gt;bdiv(3,6,undef,'odd');   # will give 0.666667
+    Math::BigFloat&minus;&gt;round_mode('zero');
+    $y = $x&minus;&gt;copy()&minus;&gt;bdiv(3,6);               # will also give 0.666667</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Note that
+<tt>&quot;Math::BigFloat&minus;&gt;accuracy()&quot;</tt> and
+<tt>&quot;Math::BigFloat&minus;&gt;precision()&quot;</tt>
+set the global variables, and thus <b>any</b> newly created
+number will be subject to the global rounding
+<b>immediately</b>. This means that in the examples above,
+the <tt>3</tt> as argument to <tt>&quot;bdiv()&quot;</tt>
+will also get an accuracy of <b>5</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is less
+confusing to either calculate the result fully, and
+afterwards round it explicitly, or use the additional
+parameters to the math functions like so:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use Math::BigFloat;
+        $x = Math::BigFloat&minus;&gt;new(2);
+        $y = $x&minus;&gt;copy()&minus;&gt;bdiv(3);
+        print $y&minus;&gt;bround(5),&quot;\n&quot;;               # will give 0.66667
+        or
+        use Math::BigFloat;
+        $x = Math::BigFloat&minus;&gt;new(2);
+        $y = $x&minus;&gt;copy()&minus;&gt;bdiv(3,5);             # will give 0.66667
+        print &quot;$y\n&quot;;</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Rounding</b>
+<br>
+ffround ( +$scale )</p>
+
+<p style="margin-left:14%;">Rounds to the
+<tt>$scale</tt>&rsquo;th place left from the
+&rsquo;.&rsquo;, counting from the dot. The first digit is
+numbered 1.</p>
+
+<p style="margin-left:11%;">ffround ( &minus;$scale )</p>
+
+<p style="margin-left:14%;">Rounds to the
+<tt>$scale</tt>&rsquo;th place right from the
+&rsquo;.&rsquo;, counting from the dot.</p>
+
+<p style="margin-left:11%;">ffround ( 0 )</p>
+
+<p style="margin-left:14%;">Rounds to an integer.</p>
+
+<p style="margin-left:11%;">fround ( +$scale )</p>
+
+<p style="margin-left:14%;">Preserves accuracy to
+<tt>$scale</tt> digits from the left (aka significant
+digits) and pads the rest with zeros. If the number is
+between 1 and &minus;1, the significant digits count from
+the first non-zero after the &rsquo;.&rsquo;</p>
+
+<p style="margin-left:11%;">fround ( &minus;$scale ) and
+fround ( 0 )</p>
+
+<p style="margin-left:14%;">These are effectively
+no-ops.</p>
+
+<p style="margin-left:11%; margin-top: 1em">All rounding
+functions take as a second parameter a rounding mode from
+one of the following: &rsquo;even&rsquo;, &rsquo;odd&rsquo;,
+&rsquo;+inf&rsquo;, &rsquo;&minus;inf&rsquo;,
+&rsquo;zero&rsquo;, &rsquo;trunc&rsquo; or
+&rsquo;common&rsquo;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The default
+rounding mode is &rsquo;even&rsquo;. By using
+<tt>&quot;Math::BigFloat&minus;&gt;round_mode($round_mode);&quot;</tt>
+you can get and set the default mode for subsequent
+rounding. The usage of
+<tt>&quot;$Math::BigFloat::$round_mode&quot;</tt> is no
+longer supported. The second parameter to the round
+functions then overrides the default temporarily.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;as_number()&quot;</tt> function returns a BigInt
+from a Math::BigFloat. It uses &rsquo;trunc&rsquo; as
+rounding mode to make it equivalent to:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        $x = 2.5;
+        $y = int($x) + 2;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can
+override this by passing the desired rounding mode as
+parameter to <tt>&quot;as_number()&quot;</tt>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        $x = Math::BigFloat&minus;&gt;new(2.5);
+        $y = $x&minus;&gt;as_number('odd');      # $y = 3</pre>
+
+
+<h2>METHODS
+<a name="METHODS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Math::BigFloat
+supports all methods that Math::BigInt supports, except it
+calculates non-integer results when possible. Please see
+Math::BigInt for a full description of each method. Below
+are just the most important differences:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>accuracy</b></p>
+
+
+<pre style="margin-left:11%;">        $x&minus;&gt;accuracy(5);             # local for $x
+        CLASS&minus;&gt;accuracy(5);          # global for all members of CLASS
+                                     # Note: This also applies to new()!
+        $A = $x&minus;&gt;accuracy();         # read out accuracy that affects $x
+        $A = CLASS&minus;&gt;accuracy();      # read out global accuracy</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Set or get the
+global or local accuracy, aka how many significant digits
+the results have. If you set a global accuracy, then this
+also applies to <i>new()</i>!</p>
+
+<p style="margin-left:11%; margin-top: 1em">Warning! The
+accuracy <i>sticks</i>, e.g. once you created a number under
+the influence of
+<tt>&quot;CLASS&minus;&gt;accuracy($A)&quot;</tt>, all
+results from math operations with that number will also be
+rounded.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In most cases,
+you should probably round the results explicitly using one
+of &quot;<i>round()</i>&quot; in Math::BigInt,
+&quot;<i>bround()</i>&quot; in Math::BigInt or
+&quot;<i>bfround()</i>&quot; in Math::BigInt or by passing
+the desired accuracy to the math operation as additional
+parameter:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        my $x = Math::BigInt&minus;&gt;new(30000);
+        my $y = Math::BigInt&minus;&gt;new(7);
+        print scalar $x&minus;&gt;copy()&minus;&gt;bdiv($y, 2);           # print 4300
+        print scalar $x&minus;&gt;copy()&minus;&gt;bdiv($y)&minus;&gt;bround(2);   # print 4300</pre>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>precision()</i></p>
+
+
+<pre style="margin-left:11%;">        $x&minus;&gt;precision(&minus;2);      # local for $x, round at the second
+                                # digit right of the dot
+        $x&minus;&gt;precision(2);       # ditto, round at the second digit left
+                                # of the dot
+        CLASS&minus;&gt;precision(5);    # Global for all members of CLASS
+                                # This also applies to new()!
+        CLASS&minus;&gt;precision(&minus;5);   # ditto
+        $P = CLASS&minus;&gt;precision();    # read out global precision
+        $P = $x&minus;&gt;precision();       # read out precision that affects $x</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Note: You
+probably want to use &quot;accuracy&quot; instead. With
+&quot;accuracy&quot; you set the number of digits each
+result should have, with &quot;<i>precision()</i>&quot; you
+set the place where to round!</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>bexp()</i></p>
+
+
+<pre style="margin-left:11%;">        $x&minus;&gt;bexp($accuracy);            # calculate e ** X</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Calculates the
+expression <tt>&quot;e ** $x&quot;</tt> where
+<tt>&quot;e&quot;</tt> is Euler&rsquo;s number.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This method was
+added in v1.82 of Math::BigInt (April 2007).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>bnok()</i></p>
+
+
+<pre style="margin-left:11%;">        $x&minus;&gt;bnok($y);   # x over y (binomial coefficient n over k)</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Calculates the
+binomial coefficient n over k, also called the
+&quot;choose&quot; function. The result is equivalent
+to:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        ( n )      n!
+        | &minus; |  = &minus;&minus;&minus;&minus;&minus;&minus;&minus;
+        ( k )    k!(n&minus;k)!</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This method was
+added in v1.84 of Math::BigInt (April 2007).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>bpi()</i></p>
+
+
+<pre style="margin-left:11%;">        print Math::BigFloat&minus;&gt;bpi(100), &quot;\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Calculate
+<small>PI</small> to N digits (including the 3 before the
+dot). The result is rounded according to the current
+rounding mode, which defaults to &quot;even&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This method was
+added in v1.87 of Math::BigInt (June 2007).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>bcos()</i></p>
+
+
+<pre style="margin-left:11%;">        my $x = Math::BigFloat&minus;&gt;new(1);
+        print $x&minus;&gt;bcos(100), &quot;\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Calculate the
+cosinus of <tt>$x</tt>, modifying <tt>$x</tt> in place.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This method was
+added in v1.87 of Math::BigInt (June 2007).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>bsin()</i></p>
+
+
+<pre style="margin-left:11%;">        my $x = Math::BigFloat&minus;&gt;new(1);
+        print $x&minus;&gt;bsin(100), &quot;\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Calculate the
+sinus of <tt>$x</tt>, modifying <tt>$x</tt> in place.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This method was
+added in v1.87 of Math::BigInt (June 2007).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>batan2()</i></p>
+
+
+<pre style="margin-left:11%;">        my $y = Math::BigFloat&minus;&gt;new(2);
+        my $x = Math::BigFloat&minus;&gt;new(3);
+        print $y&minus;&gt;batan2($x), &quot;\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Calculate the
+arcus tanges of <tt>$y</tt> divided by <tt>$x</tt>,
+modifying <tt>$y</tt> in place. See also
+&quot;<i>batan()</i>&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This method was
+added in v1.87 of Math::BigInt (June 2007).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>batan()</i></p>
+
+
+<pre style="margin-left:11%;">        my $x = Math::BigFloat&minus;&gt;new(1);
+        print $x&minus;&gt;batan(100), &quot;\n&quot;;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Calculate the
+arcus tanges of <tt>$x</tt>, modifying <tt>$x</tt> in place.
+See also &quot;<i>batan2()</i>&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This method was
+added in v1.87 of Math::BigInt (June 2007).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>bmuladd()</i></p>
+
+
+<pre style="margin-left:11%;">        $x&minus;&gt;bmuladd($y,$z);</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Multiply
+<tt>$x</tt> by <tt>$y</tt>, and then add <tt>$z</tt> to the
+result.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This method was
+added in v1.87 of Math::BigInt (June 2007).</p>
+
+<h2>Autocreating constants
+<a name="Autocreating constants"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">After
+<tt>&quot;use Math::BigFloat ':constant'&quot;</tt> all the
+floating point constants in the given scope are converted to
+<tt>&quot;Math::BigFloat&quot;</tt>. This conversion happens
+at compile time.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In
+particular</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  perl &minus;MMath::BigFloat=:constant &minus;e 'print 2E&minus;100,&quot;\n&quot;'</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">prints the
+value of <tt>&quot;2E&minus;100&quot;</tt>. Note that
+without conversion of constants the expression 2E&minus;100
+will be calculated as normal floating point number.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Please note
+that &rsquo;:constant&rsquo; does not affect integer
+constants, nor binary nor hexadecimal constants. Use bignum
+or Math::BigInt to get this to work.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Math
+library</b> <br>
+Math with the numbers is done (by default) by a module
+called Math::BigInt::Calc. This is equivalent to saying:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use Math::BigFloat lib =&gt; 'Calc';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">You can change
+this by using:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use Math::BigFloat lib =&gt; 'GMP';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Note</b>:
+General purpose packages should not be explicit about the
+library to use; let the script author decide which is
+best.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note: The
+keyword &rsquo;lib&rsquo; will warn when the requested
+library could not be loaded. To suppress the warning use
+&rsquo;try&rsquo; instead:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use Math::BigFloat try =&gt; 'GMP';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">If your script
+works with huge numbers and Calc is too slow for them, you
+can also for the loading of one of these libraries and if
+none of them can be used, the code will die:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use Math::BigFloat only =&gt; 'GMP,Pari';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+would first try to find Math::BigInt::Foo, then
+Math::BigInt::Bar, and when this also fails, revert to
+Math::BigInt::Calc:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use Math::BigFloat lib =&gt; 'Foo,Math::BigInt::Bar';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">See the
+respective low-level library documentation for further
+details.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Please note
+that Math::BigFloat does <b>not</b> use the denoted library
+itself, but it merely passes the lib argument to
+Math::BigInt. So, instead of the need to do:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use Math::BigInt lib =&gt; 'GMP';
+        use Math::BigFloat;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">you can roll it
+all into one line:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use Math::BigFloat lib =&gt; 'GMP';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">It is also
+possible to just require Math::BigFloat:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        require Math::BigFloat;</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This will load
+the necessary things (like BigInt) when they are needed, and
+automatically.</p>
+
+<p style="margin-left:11%; margin-top: 1em">See
+Math::BigInt for more details than you ever wanted to know
+about using a different low-level library.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Using
+Math::BigInt::Lite</b> <br>
+For backwards compatibility reasons it is still possible to
+request a different storage class for use with
+Math::BigFloat:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use Math::BigFloat with =&gt; 'Math::BigInt::Lite';</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">However, this
+request is ignored, as the current code now uses the
+low-level math library for directly storing the number
+parts.</p>
+
+<h2>EXPORTS
+<a name="EXPORTS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;Math::BigFloat&quot;</tt>
+exports nothing by default, but can export the
+<tt>&quot;bpi()&quot;</tt> method:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        use Math::BigFloat qw/bpi/;
+        print bpi(10), &quot;\n&quot;;</pre>
+
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Please see the
+file <small>BUGS</small> in the <small>CPAN</small>
+distribution Math::BigInt for known bugs.</p>
+
+<h2>CAVEATS
+<a name="CAVEATS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Do not try to
+be clever to insert some operations in between switching
+libraries:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">    require Math::BigFloat;
+    my $matter = Math::BigFloat&minus;&gt;bone() + 4;    # load BigInt and Calc
+    Math::BigFloat&minus;&gt;import( lib =&gt; 'Pari' );    # load Pari, too
+    my $anti_matter = Math::BigFloat&minus;&gt;bone()+4; # now use Pari</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">This will
+create objects with numbers stored in two different backend
+libraries, and <b><small>VERY BAD THINGS</small></b> will
+happen when you use these together:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">        my $flash_and_bang = $matter + $anti_matter;    # Don't do this!</pre>
+
+
+<p style="margin-left:11%;">stringify, <i>bstr()</i></p>
+
+<p style="margin-left:12%;">Both stringify and
+<i>bstr()</i> now drop the leading &rsquo;+&rsquo;. The old
+code would return &rsquo;+1.23&rsquo;, the new returns
+&rsquo;1.23&rsquo;. See the documentation in Math::BigInt
+for reasoning and details.</p>
+
+<p style="margin-left:11%;">bdiv</p>
+
+<p style="margin-left:12%;">The following will probably not
+print what you expect:</p>
+
+<pre style="margin-left:12%; margin-top: 1em">        print $c&minus;&gt;bdiv(123.456),&quot;\n&quot;;</pre>
+
+
+<p style="margin-left:12%; margin-top: 1em">It prints both
+quotient and remainder since print works in list context.
+Also, <i>bdiv()</i> will modify <tt>$c</tt>, so be careful.
+You probably want to use</p>
+
+<pre style="margin-left:12%; margin-top: 1em">    print $c / 123.456,&quot;\n&quot;;
+    print scalar $c&minus;&gt;bdiv(123.456),&quot;\n&quot;;  # or if you want to modify $c</pre>
+
+
+<p style="margin-left:12%; margin-top: 1em">instead.</p>
+
+<p style="margin-left:11%;">brsft</p>
+
+<p style="margin-left:12%;">The following will probably not
+print what you expect:</p>
+
+<pre style="margin-left:12%; margin-top: 1em">        my $c = Math::BigFloat&minus;&gt;new('3.14159');
+        print $c&minus;&gt;brsft(3,10),&quot;\n&quot;;     # prints 0.00314153.1415</pre>
+
+
+<p style="margin-left:12%; margin-top: 1em">It prints both
+quotient and remainder, since print calls
+<tt>&quot;brsft()&quot;</tt> in list context. Also,
+<tt>&quot;$c&minus;&gt;brsft()&quot;</tt> will modify
+<tt>$c</tt>, so be careful. You probably want to use</p>
+
+<pre style="margin-left:12%; margin-top: 1em">        print scalar $c&minus;&gt;copy()&minus;&gt;brsft(3,10),&quot;\n&quot;;
+        # or if you really want to modify $c
+        print scalar $c&minus;&gt;brsft(3,10),&quot;\n&quot;;</pre>
+
+
+<p style="margin-left:12%; margin-top: 1em">instead.</p>
+
+<p style="margin-left:11%;">Modifying and =</p>
+
+<p style="margin-left:12%;">Beware of:</p>
+
+<pre style="margin-left:12%; margin-top: 1em">        $x = Math::BigFloat&minus;&gt;new(5);
+        $y = $x;</pre>
+
+
+<p style="margin-left:12%; margin-top: 1em">It will not do
+what you think, e.g. making a copy of <tt>$x</tt>. Instead
+it just makes a second reference to the <b>same</b> object
+and stores it in <tt>$y</tt>. Thus anything that modifies
+<tt>$x</tt> will modify <tt>$y</tt> (except overloaded math
+operators), and vice versa. See Math::BigInt for details and
+how to avoid that.</p>
+
+<p style="margin-left:11%;">bpow</p>
+
+<p style="margin-left:12%;"><tt>&quot;bpow()&quot;</tt> now
+modifies the first argument, unlike the old code which left
+it alone and only returned the result. This is to be
+consistent with <tt>&quot;badd()&quot;</tt> etc. The first
+will modify <tt>$x</tt>, the second one won&rsquo;t:</p>
+
+<pre style="margin-left:12%; margin-top: 1em">        print bpow($x,$i),&quot;\n&quot;;         # modify $x
+        print $x&minus;&gt;bpow($i),&quot;\n&quot;;        # ditto
+        print $x ** $i,&quot;\n&quot;;            # leave $x alone</pre>
+
+
+<p style="margin-left:11%;"><i>precision()</i> vs.
+<i>accuracy()</i></p>
+
+<p style="margin-left:12%;">A common pitfall is to use
+&quot;<i>precision()</i>&quot; when you want to round a
+result to a certain number of digits:</p>
+
+<pre style="margin-left:12%; margin-top: 1em">    use Math::BigFloat;
+    Math::BigFloat&minus;&gt;precision(4);            # does not do what you
+                                             # think it does
+    my $x = Math::BigFloat&minus;&gt;new(12345);      # rounds $x to &quot;12000&quot;!
+    print &quot;$x\n&quot;;                            # print &quot;12000&quot;
+    my $y = Math::BigFloat&minus;&gt;new(3);          # rounds $y to &quot;0&quot;!
+    print &quot;$y\n&quot;;                            # print &quot;0&quot;
+    $z = $x / $y;                            # 12000 / 0 =&gt; NaN!
+    print &quot;$z\n&quot;;
+    print $z&minus;&gt;precision(),&quot;\n&quot;;              # 4</pre>
+
+
+<p style="margin-left:12%; margin-top: 1em">Replacing
+&quot;<i>precision()</i>&quot; with &quot;accuracy&quot; is
+probably not what you want, either:</p>
+
+<pre style="margin-left:12%; margin-top: 1em">    use Math::BigFloat;
+    Math::BigFloat&minus;&gt;accuracy(4);             # enables global rounding:
+    my $x = Math::BigFloat&minus;&gt;new(123456);     # rounded immediately
+                                             #   to &quot;12350&quot;
+    print &quot;$x\n&quot;;                            # print &quot;123500&quot;
+    my $y = Math::BigFloat&minus;&gt;new(3);          # rounded to &quot;3
+    print &quot;$y\n&quot;;                            # print &quot;3&quot;
+    print $z = $x&minus;&gt;copy()&minus;&gt;bdiv($y),&quot;\n&quot;;    # 41170
+    print $z&minus;&gt;accuracy(),&quot;\n&quot;;               # 4</pre>
+
+
+<p style="margin-left:12%; margin-top: 1em">What you want
+to use instead is:</p>
+
+<pre style="margin-left:12%; margin-top: 1em">    use Math::BigFloat;
+    my $x = Math::BigFloat&minus;&gt;new(123456);     # no rounding
+    print &quot;$x\n&quot;;                            # print &quot;123456&quot;
+    my $y = Math::BigFloat&minus;&gt;new(3);          # no rounding
+    print &quot;$y\n&quot;;                            # print &quot;3&quot;
+    print $z = $x&minus;&gt;copy()&minus;&gt;bdiv($y,4),&quot;\n&quot;;  # 41150
+    print $z&minus;&gt;accuracy(),&quot;\n&quot;;               # undef</pre>
+
+
+<p style="margin-left:12%; margin-top: 1em">In addition to
+computing what you expected, the last example also does
+<b>not</b> &quot;taint&quot; the result with an accuracy or
+precision setting, which would influence any further
+operation.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Math::BigInt,
+Math::BigRat and Math::Big as well as Math::BigInt::BitVect,
+Math::BigInt::Pari and Math::BigInt::GMP.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The pragmas
+bignum, bigint and bigrat might also be of interest because
+they solve the autoupgrading/downgrading issue, at least
+partly.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The package at
+http://search.cpan.org/~tels/Math&minus;BigInt
+&lt;http://search.cpan.org/~tels/Math-BigInt&gt; contains
+more documentation including a full version history,
+testcases, empty subclass files and benchmarks.</p>
+
+<h2>LICENSE
+<a name="LICENSE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This program is
+free software; you may redistribute it and/or modify it
+under the same terms as Perl itself.</p>
+
+<h2>AUTHORS
+<a name="AUTHORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Mark Biggar,
+overloaded interface by Ilya Zakharevich. Completely
+rewritten by Tels &lt;http://bloodgate.com&gt; in 2001
+&minus; 2006, and still at it in 2007.</p>
+<hr>
+</body>
+</html>

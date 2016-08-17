@@ -1,0 +1,310 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:49 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SET_MEMPOLICY</title>
+
+</head>
+<body>
+
+<h1 align="center">SET_MEMPOLICY</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">set_mempolicy
+&minus; set default NUMA memory policy for a process and its
+children</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;numaif.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+set_mempolicy(int</b> <i>mode</i><b>, unsigned long
+*</b><i>nodemask</i><b>, <br>
+unsigned long</b> <i>maxnode</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">Link with
+<i>&minus;lnuma</i>.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>set_mempolicy</b>()
+sets the NUMA memory policy of the calling process, which
+consists of a policy mode and zero or more nodes, to the
+values specified by the <i>mode</i>, <i>nodemask</i> and
+<i>maxnode</i> arguments.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A NUMA machine
+has different memory controllers with different distances to
+specific CPUs. The memory policy defines from which node
+memory is allocated for the process.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This system
+call defines the default policy for the process. The process
+policy governs allocation of pages in the process&rsquo;s
+address space outside of memory ranges controlled by a more
+specific policy set by <b>mbind</b>(2). The process default
+policy also controls allocation of any pages for memory
+mapped files mapped using the <b>mmap</b>(2) call with the
+<b>MAP_PRIVATE</b> flag and that are only read [loaded] from
+by the process and of memory mapped files mapped using the
+<b>mmap</b>(2) call with the <b>MAP_SHARED</b> flag,
+regardless of the access type. The policy is applied only
+when a new page is allocated for the process. For anonymous
+memory this is when the page is first touched by the
+application.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>mode</i>
+argument must specify one of <b>MPOL_DEFAULT</b>,
+<b>MPOL_BIND</b>, <b>MPOL_INTERLEAVE</b> or
+<b>MPOL_PREFERRED</b>. All modes except <b>MPOL_DEFAULT</b>
+require the caller to specify via the <i>nodemask</i>
+argument one or more nodes.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The <i>mode</i>
+argument may also include an optional <i>mode flag</i>. The
+supported <i>mode flags</i> are: <b><br>
+MPOL_F_STATIC_NODES</b> (since Linux 2.6.26)</p>
+
+<p style="margin-left:22%;">A nonempty <i>nodemask</i>
+specifies physical node ids. Linux does will not remap the
+<i>nodemask</i> when the process moves to a different cpuset
+context, nor when the set of nodes allowed by the
+process&rsquo;s current cpuset context changes.</p>
+
+<p style="margin-left:11%;"><b>MPOL_F_RELATIVE_NODES</b>
+(since Linux 2.6.26)</p>
+
+<p style="margin-left:22%;">A nonempty <i>nodemask</i>
+specifies node ids that are relative to the set of node ids
+allowed by the process&rsquo;s current cpuset.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>nodemask</i>
+points to a bit mask of node IDs that contains up to
+<i>maxnode</i> bits. The bit mask size is rounded to the
+next multiple of <i>sizeof(unsigned long)</i>, but the
+kernel will use bits only up to <i>maxnode</i>. A NULL value
+of <i>nodemask</i> or a <i>maxnode</i> value of zero
+specifies the empty set of nodes. If the value of
+<i>maxnode</i> is zero, the <i>nodemask</i> argument is
+ignored.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Where a
+<i>nodemask</i> is required, it must contain at least one
+node that is on-line, allowed by the process&rsquo;s current
+cpuset context, [unless the <b>MPOL_F_STATIC_NODES</b> mode
+flag is specified], and contains memory. If the
+<b>MPOL_F_STATIC_NODES</b> is set in <i>mode</i> and a
+required <i>nodemask</i> contains no nodes that are allowed
+by the process&rsquo;s current cpuset context, the memory
+policy reverts to <i>local allocation</i>. This effectively
+overrides the specified policy until the process&rsquo;s
+cpuset context includes one or more of the nodes specified
+by <i>nodemask</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>MPOL_DEFAULT</b> mode specifies that any nondefault
+process memory policy be removed, so that the memory policy
+&quot;falls back&quot; to the system default policy. The
+system default policy is &quot;local allocation&quot;--
+i.e., allocate memory on the node of the CPU that triggered
+the allocation. <i>nodemask</i> must be specified as NULL.
+If the &quot;local node&quot; contains no free memory, the
+system will attempt to allocate memory from a &quot;near
+by&quot; node.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>MPOL_BIND</b> mode defines a strict policy that restricts
+memory allocation to the nodes specified in <i>nodemask</i>.
+If <i>nodemask</i> specifies more than one node, page
+allocations will come from the node with the lowest numeric
+node ID first, until that node contains no free memory.
+Allocations will then come from the node with the next
+highest node ID specified in <i>nodemask</i> and so forth,
+until none of the specified nodes contain free memory. Pages
+will not be allocated from any node not specified in the
+<i>nodemask</i>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>MPOL_INTERLEAVE</b>
+interleaves page allocations across the nodes specified in
+<i>nodemask</i> in numeric node ID order. This optimizes for
+bandwidth instead of latency by spreading out pages and
+memory accesses to those pages across multiple nodes.
+However, accesses to a single page will still be limited to
+the memory bandwidth of a single node.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>MPOL_PREFERRED</b>
+sets the preferred node for allocation. The kernel will try
+to allocate pages from this node first and fall back to
+&quot;near by&quot; nodes if the preferred node is low on
+free memory. If <i>nodemask</i> specifies more than one node
+ID, the first node in the mask will be selected as the
+preferred node. If the <i>nodemask</i> and <i>maxnode</i>
+arguments specify the empty set, then the policy specifies
+&quot;local allocation&quot; (like the system default policy
+discussed above).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The process
+memory policy is preserved across an <b>execve</b>(2), and
+is inherited by child processes created using <b>fork</b>(2)
+or <b>clone</b>(2).</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success,
+<b>set_mempolicy</b>() returns 0; on error, &minus;1 is
+returned and <i>errno</i> is set to indicate the error.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">Part of all of the memory range
+specified by <i>nodemask</i> and <i>maxnode</i> points
+outside your accessible address space.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>mode</i> is invalid. Or, <i>mode</i> is
+<b>MPOL_DEFAULT</b> and <i>nodemask</i> is nonempty, or
+<i>mode</i> is <b>MPOL_BIND</b> or <b>MPOL_INTERLEAVE</b>
+and <i>nodemask</i> is empty. Or, <i>maxnode</i> specifies
+more than a page worth of bits. Or, <i>nodemask</i>
+specifies one or more node IDs that are greater than the
+maximum supported node ID. Or, none of the node IDs
+specified by <i>nodemask</i> are on-line and allowed by the
+process&rsquo;s current cpuset context, or none of the
+specified nodes contain memory. Or, the <i>mode</i> argument
+specified both <b>MPOL_F_STATIC_NODES</b> and
+<b>MPOL_F_RELATIVE_NODES</b>.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Insufficient kernel memory was available.</p></td></tr>
+</table>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>set_mempolicy</b>(), system call was added to the Linux
+kernel in version 2.6.7.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This system
+call is Linux-specific.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Process policy
+is not remembered if the page is swapped out. When such a
+page is paged back in, it will use the policy of the process
+or memory range that is in effect at the time the page is
+allocated.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For information
+on library support, see <b>numa</b>(7).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>get_mempolicy</b>(2),
+<b>getcpu</b>(2), <b>mbind</b>(2), <b>mmap</b>(2),
+<b>numa</b>(3), <b>cpuset</b>(7), <b>numa</b>(7),
+<b>numactl</b>(8)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

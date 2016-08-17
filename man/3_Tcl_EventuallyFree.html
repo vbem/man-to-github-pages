@@ -1,0 +1,204 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:19:03 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Tcl_Preserve</title>
+
+</head>
+<body>
+
+<h1 align="center">Tcl_Preserve</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#ARGUMENTS">ARGUMENTS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#KEYWORDS">KEYWORDS</a><br>
+
+<hr>
+
+
+
+<p>______________________________________________________________________________</p>
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Tcl_Preserve,
+Tcl_Release, Tcl_EventuallyFree &minus; avoid freeing
+storage while it is being used</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;tcl.h&gt;</b></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_Preserve</b>(<i>clientData</i>)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_Release</b>(<i>clientData</i>)</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_EventuallyFree</b>(<i>clientData,
+freeProc</i>)</p>
+
+<h2>ARGUMENTS
+<a name="ARGUMENTS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="41%">
+
+
+<p style="margin-top: 1em">ClientData <i>clientData</i>
+(in)</p> </td>
+<td width="17%"></td>
+<td width="31%">
+
+
+<p style="margin-top: 1em">Token describing structure to be
+freed or reallocated. Usually a pointer to memory for
+structure.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="41%">
+
+
+<p>Tcl_FreeProc <i>*freeProc</i> (in)</p></td>
+<td width="17%"></td>
+<td width="31%">
+
+
+<p>Procedure to invoke to free <i>clientData</i>.</p></td></tr>
+</table>
+
+
+<p style="margin-left:69%;">_________________________________________________________________</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These three
+procedures help implement a simple reference count mechanism
+for managing storage. They are designed to solve a problem
+having to do with widget deletion, but are also useful in
+many other situations. When a widget is deleted, its widget
+record (the structure holding information specific to the
+widget) must be returned to the storage allocator. However,
+it is possible that the widget record is in active use by
+one of the procedures on the stack at the time of the
+deletion. This can happen, for example, if the command
+associated with a button widget causes the button to be
+destroyed: an X event causes an event-handling C procedure
+in the button to be invoked, which in turn causes the
+button&rsquo;s associated Tcl command to be executed, which
+in turn causes the button to be deleted, which in turn
+causes the button&rsquo;s widget record to be de-allocated.
+Unfortunately, when the Tcl command returns, the
+button&rsquo;s event-handling procedure will need to
+reference the button&rsquo;s widget record. Because of this,
+the widget record must not be freed as part of the deletion,
+but must be retained until the event-handling procedure has
+finished with it. In other situations where the widget is
+deleted, it may be possible to free the widget record
+immediately.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_Preserve</b>
+and <b>Tcl_Release</b> implement short-term reference counts
+for their <i>clientData</i> argument. The <i>clientData</i>
+argument identifies an object and usually consists of the
+address of a structure. The reference counts guarantee that
+an object will not be freed until each call to
+<b>Tcl_Preserve</b> for the object has been matched by calls
+to <b>Tcl_Release</b>. There may be any number of unmatched
+<b>Tcl_Preserve</b> calls in effect at once.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>Tcl_EventuallyFree</b>
+is invoked to free up its <i>clientData</i> argument. It
+checks to see if there are unmatched <b>Tcl_Preserve</b>
+calls for the object. If not, then <b>Tcl_EventuallyFree</b>
+calls <i>freeProc</i> immediately. Otherwise
+<b>Tcl_EventuallyFree</b> records the fact that
+<i>clientData</i> needs eventually to be freed. When all
+calls to <b>Tcl_Preserve</b> have been matched with calls to
+<b>Tcl_Release</b> then <i>freeProc</i> will be called by
+<b>Tcl_Release</b> to do the cleanup.</p>
+
+<p style="margin-left:11%; margin-top: 1em">All the work of
+freeing the object is carried out by <i>freeProc</i>.
+<i>FreeProc</i> must have arguments and result that match
+the type <b>Tcl_FreeProc</b>:</p>
+
+<p style="margin-left:22%;">typedef void Tcl_FreeProc(char
+*<i>blockPtr</i>);</p>
+
+<p style="margin-left:11%;">The <i>blockPtr</i> argument to
+<i>freeProc</i> will be the same as the <i>clientData</i>
+argument to <b>Tcl_EventuallyFree</b>. The type of
+<i>blockPtr</i> (<b>char *</b>) is different than the type
+of the <i>clientData</i> argument to
+<b>Tcl_EventuallyFree</b> for historical reasons, but the
+value is the same.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When the
+<i>clientData</i> argument to <b>Tcl_EventuallyFree</b>
+refers to storage allocated and returned by a prior call to
+<b>Tcl_Alloc</b>, <b>ckalloc</b>, or another function of the
+Tcl library, then the <i>freeProc</i> argument should be
+given the special value of <b>TCL_DYNAMIC</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This mechanism
+can be used to solve the problem described above by placing
+<b>Tcl_Preserve</b> and <b>Tcl_Release</b> calls around
+actions that may cause undesired storage re-allocation. The
+mechanism is intended only for short-term use (i.e. while
+procedures are pending on the stack); it will not work
+efficiently as a mechanism for long-term reference counts.
+The implementation does not depend in any way on the
+internal structure of the objects being freed; it keeps the
+reference counts in a separate structure.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Tcl_Interp,
+Tcl_Alloc</p>
+
+<h2>KEYWORDS
+<a name="KEYWORDS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">free, reference
+count, storage</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,490 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:31:55 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PUTMSG</title>
+
+</head>
+<body>
+
+<h1 align="center">PUTMSG</h1>
+
+<a href="#PROLOG">PROLOG</a><br>
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
+<a href="#APPLICATION USAGE">APPLICATION USAGE</a><br>
+<a href="#RATIONALE">RATIONALE</a><br>
+<a href="#FUTURE DIRECTIONS">FUTURE DIRECTIONS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+
+<hr>
+
+
+<h2>PROLOG
+<a name="PROLOG"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This manual
+page is part of the POSIX Programmer&rsquo;s Manual. The
+Linux implementation of this interface may differ (consult
+the corresponding Linux manual page for details of Linux
+behavior), or the interface may not be implemented on
+Linux.</p>
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">putmsg, putpmsg
+&minus; send a message on a STREAM (<b>STREAMS</b>)</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;stropts.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+putmsg(int</b> <i>fildes</i><b>, const struct strbuf
+*</b><i>ctlptr</i><b>, &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>
+const struct strbuf *</b><i>dataptr</i><b>, int</b>
+<i>flags</i><b>); <br>
+int putpmsg(int</b> <i>fildes</i><b>, const struct strbuf
+*</b><i>ctlptr</i><b>, &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>
+const struct strbuf *</b><i>dataptr</i><b>, int</b>
+<i>band</i><b>, int</b> <i>flags</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>putmsg</i>() function shall create a message from a
+process buffer(s) and send the message to a STREAMS file.
+The message may contain either a data part, a control part,
+or both. The data and control parts are distinguished by
+placement in separate buffers, as described below. The
+semantics of each part are defined by the STREAMS module
+that receives the message.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>putpmsg</i>() function is equivalent to <i>putmsg</i>(),
+except that the process can send messages in different
+priority bands. Except where noted, all requirements on
+<i>putmsg</i>() also pertain to <i>putpmsg</i>().</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>fildes</i> argument specifies a file descriptor
+referencing an open STREAM. The <i>ctlptr</i> and
+<i>dataptr</i> arguments each point to a <b>strbuf</b>
+structure.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>ctlptr</i> argument points to the structure describing
+the control part, if any, to be included in the message. The
+<i>buf</i> member in the <b>strbuf</b> structure points to
+the buffer where the control information resides, and the
+<i>len</i> member indicates the number of bytes to be sent.
+The <i>maxlen</i> member is not used by <i>putmsg</i>(). In
+a similar manner, the argument <i>dataptr</i> specifies the
+data, if any, to be included in the message. The
+<i>flags</i> argument indicates what type of message should
+be sent and is described further below.</p>
+
+<p style="margin-left:11%; margin-top: 1em">To send the
+data part of a message, the application shall ensure that
+<i>dataptr</i> is not a null pointer and the <i>len</i>
+member of <i>dataptr</i> is 0 or greater. To send the
+control part of a message, the application shall ensure that
+the corresponding values are set for <i>ctlptr</i>. No data
+(control) part shall be sent if either <i>dataptr</i>(
+<i>ctlptr</i>) is a null pointer or the <i>len</i> member of
+<i>dataptr</i>( <i>ctlptr</i>) is set to -1.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+<i>putmsg</i>(), if a control part is specified and
+<i>flags</i> is set to RS_HIPRI, a high priority message
+shall be sent. If no control part is specified, and
+<i>flags</i> is set to RS_HIPRI, <i>putmsg</i>() shall fail
+and set <i>errno</i> to [EINVAL]. If <i>flags</i> is set to
+0, a normal message (priority band equal to 0) shall be
+sent. If a control part and data part are not specified and
+<i>flags</i> is set to 0, no message shall be sent and 0
+shall be returned.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For
+<i>putpmsg</i>(), the flags are different. The <i>flags</i>
+argument is a bitmask with the following mutually-exclusive
+flags defined: MSG_HIPRI and MSG_BAND. If <i>flags</i> is
+set to 0, <i>putpmsg</i>() shall fail and set <i>errno</i>
+to [EINVAL]. If a control part is specified and <i>flags</i>
+is set to MSG_HIPRI and <i>band</i> is set to 0, a
+high-priority message shall be sent. If <i>flags</i> is set
+to MSG_HIPRI and either no control part is specified or
+<i>band</i> is set to a non-zero value, <i>putpmsg</i>()
+shall fail and set <i>errno</i> to [EINVAL]. If <i>flags</i>
+is set to MSG_BAND, then a message shall be sent in the
+priority band specified by <i>band</i>. If a control part
+and data part are not specified and <i>flags</i> is set to
+MSG_BAND, no message shall be sent and 0 shall be
+returned.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>putmsg</i>() function shall block if the STREAM write
+queue is full due to internal flow control conditions, with
+the following exceptions:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="2%">
+
+
+<p>*</p></td>
+<td width="1%"></td>
+<td width="85%">
+
+
+<p>For high-priority messages, <i>putmsg</i>() shall not
+block on this condition and continues processing the
+message.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="2%">
+
+
+<p>*</p></td>
+<td width="1%"></td>
+<td width="85%">
+
+
+<p>For other messages, <i>putmsg</i>() shall not block but
+shall fail when the write queue is full and O_NONBLOCK is
+set.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>putmsg</i>() function shall also block, unless prevented
+by lack of internal resources, while waiting for the
+availability of message blocks in the STREAM, regardless of
+priority or whether O_NONBLOCK has been specified. No
+partial message shall be sent.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Upon successful
+completion, <i>putmsg</i>() and <i>putpmsg</i>() shall
+return 0; otherwise, they shall return -1 and set
+<i>errno</i> to indicate the error.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>putmsg</i>() and <i>putpmsg</i>() functions shall fail
+if:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EAGAIN</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">A non-priority message was
+specified, the O_NONBLOCK flag is set, and the STREAM write
+queue is full due to internal flow control conditions; or
+buffers could not be allocated for the message that was to
+be created.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EBADF</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p><i>fildes</i> is not a valid file descriptor open for
+writing.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINTR</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>A signal was caught during <i>putmsg</i>().</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>An undefined value is specified in <i>flags</i>, or
+<i>flags</i> is set to RS_HIPRI or MSG_HIPRI and no control
+part is supplied, or the STREAM or multiplexer referenced by
+<i>fildes</i> is linked (directly or indirectly) downstream
+from a multiplexer, or <i>flags</i> is set to MSG_HIPRI and
+<i>band</i> is non-zero (for <i>putpmsg</i>() only).</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOSR</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Buffers could not be allocated for the message that was
+to be created due to insufficient STREAMS memory
+resources.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOSTR</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>A STREAM is not associated with <i>fildes</i>.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENXIO</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>A hangup condition was generated downstream for the
+specified STREAM.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>EPIPE</b> or <b>EIO</b></p>
+
+<p style="margin-left:22%;">The <i>fildes</i> argument
+refers to a STREAMS-based pipe and the other end of the pipe
+is closed. A SIGPIPE signal is generated for the calling
+thread.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ERANGE</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The size of the data part of the message does not fall
+within the range specified by the maximum and minimum packet
+sizes of the topmost STREAM module. This value is also
+returned if the control part of the message is larger than
+the maximum configured size of the control part of a
+message, or if the data part of a message is larger than the
+maximum configured size of the data part of a message.</p></td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em">In addition,
+<i>putmsg</i>() and <i>putpmsg</i>() shall fail if the
+STREAM head had processed an asynchronous error before the
+call. In this case, the value of <i>errno</i> does not
+reflect the result of <i>putmsg</i>() or <i>putpmsg</i>(),
+but reflects the prior error.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><i>The
+following sections are informative.</i></p>
+
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i><b>Sending a
+High-Priority Message</b></i> <br>
+The value of <i>fd</i> is assumed to refer to an open
+STREAMS file. This call to <i>putmsg</i>() does the
+following:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">1.</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p style="margin-top: 1em">Creates a high-priority message
+with a control part and a data part, using the buffers
+pointed to by <i>ctrlbuf</i> and <i>databuf</i>,
+respectively.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+<p>2.</p></td>
+<td width="2%"></td>
+<td width="83%">
+
+
+<p>Sends the message to the STREAMS file identified by
+<i>fd</i>.</p> </td></tr>
+</table>
+
+<p style="margin-left:22%; margin-top: 1em"><b>#include
+&lt;stropts.h&gt; <br>
+#include &lt;string.h&gt; <br>
+... <br>
+int fd; <br>
+char *ctrlbuf = &quot;This is the control part&quot;; <br>
+char *databuf = &quot;This is the data part&quot;; <br>
+struct strbuf ctrl; <br>
+struct strbuf data; <br>
+int ret;</b></p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>ctrl.buf =
+ctrlbuf; <br>
+ctrl.len = strlen(ctrlbuf);</b></p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>data.buf =
+databuf; <br>
+data.len = strlen(databuf);</b></p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>ret =
+putmsg(fd, &amp;ctrl, &amp;data, MSG_HIPRI);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Using
+putpmsg()</b> <br>
+This example has the same effect as the previous example. In
+this example, however, the <i>putpmsg</i>() function creates
+and sends the message to the STREAMS file.</p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>#include
+&lt;stropts.h&gt; <br>
+#include &lt;string.h&gt; <br>
+... <br>
+int fd; <br>
+char *ctrlbuf = &quot;This is the control part&quot;; <br>
+char *databuf = &quot;This is the data part&quot;; <br>
+struct strbuf ctrl; <br>
+struct strbuf data; <br>
+int ret;</b></p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>ctrl.buf =
+ctrlbuf; <br>
+ctrl.len = strlen(ctrlbuf);</b></p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>data.buf =
+databuf; <br>
+data.len = strlen(databuf);</b></p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>ret =
+putpmsg(fd, &amp;ctrl, &amp;data, 0, MSG_HIPRI);</b></p>
+
+<h2>APPLICATION USAGE
+<a name="APPLICATION USAGE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">None.</p>
+
+<h2>RATIONALE
+<a name="RATIONALE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">None.</p>
+
+<h2>FUTURE DIRECTIONS
+<a name="FUTURE DIRECTIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">None.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>STREAMS</i>,
+<i>getmsg</i>(), <i>poll</i>(), <i>read</i>(),
+<i>write</i>(), the Base Definitions volume of
+IEEE&nbsp;Std&nbsp;1003.1-2001, <i>&lt;stropts.h&gt;</i></p>
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Portions of
+this text are reprinted and reproduced in electronic form
+from IEEE Std 1003.1, 2003 Edition, Standard for Information
+Technology -- Portable Operating System Interface (POSIX),
+The Open Group Base Specifications Issue 6, Copyright (C)
+2001-2003 by the Institute of Electrical and Electronics
+Engineers, Inc and The Open Group. In the event of any
+discrepancy between this version and the original IEEE and
+The Open Group Standard, the original IEEE and The Open
+Group Standard is the referee document. The original
+Standard can be obtained online at
+http://www.opengroup.org/unix/online.html .</p>
+<hr>
+</body>
+</html>

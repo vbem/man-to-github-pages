@@ -1,0 +1,653 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:39:12 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>GITTUTORIAL&minus;2</title>
+
+</head>
+<body>
+
+<h1 align="center">GITTUTORIAL&minus;2</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#THE GIT OBJECT DATABASE">THE GIT OBJECT DATABASE</a><br>
+<a href="#THE INDEX FILE">THE INDEX FILE</a><br>
+<a href="#WHAT NEXT?">WHAT NEXT?</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#GIT">GIT</a><br>
+<a href="#NOTES">NOTES</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">gittutorial-2
+&minus; A tutorial introduction to Git: part two</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">git *</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">You should work
+through <b>gittutorial</b>(7) before reading this
+tutorial.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The goal of
+this tutorial is to introduce two fundamental pieces of
+Git&rsquo;s architecture&mdash;the object database and the
+index file&mdash;and to provide the reader with everything
+necessary to understand the rest of the Git
+documentation.</p>
+
+<h2>THE GIT OBJECT DATABASE
+<a name="THE GIT OBJECT DATABASE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Let&rsquo;s
+start a new project and create a small amount of
+history:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ mkdir
+test&minus;project <br>
+$ cd test&minus;project <br>
+$ git init <br>
+Initialized empty Git repository in .git/ <br>
+$ echo 'hello world' &gt; file.txt <br>
+$ git add . <br>
+$ git commit &minus;a &minus;m &quot;initial commit&quot;
+<br>
+[master (root&minus;commit) 54196cc] initial commit <br>
+1 file changed, 1 insertion(+) <br>
+create mode 100644 file.txt <br>
+$ echo 'hello world!' &gt;file.txt <br>
+$ git commit &minus;a &minus;m &quot;add emphasis&quot; <br>
+[master c4d59f3] add emphasis <br>
+1 file changed, 1 insertion(+), 1 deletion(&minus;)</p>
+
+<p style="margin-left:11%; margin-top: 1em">What are the 7
+digits of hex that Git responded to the commit with?</p>
+
+<p style="margin-left:11%; margin-top: 1em">We saw in part
+one of the tutorial that commits have names like this. It
+turns out that every object in the Git history is stored
+under a 40&minus;digit hex name. That name is the
+SHA&minus;1 hash of the object&rsquo;s contents; among other
+things, this ensures that Git will never store the same data
+twice (since identical data is given an identical
+SHA&minus;1 name), and that the contents of a Git object
+will never change (since that would change the
+object&rsquo;s name as well). The 7 char hex strings here
+are simply the abbreviation of such 40 character long
+strings. Abbreviations can be used everywhere where the 40
+character strings can be used, so long as they are
+unambiguous.</p>
+
+<p style="margin-left:11%; margin-top: 1em">It is expected
+that the content of the commit object you created while
+following the example above generates a different
+SHA&minus;1 hash than the one shown above because the commit
+object records the time when it was created and the name of
+the person performing the commit.</p>
+
+<p style="margin-left:11%; margin-top: 1em">We can ask Git
+about this particular object with the cat&minus;file
+command. Don&rsquo;t copy the 40 hex digits from this
+example but use those from your own version. Note that you
+can shorten it to only a few characters to save yourself
+typing all 40 hex digits:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git
+cat&minus;file &minus;t 54196cc2 <br>
+commit <br>
+$ git cat&minus;file commit 54196cc2 <br>
+tree 92b8b694ffb1675e5975148e1121810081dbdffe <br>
+author J. Bruce Fields &lt;bfields@puzzle.fieldses.org&gt;
+1143414668 &minus;0500 <br>
+committer J. Bruce Fields
+&lt;bfields@puzzle.fieldses.org&gt; 1143414668
+&minus;0500</p>
+
+<p style="margin-left:17%; margin-top: 1em">initial
+commit</p>
+
+<p style="margin-left:11%; margin-top: 1em">A tree can
+refer to one or more &quot;blob&quot; objects, each
+corresponding to a file. In addition, a tree can also refer
+to other tree objects, thus creating a directory hierarchy.
+You can examine the contents of any tree using ls&minus;tree
+(remember that a long enough initial portion of the
+SHA&minus;1 will also work):</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git
+ls&minus;tree 92b8b694 <br>
+100644 blob 3b18e512dba79e4c8300dd08aeb37f8e728b8dad
+file.txt</p>
+
+<p style="margin-left:11%; margin-top: 1em">Thus we see
+that this tree has one file in it. The SHA&minus;1 hash is a
+reference to that file&rsquo;s data:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git
+cat&minus;file &minus;t 3b18e512 <br>
+blob</p>
+
+<p style="margin-left:11%; margin-top: 1em">A
+&quot;blob&quot; is just file data, which we can also
+examine with cat&minus;file:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git
+cat&minus;file blob 3b18e512 <br>
+hello world</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that this
+is the old file data; so the object that Git named in its
+response to the initial tree was a tree with a snapshot of
+the directory state that was recorded by the first
+commit.</p>
+
+<p style="margin-left:11%; margin-top: 1em">All of these
+objects are stored under their SHA&minus;1 names inside the
+Git directory:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ find
+.git/objects/ <br>
+.git/objects/ <br>
+.git/objects/pack <br>
+.git/objects/info <br>
+.git/objects/3b <br>
+.git/objects/3b/18e512dba79e4c8300dd08aeb37f8e728b8dad <br>
+.git/objects/92 <br>
+.git/objects/92/b8b694ffb1675e5975148e1121810081dbdffe <br>
+.git/objects/54 <br>
+.git/objects/54/196cc2703dc165cbd373a65a4dcf22d50ae7f7 <br>
+.git/objects/a0 <br>
+.git/objects/a0/423896973644771497bdc03eb99d5281615b51 <br>
+.git/objects/d0 <br>
+.git/objects/d0/492b368b66bdabf2ac1fd8c92b39d3db916e59 <br>
+.git/objects/c4 <br>
+.git/objects/c4/d59f390b9cfd4318117afde11d601c1085f241</p>
+
+<p style="margin-left:11%; margin-top: 1em">and the
+contents of these files is just the compressed data plus a
+header identifying their length and their type. The type is
+either a blob, a tree, a commit, or a tag.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The simplest
+commit to find is the HEAD commit, which we can find from
+.git/HEAD:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ cat .git/HEAD
+<br>
+ref: refs/heads/master</p>
+
+<p style="margin-left:11%; margin-top: 1em">As you can see,
+this tells us which branch we&rsquo;re currently on, and it
+tells us this by naming a file under the .git directory,
+which itself contains a SHA&minus;1 name referring to a
+commit object, which we can examine with cat&minus;file:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ cat
+.git/refs/heads/master <br>
+c4d59f390b9cfd4318117afde11d601c1085f241 <br>
+$ git cat&minus;file &minus;t c4d59f39 <br>
+commit <br>
+$ git cat&minus;file commit c4d59f39 <br>
+tree d0492b368b66bdabf2ac1fd8c92b39d3db916e59 <br>
+parent 54196cc2703dc165cbd373a65a4dcf22d50ae7f7 <br>
+author J. Bruce Fields &lt;bfields@puzzle.fieldses.org&gt;
+1143418702 &minus;0500 <br>
+committer J. Bruce Fields
+&lt;bfields@puzzle.fieldses.org&gt; 1143418702
+&minus;0500</p>
+
+<p style="margin-left:17%; margin-top: 1em">add
+emphasis</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+&quot;tree&quot; object here refers to the new state of the
+tree:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git
+ls&minus;tree d0492b36 <br>
+100644 blob a0423896973644771497bdc03eb99d5281615b51
+file.txt <br>
+$ git cat&minus;file blob a0423896 <br>
+hello world!</p>
+
+<p style="margin-left:11%; margin-top: 1em">and the
+&quot;parent&quot; object refers to the previous commit:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git
+cat&minus;file commit 54196cc2 <br>
+tree 92b8b694ffb1675e5975148e1121810081dbdffe <br>
+author J. Bruce Fields &lt;bfields@puzzle.fieldses.org&gt;
+1143414668 &minus;0500 <br>
+committer J. Bruce Fields
+&lt;bfields@puzzle.fieldses.org&gt; 1143414668
+&minus;0500</p>
+
+<p style="margin-left:17%; margin-top: 1em">initial
+commit</p>
+
+<p style="margin-left:11%; margin-top: 1em">The tree object
+is the tree we examined first, and this commit is unusual in
+that it lacks any parent.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Most commits
+have only one parent, but it is also common for a commit to
+have multiple parents. In that case the commit represents a
+merge, with the parent references pointing to the heads of
+the merged branches.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Besides blobs,
+trees, and commits, the only remaining type of object is a
+&quot;tag&quot;, which we won&rsquo;t discuss here; refer to
+<b>git-tag</b>(1) for details.</p>
+
+<p style="margin-left:11%; margin-top: 1em">So now we know
+how Git uses the object database to represent a
+project&rsquo;s history:</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+&quot;commit&quot; objects refer to &quot;tree&quot; objects
+representing the snapshot of a directory tree at a
+particular point in the history, and refer to
+&quot;parent&quot; commits to show how they&rsquo;re
+connected into the project history.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+&quot;tree&quot; objects represent the state of a single
+directory, associating directory names to &quot;blob&quot;
+objects containing file data and &quot;tree&quot; objects
+containing subdirectory information.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+&quot;blob&quot; objects contain file data without any other
+structure.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull;
+References to commit objects at the head of each branch are
+stored in files under .git/refs/heads/.</p>
+
+<p style="margin-left:17%; margin-top: 1em">&bull; The name
+of the current branch is stored in .git/HEAD.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note, by the
+way, that lots of commands take a tree as an argument. But
+as we can see above, a tree can be referred to in many
+different ways&mdash;by the SHA&minus;1 name for that tree,
+by the name of a commit that refers to the tree, by the name
+of a branch whose head refers to that tree,
+etc.&minus;&minus;and most such commands can accept any of
+these names.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In command
+synopses, the word &quot;tree&minus;ish&quot; is sometimes
+used to designate such an argument.</p>
+
+<h2>THE INDEX FILE
+<a name="THE INDEX FILE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The primary
+tool we&rsquo;ve been using to create commits is
+git&minus;commit &minus;a, which creates a commit including
+every change you&rsquo;ve made to your working tree. But
+what if you want to commit changes only to certain files? Or
+only certain changes to certain files?</p>
+
+<p style="margin-left:11%; margin-top: 1em">If we look at
+the way commits are created under the cover, we&rsquo;ll see
+that there are more flexible ways creating commits.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Continuing with
+our test&minus;project, let&rsquo;s modify file.txt
+again:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ echo
+&quot;hello world, again&quot; &gt;&gt;file.txt</p>
+
+<p style="margin-left:11%; margin-top: 1em">but this time
+instead of immediately making the commit, let&rsquo;s take
+an intermediate step, and ask for diffs along the way to
+keep track of what&rsquo;s happening:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git diff <br>
+&minus;&minus;&minus; a/file.txt <br>
++++ b/file.txt <br>
+@@ &minus;1 +1,2 @@ <br>
+hello world! <br>
++hello world, again <br>
+$ git add file.txt <br>
+$ git diff</p>
+
+<p style="margin-left:11%; margin-top: 1em">The last diff
+is empty, but no new commits have been made, and the head
+still doesn&rsquo;t contain the new line:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git diff HEAD
+<br>
+diff &minus;&minus;git a/file.txt b/file.txt <br>
+index a042389..513feba 100644 <br>
+&minus;&minus;&minus; a/file.txt <br>
++++ b/file.txt <br>
+@@ &minus;1 +1,2 @@ <br>
+hello world! <br>
++hello world, again</p>
+
+<p style="margin-left:11%; margin-top: 1em">So <i>git
+diff</i> is comparing against something other than the head.
+The thing that it&rsquo;s comparing against is actually the
+index file, which is stored in .git/index in a binary
+format, but whose contents we can examine with
+ls&minus;files:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git
+ls&minus;files &minus;&minus;stage <br>
+100644 513feba2e53ebbd2532419ded848ba19de88ba00 0 file.txt
+<br>
+$ git cat&minus;file &minus;t 513feba2 <br>
+blob <br>
+$ git cat&minus;file blob 513feba2 <br>
+hello world! <br>
+hello world, again</p>
+
+<p style="margin-left:11%; margin-top: 1em">So what our
+<i>git add</i> did was store a new blob and then put a
+reference to it in the index file. If we modify the file
+again, we&rsquo;ll see that the new modifications are
+reflected in the <i>git diff</i> output:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ echo 'again?'
+&gt;&gt;file.txt <br>
+$ git diff <br>
+index 513feba..ba3da7b 100644 <br>
+&minus;&minus;&minus; a/file.txt <br>
++++ b/file.txt <br>
+@@ &minus;1,2 +1,3 @@ <br>
+hello world! <br>
+hello world, again <br>
++again?</p>
+
+<p style="margin-left:11%; margin-top: 1em">With the right
+arguments, <i>git diff</i> can also show us the difference
+between the working directory and the last commit, or
+between the index and the last commit:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git diff HEAD
+<br>
+diff &minus;&minus;git a/file.txt b/file.txt <br>
+index a042389..ba3da7b 100644 <br>
+&minus;&minus;&minus; a/file.txt <br>
++++ b/file.txt <br>
+@@ &minus;1 +1,3 @@ <br>
+hello world! <br>
++hello world, again <br>
++again? <br>
+$ git diff &minus;&minus;cached <br>
+diff &minus;&minus;git a/file.txt b/file.txt <br>
+index a042389..513feba 100644 <br>
+&minus;&minus;&minus; a/file.txt <br>
++++ b/file.txt <br>
+@@ &minus;1 +1,2 @@ <br>
+hello world! <br>
++hello world, again</p>
+
+<p style="margin-left:11%; margin-top: 1em">At any time, we
+can create a new commit using <i>git commit</i> (without the
+&quot;&minus;a&quot; option), and verify that the state
+committed only includes the changes stored in the index
+file, not the additional change that is still only in our
+working tree:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git commit
+&minus;m &quot;repeat&quot; <br>
+$ git diff HEAD <br>
+diff &minus;&minus;git a/file.txt b/file.txt <br>
+index 513feba..ba3da7b 100644 <br>
+&minus;&minus;&minus; a/file.txt <br>
++++ b/file.txt <br>
+@@ &minus;1,2 +1,3 @@ <br>
+hello world! <br>
+hello world, again <br>
++again?</p>
+
+<p style="margin-left:11%; margin-top: 1em">So by default
+<i>git commit</i> uses the index to create the commit, not
+the working tree; the &quot;&minus;a&quot; option to commit
+tells it to first update the index with all changes in the
+working tree.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Finally,
+it&rsquo;s worth looking at the effect of <i>git add</i> on
+the index file:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ echo
+&quot;goodbye, world&quot; &gt;closing.txt <br>
+$ git add closing.txt</p>
+
+<p style="margin-left:11%; margin-top: 1em">The effect of
+the <i>git add</i> was to add one entry to the index
+file:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git
+ls&minus;files &minus;&minus;stage <br>
+100644 8b9743b20d4b15be3955fc8d5cd2b09cd2336138 0
+closing.txt <br>
+100644 513feba2e53ebbd2532419ded848ba19de88ba00 0
+file.txt</p>
+
+<p style="margin-left:11%; margin-top: 1em">And, as you can
+see with cat&minus;file, this new entry refers to the
+current contents of the file:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git
+cat&minus;file blob 8b9743b2 <br>
+goodbye, world</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+&quot;status&quot; command is a useful way to get a quick
+summary of the situation:</p>
+
+<p style="margin-left:17%; margin-top: 1em">$ git status
+<br>
+# On branch master <br>
+# Changes to be committed: <br>
+# (use &quot;git reset HEAD &lt;file&gt;...&quot; to
+unstage) <br>
+# <br>
+# new file: closing.txt <br>
+# <br>
+# Changes not staged for commit: <br>
+# (use &quot;git add &lt;file&gt;...&quot; to update what
+will be committed) <br>
+# <br>
+# modified: file.txt <br>
+#</p>
+
+<p style="margin-left:11%; margin-top: 1em">Since the
+current state of closing.txt is cached in the index file, it
+is listed as &quot;Changes to be committed&quot;. Since
+file.txt has changes in the working directory that
+aren&rsquo;t reflected in the index, it is marked
+&quot;changed but not updated&quot;. At this point, running
+&quot;git commit&quot; would create a commit that added
+closing.txt (with its new contents), but that didn&rsquo;t
+modify file.txt.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also, note that
+a bare git diff shows the changes to file.txt, but not the
+addition of closing.txt, because the version of closing.txt
+in the index file is identical to the one in the working
+directory.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In addition to
+being the staging area for new commits, the index file is
+also populated from the object database when checking out a
+branch, and is used to hold the trees involved in a merge
+operation. See <b>gitcore-tutorial</b>(7) and the relevant
+man pages for details.</p>
+
+<h2>WHAT NEXT?
+<a name="WHAT NEXT?"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">At this point
+you should know everything necessary to read the man pages
+for any of the git commands; one good place to start would
+be with the commands mentioned in
+<b><font color="#0000FF">Everyday Git</font></b>
+<small><font color="#000000">[1]</font></small>
+<font color="#000000">. You should be able to find any
+unknown jargon in <b>gitglossary</b>(7).</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">The</font>
+<b><font color="#0000FF">Git User&rsquo;s Manual</font></b>
+<small><font color="#000000">[2]</font></small>
+<font color="#000000">provides a more comprehensive
+introduction to Git.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>gitcvs-migration</b>(7)
+explains how to import a CVS repository into Git, and shows
+how to use Git in a CVS&minus;like way.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">For
+some interesting examples of Git use, see the</font>
+<b><font color="#0000FF">howtos</font></b>
+<small><font color="#000000">[3]</font></small>
+<font color="#000000">.</font></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">For
+Git developers, <b>gitcore-tutorial</b>(7) goes into detail
+on the lower&minus;level Git mechanisms involved in, for
+example, creating a new commit.</font></p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000"><b>gittutorial</b>(7),
+<b>gitcvs-migration</b>(7), <b>gitcore-tutorial</b>(7),
+<b>gitglossary</b>(7), <b>git-help</b>(1),</font>
+<b><font color="#0000FF">Everyday Git</font></b>
+<small><font color="#000000">[1]</font></small>
+<font color="#000000">,</font> <b><font color="#0000FF">The
+Git User&rsquo;s Manual</font></b>
+<small><font color="#000000">[2]</font></small></p>
+
+<h2>GIT
+<a name="GIT"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><font color="#000000">Part
+of the <b>git</b>(1) suite.</font></p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">1.</font></p> </td>
+<td width="2%"></td>
+<td width="18%">
+
+
+<p style="margin-top: 1em"><font color="#000000">Everyday
+Git</font></p> </td>
+<td width="65%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">file:///usr/share/doc/git-1.8.3.1/everyday.html</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">2.</font></p> </td>
+<td width="2%"></td>
+<td width="26%">
+
+
+<p style="margin-top: 1em"><font color="#000000">Git
+User&rsquo;s Manual</font></p></td>
+<td width="57%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">file:///usr/share/doc/git-1.8.3.1/user-manual.html</font></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="12%"></td>
+<td width="3%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">3.</font></p> </td>
+<td width="2%"></td>
+<td width="9%">
+
+
+
+<p style="margin-top: 1em"><font color="#000000">howtos</font></p> </td>
+<td width="74%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:17%;"><font color="#000000">file:///usr/share/doc/git-1.8.3.1/howto-index.html</font></p>
+<hr>
+</body>
+</html>

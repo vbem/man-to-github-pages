@@ -1,0 +1,269 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:33:15 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>Tie::Hash</title>
+
+</head>
+<body>
+
+<h1 align="center">Tie::Hash</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#Inheriting from Tie::StdHash">Inheriting from Tie::StdHash</a><br>
+<a href="#Inheriting from Tie::ExtraHash">Inheriting from Tie::ExtraHash</a><br>
+<a href="#&quot;SCALAR&quot;, &quot;UNTIE&quot; and &quot;DESTROY&quot;">&quot;SCALAR&quot;, &quot;UNTIE&quot; and &quot;DESTROY&quot;</a><br>
+<a href="#MORE INFORMATION">MORE INFORMATION</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Tie::Hash,
+Tie::StdHash, Tie::ExtraHash &minus; base class definitions
+for tied hashes</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">    package NewHash;
+    require Tie::Hash;
+    @ISA = qw(Tie::Hash);
+    sub DELETE { ... }          # Provides needed method
+    sub CLEAR { ... }           # Overrides inherited method
+    package NewStdHash;
+    require Tie::Hash;
+    @ISA = qw(Tie::StdHash);
+    # All methods provided by default, define only those needing overrides
+    # Accessors access the storage in %{$_[0]};
+    # TIEHASH should return a reference to the actual storage
+    sub DELETE { ... }
+    package NewExtraHash;
+    require Tie::Hash;
+    @ISA = qw(Tie::ExtraHash);
+    # All methods provided by default, define only those needing overrides
+    # Accessors access the storage in %{$_[0][0]};
+    # TIEHASH should return an array reference with the first element being
+    # the reference to the actual storage
+    sub DELETE {
+      $_[0][1]&minus;&gt;('del', $_[0][0], $_[1]); # Call the report writer
+      delete $_[0][0]&minus;&gt;{$_[1]};           #  $_[0]&minus;&gt;SUPER::DELETE($_[1])
+    }
+    package main;
+    tie %new_hash, 'NewHash';
+    tie %new_std_hash, 'NewStdHash';
+    tie %new_extra_hash, 'NewExtraHash',
+        sub {warn &quot;Doing \U$_[1]\E of $_[2].\n&quot;};</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This module
+provides some skeletal methods for hash-tying classes. See
+perltie for a list of the functions required in order to tie
+a hash to a package. The basic <b>Tie::Hash</b> package
+provides a <tt>&quot;new&quot;</tt> method, as well as
+methods <tt>&quot;TIEHASH&quot;</tt>,
+<tt>&quot;EXISTS&quot;</tt> and <tt>&quot;CLEAR&quot;</tt>.
+The <b>Tie::StdHash</b> and <b>Tie::ExtraHash</b> packages
+provide most methods for hashes described in perltie (the
+exceptions are <tt>&quot;UNTIE&quot;</tt> and
+<tt>&quot;DESTROY&quot;</tt>). They cause tied hashes to
+behave exactly like standard hashes, and allow for selective
+overwriting of methods. <b>Tie::Hash</b> grandfathers the
+<tt>&quot;new&quot;</tt> method: it is used if
+<tt>&quot;TIEHASH&quot;</tt> is not defined in the case a
+class forgets to include a <tt>&quot;TIEHASH&quot;</tt>
+method.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For developers
+wishing to write their own tied hashes, the required methods
+are briefly defined below. See the perltie section for more
+detailed descriptive, as well as example code: <small><br>
+TIEHASH</small> classname, <small>LIST</small></p>
+
+<p style="margin-left:17%;">The method invoked by the
+command <tt>&quot;tie %hash, classname&quot;</tt>.
+Associates a new hash instance with the specified class.
+<tt>&quot;LIST&quot;</tt> would represent additional
+arguments (along the lines of AnyDBM_File and compatriots)
+needed to complete the association.</p>
+
+<p style="margin-left:11%;"><small>STORE</small> this, key,
+value</p>
+
+<p style="margin-left:17%;">Store datum <i>value</i> into
+<i>key</i> for the tied hash <i>this</i>.</p>
+
+<p style="margin-left:11%;"><small>FETCH</small> this,
+key</p>
+
+<p style="margin-left:17%;">Retrieve the datum in
+<i>key</i> for the tied hash <i>this</i>.</p>
+
+<p style="margin-left:11%;"><small>FIRSTKEY</small>
+this</p>
+
+<p style="margin-left:17%;">Return the first key in the
+hash.</p>
+
+<p style="margin-left:11%;"><small>NEXTKEY</small> this,
+lastkey</p>
+
+<p style="margin-left:17%;">Return the next key in the
+hash.</p>
+
+<p style="margin-left:11%;"><small>EXISTS</small> this,
+key</p>
+
+<p style="margin-left:17%;">Verify that <i>key</i> exists
+with the tied hash <i>this</i>.</p>
+
+<p style="margin-left:17%; margin-top: 1em">The
+<b>Tie::Hash</b> implementation is a stub that simply
+croaks.</p>
+
+<p style="margin-left:11%;"><small>DELETE</small> this,
+key</p>
+
+<p style="margin-left:17%;">Delete the key <i>key</i> from
+the tied hash <i>this</i>.</p>
+
+<p style="margin-left:11%;"><small>CLEAR</small> this</p>
+
+<p style="margin-left:17%;">Clear all values from the tied
+hash <i>this</i>.</p>
+
+<p style="margin-left:11%;"><small>SCALAR</small> this</p>
+
+<p style="margin-left:17%;">Returns what evaluating the
+hash in scalar context yields.</p>
+
+
+<p style="margin-left:17%; margin-top: 1em"><b>Tie::Hash</b>
+does not implement this method (but <b>Tie::StdHash</b> and
+<b>Tie::ExtraHash</b> do).</p>
+
+<h2>Inheriting from Tie::StdHash
+<a name="Inheriting from Tie::StdHash"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The accessor
+methods assume that the actual storage for the data in the
+tied hash is in the hash referenced by
+<tt>&quot;tied(%tiedhash)&quot;</tt>. Thus overwritten
+<tt>&quot;TIEHASH&quot;</tt> method should return a hash
+reference, and the remaining methods should operate on the
+hash referenced by the first argument:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  package ReportHash;
+  our @ISA = 'Tie::StdHash';
+  sub TIEHASH  {
+    my $storage = bless {}, shift;
+    warn &quot;New ReportHash created, stored in $storage.\n&quot;;
+    $storage
+  }
+  sub STORE    {
+    warn &quot;Storing data with key $_[1] at $_[0].\n&quot;;
+    $_[0]{$_[1]} = $_[2]
+  }</pre>
+
+
+<h2>Inheriting from Tie::ExtraHash
+<a name="Inheriting from Tie::ExtraHash"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The accessor
+methods assume that the actual storage for the data in the
+tied hash is in the hash referenced by
+<tt>&quot;(tied(%tiedhash))&minus;&gt;[0]&quot;</tt>. Thus
+overwritten <tt>&quot;TIEHASH&quot;</tt> method should
+return an array reference with the first element being a
+hash reference, and the remaining methods should operate on
+the hash <tt>&quot;%{ $_[0]&minus;&gt;[0] }&quot;</tt>:</p>
+
+<pre style="margin-left:11%; margin-top: 1em">  package ReportHash;
+  our @ISA = 'Tie::ExtraHash';
+  sub TIEHASH  {
+    my $class = shift;
+    my $storage = bless [{}, @_], $class;
+    warn &quot;New ReportHash created, stored in $storage.\n&quot;;
+    $storage;
+  }
+  sub STORE    {
+    warn &quot;Storing data with key $_[1] at $_[0].\n&quot;;
+    $_[0][0]{$_[1]} = $_[2]
+  }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The default
+<tt>&quot;TIEHASH&quot;</tt> method stores &quot;extra&quot;
+arguments to <i>tie()</i> starting from offset 1 in the
+array referenced by <tt>&quot;tied(%tiedhash)&quot;</tt>;
+this is the same storage algorithm as in
+<small>TIEHASH</small> subroutine above. Hence, a typical
+package inheriting from <b>Tie::ExtraHash</b> does not need
+to overwrite this method.</p>
+
+<h2>&quot;SCALAR&quot;, &quot;UNTIE&quot; and &quot;DESTROY&quot;
+<a name="&quot;SCALAR&quot;, &quot;UNTIE&quot; and &quot;DESTROY&quot;"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The methods
+<tt>&quot;UNTIE&quot;</tt> and <tt>&quot;DESTROY&quot;</tt>
+are not defined in <b>Tie::Hash</b>, <b>Tie::StdHash</b>, or
+<b>Tie::ExtraHash</b>. Tied hashes do not require presence
+of these methods, but if defined, the methods will be called
+in proper time, see perltie.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><tt>&quot;SCALAR&quot;</tt>
+is only defined in <b>Tie::StdHash</b> and
+<b>Tie::ExtraHash</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If needed,
+these methods should be defined by the package inheriting
+from <b>Tie::Hash</b>, <b>Tie::StdHash</b>, or
+<b>Tie::ExtraHash</b>. See &quot; <small>SCALAR</small>
+&quot; in perltie to find out what happens when
+<tt>&quot;SCALAR&quot;</tt> does not exist.</p>
+
+<h2>MORE INFORMATION
+<a name="MORE INFORMATION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The packages
+relating to various DBM-related implementations
+(<i>DB_File</i>, <i>NDBM_File</i>, etc.) show examples of
+general tied hashes, as does the Config module. While these
+do not utilize <b>Tie::Hash</b>, they serve as good working
+examples.</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,274 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:45 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>REQUEST_KEY</title>
+
+</head>
+<body>
+
+<h1 align="center">REQUEST_KEY</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#LINKING">LINKING</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">request_key
+&minus; request a key from the kernel&rsquo;s key management
+facility</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;keyutils.h&gt;</b></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>key_serial_t
+request_key(const char *</b><i>type</i><b>, const char
+*</b><i>description</i><b>, <br>
+const char *</b><i>callout_info</i><b>, <br>
+key_serial_t</b> <i>keyring</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>request_key</b>()
+asks the kernel to find a key of the given <i>type</i> that
+matches the specified <i>description</i> and, if successful,
+to attach it to the nominated <i>keyring</i> and to return
+its serial number.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>request_key</b>()
+first recursively searches all the keyrings attached to the
+calling process in the order thread-specific keyring,
+process-specific keyring and then session keyring for a
+matching key.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b>request_key</b>() is called from a program invoked by
+<b>request_key</b>() on behalf of some other process to
+generate a key, then the keyrings of that other process will
+be searched next, using that other process&rsquo;s UID, GID,
+groups and security context to control access.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The keys in
+each keyring searched are checked for a match before any
+child keyrings are recursed into. Only keys that are
+<b>searchable</b> for the caller may be found, and only
+<b>searchable</b> keyrings may be searched.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the key is
+not found then, if <i>callout_info</i> is set, this function
+will attempt to look further afield. In such a case, the
+<i>callout_info</i> is passed to a user-space service such
+as <b>/sbin/request&minus;key</b> to generate the key.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If that is
+unsuccessful also, then an error will be returned, and a
+temporary negative key will be installed in the nominated
+<i>keyring</i>. This will expire after a few seconds, but
+will cause subsequent calls to <b>request_key</b>() to fail
+until it does.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>keyring</i> serial number may be that of a valid keyring
+to which the caller has write permission, or it may be a
+special keyring ID: <b><br>
+KEY_SPEC_THREAD_KEYRING</b></p>
+
+<p style="margin-left:22%;">This specifies the
+caller&rsquo;s thread-specific keyring.</p>
+
+
+<p style="margin-left:11%;"><b>KEY_SPEC_PROCESS_KEYRING</b></p>
+
+<p style="margin-left:22%;">This specifies the
+caller&rsquo;s process-specific keyring.</p>
+
+
+<p style="margin-left:11%;"><b>KEY_SPEC_SESSION_KEYRING</b></p>
+
+<p style="margin-left:22%;">This specifies the
+caller&rsquo;s session-specific keyring.</p>
+
+
+<p style="margin-left:11%;"><b>KEY_SPEC_USER_KEYRING</b></p>
+
+<p style="margin-left:22%;">This specifies the
+caller&rsquo;s UID-specific keyring.</p>
+
+
+<p style="margin-left:11%;"><b>KEY_SPEC_USER_SESSION_KEYRING</b></p>
+
+<p style="margin-left:22%;">This specifies the
+caller&rsquo;s UID-session keyring.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If a key is
+created, no matter whether it&rsquo;s a valid key or a
+negative key, it will displace any other key of the same
+type and description from the destination
+<i>keyring</i>.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success
+<b>request_key</b>() returns the serial number of the key it
+found. On error, the value &minus;1 will be returned and
+errno will have been set to an appropriate error.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EACCES</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">The keyring wasn&rsquo;t
+available for modification by the user.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINTR</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The request was interrupted by a signal.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EDQUOT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The key quota for this user would be exceeded by
+creating this key or linking it to the keyring.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>EKEYEXPIRED</b></p>
+
+<p style="margin-left:22%;">An expired key was found, but
+no replacement could be obtained.</p>
+
+<p style="margin-left:11%;"><b>EKEYREJECTED</b></p>
+
+<p style="margin-left:22%;">The attempt to generate a new
+key was rejected.</p>
+
+<p style="margin-left:11%;"><b>EKEYREVOKED</b></p>
+
+<p style="margin-left:22%;">A revoked key was found, but no
+replacement could be obtained.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>Insufficient memory to create a key.</p></td>
+<td width="23%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOKEY</b></p></td>
+<td width="2%"></td>
+<td width="55%">
+
+
+<p>No matching key was found.</p></td>
+<td width="23%">
+</td></tr>
+</table>
+
+<h2>LINKING
+<a name="LINKING"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Although this
+is a Linux system call, it is not present in <i>libc</i> but
+can be found rather in <i>libkeyutils</i>. When linking,
+<b>-lkeyutils</b> should be specified to the linker.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>keyctl</b>(1),
+<b>add_key</b>(2), <b>keyctl</b>(2),
+<b>request-key</b>(8)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

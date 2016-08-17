@@ -1,0 +1,274 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:26:00 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>xcb-requests</title>
+
+</head>
+<body>
+
+<h1 align="center">xcb-requests</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#REPLIES">REPLIES</a><br>
+<a href="#COOKIES">COOKIES</a><br>
+<a href="#CHECKED VS. UNCHECKED">CHECKED VS. UNCHECKED</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">xcb-requests
+&minus; about request manpages</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Every request
+in X11, like <i>MapWindow</i>, corresponds to a number of
+functions and data structures in XCB. For <i>MapWindow</i>,
+XCB provides the function <i>xcb_map_window</i>, which fills
+the <i>xcb_map_window_request_t</i> data structure and
+writes that to the X11 connection. Since the
+<i>MapWindow</i> request does not have a reply, this is the
+most simple case.</p>
+
+<h2>REPLIES
+<a name="REPLIES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Many requests
+have replies. For each reply, XCB provides at least a
+corresponding data structure and a function to return a
+pointer to a filled data structure. Let&rsquo;s take the
+<i>InternAtom</i> request as an example: XCB provides the
+<i>xcb_intern_atom_reply_t</i> data structure and
+<i>xcb_intern_atom_reply</i> function. For replies which are
+more complex (for example lists, such as in
+<i>xcb_list_fonts</i>), accessor functions are provided.</p>
+
+<h2>COOKIES
+<a name="COOKIES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">XCB returns a
+cookie for each request you send. This is an XCB-specific
+data structure containing the sequence number with which the
+request was sent to the X11 server. To get any reply, you
+have to provide that cookie (so that XCB knows which of the
+waiting replies you want). Here is an example to illustrate
+the use of cookies:</p>
+
+<p style="margin-left:11%; margin-top: 1em">void
+my_example(xcb_connection *conn) { <br>
+xcb_intern_atom_cookie_t cookie; <br>
+xcb_intern_atom_reply_t *reply;</p>
+
+<p style="margin-left:11%; margin-top: 1em">cookie =
+xcb_intern_atom(conn, 0, strlen(&quot;_NET_WM_NAME&quot;),
+&quot;_NET_WM_NAME&quot;); <br>
+/* ... do other work here if possible ... */ <br>
+if ((reply = xcb_intern_atom_reply(conn, cookie, NULL))) {
+<br>
+printf(&quot;The _NET_WM_NAME atom has ID %u0,
+reply-&gt;atom); <br>
+} <br>
+free(reply); <br>
+}</p>
+
+<h2>CHECKED VS. UNCHECKED
+<a name="CHECKED VS. UNCHECKED"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The checked and
+unchecked suffixes for functions determine which kind of
+error handling is used for this specific request.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For requests
+which have no reply (for example <i>xcb_map_window</i>),
+errors will be delivered to the event loop (you will receive
+an X11 event of type 0 when calling
+<i>xcb_poll_for_event</i>). If you want to explicitly check
+for errors in a blocking fashion, call the _checked version
+of the function (for example <i>xcb_map_window_checked</i>)
+and use <i>xcb_request_check</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For requests
+which have a reply (for example <i>xcb_intern_atom</i>),
+errors will be checked when calling the reply function. To
+get errors in the event loop instead, use the _unchecked
+version of the function (for example
+<i>xcb_intern_atom_unchecked</i>).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Here is an
+example which illustrates the four different ways of
+handling errors:</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* <br>
+* Request without a reply, handling errors in the event loop
+(default) <br>
+* <br>
+*/ <br>
+void my_example(xcb_connection *conn, xcb_window_t window) {
+<br>
+/* This is a request without a reply. Errors will be
+delivered to the event <br>
+* loop. Getting an error to xcb_map_window most likely is a
+bug in our <br>
+* program, so we don&rsquo;t need to check for that in a
+blocking way. */ <br>
+xcb_map_window(conn, window);</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* ... of
+course your event loop would not be in the same function ...
+*/ <br>
+while ((event = xcb_wait_for_event(conn)) != NULL) { <br>
+if (event-&gt;response_type == 0) { <br>
+fprintf(&quot;Received X11 error %d\n&quot;,
+error-&gt;error_code); <br>
+free(event); <br>
+continue; <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* ... handle a
+normal event ... */ <br>
+} <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* <br>
+* Request without a reply, handling errors directly <br>
+* <br>
+*/ <br>
+void my_example(xcb_connection *conn, xcb_window_t deco,
+xcb_window_t window) { <br>
+/* A reparenting window manager wants to know whether a new
+window was <br>
+* successfully reparented. If not (because the window got
+destroyed <br>
+* already, for example), it does not make sense to map an
+empty window <br>
+* decoration at all, so we need to know this right now. */
+<br>
+xcb_void_cookie_t cookie = xcb_reparent_window_checked(conn,
+window, <br>
+deco, 0, 0); <br>
+xcb_generic_error_t *error; <br>
+if ((error = xcb_request_check(conn, cookie))) { <br>
+fprintf(stderr, &quot;Could not reparent the
+window\n&quot;); <br>
+free(error); <br>
+return; <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* ... do
+window manager stuff here ... */ <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* <br>
+* Request with a reply, handling errors directly (default)
+<br>
+* <br>
+*/ <br>
+void my_example(xcb_connection *conn, xcb_window_t window) {
+<br>
+xcb_intern_atom_cookie_t cookie; <br>
+xcb_intern_atom_reply_t *reply; <br>
+xcb_generic_error_t *error;</p>
+
+<p style="margin-left:11%; margin-top: 1em">cookie =
+xcb_intern_atom(c, 0, strlen(&quot;_NET_WM_NAME&quot;),
+&quot;_NET_WM_NAME&quot;); <br>
+/* ... do other work here if possible ... */ <br>
+if ((reply = xcb_intern_atom_reply(c, cookie, &amp;error)))
+{ <br>
+printf(&quot;The _NET_WM_NAME atom has ID %u0,
+reply-&gt;atom); <br>
+free(reply); <br>
+} else { <br>
+fprintf(stderr, &quot;X11 Error %d\n&quot;,
+error-&gt;error_code); <br>
+free(error); <br>
+} <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* <br>
+* Request with a reply, handling errors in the event loop
+<br>
+* <br>
+*/ <br>
+void my_example(xcb_connection *conn, xcb_window_t window) {
+<br>
+xcb_intern_atom_cookie_t cookie; <br>
+xcb_intern_atom_reply_t *reply;</p>
+
+<p style="margin-left:11%; margin-top: 1em">cookie =
+xcb_intern_atom_unchecked(c, 0,
+strlen(&quot;_NET_WM_NAME&quot;), <br>
+&quot;_NET_WM_NAME&quot;); <br>
+/* ... do other work here if possible ... */ <br>
+if ((reply = xcb_intern_atom_reply(c, cookie, NULL))) { <br>
+printf(&quot;The _NET_WM_NAME atom has ID %u0,
+reply-&gt;atom); <br>
+free(reply); <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* ... of
+course your event loop would not be in the same function ...
+*/ <br>
+while ((event = xcb_wait_for_event(conn)) != NULL) { <br>
+if (event-&gt;response_type == 0) { <br>
+fprintf(&quot;Received X11 error %d\n&quot;,
+error-&gt;error_code); <br>
+free(event); <br>
+continue; <br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">/* ... handle a
+normal event ... */ <br>
+} <br>
+}</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>xcb_map_window</b>(3),
+<b>xcb_intern_atom</b>(3), <b>xcb_list_fonts</b>(3),
+<b>xcb_poll_for_event</b>(3),
+<b>xcb_request_check</b>(3)</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Michael
+Stapelberg &lt;michael+xcb at stapelberg dot de&gt;</p>
+<hr>
+</body>
+</html>

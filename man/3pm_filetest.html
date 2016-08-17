@@ -1,0 +1,163 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:33:21 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>filetest</title>
+
+</head>
+<body>
+
+<h1 align="center">filetest</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">filetest
+&minus; Perl pragma to control the filetest permission
+operators</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em">    $can_perhaps_read = &minus;r &quot;file&quot;;      # use the mode bits
+    {
+        use filetest 'access';          # intuit harder
+        $can_really_read = &minus;r &quot;file&quot;;
+    }
+    $can_perhaps_read = &minus;r &quot;file&quot;;      # use the mode bits again</pre>
+
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This pragma
+tells the compiler to change the behaviour of the filetest
+permission operators, <tt>&quot;&minus;r&quot;
+&quot;&minus;w&quot; &quot;&minus;x&quot;
+&quot;&minus;R&quot; &quot;&minus;W&quot;
+&quot;&minus;X&quot;</tt> (see perlfunc).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The default
+behaviour of file test operators is to use the simple mode
+bits as returned by the <i>stat()</i> family of system
+calls. However, many operating systems have additional
+features to define more complex access rights, for example
+ACLs (Access Control Lists). For such environments,
+<tt>&quot;use filetest&quot;</tt> may help the permission
+operators to return results more consistent with other
+tools.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<tt>&quot;use filetest&quot;</tt> or <tt>&quot;no
+filetest&quot;</tt> statements affect file tests defined in
+their block, up to the end of the closest enclosing block
+(they are lexically block-scoped).</p>
+
+<p style="margin-left:11%; margin-top: 1em">Currently, only
+the <tt>&quot;access&quot;</tt> sub-pragma is implemented.
+It enables (or disables) the use of <i>access()</i> when
+available, that is, on most <small>UNIX</small> systems and
+other <small>POSIX</small> environments. See details
+below.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Consider
+this carefully</b> <br>
+The <i>stat()</i> mode bits are probably right for most of
+the files and directories found on your system, because few
+people want to use the additional features offered by
+<i>access()</i>. But you may encounter surprises if your
+program runs on a system that uses ACLs, since the
+<i>stat()</i> information won&rsquo;t reflect the actual
+permissions.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There may be a
+slight performance decrease in the filetest operations when
+the filetest pragma is in effect, because checking bits is
+very cheap.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also, note that
+using the file tests for security purposes is a lost cause
+from the start: there is a window open for race conditions
+(who is to say that the permissions will not change between
+the test and the real operation?). Therefore if you are
+serious about security, just try the real operation and test
+for its success &minus; think in terms of atomic operations.
+Filetests are more useful for filesystem administrative
+tasks, when you have no need for the content of the elements
+on disk.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>The
+&quot;access&quot; sub-pragma</b> <small><br>
+UNIX</small> and <small>POSIX</small> systems provide an
+abstract <i>access()</i> operating system call, which should
+be used to query the read, write, and execute rights. This
+function hides various distinct approaches in additional
+operating system specific security features, like Access
+Control Lists (ACLs)</p>
+
+<p style="margin-left:11%; margin-top: 1em">The extended
+filetest functionality is used by Perl only when the
+argument of the operators is a filename, not when it is a
+filehandle.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Limitation
+with regard to &quot;_&quot;</b> <br>
+Because <i>access()</i> does not invoke <i>stat()</i> (at
+least not in a way visible to Perl), <b>the stat result
+cache &quot;_&quot; is not set</b>. This means that the
+outcome of the following two tests is different. The first
+has the stat bits of <tt>&quot;/etc/passwd&quot;</tt> in
+<tt>&quot;_&quot;</tt>, and in the second case this still
+contains the bits of <tt>&quot;/etc&quot;</tt>.</p>
+
+<pre style="margin-left:11%; margin-top: 1em"> { &minus;d '/etc';
+   &minus;w '/etc/passwd';
+   print &minus;f _ ? 'Yes' : 'No';   # Yes
+ }
+ { use filetest 'access';
+   &minus;d '/etc';
+   &minus;w '/etc/passwd';
+   print &minus;f _ ? 'Yes' : 'No';   # No
+ }</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">Of course,
+unless your <small>OS</small> does not implement
+<i>access()</i>, in which case the pragma is simply ignored.
+Best not to use <tt>&quot;_&quot;</tt> at all in a file
+where the filetest pragma is active!</p>
+
+<p style="margin-left:11%; margin-top: 1em">As a side
+effect, as <tt>&quot;_&quot;</tt> doesn&rsquo;t work,
+stacked filetest operators (<tt>&quot;&minus;f &minus;w
+$file&quot;</tt>) won&rsquo;t work either.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This limitation
+might be removed in a future version of perl.</p>
+<hr>
+</body>
+</html>

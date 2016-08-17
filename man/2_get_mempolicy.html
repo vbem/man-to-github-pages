@@ -1,0 +1,247 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:17:19 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>GET_MEMPOLICY</title>
+
+</head>
+<body>
+
+<h1 align="center">GET_MEMPOLICY</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">get_mempolicy
+&minus; retrieve NUMA memory policy for a process</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;numaif.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+get_mempolicy(int *</b><i>mode</i><b>, unsigned long
+*</b><i>nodemask</i><b>, <br>
+unsigned long</b> <i>maxnode</i><b>, unsigned long</b>
+<i>addr</i><b>, <br>
+unsigned long</b> <i>flags</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">Link with
+<i>&minus;lnuma</i>.</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>get_mempolicy</b>()
+retrieves the NUMA policy of the calling process or of a
+memory address, depending on the setting of
+<i>flags</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A NUMA machine
+has different memory controllers with different distances to
+specific CPUs. The memory policy defines from which node
+memory is allocated for the process.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If <i>flags</i>
+is specified as 0, then information about the calling
+process&rsquo;s default policy (as set by
+<b>set_mempolicy</b>(2)) is returned. The policy returned
+[<i>mode</i> and <i>nodemask</i>] may be used to restore the
+process&rsquo;s policy to its state at the time of the call
+to <b>get_mempolicy</b>() using <b>set_mempolicy</b>(2).</p>
+
+<p style="margin-left:11%; margin-top: 1em">If <i>flags</i>
+specifies <b>MPOL_F_MEMS_ALLOWED</b> (available since Linux
+2.6.24), the <i>mode</i> argument is ignored and the set of
+nodes [memories] that the process is allowed to specify in
+subsequent calls to <b>mbind</b>(2) or
+<b>set_mempolicy</b>(2) [in the absence of any <i>mode
+flags</i>] is returned in <i>nodemask</i>. It is not
+permitted to combine <b>MPOL_F_MEMS_ALLOWED</b> with either
+<b>MPOL_F_ADDR</b> or <b>MPOL_F_NODE</b>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If <i>flags</i>
+specifies <b>MPOL_F_ADDR</b>, then information is returned
+about the policy governing the memory address given in
+<i>addr</i>. This policy may be different from the
+process&rsquo;s default policy if <b>mbind</b>(2) or one of
+the helper functions described in <b>numa</b>(3) has been
+used to establish a policy for the memory range containing
+<i>addr</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+<i>mode</i> argument is not NULL, then
+<b>get_mempolicy</b>() will store the policy mode and any
+optional <i>mode flags</i> of the requested NUMA policy in
+the location pointed to by this argument. If <i>nodemask</i>
+is not NULL, then the nodemask associated with the policy
+will be stored in the location pointed to by this argument.
+<i>maxnode</i> specifies the number of node IDs that can be
+stored into <i>nodemask</i>&mdash;that is, the maximum node
+ID plus one. The value specified by <i>maxnode</i> is always
+rounded to a multiple of <i>sizeof(unsigned long)</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If <i>flags</i>
+specifies both <b>MPOL_F_NODE</b> and <b>MPOL_F_ADDR</b>,
+<b>get_mempolicy</b>() will return the node ID of the node
+on which the address <i>addr</i> is allocated into the
+location pointed to by <i>mode</i>. If no page has yet been
+allocated for the specified address, <b>get_mempolicy</b>()
+will allocate a page as if the process had performed a read
+[load] access to that address, and return the ID of the node
+where that page was allocated.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If <i>flags</i>
+specifies <b>MPOL_F_NODE</b>, but not <b>MPOL_F_ADDR</b>,
+and the process&rsquo;s current policy is
+<b>MPOL_INTERLEAVE</b>, then <b>get_mempolicy</b>() will
+return in the location pointed to by a non-NULL <i>mode</i>
+argument, the node ID of the next node that will be used for
+interleaving of internal kernel pages allocated on behalf of
+the process. These allocations include pages for memory
+mapped files in process memory ranges mapped using the
+<b>mmap</b>(2) call with the <b>MAP_PRIVATE</b> flag for
+read accesses, and in memory ranges mapped with the
+<b>MAP_SHARED</b> flag for all accesses.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Other flag
+values are reserved.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For an overview
+of the possible policies see <b>set_mempolicy</b>(2).</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On success,
+<b>get_mempolicy</b>() returns 0; on error, &minus;1 is
+returned and <i>errno</i> is set to indicate the error.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p style="margin-top: 1em"><b>EFAULT</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">Part of all of the memory range
+specified by <i>nodemask</i> and <i>maxnode</i> points
+outside your accessible address space.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>EINVAL</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>The value specified by <i>maxnode</i> is less than the
+number of node IDs supported by the system. Or <i>flags</i>
+specified values other than <b>MPOL_F_NODE</b> or
+<b>MPOL_F_ADDR</b>; or <i>flags</i> specified
+<b>MPOL_F_ADDR</b> and <i>addr</i> is NULL, or <i>flags</i>
+did not specify <b>MPOL_F_ADDR</b> and <i>addr</i> is not
+NULL. Or, <i>flags</i> specified <b>MPOL_F_NODE</b> but not
+<b>MPOL_F_ADDR</b> and the current process policy is not
+<b>MPOL_INTERLEAVE</b>. Or, <i>flags</i> specified
+<b>MPOL_F_MEMS_ALLOWED</b> with either <b>MPOL_F_ADDR</b> or
+<b>MPOL_F_NODE</b>. (And there are other <b>EINVAL</b>
+cases.)</p> </td></tr>
+</table>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>get_mempolicy</b>() system call was added to the Linux
+kernel in version 2.6.7.</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This system
+call is Linux-specific.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">For information
+on library support, see <b>numa</b>(7).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>getcpu</b>(2),
+<b>mbind</b>(2), <b>mmap</b>(2), <b>set_mempolicy</b>(2),
+<b>numa</b>(3), <b>numa</b>(7), <b>numactl</b>(8)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

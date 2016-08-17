@@ -1,0 +1,313 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:12:47 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>A2P</title>
+
+</head>
+<body>
+
+<h1 align="center">A2P</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#ENVIRONMENT">ENVIRONMENT</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#FILES">FILES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#DIAGNOSTICS">DIAGNOSTICS</a><br>
+<a href="#BUGS">BUGS</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">a2p &minus; Awk
+to Perl translator</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>a2p</b>
+[<i>options</i>] [<i>filename</i>]</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>A2p</i>
+takes an awk script specified on the command line (or from
+standard input) and produces a comparable <i>perl</i> script
+on the standard output.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b><small>OPTIONS</small></b>
+<br>
+Options include: <b><br>
+&minus;D&lt;number&gt;</b></p>
+
+<p style="margin-left:18%;">sets debugging flags.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;F&lt;character&gt;</b></p>
+
+<p style="margin-left:18%;">tells a2p that this awk script
+is always invoked with this <b>&minus;F</b> switch.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;n&lt;fieldlist&gt;</b></p>
+
+<p style="margin-left:18%;">specifies the names of the
+input fields if input does not have to be split into an
+array. If you were translating an awk script that processes
+the password file, you might say:</p>
+
+<pre style="margin-left:18%; margin-top: 1em">        a2p &minus;7 &minus;nlogin.password.uid.gid.gcos.shell.home</pre>
+
+
+<p style="margin-left:18%; margin-top: 1em">Any delimiter
+can be used to separate the field names.</p>
+
+
+<p style="margin-left:11%;"><b>&minus;&lt;number&gt;</b></p>
+
+<p style="margin-left:18%;">causes a2p to assume that input
+will always have that many fields.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>&minus;o</b></p></td>
+<td width="4%"></td>
+<td width="82%">
+
+
+<p>tells a2p to use old awk behavior. The only current
+differences are:</p></td></tr>
+</table>
+
+<p style="margin-left:18%;">&bull;</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="18%"></td>
+<td width="2%"></td>
+<td width="6%"></td>
+<td width="74%">
+
+
+<p style="margin-top: 1em">Old awk always has a line loop,
+even if there are no line actions, whereas new awk does
+not.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="18%"></td>
+<td width="2%">
+
+
+<p>&bull;</p></td>
+<td width="6%"></td>
+<td width="74%">
+
+
+<p>In old awk, sprintf is extremely greedy about its
+arguments. For example, given the statement</p></td></tr>
+</table>
+
+<pre style="margin-left:26%; margin-top: 1em">        print sprintf(some_args), extra_args;</pre>
+
+
+<p style="margin-left:26%; margin-top: 1em">old awk
+considers <i>extra_args</i> to be arguments to
+<tt>&quot;sprintf&quot;</tt>; new awk considers them
+arguments to <tt>&quot;print&quot;</tt>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;Considerations&quot;</b>
+<br>
+A2p cannot do as good a job translating as a human would,
+but it usually does pretty well. There are some areas where
+you may want to examine the perl script produced and tweak
+it some. Here are some of them, in no particular order.</p>
+
+<p style="margin-left:11%; margin-top: 1em">There is an awk
+idiom of putting <i>int()</i> around a string expression to
+force numeric interpretation, even though the argument is
+always integer anyway. This is generally unneeded in perl,
+but a2p can&rsquo;t tell if the argument is always going to
+be integer, so it leaves it in. You may wish to remove
+it.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl
+differentiates numeric comparison from string comparison.
+Awk has one operator for both that decides at run time which
+comparison to do. A2p does not try to do a complete job of
+awk emulation at this point. Instead it guesses which one
+you want. It&rsquo;s almost always right, but it can be
+spoofed. All such guesses are marked with the comment
+&quot;<tt>&quot;#???&quot;</tt>&quot;. You should go through
+and check them. You might want to run at least once with the
+<b>&minus;w</b> switch to perl, which will warn you if you
+use == where you should have used eq.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl does not
+attempt to emulate the behavior of awk in which nonexistent
+array elements spring into existence simply by being
+referenced. If somehow you are relying on this mechanism to
+create null entries for a subsequent for...in, they
+won&rsquo;t be there in perl.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If a2p makes a
+split line that assigns to a list of variables that looks
+like (Fld1, Fld2, Fld3...) you may want to rerun a2p using
+the <b>&minus;n</b> option mentioned above. This will let
+you name the fields throughout the script. If it splits to
+an array instead, the script is probably referring to the
+number of fields somewhere.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The exit
+statement in awk doesn&rsquo;t necessarily exit; it goes to
+the <small>END</small> block if there is one. Awk scripts
+that do contortions within the <small>END</small> block to
+bypass the block under such circumstances can be simplified
+by removing the conditional in the <small>END</small> block
+and just exiting directly from the perl script.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Perl has two
+kinds of array, numerically-indexed and associative. Perl
+associative arrays are called &quot;hashes&quot;. Awk arrays
+are usually translated to hashes, but if you happen to know
+that the index is always going to be numeric you could
+change the {...} to [...]. Iteration over a hash is done
+using the <i>keys()</i> function, but iteration over an
+array is <small>NOT</small> . You might need to modify any
+loop that iterates over such an array.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Awk starts by
+assuming <small>OFMT</small> has the value %.6g. Perl starts
+by assuming its equivalent, $#, to have the value %.20g.
+You&rsquo;ll want to set $# explicitly if you use the
+default value of <small>OFMT</small> .</p>
+
+<p style="margin-left:11%; margin-top: 1em">Near the top of
+the line loop will be the split operation that is implicit
+in the awk script. There are times when you can move this
+down past some conditionals that test the entire record so
+that the split is not done as often.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For aesthetic
+reasons you may wish to change index variables from being
+1&minus;based (awk style) to 0&minus;based (Perl style). Be
+sure to change all operations the variable is involved in to
+match.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Cute comments
+that say &quot;# Here is a workaround because awk is
+dumb&quot; are passed through unmodified.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Awk scripts are
+often embedded in a shell script that pipes stuff into and
+out of awk. Often the shell script wrapper can be
+incorporated into the perl script, since perl can start up
+pipes into and out of itself, and can do other things that
+awk can&rsquo;t do by itself.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Scripts that
+refer to the special variables <small>RSTART</small> and
+<small>RLENGTH</small> can often be simplified by referring
+to the variables $&lsquo;, $&amp; and $&rsquo;, as long as
+they are within the scope of the pattern match that sets
+them.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The produced
+perl script may have subroutines defined to deal with
+awk&rsquo;s semantics regarding getline and print. Since a2p
+usually picks correctness over efficiency. it is almost
+always possible to rewrite such code to be more efficient by
+discarding the semantic sugar.</p>
+
+<p style="margin-left:11%; margin-top: 1em">For efficiency,
+you may wish to remove the keyword from any return statement
+that is the last statement executed in a subroutine. A2p
+catches the most common case, but doesn&rsquo;t analyze
+embedded blocks for subtler cases.</p>
+
+<p style="margin-left:11%; margin-top: 1em">ARGV[0]
+translates to <tt>$ARGV0</tt>, but ARGV[n] translates to
+<tt>$ARGV</tt>[$n&minus;1]. A loop that tries to iterate
+over ARGV[0] won&rsquo;t find it.</p>
+
+<h2>ENVIRONMENT
+<a name="ENVIRONMENT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">A2p uses no
+environment variables.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Larry Wall
+&lt;<i>larry@wall.org</i>&gt;</p>
+
+<h2>FILES
+<a name="FILES"></a>
+</h2>
+
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<pre style="margin-left:11%; margin-top: 1em"> perl   The perl compiler/interpreter
+ s2p    sed to perl translator</pre>
+
+
+<h2>DIAGNOSTICS
+<a name="DIAGNOSTICS"></a>
+</h2>
+
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">It would be
+possible to emulate awk&rsquo;s behavior in selecting string
+versus numeric operations at run time by inspection of the
+operands, but it would be gross and inefficient. Besides,
+a2p almost always guesses right.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Storage for the
+awk syntax tree is currently static, and can run out.</p>
+<hr>
+</body>
+</html>

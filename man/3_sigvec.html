@@ -1,0 +1,265 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:25:28 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SIGVEC</title>
+
+</head>
+<body>
+
+<h1 align="center">SIGVEC</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#CONFORMING TO">CONFORMING TO</a><br>
+<a href="#NOTES">NOTES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">sigvec,
+sigblock, sigsetmask, siggetmask, sigmask &minus; BSD signal
+API</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;signal.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+sigvec(int</b> <i>sig</i><b>, struct sigvec
+*</b><i>vec</i><b>, struct sigvec
+*</b><i>ovec</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+sigmask(int</b> <i>signum</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+sigblock(int</b> <i>mask</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+sigsetmask(int</b> <i>mask</i><b>);</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>int
+siggetmask(void);</b></p>
+
+<p style="margin-left:5%; margin-top: 1em">Feature Test
+Macro Requirements for glibc (see
+<b>feature_test_macros</b>(7)):</p>
+
+<p style="margin-left:11%; margin-top: 1em">All functions
+shown above: _BSD_SOURCE</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">These functions
+are provided in glibc as a compatibility interface for
+programs that make use of the historical BSD signal API.
+This API is obsolete: new applications should use the POSIX
+signal API (<b>sigaction</b>(2), <b>sigprocmask</b>(2),
+etc.).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>sigvec</b>() function sets and/or gets the disposition of
+the signal <i>sig</i> (like the POSIX <b>sigaction</b>(2)).
+If <i>vec</i> is not NULL, it points to a <i>sigvec</i>
+structure that defines the new disposition for <i>sig</i>.
+If <i>ovec</i> is not NULL, it points to a <i>sigvec</i>
+structure that is used to return the previous disposition of
+<i>sig</i>. To obtain the current disposition of <i>sig</i>
+without changing it, specify NULL for <i>vec</i>, and a
+non-NULL pointer for <i>ovec</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+dispositions for <b>SIGKILL</b> and <b>SIGSTOP</b> cannot be
+changed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>sigvec</i> structure has the following form:</p>
+
+<p style="margin-left:17%; margin-top: 1em">struct sigvec {
+<br>
+void (*sv_handler)(int); /* Signal disposition */ <br>
+int sv_mask; /* Signals to be blocked in handler */ <br>
+int sv_flags; /* Flags */ <br>
+};</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>sv_handler</i> field specifies the disposition of the
+signal, and is either: the address of a signal handler
+function; <b>SIG_DFL</b>, meaning the default disposition
+applies for the signal; or <b>SIG_IGN</b>, meaning that the
+signal is ignored.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<i>sv_handler</i> specifies the address of a signal handler,
+then <i>sv_mask</i> specifies a mask of signals that are to
+be blocked while the handler is executing. In addition, the
+signal for which the handler is invoked is also blocked.
+Attempts to block <b>SIGKILL</b> or <b>SIGSTOP</b> are
+silently ignored.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<i>sv_handler</i> specifies the address of a signal handler,
+then the <i>sv_flags</i> field specifies flags controlling
+what happens when the handler is called. This field may
+contain zero or more of the following flags: <b><br>
+SV_INTERRUPT</b></p>
+
+<p style="margin-left:22%;">If the signal handler
+interrupts a blocking system call, then upon return from the
+handler the system call will not be restarted: instead it
+will fail with the error <b>EINTR</b>. If this flag is not
+specified, then system calls are restarted by default.</p>
+
+<p style="margin-left:11%;"><b>SV_RESETHAND</b></p>
+
+<p style="margin-left:22%;">Reset the disposition of the
+signal to the default before calling the signal handler. If
+this flag is not specified, then the handler remains
+established until explicitly removed by a later call to
+<b>sigvec</b>() or until the process performs an
+<b>execve</b>(2).</p>
+
+<p style="margin-left:11%;"><b>SV_ONSTACK</b></p>
+
+<p style="margin-left:22%;">Handle the signal on the
+alternate signal stack (historically established under BSD
+using the obsolete <b>sigstack</b>() function; the POSIX
+replacement is <b>sigaltstack</b>(2)).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>sigmask</b>() function constructs and returns a
+&quot;signal mask&quot; for <i>signum</i>. For example, we
+can initialize the <i>vec.sv_mask</i> field given to
+<b>sigvec</b>() using code such as the following:</p>
+
+<p style="margin-left:11%; margin-top: 1em">vec.sv_mask =
+sigmask(SIGQUIT) | sigpause(SIGABRT); <br>
+/* Block SIGQUIT and SIGABRT during <br>
+handler execution */</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>sigblock</b>() function adds the signals in <i>mask</i>
+to the process&rsquo;s signal mask (like POSIX
+<i>sigprocmask(SIG_BLOCK)</i>), and returns the
+process&rsquo;s previous signal mask. Attempts to block
+<b>SIGKILL</b> or <b>SIGSTOP</b> are silently ignored.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>sigsetmask</b>() function sets the process&rsquo;s signal
+mask to the value given in <i>mask</i> (like POSIX
+<i>sigprocmask(SIG_SETMASK)</i>), and returns the
+process&rsquo;s previous signal mask.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>siggetmask</b>() function returns the process&rsquo;s
+current signal mask. This call is equivalent to
+<i>sigblock(0)</i>.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>sigvec</b>() function returns 0 on success; on error, it
+returns &minus;1 and sets <i>errno</i> to indicate the
+error.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>sigblock</b>() and <b>sigsetmask</b>() functions return
+the previous signal mask.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>sigmask</b>() function returns the signal mask for
+<i>signum</i>.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">See the ERRORS
+under <b>sigaction</b>(2) and <b>sigprocmask</b>(2).</p>
+
+<h2>CONFORMING TO
+<a name="CONFORMING TO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">All of these
+functions were in 4.3BSD, except <b>siggetmask</b>(), whose
+origin is unclear. These functions are obsolete: do not use
+them in new programs.</p>
+
+<h2>NOTES
+<a name="NOTES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">On 4.3BSD, the
+<b>signal</b>() function provided reliable semantics (as
+when calling <b>sigvec</b>() with <i>vec.sv_mask</i> equal
+to 0). On System V, <b>signal</b>() provides unreliable
+semantics. POSIX.1-2001 leaves these aspects of
+<b>signal</b>() unspecified. See <b>signal</b>(2) for
+further details.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In order to
+wait for a signal, BSD and System V both provided a function
+named <b>sigpause</b>(3), but this function has a different
+argument on the two systems. See <b>sigpause</b>(3) for
+details.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>kill</b>(2),
+<b>pause</b>(2), <b>sigaction</b>(2), <b>signal</b>(2),
+<b>sigprocmask</b>(2), <b>raise</b>(3), <b>sigpause</b>(3),
+<b>sigset</b>(3), <b>signal</b>(7)</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>

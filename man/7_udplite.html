@@ -1,0 +1,203 @@
+<!-- Creator     : groff version 1.22.2 -->
+<!-- CreationDate: Wed Aug 17 18:39:54 2016 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>UDPLITE</title>
+
+</head>
+<body>
+
+<h1 align="center">UDPLITE</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#FILES">FILES</a><br>
+<a href="#VERSIONS">VERSIONS</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#COLOPHON">COLOPHON</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">udplite &minus;
+Lightweight User Datagram Protocol</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;sys/socket.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>sockfd =
+socket(AF_INET, SOCK_DGRAM, IPPROTO_UDPLITE);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is an
+implementation of the Lightweight User Datagram Protocol
+(UDP-Lite), as described in RFC&nbsp;3828.</p>
+
+<p style="margin-left:11%; margin-top: 1em">UDP-Lite is an
+extension of UDP (RFC&nbsp;768) to support variable-length
+checksums. This has advantages for some types of multimedia
+transport that may be able to make use of slightly damaged
+datagrams, rather than having them discarded by lower-layer
+protocols.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+variable-length checksum coverage is set via a
+<b>setsockopt</b>(2) option. If this option is not set, the
+only difference to UDP is in using a different IP protocol
+identifier (IANA number 136).</p>
+
+<p style="margin-left:11%; margin-top: 1em">The UDP-Lite
+implementation is a full extension of <b>udp</b>(7), i.e.,
+it shares the same API and API behaviour, and in addition
+offers two socket options to control the checksum
+coverage.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Address
+format</b> <br>
+UDP-Litev4 uses the <i>sockaddr_in</i> address format
+described in <b>ip</b>(7). UDP-Litev6 uses the
+<i>sockaddr_in6</i> address format described in
+<b>ipv6</b>(7).</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Socket
+options</b> <br>
+To set or get a UDP-Lite socket option, call
+<b>getsockopt</b>(2) to read or <b>setsockopt</b>(2) to
+write the option with the option level argument set to
+<b>IPPROTO_UDPLITE</b>. In addition, all <b>IPPROTO_UDP</b>
+socket options are valid on a UDP-Lite socket. See
+<b>udp</b>(7) for more information.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The following
+two options are specific to UDP-Lite. <b><br>
+UDPLITE_SEND_CSCOV</b></p>
+
+<p style="margin-left:22%;">This option sets the sender
+checksum coverage and takes an <i>int</i> as argument, with
+a checksum coverage value in the range 0..2^16-1.</p>
+
+<p style="margin-left:22%; margin-top: 1em">A value of 0
+means that the entire datagram is always covered. Values
+from 1-7 are illegal (RFC&nbsp;3828, 3.1) and are rounded up
+to the minimum coverage of 8.</p>
+
+<p style="margin-left:22%; margin-top: 1em">With regard to
+IPv6 jumbograms (RFC&nbsp;2675), the UDP-Litev6 checksum
+coverage is limited to the first 2^16-1 octets, as per
+RFC&nbsp;3828, 3.5. Higher values are therefore silently
+truncated to 2^16-1. If in doubt, the current coverage value
+can always be queried using <b>getsockopt</b>(2).</p>
+
+<p style="margin-left:11%;"><b>UDPLITE_RECV_CSCOV</b></p>
+
+<p style="margin-left:22%;">This is the receiver-side
+analogue and uses the same argument format and value range
+as <b>UDPLITE_SEND_CSCOV</b>. This option is not required to
+enable traffic with partial checksum coverage. Its function
+is that of a traffic filter: when enabled, it instructs the
+kernel to drop all packets which have a coverage <i>less</i>
+than the specified coverage value.</p>
+
+<p style="margin-left:22%; margin-top: 1em">When the value
+of <b>UDPLITE_RECV_CSCOV</b> exceeds the actual packet
+coverage, incoming packets are silently dropped, but may
+generate a warning message in the system log.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">All errors
+documented for <b>udp</b>(7) may be returned. UDP-Lite does
+not add further errors.</p>
+
+<h2>FILES
+<a name="FILES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>/proc/net/snmp</i>
+&minus; basic UDP-Litev4 statistics counters. <i><br>
+/proc/net/snmp6</i> &minus; basic UDP-Litev6 statistics
+counters.</p>
+
+<h2>VERSIONS
+<a name="VERSIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">UDP-Litev4/v6
+first appeared in Linux 2.6.20.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Where glibc
+support is missing, the following definitions are
+needed:</p>
+
+<p style="margin-left:17%; margin-top: 1em">#define
+IPPROTO_UDPLITE 136 <br>
+#define UDPLITE_SEND_CSCOV 10 <br>
+#define UDPLITE_RECV_CSCOV 11</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>ip</b>(7),
+<b>ipv6</b>(7), <b>socket</b>(7), <b>udp</b>(7)</p>
+
+<p style="margin-left:11%; margin-top: 1em">RFC&nbsp;3828
+for the Lightweight User Datagram Protocol (UDP-Lite).</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>Documentation/networking/udplite.txt</i>
+in the Linux kernel source tree</p>
+
+<h2>COLOPHON
+<a name="COLOPHON"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This page is
+part of release 3.53 of the Linux <i>man-pages</i> project.
+A description of the project, and information about
+reporting bugs, can be found at
+http://www.kernel.org/doc/man&minus;pages/.</p>
+<hr>
+</body>
+</html>
