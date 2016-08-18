@@ -19,6 +19,9 @@ import operator
 import textwrap
 import itertools
 import html
+import multiprocessing
+import queue
+import threading
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 LOG = logging.getLogger(__name__)
 LOG_FMT_DEMO = '[%(asctime)s %(levelname)s %(name)s %(module)s:%(funcName)s:%(lineno)d] %(message)s'
@@ -96,7 +99,7 @@ class ManManager:
     <head><title>Man Pages on Github Pages</title></head>
     <body bgcolor="white">
     <h1><a href="https://github.com/vbem/man-to-github-pages" target="_blank">Man Pages on Github Pages</a></h1>
-    Use CTRL+F for searching.<br /> 
+    Use CTRL+F for searching.<br />
     For more, check <a href="http://man7.org/linux/man-pages/index.html" target="_blank">man7.org</a> and <a href="http://linux.die.net/man/"   target="_blank">die.net</a>.
     <hr><table border="1">
     <tr><td>Section</td><td>Name</td><td>Description</td></tr>
@@ -114,7 +117,7 @@ class ManManager:
         r'''Initilization.
         '''
         super().__init__(*t, **d)
-            
+
     @decorateLog(LOG)
     def updateIndex(self):
         r'''Update Index from man-pages database.
@@ -128,13 +131,13 @@ class ManManager:
                     continue
                 self._lIndex.append((match.group('name'), match.group('section'), match.group('description')))
         return len(self._lIndex)
-    
+
     @decorateLog(LOG)
     def sortIndex(self, tSequence=(1,0,2)):
         r'''Sort Index.
         '''
         self._lIndex.sort(key=operator.itemgetter(*tSequence))
-    
+
     def _yieldIndexHtmlLine(self):
         r'''Yield index.html line.
         '''
@@ -167,13 +170,51 @@ class ManManager:
     def writeManHtml(self):
         r'''Write man-page HTML files.
         '''
-        nTotal = len(self._lIndex)
         for (n, (sName, sSection, _)) in enumerate(self._lIndex, 1):
             sHtml = self._getManHtml(sName, sSection)
             sPath = self.__class__.TPL_MAN_PATH.format_map(locals())
             with open(sPath, 'w') as f:
                 f.write(sHtml)
-            LOG.info('%r generated, %s/%s', sPath, n, nTotal)
+            LOG.info('%r generated, %s/%s', sPath, n, len(self._lIndex))
+
+    @decorateLog(LOG)
+    def writeManHtmlWithThreading(self):
+        r'''Write man-page HTML files with multi threading.
+        '''
+        nThreadsSize = multiprocessing.cpu_count() * 2 + 1
+
+        self._qInput = queue.Queue()
+        for n, (sName, sSection, _) in enumerate(self._lIndex, 1):
+            self._qInput.put((n, sName, sSection))
+        for n in range(nThreadsSize):
+            self._qInput.put(EOFError)
+        LOG.debug('built queue')
+
+        lThreads = [
+            threading.Thread(target=self._target_writeManHtml, name='_target_writeManHtml-{}/{}'.format(n+1, nThreadsSize))
+            for n in range(nThreadsSize)
+        ]
+        LOG.debug('built threads list size %s', nThreadsSize)
+        for thread in lThreads:
+            thread.start()
+        LOG.debug('all threads start')
+
+        for thread in lThreads:
+            thread.join()
+        LOG.debug('all threads join')
+
+    def _target_writeManHtml(self):
+        while True:
+            fetch = self._qInput.get()
+            if fetch is EOFError:
+                LOG.debug('{} terminated'.format(threading.current_thread().name))
+                break
+            n, sName, sSection = fetch
+            sHtml = self._getManHtml(sName, sSection)
+            sPath = self.__class__.TPL_MAN_PATH.format_map(locals())
+            with open(sPath, 'w') as f:
+                f.write(sHtml)
+            LOG.info('%s generated %r, %s/%s', threading.current_thread().name, sPath, n, len(self._lIndex))
 
     @decorateLog(LOG)
     def buildHtml(self):
@@ -184,7 +225,7 @@ class ManManager:
         self.sortIndex()
         self.writeIndexHtml()
         LOG.info("'index.html' generated")
-        self.writeManHtml()
+        self.writeManHtmlWithThreading()
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # CLI functions
