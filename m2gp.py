@@ -19,7 +19,6 @@ import operator
 import textwrap
 import itertools
 import html
-import multiprocessing
 import queue
 import threading
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -181,7 +180,7 @@ class ManManager:
     def writeManHtmlWithThreading(self):
         r'''Write man-page HTML files with multi threading.
         '''
-        nThreadsSize = multiprocessing.cpu_count() * 2 + 1
+        nThreadsSize = os.cpu_count() * 2 + 1
 
         self._qInput = queue.Queue()
         for n, (sName, sSection, _) in enumerate(self._lIndex, 1):
